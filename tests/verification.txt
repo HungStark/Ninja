@@ -1,0 +1,3 @@
+PASS: 12 seals, all 3 spell rules, chakra recovery/cost, cooldown, wrong sequence, expiry, mouse pitch, movement, fireball hit and target death, all 5 targets, complete round, next round, breath at close range, pause/resume, reset.
+Method: actual game handlers in DOM/WebGL recording harness.
+Not verified: real WebGL shader compilation, browser CSS layout and frame rate. Edge headless failed to initialize the GPU in this environment.

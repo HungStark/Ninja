@@ -1,0 +1,3 @@
+.test-browser*/
+node_modules/
+.publish-stage/

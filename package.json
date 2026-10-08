@@ -1,0 +1,10 @@
+{
+  "name": "an-hoa-hand-seal-game",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Game kết ấn 3D góc nhìn thứ nhất, chạy ngoại tuyến",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node tests/smoke.cjs"
+  }
+}
