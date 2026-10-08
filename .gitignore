@@ -1,3 +1,5 @@
+.tools/
 .test-browser*/
-node_modules/
 .publish-stage/
+node_modules/
+test-results/

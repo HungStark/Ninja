@@ -1,3 +1,6 @@
-PASS: 12 seals, all 3 spell rules, chakra recovery/cost, cooldown, wrong sequence, expiry, mouse pitch, movement, fireball hit and target death, all 5 targets, complete round, next round, breath at close range, pause/resume, reset.
-Method: actual game handlers in DOM/WebGL recording harness.
-Not verified: real WebGL shader compilation, browser CSS layout and frame rate. Edge headless failed to initialize the GPU in this environment.
+PASS: rule tests, 12 keys / 3 spells, chakra/cooldown/expiry.
+PASS: GLB 2.0, 16 bones with skinning, 12 clips with finger/thumb animation.
+PASS: Edge headless WebGL 2 shader compilation, offline file loading, 12 distinct animated poses, all 5 targets, win/restart, breath range, phoenix spread, pause/resume, compact layout.
+PASS: final graphics regression after shadow/material update: path pixels [200,196,153,255] in Balanced, Low, High and Balanced; zero page/shader errors.
+Verified real browser renders in test-results; assets/preview.png is a real screenshot of the final High preset.
+WebGL software rendering was used for validation; hardware FPS is not benchmarked.

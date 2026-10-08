@@ -1,10 +1,26 @@
 {
   "name": "an-hoa-hand-seal-game",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Game kết ấn 3D góc nhìn thứ nhất, chạy ngoại tuyến",
+  "description": "Anime first-person hand seal training",
   "scripts": {
     "start": "node server.cjs",
-    "test": "node tests/smoke.cjs"
+    "build": "node tools/build.mjs",
+    "assets": "node tools/generate-hands.mjs",
+    "test": "node tests/core.cjs && node tests/server.cjs",
+    "test:browser": "node tests/browser.cjs",
+    "test:graphics": "node tests/graphics.cjs",
+    "preview:capture": "node tools/capture.cjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1",
+    "playwright": "^1.56.0"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
   }
 }
