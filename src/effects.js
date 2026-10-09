@@ -38,13 +38,15 @@ export class FireEffects {
   }
   makeShot() {
     const g = new T.Group();
-    const core = new T.Mesh(this.coreGeometry, this.fireMaterial);
+    const core = new T.Mesh(this.coreGeometry, this.fireMaterial.clone());
+    core.material.uniforms.uColor = { value: new T.Color('#ff844b') };
+    core.material.fragmentShader = core.material.fragmentShader.replace('uniform float uTime;', 'uniform float uTime;uniform vec3 uColor;').replace('gl_FragColor=vec4(col,1.0);', 'gl_FragColor=vec4(uColor*(2.4+smoothstep(-.6,.8,f)),1.0);');
     g.add(core);
     const shell = new T.Mesh(this.coreGeometry, new T.MeshBasicMaterial({ color: new T.Color("#ff7027").multiplyScalar(2), transparent: true, opacity: 0.19, blending: T.AdditiveBlending, depthWrite: false }));
     shell.scale.setScalar(1.3);
     g.add(shell);
     for (let j = 0; j < 4; j++) {
-      const flame = new T.Mesh(this.flameGeometry, this.fireMaterial);
+      const flame = new T.Mesh(this.flameGeometry, core.material);
       flame.position.set(Math.sin(j * 2) * 0.35, 0.55 + j * 0.22, Math.cos(j * 2) * 0.35);
       flame.scale.set(0.4, 1.25, 0.4);
       g.add(flame);
@@ -53,9 +55,9 @@ export class FireEffects {
     this.objects.push(g);
     return g;
   }
-  explosion(pos, amount = 1) {
+  explosion(pos, amount = 1, color = '#ffcb72') {
     for (let i = 0; i < Math.min(12, amount * 7); i++) this.smoke.push({ p: new T.Vector3(...pos), v: new T.Vector3((Math.random() - 0.5) * 1.8, Math.random() * 0.9 + 0.4, (Math.random() - 0.5) * 1.8), age: 0, life: 1.8 + Math.random() * 0.6, size: 0.18 + Math.random() * 0.12 });
-    const ring = new T.Mesh(new T.TorusGeometry(1, 0.018, 5, 64), new T.MeshBasicMaterial({ color: new T.Color("#ffcb72").multiplyScalar(1.6), transparent: true, opacity: 0.7, blending: T.AdditiveBlending, depthWrite: false }));
+    const ring = new T.Mesh(new T.TorusGeometry(1, 0.018, 5, 64), new T.MeshBasicMaterial({ color: new T.Color(color).multiplyScalar(1.6), transparent: true, opacity: 0.7, blending: T.AdditiveBlending, depthWrite: false }));
     ring.position.fromArray(pos);
     ring.scale.setScalar(0.25);
     this.scene.add(ring);
@@ -69,15 +71,23 @@ export class FireEffects {
       const g = this.objects[i], shot = shots[i];
       g.visible = !!shot;
       if (!shot) continue;
+      g.children[0].material.uniforms.uTime.value = time;
+      g.children[0].material.uniforms.uColor.value.set(shot.color || '#ff844b');
+      g.children[1].material.color.set(shot.color || '#ff844b').multiplyScalar(2);
+      const fire = shot.element === 'fire';
+      for (let j = 2; j < g.children.length; j++) g.children[j].visible = fire || shot.style === 'lance';
       g.position.fromArray(shot.p);
       g.scale.setScalar(shot.size);
       g.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), new T.Vector3(...shot.v).normalize().negate());
       g.children[0].scale.setScalar(1 + Math.sin(time * 25 + i) * 0.06);
+      if (shot.style === 'lance') g.children[0].scale.set(.65, 2.6, .65);
+      if (shot.element === 'earth' || shot.element === 'wood') g.children[0].scale.set(1, 1.4, 1);
     }
     for (let i = 0; i < this.lights.length; i++) {
       const shot = shots[i], l = this.lights[i];
       l.intensity = shot ? 18 * shot.size : 0;
       if (shot) l.position.fromArray(shot.p);
+      if (shot) l.color.set(shot.color || '#ff844b');
     }
     const geo = this.sparks.geometry, n = Math.min(particles.length, this.sparkCapacity);
     geo.setDrawRange(0, n);

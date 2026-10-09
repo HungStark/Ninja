@@ -5,11 +5,10 @@ const rand = () => {
   seed = Math.imul(seed, 1664525) + 1013904223 >>> 0;
   return seed / 4294967296;
 }, range = (a, b) => a + (b - a) * rand();
-export const targetPositions = [[-6, 1.72, -8], [0, 1.72, -12], [6, 1.72, -9], [-8, 1.72, -20], [8, 1.72, -20]];
 export function createWorld() {
   const scene = new T.Scene();
   scene.fog = new T.FogExp2("#b6d8de", 9e-3);
-  const animated = [], targets = [], lanternLights = [];
+  const animated = [], lanternLights = [];
   const mats = { stone: toon("#bdc7af"), darkStone: toon("#657c77"), wood: toon("#85664b"), red: toon("#c55c47"), roof: toon("#364f61"), gold: toon("#e5be79"), grass: toon("#8aaf71"), leaf: toon("#4c936b", { wind: true, side: T.DoubleSide }), pink: toon("#f2b5c8", { wind: true }), ground: toon("#89a67d") };
   const geos = { box: new T.BoxGeometry(1, 1, 1), sphere: new T.SphereGeometry(1, 16, 10), ico: new T.IcosahedronGeometry(1, 1), cylinder: new T.CylinderGeometry(1, 1, 1, 12), cone: new T.ConeGeometry(1, 1, 10) };
   function mesh(geo, mat, p, s = [1, 1, 1], parent = scene) {
@@ -311,33 +310,6 @@ export function createWorld() {
     lanternLights.push(l);
   }
   for (const x of [-5, 5]) for (const z of [4, -19]) lantern(x, z);
-  const targetMap = canvasTexture(256, (c, n) => {
-    c.fillStyle = "#ebdfb5";
-    c.fillRect(0, 0, n, n);
-    for (let i = 0; i < 6; i++) {
-      c.fillStyle = i % 2 ? "#eeddb0" : "#b75742";
-      c.beginPath();
-      c.arc(n / 2, n / 2, n * 0.46 * (1 - i * 0.16), 0, Math.PI * 2);
-      c.fill();
-    }
-    for (let i = 0; i < 350; i++) {
-      c.globalAlpha = 0.09;
-      c.fillStyle = "#765b41";
-      c.fillRect(rand() * n, rand() * n, 1, range(1, 6));
-    }
-    c.globalAlpha = 1;
-  });
-  targetPositions.forEach((pos, i) => {
-    const g = group([pos[0], 0, pos[2]]);
-    mesh("box", mats.darkStone, [0, 0.08, 0], [1.1, 0.16, 1], g);
-    mesh("box", mats.wood, [0, 0.86, 0], [0.19, 1.6, 0.19], g);
-    mesh("box", mats.wood, [0, 1.42, 0], [1.5, 0.12, 0.13], g);
-    const discMat = toon("#ffffff", { map: targetMap }), disc = mesh(new T.CylinderGeometry(0.77, 0.77, 0.16, 48), mats.wood, [0, pos[1], 0], [1, 1, 1], g);
-    disc.rotation.x = Math.PI / 2;
-    const face = mesh(new T.CircleGeometry(0.752, 48), discMat, [0, pos[1], 0.09], [1, 1, 1], g);
-    mesh(new T.TorusGeometry(0.76, 0.03, 6, 48), mats.gold, [0, pos[1], 0.1], [1, 1, 1], g);
-    targets.push({ group: g, face, disc, material: discMat, pos: new T.Vector3(pos[0], pos[1], pos[2] + 0.1), hp: 100, index: i, dead: false, hit: 0 });
-  });
   const petals = new T.InstancedMesh(new T.SphereGeometry(1, 5, 3), toon("#f3bfca", { side: T.DoubleSide }), 70), petalData = [];
   for (let i = 0; i < 70; i++) petalData.push({ x: range(-18, 18), y: range(1, 8), z: range(-28, 12), phase: rand() * 6, speed: range(0.1, 0.35) });
   scene.add(petals);
@@ -358,22 +330,6 @@ export function createWorld() {
       petals.setMatrixAt(i, dummy.matrix);
     }
     petals.instanceMatrix.needsUpdate = true;
-    for (const t of targets) {
-      t.hit = Math.max(0, t.hit - dt);
-      t.group.rotation.x = T.MathUtils.damp(t.group.rotation.x, t.dead ? -1.48 : Math.sin(t.hit * 40) * t.hit * 0.17, 8, dt);
-      t.group.position.y = T.MathUtils.damp(t.group.position.y, t.dead ? -0.12 : 0, 8, dt);
-      t.material.emissive.set(t.hit > 0 ? "#ed7840" : "#000000");
-      t.material.emissiveIntensity = t.hit > 0 ? 0.4 : 0;
-    }
   }
-  function reset() {
-    targets.forEach((t) => {
-      t.hp = 100;
-      t.dead = false;
-      t.hit = 0;
-      t.group.rotation.set(0, 0, 0);
-      t.group.position.y = 0;
-    });
-  }
-  return { scene, sky, sun, fill, grass, targets, update, reset, lanternLights };
+  return { scene, sky, sun, fill, grass, gate, update, lanternLights };
 }

@@ -42,7 +42,7 @@ export async function createHands() {
         }
       }
     });
-    hands.push({ side, wrapper, joints });
+    hands.push({ side, wrapper, joints, fromPosition: wrapper.position.clone(), fromRotation: wrapper.quaternion.clone(), fromJoints: Object.fromEntries(Object.entries(joints).map(([name, joint]) => [name, joint.quaternion.clone()])) });
   }
   let lastPose = -1, transitionAge = 1, castAge = 10, sealPulse = 0;
   const tempQ = new T.Quaternion(), tempE = new T.Euler(), auraMat = new T.MeshBasicMaterial({ color: new T.Color("#ffcc7a").multiplyScalar(1.5), transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending });
@@ -60,33 +60,47 @@ export async function createHands() {
     if (poseIndex !== lastPose) {
       transitionAge = 0;
       lastPose = poseIndex;
+      for (const hand of hands) {
+        hand.fromPosition.copy(hand.wrapper.position);
+        hand.fromRotation.copy(hand.wrapper.quaternion);
+        for (const [name, joint] of Object.entries(hand.joints)) hand.fromJoints[name] = joint.quaternion.clone();
+      }
     }
     transitionAge += dt;
     castAge += dt;
     sealPulse = Math.max(0, sealPulse - dt * 2.2);
-    const pose = poses[poseIndex], settle = Math.sin(Math.min(1, transitionAge / 0.24) * Math.PI) * 0.012, castPull = Math.exp(-castAge * 7) * Math.sin(Math.min(castAge, 0.5) * 9) * 0.07;
+    const pose = poses[poseIndex], duration = reducedMotion ? 0.12 : 0.26;
+    const progress = Math.min(1, transitionAge / duration), opening = 0.38;
+    const smooth = (v) => v * v * (3 - 2 * v);
+    const close = smooth(Math.max(0, (progress - opening) / (1 - opening)));
+    const separate = smooth(Math.min(1, progress / opening));
+    const castPull = Math.exp(-castAge * 7) * Math.sin(Math.min(castAge, 0.5) * 9) * 0.07;
     for (const hand of hands) {
       const { side, wrapper, joints } = hand, p = pose ? pose.p : [0.33, -0.39, -0.76], r = pose ? pose.r : [0.16, 0.16, 0.27];
       const bob = reducedMotion ? 0 : Math.sin(time * (moving ? 9 : 1.6)) * (moving ? 6e-3 : 3e-3);
-      const tx = side * (p[0] + castPull * 0.8), ty = p[1] + bob - settle - castPull * 0.5, tz = p[2] + castPull;
-      wrapper.position.x = T.MathUtils.damp(wrapper.position.x, tx, 16, dt);
-      wrapper.position.y = T.MathUtils.damp(wrapper.position.y, ty, 16, dt);
-      wrapper.position.z = T.MathUtils.damp(wrapper.position.z, tz, 16, dt);
+      const spreadX = Math.max(0.18, Math.abs(hand.fromPosition.x), p[0] + 0.08);
+      const outwardX = T.MathUtils.lerp(hand.fromPosition.x, side * spreadX, separate);
+      wrapper.position.set(
+        T.MathUtils.lerp(outwardX, side * p[0], close) + side * castPull * 0.8,
+        T.MathUtils.lerp(hand.fromPosition.y, p[1], close) + bob - castPull * 0.5,
+        T.MathUtils.lerp(hand.fromPosition.z, p[2], close) + castPull
+      );
       tempE.set(r[0] + castPull * 3, side * r[1], side * r[2]);
       tempQ.setFromEuler(tempE);
-      wrapper.quaternion.slerp(tempQ, 1 - Math.exp(-dt * 17));
+      wrapper.quaternion.slerpQuaternions(hand.fromRotation, tempQ, close);
       for (const [f, name] of ["index", "middle", "ring", "little"].entries()) {
         const curl = pose ? pose.curl[f] : 0.24 + f * 0.06;
         for (let j = 0; j < 3; j++) {
           tempE.set(-curl * (j === 0 ? 0.6 : 0.85), 0, j === 0 ? (f - 1.5) * (pose ? pose.spread : 0.06) : 0);
           tempQ.setFromEuler(tempE);
-          joints[name + "_" + j].quaternion.slerp(tempQ, 1 - Math.exp(-dt * 20));
+          const jointName = name + "_" + j;
+          joints[jointName].quaternion.slerpQuaternions(hand.fromJoints[jointName], tempQ, close);
         }
       }
       for (let j = 0; j < 3; j++) {
-        tempE.set(-(pose ? pose.thumb : 0.35) * (j === 0 ? 0.55 : 0.7), 0, j === 0 ? 0.92 - (pose ? pose.thumb : 0.35) * 1.05 : 0);
+        tempE.set(-(pose ? pose.thumb : 0.35) * (j === 0 ? 0.55 : 0.7), 0, j === 0 ? (pose?.thumbAngle ?? 0.92 - (pose ? pose.thumb : 0.35) * 1.05) : 0);
         tempQ.setFromEuler(tempE);
-        joints["thumb_" + j].quaternion.slerp(tempQ, 1 - Math.exp(-dt * 18));
+        joints["thumb_" + j].quaternion.slerpQuaternions(hand.fromJoints["thumb_" + j], tempQ, close);
       }
     }
     auraMat.opacity = T.MathUtils.damp(auraMat.opacity, ready ? 0.3 : sealPulse * 0.16, 7, dt);
