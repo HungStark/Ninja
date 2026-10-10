@@ -27,11 +27,11 @@ Hệ Hỏa có hiệu ứng và cơ chế riêng:
 | Hỏa cầu | 2 | Q W | 28 | Cầu lửa xoáy, 43 sát thương |
 | Hỏa liên đạn | 4 | Q W D F | 40 | Bốn đạn nối tiếp cách nhau 0,14 giây, mỗi đạn 24 sát thương |
 | Rồng lửa | 6 | Q W C V Z X | 56 | Rồng cuộn thành vòng lửa trước mặt trong 1,1 giây rồi lao tới; camera chuyển lên trên bên trái và trở lại sau cú đánh, 104 sát thương |
-| Thiên thạch | 8 | Q W C V Z X E R | 82 | Rơi xuống vùng ngắm sau 1,6 giây; 150 sát thương trong bán kính 5,5 m |
+| Thiên thạch | 8 | Q W C V Z X E R | 82 | Camera ngước nhìn thiên thạch xuyên mây trong 1,4 giây, trở về trong 0,4 giây rồi bắt đầu quỹ đạo rơi 1,6 giây; 150 sát thương trong bán kính 5,5 m |
 | Khiên lửa | 3 | Q W A | 26 | Vòm lửa bao quanh người, hấp thụ 75 sát thương trong 4,5 giây |
 | Tường lửa | 5 | Q W Z X C | 36 | Tường rộng 7 m, cao 4,2 m, dựng cách 3 m phía trước; 120 độ bền, tồn tại 5 giây |
 
-Tường đứng yên khi người chơi né, chặn đạn đối phương đi xuyên qua mặt tường và có thể tồn tại cùng khiên. Dựng tường mới thay tường cũ của người thi triển. Thiên thạch có dấu báo vùng rơi, đuôi lửa, vụ nổ lan, cột lửa và đá văng; có thể né khỏi vùng nổ, nhưng không phản được thiên thạch. Nhắm ngang sẽ thả ở khoảng cách 31 m; nhắm xuống sẽ chọn điểm trên mặt đất (6–55 m). Các ID chiêu Hỏa cũ được giữ để bộ chiêu đã lưu vẫn dùng được.
+Tường đứng yên khi người chơi né, chặn đạn đối phương đi xuyên qua mặt tường và có thể tồn tại cùng khiên. Dựng tường mới thay tường cũ của người thi triển. Thiên thạch xuyên một tầng mây bị đẩy tách ra, có dấu báo vùng rơi và đuôi lửa. Khi chạm đất, đá lớn nhỏ bật tung theo quỹ đạo, bụi đất lan ra, tia lửa bắn lên và vết nứt nóng sáng xuất hiện quanh tâm nổ; có thể né khỏi vùng nổ, nhưng không phản được thiên thạch. Nhắm ngang sẽ thả ở khoảng cách 31 m; nhắm xuống sẽ chọn điểm trên mặt đất (6–55 m). Camera giữ hướng ngắm gốc khi trở về; đối thủ thi triển không đổi camera của người chơi. Các ID chiêu Hỏa cũ được giữ để bộ chiêu đã lưu vẫn dùng được.
 
 Các hệ còn lại dùng bảng cấp sau:
 

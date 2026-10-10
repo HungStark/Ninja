@@ -26,6 +26,7 @@ export class FireArts {
     this.red = additive('#ff491b', .3);
     this.ink = new T.MeshBasicMaterial({ color: '#702116' });
     this.teeth = new T.MeshBasicMaterial({ color: '#ffe6a1' });
+    this.meteorStone = new T.MeshStandardMaterial({ color: '#544033', roughness: 1, flatShading: true });
     this.fire = new T.ShaderMaterial({
       uniforms: { uTime: { value: 0 } },
       vertexShader: `varying vec3 vLocal; varying vec3 vNormal; uniform float uTime;
@@ -256,6 +257,28 @@ export class FireArts {
     const circle = part(g, this.ring, this.gold); circle.rotation.x = -Math.PI / 2; circle.scale.setScalar(shot.blastRadius);
     return g;
   }
+  meteorCloud(shot) {
+    const g = new T.Group(); g.position.fromArray(shot.cloudPoint); this.scene.add(g);
+    const material = new T.MeshLambertMaterial({ color: '#ece5d7', transparent: true, opacity: .88, depthWrite: false });
+    const puffs = [];
+    for (let j = 0; j < 29; j++) {
+      const center = j >= 24, a = j * 2.399, r = center ? (j - 24) * .5 : 6 + Math.floor(j / 8) * 3;
+      const mesh = part(g, this.sphere, material, [Math.cos(a) * r, Math.sin(j * 3) * .8, Math.sin(a) * r], [center ? 2.8 : 4.8, center ? 1.8 : 2, center ? 2.8 : 4.1]);
+      puffs.push({ mesh, center, a, origin: mesh.position.clone(), scale: mesh.scale.clone() });
+    }
+    return { g, material, puffs };
+  }
+  updateMeteorCloud(cloud, shot, quality) {
+    const breakTime = shot.skyTime * Math.sqrt((65 - 42) / 45);
+    const age = Math.max(0, shot.age - breakTime), fade = Math.max(0, 1 - age / 1.7);
+    cloud.g.visible = fade > 0; cloud.material.opacity = .88 * fade;
+    for (const { mesh, center, a, origin, scale } of cloud.puffs) {
+      mesh.visible = (!center || age < .32) && (quality !== 2 || center || Math.round(a / 2.399) % 2 === 0);
+      const push = age * (center ? 8 : 3.2);
+      mesh.position.copy(origin).add(new T.Vector3(Math.cos(a) * push, age * .8, Math.sin(a) * push));
+      mesh.scale.copy(scale).multiplyScalar(center ? Math.max(.001, 1 - age / .32) : 1 + age * .12);
+    }
+  }
   shield() {
     const g = new T.Group(); this.scene.add(g);
     part(g, this.sphere, this.shieldMaterial, [0, 0, 0], [1.25, 1.65, 1.25]);
@@ -282,28 +305,113 @@ export class FireArts {
     return g;
   }
   blast(pos, style = 'orb', radius = 1) {
-    const huge = style === 'meteor', dragon = style === 'dragon';
+    if (style === 'meteor') { this.meteorBlast(pos, radius); return; }
+    const dragon = style === 'dragon';
     const g = new T.Group(); g.position.fromArray(pos); this.scene.add(g);
     const gold = this.gold.clone(), red = this.red.clone();
-    const circle = part(g, this.ring, gold); circle.rotation.x = huge ? -Math.PI / 2 : 0;
+    const circle = part(g, this.ring, gold);
     const shell = part(g, this.sphere, red);
     const flames = [];
-    for (let j = 0; j < (huge ? 20 : dragon ? 12 : 7); j++) {
-      const a = j * 2.399, r = huge ? 2 + (j % 4) * .9 : .2;
-      const f = huge ? this.flameSprite(g, 1.8, 2) : part(g, this.cone, this.flame, [0, 0, 0], [.3, 2, .3]);
+    for (let j = 0; j < (dragon ? 12 : 7); j++) {
+      const a = j * 2.399, r = .2;
+      const f = part(g, this.cone, this.flame, [0, 0, 0], [.3, 2, .3]);
       f.position.set(Math.cos(a) * r, .7, Math.sin(a) * r);
       flames.push({ mesh: f, a, r });
     }
     const debris = [];
-    if (huge) {
-      const crater = part(g, this.sigilGeometry, this.sigilMaterial, [0, .02, 0], [radius * 2, radius * 2, 1]); crater.rotation.x = -Math.PI / 2;
-      for (let j = 0; j < 12; j++) {
-        const a = j * 2.399, mesh = part(g, this.rock, j % 2 ? this.fire : this.ink, [0, .5, 0], [.13, .18, .16]);
-        debris.push({ mesh, v: new T.Vector3(Math.cos(a) * (3 + j % 3), 4 + j % 4, Math.sin(a) * (3 + j % 3)) });
-      }
+    const light = new T.PointLight('#ff9b37', 12, 7, 2); light.position.y = 1; g.add(light);
+    this.bursts.push({ g, circle, shell, flames, debris, light, gold, red, age: 0, radius: dragon ? 2.4 : 1, life: .65 });
+  }
+  meteorBlast(pos, radius) {
+    const g = new T.Group(); g.position.fromArray(pos); this.scene.add(g);
+    const gold = additive('#ffad34', 1), hot = additive('#ffe8b2', 1), red = additive('#ff6317', .8);
+    const dustMaterial = new T.MeshLambertMaterial({ color: '#b89a76', transparent: true, opacity: .4, depthWrite: false });
+    const scorchMaterial = new T.MeshBasicMaterial({ color: '#392b23', transparent: true, opacity: .5, depthWrite: false });
+    const scorch = part(g, new T.CircleGeometry(radius * .9, 48), scorchMaterial, [0, .04, 0]); scorch.rotation.x = -Math.PI / 2;
+    const circle = part(g, this.ring, gold, [0, .08, 0]); circle.rotation.x = -Math.PI / 2;
+    const core = part(g, this.sphere, hot, [0, .4, 0], [.5, .5, .5]);
+    const flash = this.sprite(g, 9, .6); flash.position.y = 1.3;
+    const cracks = new T.Group(); g.add(cracks);
+    for (let j = 0; j < 14; j++) {
+      const a = j * 2.399, length = radius * (1 + (j % 3) * .14);
+      const points = Array.from({ length: 6 }, (_, k) => {
+        const r = .3 + k / 5 * length, bend = a + Math.sin(j * 9 + k * 3) * .16;
+        return new T.Vector3(Math.cos(bend) * r, .08, Math.sin(bend) * r);
+      });
+      part(cracks, new T.TubeGeometry(new T.CatmullRomCurve3(points), 16, .035, 4, false), gold);
     }
-    const light = new T.PointLight('#ff9b37', huge ? 45 : 12, huge ? 24 : 7, 2); light.position.y = 1; g.add(light);
-    this.bursts.push({ g, circle, shell, flames, debris, light, gold, red, age: 0, radius: huge ? radius : dragon ? 2.4 : 1, life: huge ? 2.4 : .65, huge });
+    const rubble = [], debris = [], dust = [], streaks = [], flames = [];
+    for (let j = 0; j < 25; j++) {
+      const a = j * 2.399, r = .8 + (j % 6) * radius / 6;
+      const size = .35 + (j % 4) * .17;
+      const mesh = part(g, this.rock, this.meteorStone, [Math.cos(a) * r, size * .35, Math.sin(a) * r], [size * 1.8, size * .7, size * 1.3]);
+      mesh.rotation.set(j * .7, j, j * .4);
+      rubble.push({ mesh, scale: mesh.scale.clone() });
+    }
+    for (let j = 0; j < 46; j++) {
+      const a = j * 2.399, large = j < 10, r = (j % 5) * .35;
+      const size = large ? .6 + (j % 3) * .25 : .12 + (j % 5) * .065;
+      const mesh = part(g, this.rock, this.meteorStone, [Math.cos(a) * r, .3, Math.sin(a) * r], [size * .8, size * (large ? 1.6 : 1.1), size]);
+      mesh.rotation.set(j * 2, j, j * .7);
+      mesh.castShadow = large;
+      const ember = part(mesh, this.rock, red, [0, -.25, 0], [.85, .55, .85]);
+      const speed = large ? 3.5 + j % 4 : 5 + j % 7;
+      debris.push({ mesh, ember, origin: mesh.position.clone(), v: new T.Vector3(Math.cos(a) * speed, large ? 11 + j % 6 : 6 + j % 9, Math.sin(a) * speed), spin: .7 + j % 5 });
+    }
+    for (let j = 0; j < 20; j++) {
+      const a = j * 2.399, r = 1.5 + (j % 4) * .8;
+      const mesh = part(g, this.sphere, dustMaterial, [Math.cos(a) * r, .4, Math.sin(a) * r], [1, 1, 1]);
+      dust.push({ mesh, a, r, size: 1.2 + (j % 3) * .45 });
+    }
+    for (let j = 0; j < 42; j++) {
+      const a = j * 2.399, speed = 8 + j % 9;
+      const v = new T.Vector3(Math.cos(a) * speed, 8 + j % 13, Math.sin(a) * speed);
+      const mesh = part(g, this.cone, j % 3 ? gold : hot, [0, .3, 0], [.065, 1, .065]);
+      streaks.push({ mesh, v, length: 1.4 + j % 4 * .6 });
+    }
+    for (let j = 0; j < 9; j++) {
+      const a = j * 2.399, mesh = this.flameSprite(g, 2, 5);
+      flames.push({ mesh, a, height: 5 + j % 4 });
+    }
+    const light = new T.PointLight('#ffb35a', 60, 30, 2); light.position.y = 2; g.add(light);
+    this.bursts.push({ meteor: true, g, circle, core, flash, scorch, cracks, rubble, debris, dust, streaks, flames, light,
+      gold, hot, red, dustMaterial, scorchMaterial, age: 0, radius, life: 4,
+      materials: [gold, hot, red, dustMaterial, scorchMaterial] });
+  }
+  updateMeteorBlast(b, dt, quality) {
+    const age = b.age, fade = Math.max(0, 1 - Math.max(0, age - 2.5) / 1.5);
+    b.circle.scale.setScalar(.3 + Math.min(b.radius * 1.5, age * 19));
+    b.gold.opacity = Math.max(0, 1 - age / 3) * .95;
+    b.hot.opacity = Math.max(0, 1 - age / 1);
+    b.flash.material.opacity = Math.max(0, 1 - age / .8) * .7;
+    b.red.opacity = Math.max(0, 1 - age / 1.3) * .8;
+    b.core.scale.set(1 + age * 7, .7 + age * 8, 1 + age * 7); b.core.visible = age < .55;
+    b.dustMaterial.opacity = Math.min(.42, age * 1.5) * fade;
+    b.scorchMaterial.opacity = .5 * fade; b.cracks.visible = age < 3;
+    b.light.intensity = quality === 2 ? 0 : 60 * Math.exp(-age * 3);
+    for (const { mesh, scale } of b.rubble) mesh.scale.copy(scale).multiplyScalar(Math.min(1, age * 12) * fade);
+    for (const { mesh, ember, origin, v, spin } of b.debris) {
+      mesh.position.copy(origin).addScaledVector(v, age); mesh.position.y -= 7 * age * age;
+      mesh.rotation.x += dt * spin; mesh.rotation.z += dt * spin * .7;
+      mesh.visible = mesh.position.y > 0 && fade > 0; ember.visible = age < 1.3;
+    }
+    b.dust.forEach(({ mesh, a, r, size }, j) => {
+      const spread = r + age * 2.1;
+      mesh.position.set(Math.cos(a) * spread, .6 + age * .9, Math.sin(a) * spread);
+      const scale = size * (.25 + Math.min(1.6, age * 1.8)); mesh.scale.set(scale * 1.25, scale, scale);
+      mesh.visible = quality !== 2 || j % 2 === 0;
+    });
+    b.streaks.forEach(({ mesh, v, length }, j) => {
+      mesh.position.copy(v).multiplyScalar(age); mesh.position.y += .3 - 7 * age * age;
+      mesh.quaternion.setFromUnitVectors(up, new T.Vector3(v.x, v.y - 14 * age, v.z).normalize());
+      mesh.scale.y = length * Math.max(.05, 1 - age / .9);
+      mesh.visible = age < .85 && (quality !== 2 || j % 2 === 0);
+    });
+    for (const { mesh, a, height } of b.flames) {
+      const h = height * Math.sin(Math.min(1, age / .7) * Math.PI);
+      mesh.position.set(Math.cos(a) * age * 2, Math.max(0, h) / 2, Math.sin(a) * age * 2);
+      mesh.scale.set(2, Math.max(.001, h), 1); mesh.visible = age < .7;
+    }
   }
   disposeGroup(g) {
     this.scene.remove(g);
@@ -314,20 +422,28 @@ export class FireArts {
       if (o.isSprite) o.material.dispose();
     });
   }
+  disposeBurst(b) {
+    this.disposeGroup(b.g);
+    for (const material of b.materials || [b.gold, b.red]) material.dispose();
+  }
   update(dt, time, shots, walls, fighters, quality) {
     for (const m of [this.fire, this.flame, this.wallMaterial, this.shieldMaterial]) m.uniforms.uTime.value = time;
     const live = new Set(shots.filter(s => s.element === 'fire'));
     for (const [shot, art] of this.shots) if (!live.has(shot)) {
-      this.disposeGroup(art.g); if (art.marker) this.disposeGroup(art.marker); this.shots.delete(shot);
+      this.disposeGroup(art.g); if (art.marker) this.disposeGroup(art.marker);
+      if (art.cloud) { this.disposeGroup(art.cloud.g); art.cloud.material.dispose(); }
+      this.shots.delete(shot);
     }
     for (const shot of live) {
       let art = this.shots.get(shot);
       if (!art) {
         const g = shot.style === 'dragon' ? this.dragon() : shot.style === 'meteor' ? this.meteor() : this.orb(shot.style === 'volley');
-        this.scene.add(g); art = { g, marker: shot.style === 'meteor' ? this.marker(shot) : null }; this.shots.set(shot, art);
+        this.scene.add(g); art = { g, marker: shot.style === 'meteor' ? this.marker(shot) : null,
+          cloud: shot.style === 'meteor' ? this.meteorCloud(shot) : null }; this.shots.set(shot, art);
       }
       const g = art.g;
       g.position.fromArray(shot.p); g.scale.setScalar(shot.size);
+      if (shot.style === 'meteor' && shot.phase === 'sky') g.scale.multiplyScalar(1 + .35 * Math.max(0, 1 - shot.preludeAge / shot.skyTime));
       g.quaternion.setFromUnitVectors(forward, new T.Vector3(...shot.v).normalize());
       if (g.userData.ribbons) g.userData.ribbons.rotation.z = time * (shot.style === 'meteor' ? 2 : 5);
       if (g.userData.segments) {
@@ -337,6 +453,7 @@ export class FireArts {
         art.marker.rotation.y = -time * .4;
         const scale = 1 + Math.sin(time * 9) * .04; art.marker.scale.setScalar(scale);
       }
+      if (art.cloud) this.updateMeteorCloud(art.cloud, shot, quality);
     }
     const liveWalls = new Set(walls.filter(w => w.life > 0 && w.hp > 0));
     for (const [wall, g] of this.walls) if (!liveWalls.has(wall)) { this.disposeGroup(g); this.walls.delete(wall); }
@@ -360,6 +477,11 @@ export class FireArts {
     }
     for (let i = this.bursts.length - 1; i >= 0; i--) {
       const b = this.bursts[i]; b.age += dt; const t = b.age / b.life;
+      if (b.meteor) {
+        this.updateMeteorBlast(b, dt, quality);
+        if (t >= 1) { this.disposeBurst(b); this.bursts.splice(i, 1); }
+        continue;
+      }
       b.circle.scale.setScalar(.25 + Math.min(b.radius * 1.4, b.age * (b.huge ? 10 : 6)));
       b.gold.opacity = Math.max(0, .85 * (1 - t)); b.red.opacity = Math.max(0, .22 * (1 - t * 2));
       b.shell.scale.setScalar(.2 + Math.min(b.radius, b.age * 8));
@@ -373,14 +495,17 @@ export class FireArts {
         mesh.position.addScaledVector(v, dt); v.y -= dt * 9.8; mesh.rotation.x += dt * 3;
         mesh.visible = mesh.position.y >= 0;
       }
-      if (t >= 1) { this.disposeGroup(b.g); b.gold.dispose(); b.red.dispose(); this.bursts.splice(i, 1); }
+      if (t >= 1) { this.disposeBurst(b); this.bursts.splice(i, 1); }
     }
   }
   reset() {
-    for (const art of this.shots.values()) { this.disposeGroup(art.g); if (art.marker) this.disposeGroup(art.marker); }
+    for (const art of this.shots.values()) {
+      this.disposeGroup(art.g); if (art.marker) this.disposeGroup(art.marker);
+      if (art.cloud) { this.disposeGroup(art.cloud.g); art.cloud.material.dispose(); }
+    }
     for (const g of this.walls.values()) this.disposeGroup(g);
     for (const g of this.shields.values()) this.disposeGroup(g);
-    for (const b of this.bursts) { this.disposeGroup(b.g); b.gold.dispose(); b.red.dispose(); }
+    for (const b of this.bursts) this.disposeBurst(b);
     this.shots.clear(); this.walls.clear(); this.shields.clear(); this.bursts.length = 0;
   }
 }

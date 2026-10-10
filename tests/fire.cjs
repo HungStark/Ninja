@@ -92,22 +92,57 @@ const fs = require('node:fs/promises');
     assert.equal((await state()).casts, 1); assert.equal((await state()).chakra, 18);
     assert.equal((await state()).projectiles[0].style, 'meteor');
     assert.deepEqual((await state()).projectiles[0].target, [0, .08, -24]);
-    await advance(1.05); await screenshot('meteor-fall');
+    assert.equal((await state()).cameraView, 'meteor-sky'); assert.equal((await state()).projectiles[0].position[1], 65);
+    await advance(.4); await screenshot('meteor-sky');
+    const sky = await state();
+    assert.equal(sky.fireArt.clouds, 1); assert.equal(sky.handsVisible, false);
+    assert.ok(sky.viewRotation[0] > .2, 'Camera looks upward at the meteor');
+    await page.keyboard.press('Escape'); await advance(2);
+    assert.deepEqual((await state()).projectiles, sky.projectiles); assert.deepEqual((await state()).viewRotation, sky.viewRotation);
+    await page.keyboard.press('Enter');
+    await page.evaluate(() => document.getElementById('world').dispatchEvent(new MouseEvent('mousemove', { bubbles: true, movementX: 80, movementY: 40 })));
+    assert.equal((await state()).yaw, 0); assert.equal((await state()).pitch, 0);
+    await page.evaluate(() => document.getElementById('world').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 })));
+    await advance(.65); await screenshot('meteor-cloud-break');
+    assert.ok((await state()).projectiles[0].position[1] < 42, 'Meteor passes below the cloud layer');
+    assert.equal((await state()).projectiles[0].fallAge, 0); assert.equal((await state()).enemyHealth, 220);
+    await advance(.55); assert.equal((await state()).cameraView, 'meteor-returning');
+    const returnView = await state(); await page.keyboard.press('Escape'); await advance(1);
+    assert.deepEqual((await state()).viewRotation, returnView.viewRotation); assert.deepEqual((await state()).projectiles, returnView.projectiles);
+    await page.keyboard.press('Enter'); await advance(.22);
+    assert.equal((await state()).cameraView, 'first-person'); assert.equal((await state()).handsVisible, true);
+    assert.equal((await state()).projectiles[0].phase, 'falling');
+    assert.ok((await state()).projectiles[0].fallAge < .03, 'Old fall begins only after the camera returns');
+    assert.equal((await state()).position[0], -1.8); assert.equal((await state()).yaw, 0);
+    await advance(1.03); await screenshot('meteor-fall');
     await page.keyboard.press('Escape'); const frozen = await state();
     await advance(2); assert.deepEqual((await state()).projectiles, frozen.projectiles);
     await page.keyboard.press('Enter'); await advance(.58);
     assert.equal((await state()).enemyHealth, 70, 'Meteor applies damage once at ground impact');
-    assert.equal((await state()).shots, 0); assert.ok((await state()).fireArt.bursts > 0);
-    await advance(.45); await screenshot('meteor-impact');
+    assert.equal((await state()).projectiles.filter(s => s.style === 'meteor').length, 0); assert.equal((await state()).fireArt.meteorImpacts.length, 1);
+    await advance(.3); await screenshot('meteor-impact');
+    const rocks = (await state()).fireArt.meteorImpacts[0].rocks;
+    assert.ok(rocks.length > 30 && rocks.some(p => p[1] > 3), 'Impact throws large and small rocks into the air');
+    assert.ok((await state()).fireArt.meteorImpacts[0].dust > 0);
+    await page.keyboard.press('Escape'); const impactFrozen = (await state()).fireArt.meteorImpacts; await advance(1);
+    assert.deepEqual((await state()).fireArt.meteorImpacts, impactFrozen, 'Pause freezes debris and dust');
+    await page.keyboard.press('Enter'); await advance(.5); await screenshot('meteor-debris');
+
+    for (const time of [.4, 1.6]) {
+      await reset(); await cast('fire-meteor'); await advance(time); await reset();
+      assert.equal((await state()).cameraView, 'first-person'); assert.equal((await state()).handsVisible, true);
+      assert.equal((await state()).fireArt.clouds, 0); assert.equal((await state()).fireArt.projectiles, 0);
+      assert.equal((await state()).fireArt.meteorImpacts.length, 0);
+    }
 
     await reset();
     await page.evaluate(() => document.getElementById('world').dispatchEvent(new MouseEvent('mousemove', { bubbles: true, movementX: 40, movementY: 0 })));
-    await cast('fire-meteor'); await advance(1.7);
+    await cast('fire-meteor'); await advance(3.5);
     assert.equal((await state()).enemyHealth, 70, 'The blast hits opponents away from the meteor core but inside the 5.5m radius');
 
     await reset();
     await page.evaluate(() => document.getElementById('world').dispatchEvent(new MouseEvent('mousemove', { bubbles: true, movementX: 240, movementY: 0 })));
-    await cast('fire-meteor'); await advance(1.7);
+    await cast('fire-meteor'); await advance(3.5);
     assert.equal((await state()).enemyHealth, 220, 'Meteor misses when aimed away from the opponent');
 
     await reset(); await advance(2.7); await cast('fire-barrier');
@@ -160,8 +195,14 @@ const fs = require('node:fs/promises');
       await reset(); await cast('fire-lance'); await advance(.32);
       assert.ok((await state()).fireArt.projectiles > 0);
       await screenshot(`quality-${preset}`);
+      await reset(); await advance(1.8); await cast('fire-meteor'); await advance(1.05);
+      assert.equal((await state()).cameraView, 'meteor-sky'); assert.equal((await state()).fireArt.clouds, 1);
+      await screenshot(`meteor-cloud-${preset}`);
+      await advance(2.7); assert.equal((await state()).cameraView, 'first-person'); assert.equal((await state()).enemyHealth, 70);
+      assert.ok((await state()).fireArt.meteorImpacts[0].rocks.length > 30);
+      await screenshot(`meteor-impact-${preset}`);
     }
     assert.deepEqual(errors, []);
-    console.log('PASS fire: six arts and exact seal counts; five-spell loadout; staggered salvo and damage; dragon; aimed meteor with area damage/miss and pause; flame shield; physical wall blocks, expires and stays fixed; reset clears queued bolts and art; eight-seal responsive guide; no browser/shader errors.');
+    console.log('PASS fire: six arts and exact seal counts; five-spell loadout; staggered salvo and damage; dragon; meteor sky camera, cloud penetration, return before old fall, debris/dust, hit/miss, pause/reset and all graphics tiers; flame shield; physical wall; responsive guide; no browser/shader errors.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });
