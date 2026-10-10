@@ -139,6 +139,7 @@ export class FireArts {
   }
   dragon() {
     const g = new T.Group(), head = new T.Group(); g.add(head);
+    g.userData.head = head;
     part(head, this.rock, this.fire, [0, .08, -.1], [1, .8, 1.1]);
     part(head, this.box, this.fire, [0, -.05, -1.1], [.95, .48, 1.2]);
     part(head, this.box, this.ink, [0, -.39, -1.05], [.8, .25, 1.18]);
@@ -149,28 +150,88 @@ export class FireArts {
       eye.rotation.z = side * -.35;
       part(head, this.sphere, this.ink, [side * .87, .29, -.73], [.045, .11, .13]);
       const brow = part(head, this.box, this.fire, [side * .78, .48, -.57], [.18, .15, .65]); brow.rotation.z = side * -.3;
-      const horn = part(head, this.cone, this.teeth, [side * .65, 1.05, .28], [.18, 1.5, .18]); horn.rotation.x = .65; horn.rotation.z = side * -.3;
+      const horn = part(head, this.cone, this.teeth, [side * .65, .95, .28], [.13, .95, .13]); horn.rotation.x = .65; horn.rotation.z = side * -.3;
       for (let j = 0; j < 4; j++) {
         const tooth = part(head, this.cone, this.teeth, [side * .34, -.32, -1.53 + j * .27], [.08, .27, .08]); tooth.rotation.z = Math.PI;
       }
       const whisker = new T.CatmullRomCurve3([new T.Vector3(side * .48, -.12, -1.5), new T.Vector3(side * 1.55, -.16, -1), new T.Vector3(side * 1.8, .25, .15), new T.Vector3(side * 1.3, .52, 1.15)]);
       part(head, new T.TubeGeometry(whisker, 18, .035, 5, false), this.gold);
-      const mane = part(head, this.cone, this.flame, [side * .8, .15, .92], [.65, 2.4, .65]); mane.rotation.x = Math.PI / 2;
+      const mane = part(head, this.cone, this.flame, [side * .8, .15, .92], [.28, 1.7, .28]); mane.rotation.x = Math.PI / 2;
+      for (let j = 0; j < 3; j++) {
+        const flame = this.flameSprite(head, .8, 1.8);
+        flame.position.set(side * (.65 + j * .1), .35 + j * .15, .25 + j * .45);
+      }
     }
     const segments = [];
-    for (let j = 0; j < 12; j++) {
-      const segment = new T.Group(), size = .85 * (1 - j / 14); g.add(segment);
-      part(segment, this.sphere, this.fire, [0, 0, 0], [size, size * .78, .52]);
+    for (let j = 0; j < 26; j++) {
+      const segment = new T.Group(), size = .82 * (1 - j / 29); g.add(segment);
+      part(segment, this.sphere, this.fire, [0, 0, 0], [size, size * .78, .55]);
       part(segment, this.sphere, this.gold, [0, -.32 * size, -.08], [size * .64, size * .17, .49]);
       const spike = part(segment, this.cone, this.flame, [0, size * 1.15, 0], [size * .22, size * 1.4, size * .2]); spike.rotation.x = .4;
+      if (j % 2 === 0) {
+        const flame = this.flameSprite(segment, size * 1.4, size * 2.4);
+        flame.position.y = size * .65;
+      }
       segments.push(segment);
     }
     g.userData.segments = segments;
     const ribbons = new T.Group(); g.add(ribbons); g.userData.ribbons = ribbons;
-    this.ribbon(ribbons, 1.2, 6.5, 1.2, 0, this.gold);
-    this.ribbon(ribbons, 1.2, 6.5, 1.2, Math.PI, this.red);
+    this.ribbon(ribbons, 1.7, 11.5, 1.2, 0, this.gold);
+    this.ribbon(ribbons, 1.7, 11.5, 1.2, Math.PI, this.red);
+    const coil = new T.Group(); g.add(coil); g.userData.coil = coil;
+    const embers = [];
+    for (let j = 0; j < 28; j++) {
+      const flame = this.flameSprite(coil, .5, .95);
+      embers.push(flame);
+    }
+    g.userData.embers = embers;
     this.sprite(head, 3.8, .22);
     return g;
+  }
+  updateDragon(g, shot, time, quality) {
+    const forming = shot.phase === 'forming';
+    const grow = Math.min(1, shot.age / (shot.formation * .65));
+    const t = forming ? 0 : Math.min(1, shot.flightAge / shot.uncoil);
+    const release = t * t * (3 - 2 * t);
+    g.scale.setScalar(shot.size * (1 + release * .2));
+    const radius = 2.35, angle = .7 + Math.sin(Math.min(shot.age, shot.formation) * 2) * .08;
+    const coilPoint = fraction => {
+      const a = angle + fraction * Math.PI * 1.87;
+      return new T.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, fraction * .15);
+    };
+    const coilRotation = fraction => {
+      const a = angle + fraction * Math.PI * 1.87;
+      return new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(
+        new T.Vector3(0, 0, 1), new T.Vector3(Math.cos(a), Math.sin(a), 0), new T.Vector3(-Math.sin(a), Math.cos(a), 0)));
+    };
+    g.position.y += .55 * (1 - release);
+    const head = g.userData.head;
+    head.position.copy(coilPoint(0)).multiplyScalar(1 - release);
+    head.quaternion.copy(coilRotation(.16)).slerp(new T.Quaternion(), release);
+    head.scale.setScalar(forming ? .45 + .55 * Math.min(1, shot.age / .18) : 1);
+    g.userData.segments.forEach((segment, j, segments) => {
+      const fraction = (j + 1) / segments.length;
+      const z = .65 + j * .43, wave = Math.sin(j * .4 - time * 8);
+      const flight = new T.Vector3(wave * Math.min(.9, j * .09), Math.cos(j * .35 - time * 6) * j * .015, z);
+      segment.position.copy(coilPoint(fraction)).lerp(flight, release);
+      const flightRotation = new T.Quaternion().setFromAxisAngle(up, Math.cos(j * .4 - time * 8) * .15);
+      segment.quaternion.copy(coilRotation(fraction)).slerp(flightRotation, release);
+      segment.visible = !forming || fraction <= grow;
+      segment.scale.setScalar(forming ? Math.min(1, Math.max(.05, (grow - fraction) * 12)) : 1);
+      segment.children[2].visible = quality !== 2 || j % 2 === 0;
+    });
+    g.userData.ribbons.visible = !forming;
+    g.userData.ribbons.scale.setScalar(Math.max(.001, release));
+    g.userData.coil.visible = release < 1;
+    g.userData.coil.scale.setScalar(1 + release * .4);
+    g.userData.embers.forEach((flame, j) => {
+      const a = j * Math.PI * 2 / 28 + time * .8;
+      flame.position.set(Math.cos(a) * (radius + .12), Math.sin(a) * (radius + .12), -.05);
+      flame.material.rotation = a - Math.PI / 2;
+      flame.material.opacity = (1 - release) * .7 * Math.min(1, grow * 2);
+      flame.visible = quality !== 2 || j % 2 === 0;
+    });
+    g.userData.jaw.rotation.x = -.12 - Math.sin(time * 10) * .07;
   }
   meteor() {
     const g = new T.Group();
@@ -270,13 +331,7 @@ export class FireArts {
       g.quaternion.setFromUnitVectors(forward, new T.Vector3(...shot.v).normalize());
       if (g.userData.ribbons) g.userData.ribbons.rotation.z = time * (shot.style === 'meteor' ? 2 : 5);
       if (g.userData.segments) {
-        g.userData.segments.forEach((segment, j) => {
-          const z = .6 + j * .47, wave = Math.sin(j * .45 - time * 8);
-          segment.position.set(wave * Math.min(1.2, j * .17), Math.cos(j * .38 - time * 6) * j * .025, z);
-          segment.rotation.y = Math.cos(j * .45 - time * 8) * .2;
-          segment.children[2].visible = quality !== 2 || j % 2 === 0;
-        });
-        g.userData.jaw.rotation.x = -.12 - Math.sin(time * 10) * .07;
+        this.updateDragon(g, shot, time, quality);
       }
       if (art.marker) {
         art.marker.rotation.y = -time * .4;

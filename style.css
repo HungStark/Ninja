@@ -73,3 +73,13 @@ body.paused .reticle{visibility:hidden}
 .guide .spell{min-width:0;grid-template-columns:minmax(0,1fr)}
 .guide .spell-sequence,#comboSlots{min-width:0}
 .guide .spell-sequence kbd{flex-shrink:1;min-width:0}
+body.dragon-camera #reticle,
+body.dragon-camera #targetInfo { visibility: hidden; }
+@media(min-width:901px) and (min-height:650px){
+  body.dragon-active .enemy-status{top:82px;width:240px;padding:8px 14px}
+  body.dragon-active .enemy-status .eyebrow,
+  body.dragon-active #enemyAction,
+  body.dragon-active #enemyShield,
+  body.dragon-active #battleClock{display:none}
+  body.dragon-active .enemy-status .meter{margin:6px 0 0}
+}

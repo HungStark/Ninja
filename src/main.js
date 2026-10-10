@@ -48,6 +48,8 @@ async function main() {
   let camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }, lastTime = 0, recoil = 0, hitTimer = 0, flashTimer = 0, messageTime = 0, muted = false, audio = null;
   let moveDirection = 0, moveTargetX = 0, touchPoint = null;
   let spellVoice = null;
+  const dragonFormation = 1.1, dragonUncoil = .32;
+  let dragonView = null;
   let loadout = [...defaultLoadout], filterElement = 'all', filterKind = 'all', loadoutMessage = '';
   let enemyPose = -1, enemyHit = 0, aiTimer = 2.2, aiSpell = null, aiStep = 0, aiCycle = 0, aiCasts = 0, aiCastAge = 99, battleTime = 0;
   try { const saved = JSON.parse(localStorage.getItem('anhoa-loadout-v3')); if (validateLoadout(saved).ok) loadout = saved; } catch {}
@@ -229,6 +231,15 @@ async function main() {
         size: spell.size, damage: spell.damage, style: spell.style, element: spell.element, color: spell.color, owner, reflected: false, life: duration + .5, fallTime: duration, trail: 0, age: 0 });
       tone(72, .6, 'sawtooth', .055); return;
     }
+    if (spell.style === 'dragon') {
+      // Formation is part of the spell itself; speech and chakra consumption start immediately.
+      const p = vadd(pos, vmul(dir, 5));
+      shots.push({ p, old: [...p], origin: [...p], v: vmul(dir, spell.speed),
+        phase: 'forming', formation: dragonFormation, uncoil: dragonUncoil, flightAge: 0,
+        size: spell.size, damage: spell.damage, style: spell.style, element: spell.element,
+        color: spell.color, owner, reflected: false, life: 4, trail: 0, age: 0 });
+      return;
+    }
     if (spell.salvoInterval) {
       for (let i = 0; i < spell.count; i++) {
         const entry = { spell, owner, pos: [...pos], dir: [...dir], delay: i * spell.salvoInterval, index: i };
@@ -297,6 +308,7 @@ async function main() {
   function finish(victory) {
     if (won) return;
     stopSpellVoice();
+    clearDragonView();
     won = true; moveTargetX = camera.p[0]; moveDirection = 0; enemyPose = -1; releaseAimLock();
     salvos.length = 0;
     score = victory ? 1 : 0; $('score').textContent = String(score).padStart(2, '0');
@@ -307,6 +319,7 @@ async function main() {
   }
   function impact(shot, pos) {
     const fighter = shot.owner === 'enemy' ? player : enemy, result = fighter.receive(shot.damage, shot.reflected || shot.unreflectable);
+    if (dragonView?.shot === shot && dragonView.phase === 'overhead') { dragonView.phase = 'impact'; dragonView.hold = 0; }
     burst(pos, 14, .9, shot.color);
     if (result.reflected) {
       shot.owner = shot.owner === 'enemy' ? 'player' : 'enemy'; shot.reflected = true;
@@ -332,9 +345,19 @@ async function main() {
     for (let i = walls.length - 1; i >= 0; i--) { walls[i].life -= dt; if (walls[i].life <= 0 || walls[i].hp <= 0) walls.splice(i, 1); }
     for (let i = shots.length - 1; i >= 0; i--) {
       const shot = shots[i]; shot.old = [...shot.p];
-      shot.p = vadd(shot.p, vmul(shot.v, dt));
+      let flightDt = dt;
+      if (shot.phase === 'forming') {
+        shot.age += dt;
+        if (shot.age + 1e-6 < shot.formation) continue;
+        flightDt = Math.max(0, shot.age - shot.formation);
+        shot.age = shot.formation; shot.phase = 'flying';
+        if (shot.owner === 'player') beginDragonView(shot);
+        burst(shot.p, 18, 1.8, '#ffc45e'); tone(85, .25, 'sawtooth', .045);
+      }
+      shot.p = vadd(shot.p, vmul(shot.v, flightDt));
       if (shot.gravity) { shot.p = vadd(shot.p, vmul(shot.gravity, .5 * dt * dt)); shot.v = vadd(shot.v, vmul(shot.gravity, dt)); }
-      shot.life -= dt; shot.trail += dt; shot.age += dt;
+      shot.life -= flightDt; shot.trail += flightDt; shot.age += flightDt;
+      if (shot.phase === 'flying') shot.flightAge += flightDt;
       while (shot.trail > .025) {
         shot.trail -= .025; particle(shot.p, vmul(shot.v, -.06), shot.size * .4, shot.style === 'meteor' ? .8 : .4, shot.color);
         if (shot.element === 'fire') {
@@ -421,11 +444,61 @@ async function main() {
     $('targetInfo').style.opacity = onTarget && running ? 1 : 0; $('targetName').textContent = 'ĐỐI THỦ'; $('targetHP').style.width = enemy.hp / enemy.maxHp * 100 + '%';
     playerShield.visible = player.defenseElement !== 'fire' && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45, camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
     const shake = reducedMotion || paused ? 0 : recoil * .015;
+    document.body.classList.toggle('dragon-active', started && !won && (!!dragonView || shots.some(s => s.owner === 'player' && s.phase === 'forming')));
     camera3d.position.set(camera.p[0] + Math.sin(animationTime * 60) * shake, camera.p[1] + Math.cos(animationTime * 70) * shake, camera.p[2]); camera3d.rotation.set(camera.pitch, camera.yaw, 0, 'YXZ');
+    updateDragonView(running ? dt : 0);
+    if (dragonView) { dragonView.renderedPosition = camera3d.position.clone(); dragonView.renderedRotation = camera3d.quaternion.clone(); }
     effects.update(paused ? 0 : dt, animationTime, shots, particles, camera3d, quality, walls,
       [{ owner: 'player', fighter: player, pos: camera.p }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }]);
   }
   function render() { renderer.info.reset(); renderer.clear(); composer.render(); }
+  function clearDragonView() {
+    dragonView = null; handsPass.enabled = true;
+    document.body.classList.remove('dragon-camera', 'dragon-active');
+  }
+  function beginDragonView(shot) {
+    dragonView = { shot, phase: 'overhead', age: 0, hold: 0,
+      from: camera3d.position.clone(), rotation: camera3d.quaternion.clone() };
+    handsPass.enabled = false; document.body.classList.add('dragon-camera');
+  }
+  function updateDragonView(dt) {
+    if (!dragonView) return;
+    const view = dragonView, shot = view.shot;
+    if (!dt && view.renderedPosition) {
+      camera3d.position.copy(view.renderedPosition); camera3d.quaternion.copy(view.renderedRotation); return;
+    }
+    const basePosition = camera3d.position.clone(), baseRotation = camera3d.quaternion.clone();
+    view.age += dt;
+    if (view.phase === 'overhead' && !shots.includes(shot)) {
+      view.phase = 'impact'; view.hold = 0;
+    }
+    if (view.phase === 'impact') {
+      view.hold += dt;
+      if (view.hold >= .3) { view.phase = 'returning'; view.hold = 0; }
+    }
+    if (view.phase === 'returning') {
+      view.hold += dt;
+      const t = reducedMotion ? 1 : clamp(view.hold / .35, 0, 1), smooth = t * t * (3 - 2 * t);
+      camera3d.position.copy(view.lastPosition).lerp(basePosition, smooth);
+      camera3d.quaternion.copy(view.lastRotation).slerp(baseRotation, smooth);
+      if (t >= 1) { clearDragonView(); camera3d.position.copy(basePosition); camera3d.quaternion.copy(baseRotation); }
+      return;
+    }
+    if (view.phase === 'impact') {
+      camera3d.position.copy(view.lastPosition); camera3d.quaternion.copy(view.lastRotation);
+      return;
+    }
+    const direction = vnorm(shot.v), right = vnorm([-direction[2], 0, direction[0]]);
+    const travel = vsub(shot.p, shot.origin);
+    const position = vadd(vadd(vadd(shot.origin, vmul(right, -9)), vmul(direction, -9)), vmul(travel, .45));
+    position[1] = Math.max(10, shot.origin[1] + 12);
+    camera3d.position.fromArray(position);
+    camera3d.lookAt(new T.Vector3(...vadd(shot.p, vmul(direction, 4))));
+    const t = reducedMotion ? 1 : clamp(view.age / .24, 0, 1), smooth = t * t * (3 - 2 * t);
+    camera3d.position.lerpVectors(view.from, camera3d.position.clone(), smooth);
+    camera3d.quaternion.slerpQuaternions(view.rotation, camera3d.quaternion.clone(), smooth);
+    view.lastPosition = camera3d.position.clone(); view.lastRotation = camera3d.quaternion.clone();
+  }
   function frame(now) { const dt = Math.min((now - lastTime) / 1000 || .016, .1); lastTime = now; if (!testMode) tick(dt); render(); requestAnimationFrame(frame); }
   function requestAimLock(event) {
     if (!event?.isTrusted || document.pointerLockElement === canvas) return;
@@ -440,6 +513,7 @@ async function main() {
     moveTargetX = clamp(moveTargetX + direction * 1.8, -6, 6);
   }
   function look(dx, dy) {
+    if (dragonView) return;
     camera.yaw -= dx * .0025;
     camera.pitch = clamp(camera.pitch - dy * .0025, -.65, .65);
   }
@@ -447,6 +521,7 @@ async function main() {
     if (started) return;
     const valid = validateLoadout(loadout); if (!valid.ok) { loadoutMessage = valid.reason; renderLoadout(); return; }
     stopSpellVoice();
+    clearDragonView();
     rules = new GameRules(loadout); player = new Fighter(); enemy = new Fighter();
     const el = elements[(round - 1) % elements.length], support = elements[(round + 1) % elements.length];
     aiRules = new GameRules([el.id + '-orb', el.id + '-lance', el.id + (el.id === 'fire' ? '-meteor' : '-volley'), support.id + '-barrier', support.id + '-reflect']);
@@ -464,6 +539,7 @@ async function main() {
   function resume(event) { paused = false; if (spellVoice) { try { window.speechSynthesis.resume(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
     stopSpellVoice();
+    clearDragonView();
     if (next) round++;
     started = false; paused = false; won = false; moveTargetX = 0; moveDirection = 0; aiSpell = null; enemyPose = -1; releaseAimLock();
     shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; effects.reset(); player = new Fighter(); enemy = new Fighter(); activePose = -1;
@@ -508,7 +584,7 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, color: s.color, reflected: s.reflected, position: [...s.p], target: s.target ? [...s.target] : null })) });
+  const state = () => ({ cameraView: dragonView?.phase || 'first-person', viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, color: s.color, reflected: s.reflected, position: [...s.p], target: s.target ? [...s.target] : null })) });
   window.__AN_HOA__ = { state };
   if (testMode) window.__AN_HOA__.advance = seconds => { for (let t = 0; t < seconds; t += 1 / 60) tick(Math.min(1 / 60, seconds - t)); render(); };
   renderLoadout(); renderGuide(); updateUI(); $('loading').classList.add('hidden'); document.body.dataset.ready = 'true'; tick(.016); render(); if (!testMode) requestAnimationFrame(frame);
