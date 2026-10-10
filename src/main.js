@@ -47,8 +47,7 @@ async function main() {
   let activePose = -1, poseAge = 99, animationTime = 0, started = false, paused = false, won = false, round = 1, selected = 0, score = 0;
   let camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }, lastTime = 0, recoil = 0, hitTimer = 0, flashTimer = 0, messageTime = 0, muted = false, audio = null;
   let moveDirection = 0, moveTargetX = 0, touchPoint = null;
-  let incantation = null;
-  const incantationDelay = 1, incantationTimeout = 5;
+  let spellVoice = null;
   let loadout = [...defaultLoadout], filterElement = 'all', filterKind = 'all', loadoutMessage = '';
   let enemyPose = -1, enemyHit = 0, aiTimer = 2.2, aiSpell = null, aiStep = 0, aiCycle = 0, aiCasts = 0, aiCastAge = 99, battleTime = 0;
   try { const saved = JSON.parse(localStorage.getItem('anhoa-loadout-v3')); if (validateLoadout(saved).ok) loadout = saved; } catch {}
@@ -142,7 +141,7 @@ async function main() {
     $('spellList').innerHTML = rules.spells.map((s, i) => spellMarkup(s, i)).join('');
     document.querySelectorAll('[data-spell]').forEach(el => el.onclick = () => selectSpell(Number(el.dataset.spell)));
   }
-  function selectSpell(i) { if (incantation || !rules.spells[i]) return; selected = i; updateUI(); }
+  function selectSpell(i) { if (!rules.spells[i]) return; selected = i; updateUI(); }
   function announce(text, error = false) {
     $('message').textContent = text; $('message').style.color = error ? '#ffc28b' : '#c7d5bb'; messageTime = 3.2;
   }
@@ -155,10 +154,8 @@ async function main() {
     $('comboSlots').innerHTML = spell.sequence.map((k, i) => '<span class="combo-slot ' + (seq[i] === k ? 'done' : seq.length === i ? 'next' : '') + '">' + k.toUpperCase() + '</span>').join('');
     const ready = rules.ready();
     $('comboLabel').textContent = ready?.id === spell.id ? 'ẤN HOÀN CHỈNH · ' + spell.name.toUpperCase() : spell.name.toUpperCase() + ' / ' + seq.length + ' / ' + spell.sequence.length + ' ẤN';
-    if (incantation) $('comboLabel').textContent = 'ĐANG XƯỚNG TÊN · ' + incantation.spell.name.toUpperCase();
-    $('castButton').querySelector('span').textContent = incantation ? 'ĐANG NIỆM CHIÊU' : 'THI TRIỂN';
-    $('castButton').disabled = !started || paused || won || !!incantation || !rules.ready() || rules.cooldown > 0 || rules.chakra < (rules.ready()?.cost || spell.cost);
-    document.querySelectorAll('.seal').forEach(el => { el.disabled = !!incantation; el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
+    $('castButton').disabled = !started || paused || won || !rules.ready() || rules.cooldown > 0 || rules.chakra < (rules.ready()?.cost || spell.cost);
+    document.querySelectorAll('.seal').forEach(el => { el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
     document.querySelectorAll('[data-spell]').forEach((el, i) => { el.classList.toggle('selected', i === selected); el.querySelectorAll('kbd').forEach((k, j) => k.classList.toggle('done', i === selected && seq[j] === k.dataset.seq)); });
   }
   function initAudio() {
@@ -195,7 +192,7 @@ async function main() {
     src.start();
   }
   function seal(key) {
-    if (!started || paused || won || incantation) return;
+    if (!started || paused || won) return;
     const result = rules.seal(key); hands.seal(); activePose = keys.indexOf(key); poseAge = 0;
     $('currentSeal').textContent = key.toUpperCase() + ' / Ấn ' + String(activePose + 1).padStart(2, '0') + ' · ' + names[activePose];
     tone(290 + activePose * 28, .09, 'triangle');
@@ -225,46 +222,34 @@ async function main() {
     }
   }
   function cast() {
-    if (!started || paused || won || incantation) return;
-    const spell = rules.ready();
-    const reason = !spell ? 'sequence' : rules.cooldown > 0 ? 'cooldown' : rules.chakra < spell.cost ? 'chakra' : null;
-    if (reason) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[reason], true); tone(130, .1); return; }
-    incantation = { spell, elapsed: 0, voiceDone: true, utterance: null };
-    announce(spell.name + '…');
+    if (!started || paused || won) return;
+    const result = rules.cast();
+    if (!result.ok) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
+    const spell = result.spell;
+    activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); fireSound();
+    launch(spell, 'player', camera.p, aim()); announce(spell.name + '!');
+    speakSpell(spell);
+    updateUI();
+  }
+  function speakSpell(spell) {
+    stopSpellVoice();
     if (!muted && window.speechSynthesis && window.SpeechSynthesisUtterance) {
-      const pending = incantation;
       try {
         const utterance = new SpeechSynthesisUtterance(spell.name + '!');
         utterance.lang = 'vi-VN'; utterance.rate = .95; utterance.pitch = .85; utterance.volume = 1;
         const voice = window.speechSynthesis.getVoices().find(v => /^vi(?:-|$)/i.test(v.lang));
         if (voice) utterance.voice = voice;
-        pending.voiceDone = false; pending.utterance = utterance;
-        utterance.onend = utterance.onerror = () => { if (incantation === pending) pending.voiceDone = true; };
+        spellVoice = utterance;
+        utterance.onend = utterance.onerror = () => { if (spellVoice === utterance) spellVoice = null; };
         window.speechSynthesis.cancel(); window.speechSynthesis.resume(); window.speechSynthesis.speak(utterance);
-      } catch { pending.voiceDone = true; }
-    }
-    updateUI();
-  }
-  function stopIncantationVoice() {
-    if (!incantation) return;
-    incantation.voiceDone = true;
-    if (incantation.utterance) {
-      incantation.utterance.onend = incantation.utterance.onerror = null;
-      incantation.utterance = null;
-      try { window.speechSynthesis.cancel(); } catch {}
+      } catch { stopSpellVoice(); }
     }
   }
-  function cancelIncantation() { stopIncantationVoice(); incantation = null; }
-  function updateIncantation(dt) {
-    if (!incantation) return;
-    incantation.elapsed += dt;
-    // A missing or stalled speech service must not leave the player unable to cast.
-    if (incantation.elapsed + 1e-6 < incantationDelay || (!incantation.voiceDone && incantation.elapsed + 1e-6 < incantationTimeout)) return;
-    cancelIncantation();
-    const result = rules.cast();
-    if (!result.ok) { updateUI(); return; }
-    activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); fireSound();
-    launch(result.spell, 'player', camera.p, aim()); announce(result.spell.name + '!'); updateUI();
+  function stopSpellVoice() {
+    if (!spellVoice) return;
+    spellVoice.onend = spellVoice.onerror = null;
+    spellVoice = null;
+    try { window.speechSynthesis.cancel(); } catch {}
   }
   function particle(p, v, size = .06, life = .7, color = '#ff9756') {
     if (particles.length >= 420) return;
@@ -276,7 +261,7 @@ async function main() {
   }
   function finish(victory) {
     if (won) return;
-    cancelIncantation();
+    stopSpellVoice();
     won = true; moveTargetX = camera.p[0]; moveDirection = 0; enemyPose = -1; releaseAimLock();
     score = victory ? 1 : 0; $('score').textContent = String(score).padStart(2, '0');
     $('resultLabel').textContent = victory ? 'CHIẾN THẮNG' : 'THẤT BẠI';
@@ -337,7 +322,6 @@ async function main() {
     if (!paused) animationTime += dt;
     if (running) {
       battleTime += dt;
-      if (incantation) rules.lastSeal = rules.time;
       if (rules.tick(dt)) announce('Chuỗi ấn hết hạn — kết lại từ đầu.', true);
       player.tick(dt); enemy.tick(dt);
       const remaining = moveTargetX - camera.p[0];
@@ -345,9 +329,8 @@ async function main() {
       camera.p[0] += moveDirection * Math.min(Math.abs(remaining), 10 * dt);
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
       updateAI(dt); updateShots(dt);
-      if (!won) updateIncantation(dt);
       messageTime -= dt;
-      if (messageTime <= 0) { $('message').textContent = incantation ? incantation.spell.name + '…' : rules.ready() ? 'SPACE thi triển · chuột trái/phải để né' : 'Kết ấn theo quyển trục mang theo'; $('message').style.color = '#c7c5b6'; }
+      if (messageTime <= 0) { $('message').textContent = rules.ready() ? 'SPACE thi triển · chuột trái/phải để né' : 'Kết ấn theo quyển trục mang theo'; $('message').style.color = '#c7c5b6'; }
       updateUI();
     }
     if (!paused) {
@@ -393,7 +376,7 @@ async function main() {
   function start(event) {
     if (started) return;
     const valid = validateLoadout(loadout); if (!valid.ok) { loadoutMessage = valid.reason; renderLoadout(); return; }
-    cancelIncantation();
+    stopSpellVoice();
     rules = new GameRules(loadout); player = new Fighter(); enemy = new Fighter();
     const el = elements[(round - 1) % elements.length], support = elements[(round + 1) % elements.length];
     aiRules = new GameRules([el.id + '-orb', el.id + '-lance', el.id + '-volley', support.id + '-barrier', support.id + '-reflect']);
@@ -407,17 +390,17 @@ async function main() {
     ['startScreen', 'pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden'));
     initAudio(); audio?.resume(); renderGuide(); announce('Lia chuột để ngắm. Bấm trái né trái, bấm phải né phải.'); updateUI(); tick(0); requestAimLock(event);
   }
-  function pause() { if (!started || won) return; paused = true; if (incantation?.utterance) { try { window.speechSynthesis.pause(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
-  function resume(event) { paused = false; if (incantation?.utterance) { try { window.speechSynthesis.resume(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
+  function pause() { if (!started || won) return; paused = true; if (spellVoice) { try { window.speechSynthesis.pause(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
+  function resume(event) { paused = false; if (spellVoice) { try { window.speechSynthesis.resume(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
-    cancelIncantation();
+    stopSpellVoice();
     if (next) round++;
     started = false; paused = false; won = false; moveTargetX = 0; moveDirection = 0; aiSpell = null; enemyPose = -1; releaseAimLock();
     shots.length = 0; particles.length = 0; effects.reset(); player = new Fighter(); enemy = new Fighter(); activePose = -1;
     opponent.group.rotation.set(0, 0, 0); camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 };
     document.body.classList.remove('playing', 'paused'); ['pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden')); $('startScreen').classList.remove('hidden'); loadoutMessage = ''; renderLoadout();
   }
-  function toggleSound() { muted = !muted; if (muted) stopIncantationVoice(); $('soundButton').textContent = muted ? '♫̸' : '♪'; $('soundButton').setAttribute('aria-pressed', String(muted)); }
+  function toggleSound() { muted = !muted; if (muted) stopSpellVoice(); $('soundButton').textContent = muted ? '♫̸' : '♪'; $('soundButton').setAttribute('aria-pressed', String(muted)); }
   $('startButton').onclick = start; $('resumeButton').onclick = resume; $('resetButton').onclick = e => { started = false; start(e); }; $('changeLoadout').onclick = () => prepare(); $('nextButton').onclick = () => prepare(true); $('castButton').onclick = cast; $('soundButton').onclick = toggleSound;
   $('helpButton').onclick = () => $('guide').classList.toggle('hidden');
   document.querySelectorAll('.seal').forEach(el => el.onclick = () => seal(el.dataset.key));
@@ -431,7 +414,6 @@ async function main() {
     if (key === 'h') { $('guide').classList.toggle('hidden'); return; }
     if (key === 'm') { toggleSound(); return; }
     if (!started || paused || won) return;
-    if (incantation) return;
     if (keys.includes(key)) seal(key); else if (key === ' ') cast(); else if (key === 'backspace') { rules.clear(); activePose = -1; announce('Đã xóa chuỗi ấn.'); updateUI(); } else if (['1', '2', '3', '4', '5'].includes(key)) selectSpell(Number(key) - 1);
   });
   window.addEventListener('blur', () => { if (started && !paused && !won) pause(); });
@@ -456,7 +438,7 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: incantation?.spell.id || null, castElapsed: incantation?.elapsed || 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], projectiles: shots.map(s => ({ owner: s.owner, element: s.element, color: s.color, reflected: s.reflected })) });
+  const state = () => ({ ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], projectiles: shots.map(s => ({ owner: s.owner, element: s.element, color: s.color, reflected: s.reflected })) });
   window.__AN_HOA__ = { state };
   if (testMode) window.__AN_HOA__.advance = seconds => { for (let t = 0; t < seconds; t += 1 / 60) tick(Math.min(1 / 60, seconds - t)); render(); };
   renderLoadout(); renderGuide(); updateUI(); $('loading').classList.add('hidden'); document.body.dataset.ready = 'true'; tick(.016); render(); if (!testMode) requestAnimationFrame(frame);

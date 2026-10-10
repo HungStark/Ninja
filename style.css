@@ -21,3 +21,48 @@ body.paused .reticle{visibility:hidden}
 /* Variable-length seals wrap; the carried scroll only shows names and keys. */
 .spell-title{display:block}.spell-title small{display:block;line-height:1.6;margin-top:4px}.spell-sequence{flex-wrap:wrap}
 .guide .spell{grid-template-columns:1fr;gap:8px}.guide .spell-title{font-size:14px}.guide-foot{display:none}.seal:disabled{cursor:default}
+/* Show every carried spell without scrolling, including on narrow screens. */
+.guide{max-height:none;overflow:visible}
+.guide .spell{padding:10px 0;gap:6px}
+.guide .spell-sequence{flex-wrap:nowrap}
+#moveHint{bottom:55px}
+@media(max-width:760px){
+  .guide{width:220px}
+}
+@media(max-width:520px){
+  .guide{top:auto;bottom:42px;left:12px;right:12px;width:auto;padding:10px 12px}
+  .guide .eyebrow{margin-bottom:8px}
+  #spellList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px}
+  .guide .spell{padding:7px 0;gap:5px}
+  .guide .spell-title{font-size:12px}
+  .guide .spell-sequence{gap:3px}
+  .guide .spell-sequence kbd{width:17px;height:20px;flex:none}
+  .center-status{top:244px;bottom:auto;width:190px}
+  .status,.enemy-status{width:calc((100% - 36px)/2);max-width:180px}
+  .score{display:none}
+  #moveHint{display:none}
+}
+@media(max-width:520px) and (max-height:700px){
+  .center-status{top:238px;left:12px;right:12px;width:auto;padding:8px;display:grid;grid-template-columns:1fr auto;gap:6px}
+  .center-status>.eyebrow{grid-column:1}
+  #comboSlots{grid-column:1;gap:3px;margin:0}
+  .combo-slot{width:24px;height:27px;font-size:12px}
+  #castButton{grid-column:2;grid-row:1 / span 2;margin:0;padding:6px;gap:6px;font-size:8px}
+  #message{display:none}
+}
+@media(max-height:520px) and (min-width:521px){
+  .guide{top:82px;bottom:auto;left:auto;right:12px;width:200px;padding:8px 12px}
+  .guide .eyebrow{margin-bottom:8px}
+  #spellList{display:block}
+  .guide .spell{padding:5px 0;gap:4px}
+  .guide .spell-title{font-size:12px;line-height:14px}
+  .guide .spell-sequence{gap:3px}
+  .guide .spell-sequence kbd{width:16px;height:18px;flex:none}
+  .center-status{top:202px;bottom:auto;width:230px;padding:8px 12px;display:grid;grid-template-columns:1fr;gap:6px}
+  .center-status>.eyebrow{grid-column:1}
+  #comboSlots{grid-column:1;gap:3px;margin:0}
+  .combo-slot{width:24px;height:27px;font-size:12px}
+  #castButton{grid-column:1;grid-row:auto;justify-self:start;margin:0;padding:6px;gap:6px;font-size:8px}
+  #message{display:none}
+  .score,#moveHint{display:none}
+}
