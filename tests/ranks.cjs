@@ -10,7 +10,7 @@
   for(const [style,rank,count] of [['orb','D',2],['barrier','C',3],['lance','B',4],['reflect','A',5],['volley','S',6]]){
    const card=page.locator('[data-equip="fire-'+style+'"]');assert.equal(await card.locator('kbd').count(),count);assert.ok((await card.textContent()).includes('CẤP '+rank+' · '+count+' ẤN'));
   }
-  await click('clearLoadout');for(const id of ['fire-orb','fire-lance','fire-volley','earth-barrier','ice-reflect'])await page.evaluate(id=>document.querySelector('[data-equip="'+id+'"]').click(),id);
+  await click('soundButton');await click('clearLoadout');for(const id of ['fire-orb','fire-lance','fire-volley','earth-barrier','ice-reflect'])await page.evaluate(id=>document.querySelector('[data-equip="'+id+'"]').click(),id);
   await page.screenshot({path:'test-results/rank-scroll.png'});await click('startButton');
   const s=await state();assert.equal(s.enemyPosition[0],s.gatePosition[0]);assert.equal(s.enemyPosition[2],s.gatePosition[2]);assert.equal(s.position[2]-s.enemyPosition[2],31);
   await page.screenshot({path:'test-results/opponent-under-gate.png'});
@@ -19,9 +19,9 @@
   await seal(['q','w']);assert.equal((await state()).casts,0);assert.equal((await state()).chakra,100);assert.equal(await page.locator('#castButton').isEnabled(),true);assert.ok((await page.locator('#comboLabel').textContent()).includes('2 / 6 ẤN'));
   await seal(['c','v','z']);assert.equal(await page.locator('#castButton').isDisabled(),true);await page.keyboard.press('Space');assert.equal((await state()).casts,0);
   await page.screenshot({path:'test-results/rank-six-incomplete.png'});await seal(['x']);assert.equal(await page.locator('#castButton').isEnabled(),true);
-  await page.screenshot({path:'test-results/rank-six-ready.png'});await page.keyboard.press('Space');assert.equal((await state()).casts,1);assert.equal((await state()).chakra,44);assert.equal((await state()).shots,3);
+  await page.screenshot({path:'test-results/rank-six-ready.png'});await page.keyboard.press('Space');assert.equal((await state()).casts,0);await advance(1);assert.equal((await state()).casts,1);assert.equal((await state()).chakra,44);assert.equal((await state()).shots,3);
   await advance(1.8);assert.equal((await state()).enemyHealth,155,'Strong central projectile reaches opponent under gate');
-  await reset();await seal(['q']);assert.equal(await page.locator('#castButton').isDisabled(),true);await seal(['w']);await page.keyboard.press('Space');assert.equal((await state()).casts,1);
+  await reset();await seal(['q']);assert.equal(await page.locator('#castButton').isDisabled(),true);await seal(['w']);await page.keyboard.press('Space');assert.equal((await state()).casts,0);await advance(1);assert.equal((await state()).casts,1);
   await advance(.9);assert.equal((await state()).enemyHealth,220,'Far opponent cannot be hit before travel time');await advance(.8);assert.equal((await state()).enemyHealth,177);
   await reset();await advance(2.3);assert.ok((await page.locator('#enemyAction').textContent()).includes('1/2'));await advance(.5);assert.ok((await page.locator('#enemyAction').textContent()).includes('2/2'));assert.equal((await state()).aiCasts,0);await advance(.4);assert.equal((await state()).aiCasts,1);
   let observedSix=false;for(let i=0;i<100;i++){await advance(.1);if((await page.locator('#enemyAction').textContent()).includes('/6')){observedSix=true;break;}}

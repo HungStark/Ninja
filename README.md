@@ -34,6 +34,8 @@ Chiêu thủ của Mộc và Quang còn hồi 12 sinh lực, không vượt máu
 
 Hai bên có **220 sinh lực** và **100 chakra**. Chakra hồi 11 mỗi giây, cách hai lần thi triển ít nhất 1 giây. Kết đủ chuỗi 2–6 ấn của chiêu theo quyển trục rồi nhấn Space. Cấp và số ấn được ghi trên từng thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
 
+Quyển trục mang theo trong trận chỉ hiện tên chiêu và phím kết ấn. Sau khi nhấn Space, nhân vật giữ thế tay, đọc tên chiêu rồi mới tung đạn hoặc tạo khiên; khoảng nghỉ tối thiểu 1 giây. Chakra chỉ được trừ khi chiêu tung ra. Giọng đọc dùng tính năng tổng hợp tiếng nói của trình duyệt, ưu tiên giọng tiếng Việt trên máy. Khi tắt âm thanh hoặc giọng đọc không khả dụng, vẫn giữ khoảng nghỉ 1 giây; dịch vụ giọng nói không phản hồi sẽ được bỏ qua sau 5 giây. Tạm dừng cũng dừng tiến trình niệm chiêu, đấu lại hoặc về chọn chiêu sẽ hủy chiêu đang niệm.
+
 Đối thủ đứng ngay dưới cổng, cách vị trí xuất phát của người chơi 31 m, sử dụng model tay có khớp và bộ 12 thế tay như người chơi. Máy kết từng ấn theo đúng độ dài của từng chiêu trước khi tung chiêu, ngắm vị trí của người chơi lúc phóng đạn, có chakra và có thể chọn phòng ngự khi bị tấn công. Thanh trên cùng cho biết máu, hệ, chakra và chiêu đang kết ấn. Qua mỗi trận, máy dùng tổ hợp hệ khác.
 
 Hết máu sẽ kết thúc trận: có màn hình thắng hoặc thua, thời gian trận và số lần thi triển. Tạm dừng giữ nguyên máu, chakra, khiên, đạn, chuỗi ấn và tiến trình máy.
@@ -61,6 +63,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm test:** luật 45 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khiên/phản đòn/hồi máu, GLB, animation và máy chủ.
 - **npm run test:browser:** Edge headless, WebGL 2/SwiftShader; kiểm tra chọn chiêu, 12 thế tay, di chuyển chuột, máy kết ấn, sát thương, khiên, phản đòn, thắng/thua, tạm dừng, chọn lại và giao diện nhỏ.
 - **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–6 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
+- **npm run test:incantation:** kiểm tra quyển trục gọn, đọc tên trước khi tung chiêu, khóa nhập lặp, tạm dừng/hủy niệm chiêu và xử lý giọng đọc không khả dụng.
 - **npm run test:controls:** kiểm tra khóa con trỏ, hướng bắn trùng tâm ngắm, click trái/phải độc lập vị trí chuột, giữ nút không đi tiếp và giới hạn sân đấu.
 - **npm run test:layout:** kiểm tra nút vào trận trên cửa sổ nhỏ và điện thoại, tâm ngắm ở giữa màn hình, khóa/thả con trỏ, nút HUD không gây né và đổi kích thước cửa sổ.
 - **npm run test:graphics:** kiểm tra pixel môi trường ở ba mức đồ họa và chụp thế tay/giao diện.

@@ -9,6 +9,7 @@
   const state=()=>page.evaluate(()=>window.__AN_HOA__.state());
   const advance=seconds=>page.evaluate(s=>window.__AN_HOA__.advance(s),seconds);
   const press=(button,x)=>page.evaluate(({button,x})=>document.getElementById('world').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button,clientX:x,clientY:480})),{button,x});
+  await page.evaluate(()=>document.getElementById('soundButton').click());
   await page.locator('#startButton').click();
   await page.waitForFunction(()=>document.pointerLockElement===document.getElementById('world'));
   assert.equal((await state()).aimLocked,true);
@@ -39,7 +40,7 @@
   await page.keyboard.press('Escape');await page.evaluate(()=>document.getElementById('resetButton').click());
   const neutral=await state();assert.equal(neutral.position[0],0);assert.equal(neutral.yaw,0);assert.equal(neutral.pitch,0);
   const sequence=await page.evaluate(()=>globalThis.SealGameCore.spells.find(s=>s.id==='fire-orb').sequence);
-  for(const key of sequence)await page.keyboard.press(key);await page.keyboard.press('Space');await advance(1.8);assert.equal((await state()).enemyHealth,177,'Projectile follows centered reticle');
+  for(const key of sequence)await page.keyboard.press(key);await page.keyboard.press('Space');await advance(2.8);assert.equal((await state()).enemyHealth,177,'Projectile follows centered reticle');
   assert.deepEqual(errors,[]);
   console.log('PASS controls: native pointer lock; centered reticle and hit ray; mouse aims only; left/right click directions independent of screen side; one step per click/hold; movement bounds; pause/resume cancels steps; losing lock pauses; HUD does not dodge.');
  } finally {await browser.close();}

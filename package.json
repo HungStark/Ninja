@@ -13,7 +13,8 @@
     "preview:capture": "node tools/capture.cjs",
     "test:layout": "node tests/layout.cjs",
     "test:controls": "node tests/controls.cjs",
-    "test:ranks": "node tests/ranks.cjs"
+    "test:ranks": "node tests/ranks.cjs",
+    "test:incantation": "node tests/incantation.cjs"
   },
   "dependencies": {
     "three": "0.186.1"
