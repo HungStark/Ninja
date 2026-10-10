@@ -1,5 +1,6 @@
 import * as T from "three";
 import { glowTexture, smokeTexture } from "./materials.js";
+import { FireArts } from './fire-arts.js';
 export class FireEffects {
   constructor(scene) {
     this.scene = scene;
@@ -8,6 +9,7 @@ export class FireEffects {
     this.rings = [];
     this.objects = [];
     this.glow = glowTexture();
+    this.arts = new FireArts(scene, this.glow);
     this.smokeMap = smokeTexture();
     this.lights = [];
     for (let i = 0; i < 3; i++) {
@@ -56,21 +58,22 @@ export class FireEffects {
     return g;
   }
   explosion(pos, amount = 1, color = '#ffcb72') {
-    for (let i = 0; i < Math.min(12, amount * 7); i++) this.smoke.push({ p: new T.Vector3(...pos), v: new T.Vector3((Math.random() - 0.5) * 1.8, Math.random() * 0.9 + 0.4, (Math.random() - 0.5) * 1.8), age: 0, life: 1.8 + Math.random() * 0.6, size: 0.18 + Math.random() * 0.12 });
+    const large = amount > 2, scale = large ? Math.sqrt(amount) : 1;
+    for (let i = 0; i < Math.min(large ? 36 : 12, amount * 7); i++) this.smoke.push({ p: new T.Vector3(...pos), v: new T.Vector3((Math.random() - 0.5) * 1.8 * scale, (Math.random() * 0.9 + 0.4) * scale, (Math.random() - 0.5) * 1.8 * scale), age: 0, life: 1.8 + Math.random() * .6 + (large ? amount * .1 : 0), size: (.18 + Math.random() * .12) * scale });
     const ring = new T.Mesh(new T.TorusGeometry(1, 0.018, 5, 64), new T.MeshBasicMaterial({ color: new T.Color(color).multiplyScalar(1.6), transparent: true, opacity: 0.7, blending: T.AdditiveBlending, depthWrite: false }));
     ring.position.fromArray(pos);
     ring.scale.setScalar(0.25);
     this.scene.add(ring);
     this.rings.push({ mesh: ring, age: 0 });
   }
-  update(dt, time, shots, particles, camera, quality) {
+  update(dt, time, shots, particles, camera, quality, walls = [], fighters = []) {
     this.time = time;
     this.fireMaterial.uniforms.uTime.value = time;
     while (this.objects.length < shots.length) this.makeShot();
     for (let i = 0; i < this.objects.length; i++) {
       const g = this.objects[i], shot = shots[i];
-      g.visible = !!shot;
-      if (!shot) continue;
+      g.visible = !!shot && shot.element !== 'fire';
+      if (!g.visible) continue;
       g.children[0].material.uniforms.uTime.value = time;
       g.children[0].material.uniforms.uColor.value.set(shot.color || '#ff844b');
       g.children[1].material.color.set(shot.color || '#ff844b').multiplyScalar(2);
@@ -129,8 +132,10 @@ export class FireEffects {
         this.rings.splice(i, 1);
       }
     }
+    this.arts.update(dt, time, shots, walls, fighters, quality);
   }
   reset() {
+    this.arts.reset();
     this.objects.forEach((o) => o.visible = false);
     this.smoke.length = 0;
     this.rings.forEach((r) => {

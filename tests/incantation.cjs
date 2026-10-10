@@ -96,10 +96,10 @@ const fs = require('node:fs/promises');
     await reset(); await page.evaluate(() => Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: undefined }));
     await cast('fire-orb'); assert.equal((await state()).casts, 1);
     await reset();
-    // Three six-seal attacks exercise the widest possible key rows.
+    // Include the eight-seal meteor to exercise the widest fire formula.
     await page.keyboard.press('Escape'); await click('changeLoadout'); await click('clearLoadout');
     await page.evaluate(() => {
-      for (const id of ['fire-volley', 'water-volley', 'lightning-volley', 'earth-reflect', 'ice-reflect']) {
+      for (const id of ['fire-meteor', 'water-volley', 'lightning-volley', 'earth-reflect', 'ice-reflect']) {
         document.querySelector('[data-equip="' + id + '"]').click();
       }
     });

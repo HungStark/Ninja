@@ -10,7 +10,7 @@ Nếu có Node.js, chạy **npm start** rồi mở http://127.0.0.1:4173.
 
 ## Quyển trục trước trận
 
-Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Mỗi hệ có 3 chiêu công, 2 chiêu thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ.
+Có **9 hệ, 46 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa có 4 chiêu công, 2 chiêu thủ; các hệ còn lại có 3 công, 2 thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ; có thể thay một chiêu công bằng Hỏa cầu.
 
 - Mang **từ 1 đến tối đa 5 chiêu**, tối đa 3 chiêu mỗi loại.
 - Khi mang đủ 5: **3 công + 2 thủ** hoặc **2 công + 3 thủ**.
@@ -20,6 +20,21 @@ Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc 
 
 ## Chiêu thức và trận đấu
 
+Hệ Hỏa có hiệu ứng và cơ chế riêng:
+
+| Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
+| --- | --- | --- | --- | --- |
+| Hỏa cầu | 2 | Q W | 28 | Cầu lửa xoáy, 43 sát thương |
+| Hỏa liên đạn | 4 | Q W D F | 40 | Bốn đạn nối tiếp cách nhau 0,14 giây, mỗi đạn 24 sát thương |
+| Rồng lửa | 6 | Q W C V Z X | 56 | Rồng có đầu, sừng, nanh và thân uốn lượn, 104 sát thương |
+| Thiên thạch | 8 | Q W C V Z X E R | 82 | Rơi xuống vùng ngắm sau 1,6 giây; 150 sát thương trong bán kính 5,5 m |
+| Khiên lửa | 3 | Q W A | 26 | Vòm lửa bao quanh người, hấp thụ 75 sát thương trong 4,5 giây |
+| Tường lửa | 5 | Q W Z X C | 36 | Tường rộng 7 m, cao 4,2 m, dựng cách 3 m phía trước; 120 độ bền, tồn tại 5 giây |
+
+Tường đứng yên khi người chơi né, chặn đạn đối phương đi xuyên qua mặt tường và có thể tồn tại cùng khiên. Dựng tường mới thay tường cũ của người thi triển. Thiên thạch có dấu báo vùng rơi, đuôi lửa, vụ nổ lan, cột lửa và đá văng; có thể né khỏi vùng nổ, nhưng không phản được thiên thạch. Nhắm ngang sẽ thả ở khoảng cách 31 m; nhắm xuống sẽ chọn điểm trên mặt đất (6–55 m). Các ID chiêu Hỏa cũ được giữ để bộ chiêu đã lưu vẫn dùng được.
+
+Các hệ còn lại dùng bảng cấp sau:
+
 | Cấp | Số ấn | Loại chiêu | Cách hoạt động |
 | --- | --- | --- | --- |
 | D | 2 | Đạn cầu | Đạn cơ bản, sát thương 38 trước hệ số hệ, 28 chakra |
@@ -28,11 +43,11 @@ Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc 
 | A | 5 | Kính / phản / hồi | Phản một đạn về đối thủ, khiên 25 trong 2,8 giây; Thổ 30 |
 | S | 6 | Liên kích | Ba đạn mạnh xòe ngang, mỗi đạn 58 sát thương trước hệ số hệ, 56 chakra |
 
-Chuỗi của mỗi hệ bắt đầu bằng hai ấn nhận diện hệ. Ví dụ Hỏa: **Q W** (cấp D), **Q W A** (cấp C), **Q W D F** (cấp B), **Q W Z X C** (cấp A), **Q W C V Z X** (cấp S). Sau hai ấn có thể nhấn Space để dùng chiêu cơ bản, hoặc tiếp tục kết ấn để hoàn thành chiêu mạnh hơn; game không tự tung chiêu. Khi đang xem chiêu dài, quyển trục giữ công thức đó để theo dõi tiến trình.
+Chuỗi của mỗi hệ bắt đầu bằng hai ấn nhận diện hệ. Sau hai ấn có thể nhấn Space để dùng chiêu cơ bản, hoặc tiếp tục kết ấn để hoàn thành chiêu mạnh hơn; game không tự tung chiêu. Khi đang xem chiêu dài, quyển trục giữ công thức đó để theo dõi tiến trình. Rồng lửa có thể nối thêm **E R** thành Thiên thạch nếu mang cả hai chiêu.
 
 Chiêu thủ của Mộc và Quang còn hồi 12 sinh lực, không vượt máu tối đa. Thi triển phòng ngự mới thay thế khiên cũ. Đạn đã phản không được phản tiếp để tránh vòng lặp. Mỗi đạn có màu, ánh sáng và vệt theo hệ.
 
-Hai bên có **220 sinh lực** và **100 chakra**. Chakra hồi 11 mỗi giây, cách hai lần thi triển ít nhất 1 giây. Kết đủ chuỗi 2–6 ấn của chiêu theo quyển trục rồi nhấn Space. Cấp và số ấn được ghi trên từng thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
+Hai bên có **220 sinh lực** và **100 chakra**. Chakra hồi 11 mỗi giây, cách hai lần thi triển ít nhất 1 giây. Kết đủ chuỗi 2–8 ấn của chiêu theo quyển trục rồi nhấn Space. Cấp và số ấn được ghi trên từng thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
 
 Quyển trục mang theo trong trận hiện đủ tên và phím kết ấn của cả 5 chiêu, không cần cuộn; trên màn hình nhỏ, bảng chiêu nằm phía dưới. Nhấn Space sẽ tung đạn hoặc tạo khiên ngay, đồng thời đọc tên chiêu và trừ chakra. Có thể kết chuỗi tiếp theo khi giọng đọc vẫn đang chạy; khoảng cách giữa hai lần thi triển vẫn là 1 giây. Giọng đọc dùng tính năng tổng hợp tiếng nói của trình duyệt, ưu tiên giọng tiếng Việt trên máy. Tắt âm thanh, thiếu giọng đọc hoặc lỗi dịch vụ giọng nói không làm chậm chiêu. Tạm dừng cũng dừng giọng đọc; đấu lại hoặc về chọn chiêu sẽ hủy giọng đang đọc. Banner 12 hình kết ấn được ẩn.
 
@@ -60,9 +75,10 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 
 - **npm run build:** bundle src/main.js thành game.js để chơi trực tiếp ngoại tuyến.
 - **npm run assets:** xuất lại model tay GLB và dữ liệu nhúng.
-- **npm test:** luật 45 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khiên/phản đòn/hồi máu, GLB, animation và máy chủ.
+- **npm test:** luật 46 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khiên/phản đòn/hồi máu, va chạm tường và vị trí thiên thạch, GLB, animation và máy chủ.
 - **npm run test:browser:** Edge headless, WebGL 2/SwiftShader; kiểm tra chọn chiêu, 12 thế tay, di chuyển chuột, máy kết ấn, sát thương, khiên, phản đòn, thắng/thua, tạm dừng, chọn lại và giao diện nhỏ.
-- **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–6 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
+- **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
+- **npm run test:fire:** kiểm tra sáu chiêu Hỏa, liên đạn nối tiếp, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:incantation:** kiểm tra đọc tên đồng thời tung chiêu công/thủ, trừ chakra ngay, hồi chiêu, nhập chuỗi tiếp khi đang đọc, tạm dừng/hủy giọng đọc, lỗi giọng nói, hiện đủ 5 chiêu ở 8 kích thước màn hình và ẩn banner hình ấn.
 - **npm run test:controls:** kiểm tra khóa con trỏ, hướng bắn trùng tâm ngắm, click trái/phải độc lập vị trí chuột, giữ nút không đi tiếp và giới hạn sân đấu.
 - **npm run test:layout:** kiểm tra nút vào trận trên cửa sổ nhỏ và điện thoại, tâm ngắm ở giữa màn hình, khóa/thả con trỏ, nút HUD không gây né và đổi kích thước cửa sổ.
@@ -72,11 +88,12 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 
 ## Cấu trúc
 
-- **game-core.js:** 9 hệ, 45 chiêu, kiểm tra bộ chiêu, luật kết ấn/chakra, sinh lực/khiên/phản đòn.
+- **game-core.js:** 9 hệ, 46 chiêu, kiểm tra bộ chiêu, luật kết ấn/chakra, sinh lực/khiên/phản đòn, va chạm tường và chọn vùng thiên thạch.
 - **src/main.js:** quyển trục, HUD, điều khiển chuột, AI, va chạm và vòng trận đấu.
 - **src/opponent.js:** nhân vật ninja, tay kết ấn có khớp, tay áo đi theo cổ tay, khiên máy.
 - **src/scene.js:** môi trường anime, toon shading, ánh sáng, bóng, gió, cây hoa và cánh hoa.
 - **src/effects.js:** đạn theo màu hệ, ánh sáng, vệt, khói và vòng va chạm.
+- **src/fire-arts.js:** shader lửa, rồng có thân uốn lượn, thiên thạch, dấu báo vùng rơi, vòm khiên, tường lửa và vụ nổ.
 - **src/hands.js / hand-model.js / poses.js:** model tay, rig và 12 thế kết ấn.
 - **assets/ninja-hands.glb / hand-data.js:** model chỉnh sửa được và dữ liệu nhúng ngoại tuyến.
 

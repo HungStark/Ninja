@@ -13,7 +13,6 @@
     { id: 'ice', name: 'Băng', glyph: '氷', color: '#a6edff', prefix: 'zx', speed: 21, power: 1.04 }
   ];
   const titles = {
-    fire: ['Hỏa cầu', 'Hỏa long', 'Phượng hỏa', 'Hỏa bích', 'Hỏa kính'],
     water: ['Thủy đạn', 'Thủy long', 'Thủy liên kích', 'Thủy bích', 'Thủy kính'],
     lightning: ['Lôi cầu', 'Lôi thương', 'Lôi liên kích', 'Lôi giáp', 'Lôi phản'],
     wind: ['Phong đạn', 'Phong nhận', 'Phong liên kích', 'Phong bích', 'Phong hồi'],
@@ -30,7 +29,16 @@
     { kind: 'defense', style: 'barrier', rank: 'C', suffix: 'a', cost: 26, damage: 0, shield: 65, duration: 4.5, subtitle: 'Khiên hấp thụ • 4,5 giây' },
     { kind: 'defense', style: 'reflect', rank: 'A', suffix: 'zxc', cost: 32, damage: 0, shield: 25, duration: 2.8, subtitle: 'Phản lại một đạn • 2,8 giây' }
   ];
-  const spells = elements.flatMap(el => variants.map((v, i) => ({
+  // Keep the saved fire IDs while replacing their formulas and behavior.
+  const fireSpells = [
+    { id: 'fire-orb', name: 'Hỏa cầu', kind: 'attack', style: 'orb', rank: 'D', sequence: [...'qw'], cost: 28, damage: 43, size: .48, count: 1, speed: 20, subtitle: 'Cầu lửa xoáy • lõi nóng và đuôi tàn lửa' },
+    { id: 'fire-volley', name: 'Hỏa liên đạn', kind: 'attack', style: 'volley', rank: 'B', sequence: [...'qwdf'], cost: 40, damage: 24, size: .32, count: 4, speed: 27, salvoInterval: .14, subtitle: 'Bốn đạn nối tiếp • hội tụ theo hướng ngắm' },
+    { id: 'fire-lance', name: 'Rồng lửa', kind: 'attack', style: 'dragon', rank: 'S', sequence: [...'qwcvzx'], cost: 56, damage: 104, size: .72, count: 1, speed: 23, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
+    { id: 'fire-meteor', name: 'Thiên thạch', kind: 'attack', style: 'meteor', rank: 'SS', sequence: [...'qwcvzxer'], cost: 82, damage: 150, size: 1.5, count: 1, speed: 0, blastRadius: 5.5, fallTime: 1.6, subtitle: 'Thiên thạch từ trời • nổ lan bán kính 5,5 m' },
+    { id: 'fire-barrier', name: 'Khiên lửa', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'qwa'], cost: 26, damage: 0, shield: 75, duration: 4.5, count: 0, subtitle: 'Vòm lửa bao quanh người • hấp thụ 75 sát thương' },
+    { id: 'fire-reflect', name: 'Tường lửa', kind: 'defense', style: 'firewall', rank: 'A', sequence: [...'qwzxc'], cost: 36, damage: 0, shield: 120, duration: 5, count: 0, wallWidth: 7, wallHeight: 4.2, subtitle: 'Tường lửa phía trước • chặn đạn, tồn tại 5 giây' }
+  ].map(s => ({ ...s, element: 'fire', glyph: '火', color: '#ff844b', heal: 0, shield: s.shield || 0 }));
+  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
     damage: Math.round(v.damage * el.power), sequence: [...el.prefix, ...v.suffix],
@@ -78,9 +86,9 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 220) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.color = '#ffffff'; }
+    constructor(maxHp = 220) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.color = '#ffffff'; this.defenseElement = ''; }
     tick(dt) { this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
-    defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
+    defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
     receive(damage, reflected = false) {
       if (this.hp <= 0) return { damage: 0, reflected: false };
       if (this.reflect && !reflected) { this.reflect--; return { damage: 0, reflected: true }; }
@@ -89,5 +97,18 @@
       return { damage: actual, absorbed, reflected: false };
     }
   }
-  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter };
+  // Swept plane intersection prevents fast projectiles from passing through a wall.
+  function intersectFireWall(start, end, wall) {
+    const side = p => (p[0] - wall.p[0]) * wall.normal[0] + (p[2] - wall.p[2]) * wall.normal[2];
+    const a = side(start), b = side(end);
+    if (a * b > 0 || Math.abs(a - b) < 1e-8) return null;
+    const t = a / (a - b), point = start.map((v, i) => v + (end[i] - v) * t);
+    const across = (point[0] - wall.p[0]) * -wall.normal[2] + (point[2] - wall.p[2]) * wall.normal[0];
+    return Math.abs(across) <= wall.width / 2 && point[1] >= 0 && point[1] <= wall.height ? point : null;
+  }
+  function meteorTarget(pos, dir) {
+    const distance = dir[1] < -.025 ? Math.min(55, Math.max(6, -pos[1] / dir[1])) : 31;
+    return [pos[0] + dir[0] * distance, .08, pos[2] + dir[2] * distance];
+  }
+  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, meteorTarget };
 })(globalThis);

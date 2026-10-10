@@ -1,13 +1,13 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert/strict');
 const root = path.join(__dirname, '..'), context = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'game-core.js'), 'utf8'), context);
-const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout } = context.SealGameCore;
+const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout, intersectFireWall, meteorTarget } = context.SealGameCore;
 assert.equal(new Set(keys).size, 12);
-assert.equal(elements.length, 9); assert.equal(spells.length, 45);
-assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 45);
+assert.equal(elements.length, 9); assert.equal(spells.length, 46);
+assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 46);
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
-  assert.equal(list.filter(s=>s.kind==='attack').length,3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
+  assert.equal(list.filter(s=>s.kind==='attack').length,element.id==='fire'?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
 }
 for (const spell of spells) {
   const r = new GameRules([spell.id]); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
@@ -15,11 +15,11 @@ for (const spell of spells) {
   r.seal(spell.sequence.at(-1));
   assert.equal(r.ready().id,spell.id); assert.equal(r.cast().ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
 }
-assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort(),[2,3,4,5,6]);
+assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort(),[2,3,4,5,6,8]);
 for(const element of elements){
  const list=spells.filter(s=>s.element===element.id), attack=list.filter(s=>s.kind==='attack').sort((a,b)=>a.sequence.length-b.sequence.length);
- for(let i=1;i<attack.length;i++){assert.ok(attack[i].damage>attack[i-1].damage);assert.ok(attack[i].cost>attack[i-1].cost);}
- const volley=list.find(s=>s.style==='volley'), orb=list.find(s=>s.style==='orb'), chain=new GameRules(list.map(s=>s.id));
+ for(let i=1;i<attack.length;i++){assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);assert.ok(attack[i].cost>attack[i-1].cost);}
+ const volley=list.find(s=>s.style==='volley'), orb=list.find(s=>s.style==='orb'), chain=new GameRules([orb.id,volley.id]);
  volley.sequence.slice(0,2).forEach(k=>chain.seal(k));assert.equal(chain.ready().id,orb.id);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);
  volley.sequence.slice(2,-1).forEach(k=>chain.seal(k));assert.equal(chain.ready(),undefined);assert.equal(chain.cast().reason,'sequence');
  chain.seal(volley.sequence.at(-1));assert.equal(chain.cast().spell.id,volley.id);
@@ -45,6 +45,17 @@ fighter.defend(mirror);assert.equal(fighter.receive(43).reflected,true);assert.e
 assert.equal(fighter.receive(43).damage,18);fighter.defend(mirror);assert.equal(fighter.receive(43,true).reflected,false);
 fighter.tick(3);assert.equal(fighter.reflect,0);fighter.receive(999);assert.equal(fighter.hp,0);assert.equal(fighter.receive(99).damage,0);
 const healed=new Fighter();healed.hp=210;healed.defend(spells.find(s=>s.id==='wood-barrier'));assert.equal(healed.hp,220);
+const fire = spells.filter(s=>s.element==='fire');
+assert.deepEqual(Array.from(fire.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[2,4,6,8]);
+assert.deepEqual(Array.from(fire.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,5]);
+const wall={p:[0,0,0],normal:[0,0,-1],width:7,height:4.2};
+assert.ok(intersectFireWall([0,1.7,-10],[0,1.7,10],wall),'Swept collision catches fast shots');
+assert.equal(intersectFireWall([4,1.7,-1],[4,1.7,1],wall),null,'Can shoot around the wall');
+assert.equal(intersectFireWall([0,5,-1],[0,5,1],wall),null,'Can shoot over the wall');
+assert.equal(intersectFireWall([0,1.7,-3],[0,1.7,-1],wall),null);
+assert.ok(intersectFireWall([-3,1,0],[3,1,0],{...wall,normal:[1,0,0]}),'Wall rotates with aim');
+assert.deepEqual(Array.from(meteorTarget([0,1.72,7],[0,0,-1])),[0,.08,-24]);
+const downward=meteorTarget([0,1.72,7],[0,-.1,-.995]);assert.ok(downward[2]>-11&&downward[2]<-10);
 const binary = fs.readFileSync(path.join(root, "assets/ninja-hands.glb"));
 assert.equal(binary.readUInt32LE(0), 1179937895);
 assert.equal(binary.readUInt32LE(4), 2);
@@ -62,4 +73,4 @@ assert.equal(pkg.version, "0.3.0");
 const bundle = fs.readFileSync(path.join(root, "game.js"), "utf8");
 assert.ok(bundle.length > 5e5);
 assert.ok(!/<script[^>]+https?:/.test(fs.readFileSync(path.join(root, "index.html"), "utf8")));
-console.log("PASS: 9 elements; 45 unique spells; 2-6 seals by rank; attack power/cost progression; short-to-long combos without auto-casting; loadout limits; shields/reflection/healing; expiry, cooldown, chakra recovery; offline bundle and GLB.");
+console.log("PASS: 9 elements; 46 unique spells; six fire arts with 2/4/6/8 attack seals and 3/5 defense seals; total attack power progression; short-to-long combos; five-spell loadout; swept fire-wall collision and meteor targeting; shields/reflection/healing; cooldown and chakra; offline bundle and GLB.");

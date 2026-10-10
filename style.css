@@ -22,6 +22,9 @@ body.paused .reticle{visibility:hidden}
 .spell-title{display:block}.spell-title small{display:block;line-height:1.6;margin-top:4px}.spell-sequence{flex-wrap:wrap}
 .guide .spell{grid-template-columns:1fr;gap:8px}.guide .spell-title{font-size:14px}.guide-foot{display:none}.seal:disabled{cursor:default}
 /* Show every carried spell without scrolling, including on narrow screens. */
+.guide .spell-sequence kbd{min-width:0;flex-shrink:1}
+#comboSlots{gap:clamp(3px,.5vw,6px)}
+.combo-slot{min-width:0;flex-shrink:1}
 .guide{max-height:none;overflow:visible}
 .guide .spell{padding:10px 0;gap:6px}
 .guide .spell-sequence{flex-wrap:nowrap}
@@ -66,3 +69,7 @@ body.paused .reticle{visibility:hidden}
   #message{display:none}
   .score,#moveHint{display:none}
 }
+/* Eight-seal fire formulas fit the same carried-spell cards at every breakpoint. */
+.guide .spell{min-width:0;grid-template-columns:minmax(0,1fr)}
+.guide .spell-sequence,#comboSlots{min-width:0}
+.guide .spell-sequence kbd{flex-shrink:1;min-width:0}
