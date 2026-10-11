@@ -31,7 +31,9 @@ const fs = require('node:fs/promises');
     assert.equal((await state()).casts, 1); assert.equal((await state()).shots, 3); assert.equal((await state()).salvos, 0);
     assert.ok((await state()).projectiles.every(s => s.phase === 'staged'));
     await advance(.35); assert.equal((await state()).shots, 3); await screenshot('salvo');
-    await advance(.15); assert.ok((await state()).projectiles.every(s => s.phase === 'flying'));
+    await advance(.15); assert.equal((await state()).projectiles.filter(s => s.phase === 'flying').length, 1);
+    await advance(.1); assert.equal((await state()).projectiles.filter(s => s.phase === 'flying').length, 2);
+    await advance(.1); assert.ok((await state()).projectiles.every(s => s.phase === 'flying'));
     await advance(1.3); assert.equal((await state()).enemyHealth, 148, 'All three small orbs hit the fixed aim point');
     assert.equal((await state()).fireArt.bursts, 0, 'Volley hits leave no flames on the opponent');
 

@@ -262,7 +262,8 @@ async function main() {
       const target = volleyTarget(owner, pos, dir);
       for (let i = 0; i < spell.count; i++) {
         const shot = { p: [...pos], old: [...pos], v: [0, 0, 0], target: [...target], rowIndex: i,
-          castDirection: [...dir], phase: 'staged', holdTime: spell.holdTime, flightAge: 0,
+          castDirection: [...dir], phase: 'staged', holdTime: spell.holdTime,
+          releaseAt: spell.holdTime + i * spell.salvoInterval, flightAge: 0,
           size: spell.size, speed: spell.speed, damage: spell.damage, style: spell.style, element: spell.element, color: spell.color,
           owner, reflected: false, life: 4, trail: 0, age: 0 };
         positionVolley(shot); shot.old = [...shot.p]; shots.push(shot);
@@ -407,10 +408,10 @@ async function main() {
       }
       if (shot.phase === 'staged') {
         shot.age += dt; positionVolley(shot); shot.old = [...shot.p];
-        if (shot.age + 1e-6 < shot.holdTime) continue;
-        flightDt = Math.max(0, shot.age - shot.holdTime); shot.age = shot.holdTime;
+        if (shot.age + 1e-6 < shot.releaseAt) continue;
+        flightDt = Math.max(0, shot.age - shot.releaseAt); shot.age = shot.releaseAt;
         shot.phase = 'flying'; shot.v = vmul(vnorm(vsub(shot.target, shot.p)), shot.speed);
-        if (shot.owner === 'player' && shot.rowIndex === 0) cameraImpacts.trigger('volley');
+        if (shot.owner === 'player') cameraImpacts.trigger('volley');
         tone(190 + shot.rowIndex * 55, .09, 'triangle', .035);
       }
       if (shot.phase === 'forming') {

@@ -33,7 +33,7 @@ Hệ Hỏa có hiệu ứng và cơ chế riêng:
 | Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
 | --- | --- | --- | --- | --- |
 | Hỏa cầu | 2 | Q W | 28 | Cầu lửa xoáy, 43 sát thương |
-| Hỏa liên đạn | 4 | Q W D F | 40 | Ba hỏa cầu nhỏ xếp ngang phía trên tay, giữ 0,5 giây rồi cùng bay tới điểm ngắm đã chọn; mỗi viên 24 sát thương, không để lại lửa trên đối thủ |
+| Hỏa liên đạn | 4 | Q W D F | 40 | Ba hỏa cầu nhỏ xếp ngang phía trên tay, giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây tới điểm ngắm đã chọn; mỗi viên 24 sát thương, không để lại lửa trên đối thủ |
 | Rồng lửa | 6 | Q W C V Z X | 56 | Rồng cuộn thành vòng lửa trước mặt trong 1,1 giây rồi lao tới; camera chuyển lên trên bên trái và trở lại sau cú đánh, 104 sát thương |
 | Thiên thạch | 8 | Q W C V Z X E R | 82 | Bay một đường thẳng từ trời tới đất trong 3,4 giây; camera ngước lên, zoom in trong 0,24 giây rồi zoom out dần trong cảnh trời 1,4 giây, trở về trong 0,4 giây; 150 sát thương trong bán kính 5,5 m |
 | Khiên lửa | 3 | Q W A | 26 | Vòm lửa bao quanh người, hấp thụ 75 sát thương trong 4,5 giây |

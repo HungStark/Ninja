@@ -32,7 +32,7 @@
   // Keep the saved fire IDs while replacing their formulas and behavior.
   const fireSpells = [
     { id: 'fire-orb', name: 'Hỏa cầu', kind: 'attack', style: 'orb', rank: 'D', sequence: [...'qw'], cost: 28, damage: 43, size: .48, count: 1, speed: 20, subtitle: 'Cầu lửa xoáy • lõi nóng và đuôi tàn lửa' },
-    { id: 'fire-volley', name: 'Hỏa liên đạn', kind: 'attack', style: 'volley', rank: 'B', sequence: [...'qwdf'], cost: 40, damage: 24, size: .075, count: 3, speed: 27, holdTime: .5, subtitle: 'Ba hỏa cầu nhỏ xếp ngang • giữ 0,5 giây rồi cùng phóng tới điểm ngắm' },
+    { id: 'fire-volley', name: 'Hỏa liên đạn', kind: 'attack', style: 'volley', rank: 'B', sequence: [...'qwdf'], cost: 40, damage: 24, size: .075, count: 3, speed: 27, holdTime: .5, salvoInterval: .1, subtitle: 'Ba hỏa cầu nhỏ xếp ngang • giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây' },
     { id: 'fire-lance', name: 'Rồng lửa', kind: 'attack', style: 'dragon', rank: 'S', sequence: [...'qwcvzx'], cost: 56, damage: 104, size: .72, count: 1, speed: 23, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
     { id: 'fire-meteor', name: 'Thiên thạch', kind: 'attack', style: 'meteor', rank: 'SS', sequence: [...'qwcvzxer'], cost: 82, damage: 150, size: 1.5, count: 1, speed: 0, blastRadius: 5.5, fallTime: 1.6, subtitle: 'Thiên thạch từ trời • nổ lan bán kính 5,5 m' },
     { id: 'fire-barrier', name: 'Khiên lửa', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'qwa'], cost: 26, damage: 0, shield: 75, duration: 4.5, count: 0, subtitle: 'Vòm lửa bao quanh người • hấp thụ 75 sát thương' },
