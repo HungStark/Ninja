@@ -13,7 +13,6 @@
     { id: 'ice', name: 'Băng', glyph: '氷', color: '#a6edff', prefix: 'zx', speed: 21, power: 1.04 }
   ];
   const titles = {
-    lightning: ['Lôi cầu', 'Lôi thương', 'Lôi liên kích', 'Lôi giáp', 'Lôi phản'],
     wind: ['Phong đạn', 'Phong nhận', 'Phong liên kích', 'Phong bích', 'Phong hồi'],
     earth: ['Thổ đạn', 'Thổ thương', 'Thổ liên kích', 'Thổ thành', 'Thổ phản'],
     light: ['Quang cầu', 'Quang thương', 'Quang liên kích', 'Quang thuẫn', 'Quang kính'],
@@ -46,7 +45,16 @@
     { id: 'water-barrier', name: 'Khiên nước', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, shield: 65, duration: 4.5, count: 0, subtitle: 'Khiên nước bao quanh bản thân • hấp thụ 65 sát thương' },
     { id: 'water-reflect', name: 'Thủy thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence: [...'wedf'], cost: 32, damage: 0, shield: 95, duration: 5, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
   ].map(s => ({ ...s, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
-  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : variants.map((v, i) => ({
+  // Keep saved lightning IDs while giving each art its own behavior.
+  const lightningSpells = [
+    { id: 'lightning-orb', name: 'Lôi cầu', kind: 'attack', style: 'orb', rank: 'D', sequence: [...'er'], cost: 28, damage: 40, size: .46, count: 1, speed: 29, subtitle: 'Cầu điện phóng nhanh • hồ quang bao quanh lõi sáng' },
+    { id: 'lightning-lance', name: 'Lôi thương', kind: 'attack', style: 'lance', rank: 'B', sequence: [...'erdf'], cost: 40, damage: 62, size: .3, count: 1, speed: 38, subtitle: 'Thương sét dài • mũi nhọn và đuôi điện' },
+    { id: 'lightning-volley', name: 'Lôi điểu', kind: 'attack', style: 'bird', rank: 'S', sequence: [...'ercvzx'], cost: 56, damage: 102, size: .9, count: 1, speed: 27, subtitle: 'Chim sét dang cánh lao tới • lông cánh và hồ quang chuyển động' },
+    { id: 'lightning-thunder', name: 'Thiên lôi', kind: 'attack', style: 'thunder', rank: 'SS', sequence: [...'ercvzxer'], cost: 82, damage: 150, size: 1, count: 1, speed: 0, blastRadius: 4.5, chargeTime: 1.4, subtitle: 'Ngước nhìn mây tụ điện • một tia sét lớn đánh xuống vùng ngắm' },
+    { id: 'lightning-barrier', name: 'Lôi thuẫn', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'era'], cost: 26, damage: 0, shield: 80, duration: 5, count: 0, subtitle: 'Khiên điện bao quanh bản thân • hấp thụ 80 sát thương trong 5 giây' },
+    { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .3, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 30% tốc độ trong vùng' }
+  ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
+  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
     damage: Math.round(v.damage * el.power), sequence: [...el.prefix, ...v.suffix],
@@ -135,5 +143,37 @@
     const distance = dir[1] < -.025 ? Math.min(55, Math.max(6, -pos[1] / dir[1])) : 31;
     return [pos[0] + dir[0] * distance, .08, pos[2] + dir[2] * distance];
   }
-  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget };
+  // Integrate travel across field boundaries, including a fast shot entering and
+  // leaving a field in one frame. Velocity stays intact, so exiting restores it.
+  function projectileTimeStep(start, velocity, dt, owner, fields) {
+    if(dt<=0)return { travelTime: 0, slowFactor: 1 };
+    const delta=velocity.map(v=>v*dt),intervals=[];
+    for(const f of fields) {
+      if(f.owner===owner||f.life<=0)continue;
+      const x=start[0]-f.p[0],z=start[2]-f.p[2],a=delta[0]**2+delta[2]**2;
+      let enter=0,leave=1;
+      if(a<1e-12){if(x*x+z*z>f.radius*f.radius)continue;}
+      else {
+        const b=2*(x*delta[0]+z*delta[2]),c=x*x+z*z-f.radius*f.radius,disc=b*b-4*a*c;
+        if(disc<0)continue;
+        enter=Math.max(enter,(-b-Math.sqrt(disc))/(2*a));leave=Math.min(leave,(-b+Math.sqrt(disc))/(2*a));
+      }
+      const low=f.p[1],high=low+f.height;
+      if(Math.abs(delta[1])<1e-12){if(start[1]<low||start[1]>high)continue;}
+      else {
+        const t1=(low-start[1])/delta[1],t2=(high-start[1])/delta[1];
+        enter=Math.max(enter,Math.min(t1,t2));leave=Math.min(leave,Math.max(t1,t2));
+      }
+      if(enter<leave)intervals.push({enter:enter*dt,leave:leave*dt,factor:f.slowFactor});
+    }
+    const events=[0,dt,...intervals.flatMap(i=>[i.enter,i.leave])].sort((a,b)=>a-b);
+    let remaining=dt,travelTime=0;
+    for(let i=1;i<events.length&&remaining>0;i++) {
+      const a=events[i-1],b=events[i],mid=(a+b)/2;
+      const factor=Math.min(1,...intervals.filter(v=>mid>=v.enter&&mid<=v.leave).map(v=>v.factor));
+      const travel=Math.min(b-a,remaining*factor);travelTime+=travel;remaining-=travel/factor;
+    }
+    return { travelTime, slowFactor: travelTime/dt };
+  }
+  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep };
 })(globalThis);

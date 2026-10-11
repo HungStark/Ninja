@@ -6,6 +6,7 @@ const profiles = {
   dragon: { duration: .4, shake: .025, zoom: 5, kick: .045 },
   dragonHit: { duration: .36, shake: .065, zoom: -3, kick: .025 },
   meteorHit: { duration: .85, shake: .11, zoom: 6, kick: .055 },
+  thunderHit: { duration: .5, shake: .055, zoom: 4, kick: .03 },
   block: { duration: .24, shake: .025, zoom: 2, kick: .03 },
   reflect: { duration: .26, shake: .028, zoom: -3, kick: .025 },
   hit: { duration: .38, shake: .045, zoom: 3, kick: .035 },

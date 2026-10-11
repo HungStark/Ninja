@@ -22,16 +22,16 @@ const { chromium } = require('playwright');
     const reset = async () => { await page.keyboard.press('Escape'); await click('resetButton'); await center(); };
     await click('soundButton');
     assert.equal((await state()).bones,16);
-    assert.equal(await page.locator('[data-equip]').count(),47);
+    assert.equal(await page.locator('[data-equip]').count(),48);
     assert.equal(await page.locator('[data-element]').count(),10);
     await page.screenshot({path:'test-results/start.png'});
     for (const element of ['fire','water','lightning','wind','earth','light','dark','wood','ice']) {
       await page.locator('[data-element="'+element+'"]').click();
-      assert.equal(await page.locator('[data-equip]').count(),['fire','water'].includes(element)?6:5);
+      assert.equal(await page.locator('[data-equip]').count(),['fire','water','lightning'].includes(element)?6:5);
     }
     await page.locator('[data-element="all"]').click();
     await page.locator('[data-kind="defense"]').click(); assert.equal(await page.locator('[data-equip]').count(),18);
-    await page.locator('[data-kind="attack"]').click(); assert.equal(await page.locator('[data-equip]').count(),29);
+    await page.locator('[data-kind="attack"]').click(); assert.equal(await page.locator('[data-equip]').count(),30);
     await page.locator('[data-kind="all"]').click();
     await page.locator('[data-equip="wood-orb"]').click();assert.equal((await state()).loadout.length,5);
     await click('clearLoadout');assert.equal(await page.locator('#startButton').isDisabled(),true);
@@ -78,7 +78,7 @@ const { chromium } = require('playwright');
     await page.screenshot({path:'test-results/reflect.png'});
     await reset();await cast('water-lance');await advance(.1);assert.equal((await state()).projectiles[0].element,'water');assert.equal((await state()).projectiles[0].color,'#50baff');
     await page.screenshot({path:'test-results/water.png'});
-    await reset();await cast('lightning-volley');await advance(.05);assert.equal((await state()).shots,3);
+    await reset();await cast('lightning-volley');await advance(.05);assert.equal((await state()).shots,1);assert.equal((await state()).projectiles[0].style,'bird');
     await page.screenshot({path:'test-results/lightning.png'});
     await reset();
     for(let i=0;i<8 && !(await state()).won;i++){ await cast('fire-orb');await advance(1.5); }
@@ -96,7 +96,7 @@ const { chromium } = require('playwright');
     assert.equal(await page.locator('#startButton').isEnabled(),true);
     await page.setViewportSize({width:1440,height:960});await click('startButton');await center();await page.screenshot({path:'test-results/final.png'});
     assert.deepEqual(errors,[]);
-    const report={passed:true,renderer:'Edge / WebGL 2 / SwiftShader',checks:['9 elements and 47 catalog spells; 2-8 seals by rank; opponent under the gate at 31m','loadout cap, filters, presets, empty validation','12 distinct skinned poses','equipped-only casting','centered FPS aim; left/right click sidesteps; holding and mouse position do not move player','animated AI seals and real incoming damage','barrier absorbs damage','reflection returns enemy projectile','pause freezes fighters, AI, timers','victory, defeat, reset and reselect loadout','colored projectiles and three graphics tiers','offline loading and responsive scroll'],state:await state(),errors};
+    const report={passed:true,renderer:'Edge / WebGL 2 / SwiftShader',checks:['9 elements and 48 catalog spells; 2-8 seals by rank; opponent under the gate at 31m','loadout cap, filters, presets, empty validation','12 distinct skinned poses','equipped-only casting','centered FPS aim; left/right click sidesteps; holding and mouse position do not move player','animated AI seals and real incoming damage','barrier absorbs damage','reflection returns enemy projectile','pause freezes fighters, AI, timers','victory, defeat, reset and reselect loadout','colored projectiles and three graphics tiers','offline loading and responsive scroll'],state:await state(),errors};
     await fs.writeFile('test-results/verification.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
   } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

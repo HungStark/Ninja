@@ -48,6 +48,7 @@ export async function createHands() {
   let readyElement = '';
   function setReady(element) {
     readyElement = element || '';
+    auraMat.color.set(readyElement==='lightning'?'#c6a2ff':'#ffcc7a').multiplyScalar(1.5);
     handFire.setReady(readyElement === 'fire');
     handWater.setReady(readyElement === 'water');
     if (['fire', 'water'].includes(readyElement)) auraMat.opacity = 0;

@@ -10,7 +10,7 @@ import { sealNames as names } from "./poses.js";
 import { createOpponent } from "./opponent.js";
 import { CameraImpacts } from './camera-impact.js';
 async function main() {
-  const $ = id => document.getElementById(id), { keys, spells, elements, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget } = globalThis.SealGameCore;
+  const $ = id => document.getElementById(id), { keys, spells, elements, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = globalThis.SealGameCore;
   let rules = new GameRules(), player = new Fighter(), enemy = new Fighter(), aiRules = new GameRules();
   const testMode = new URLSearchParams(location.search).get("test") === "1";
   const canvas = $("world");
@@ -27,7 +27,7 @@ async function main() {
   const baseFov = 68;
   const camera3d = new T.PerspectiveCamera(baseFov, innerWidth / innerHeight, 0.05, 220), handCamera = new T.PerspectiveCamera(baseFov, innerWidth / innerHeight, 0.02, 10);
   camera3d.rotation.order = "YXZ";
-  const effects = new FireEffects(scene), shots = [], particles = [], salvos = [], walls = [];
+  const effects = new FireEffects(scene), shots = [], particles = [], salvos = [], walls = [], fields = [];
   const cameraImpacts = new CameraImpacts();
   let cameraReaction = cameraImpacts.sample();
   const reactionPosition = new T.Vector3(), reactionRotation = new T.Quaternion(), reactionEuler = new T.Euler();
@@ -227,6 +227,12 @@ async function main() {
   function launch(spell, owner, pos, dir) {
     if (spell.kind === 'defense') {
       if (owner === 'player') cameraImpacts.trigger('defense');
+      if(spell.style==='stormfield') {
+        for(let i=fields.length-1;i>=0;i--)if(fields[i].owner===owner)fields.splice(i,1);
+        const normal=vnorm([dir[0],0,dir[2]]),p=vadd(pos,vmul(normal,4));p[1]=.08;
+        fields.push({owner,p,radius:spell.fieldRadius,height:spell.fieldHeight,slowFactor:spell.slowFactor,life:spell.duration,age:0});
+        return;
+      }
       if (['firewall', 'waterwall'].includes(spell.style)) {
         const normal = vnorm([dir[0], 0, dir[2]]);
         // Casting another wall replaces this owner's previous wall.
@@ -257,6 +263,14 @@ async function main() {
       shots.push(shot);
       if (owner === 'player') beginWaveView(shot);
       return;
+    }
+    if(spell.style==='thunder') {
+      const target=meteorTarget(pos,dir),cloudPoint=[target[0],44,target[2]];
+      const shot={p:[...cloudPoint],old:[...cloudPoint],v:[0,0,0],target,cloudPoint,
+        chargeTime:spell.chargeTime,skyTime:spell.chargeTime+.35,returnTime:meteorReturnTime,totalTime:spell.chargeTime+.35+meteorReturnTime+.35,
+        preludeAge:0,phase:'charging',age:0,life:3,damage:spell.damage,blastRadius:spell.blastRadius,size:spell.size,
+        style:spell.style,element:spell.element,color:spell.color,owner,unreflectable:true,reflected:false,trail:0};
+      shots.push(shot);if(owner==='player')beginMeteorView(shot);tone(65,.45,'sawtooth',.05);return;
     }
     if (spell.style === 'meteor') {
       const target = meteorTarget(pos, dir), skyStart = [target[0] + 38, 65, target[2] + 7];
@@ -294,6 +308,13 @@ async function main() {
       return;
     }
     const right = vnorm([-dir[2], 0, dir[0]]);
+    if(spell.element==='lightning'&&['lance','bird'].includes(spell.style)) {
+      const target=volleyTarget(owner,pos,dir),p=vadd(vadd(pos,vmul(dir,.85)),vmul(right,spell.style==='lance'?.85:0));
+      p[1]+=spell.style==='bird'?.3:-.1;
+      shots.push({p,old:[...p],v:vmul(vnorm(vsub(target,p)),spell.speed),target,size:spell.size,damage:spell.damage,style:spell.style,
+        element:spell.element,color:spell.color,owner,reflected:false,life:4,trail:0,age:0});
+      if(owner==='player')cameraImpacts.trigger('orb');return;
+    }
     if (owner === 'player') cameraImpacts.trigger('orb');
     for (let i = 0; i < spell.count; i++) {
       const spread = (i - (spell.count - 1) / 2) * .12;
@@ -379,7 +400,10 @@ async function main() {
     const fighter = shot.owner === 'enemy' ? player : enemy, result = fighter.receive(shot.damage, shot.reflected || shot.unreflectable);
     if (dragonView?.shot === shot && dragonView.phase === 'overhead') { dragonView.phase = 'impact'; dragonView.hold = 0; }
     const cleanVolleyHit = shot.element === 'fire' && shot.style === 'volley';
-    if (shot.style !== 'meteor' && !cleanVolleyHit) burst(pos, 14, .9, shot.color);
+    if(shot.element==='lightning') {
+      if(shot.style!=='thunder')effects.lightningArts.blast(pos,shot.style==='bird'?1.8:.7);
+      for(let i=0;i<18;i++)particle(pos,[range(-2,2),range(-.5,2),range(-2,2)],.04,.45,shot.color);
+    } else if (shot.style !== 'meteor' && !cleanVolleyHit) burst(pos, 14, .9, shot.color);
     if (result.reflected) {
       if (shot.owner === 'enemy') cameraImpacts.trigger('reflect');
       shot.owner = shot.owner === 'enemy' ? 'player' : 'enemy'; shot.reflected = true;
@@ -422,15 +446,27 @@ async function main() {
     const target = shot.owner === 'enemy' ? camera.p : enemyPos();
     if (Math.hypot(target[0] - pos[0], target[2] - pos[2]) <= shot.blastRadius) impact(shot, pos);
   }
+  function thunderImpact(shot) {
+    const pos=shot.target;effects.lightningArts.blast(pos,shot.blastRadius);
+    cameraImpacts.trigger('thunderHit',clamp(1-vlen(vsub(pos,camera.p))/65,.2,1));tone(45,.45,'sawtooth',.085);
+    for(const wall of walls)if(Math.hypot(pos[0]-wall.p[0],pos[2]-wall.p[2])<=shot.blastRadius)wall.hp=Math.max(0,wall.hp-shot.damage);
+    const target=shot.owner==='enemy'?camera.p:enemyPos();
+    if(Math.hypot(target[0]-pos[0],target[2]-pos[2])<=shot.blastRadius)impact(shot,pos);
+  }
+  function travelStep(shot,dt) {
+    const step=projectileTimeStep(shot.p,shot.v,dt,shot.owner,fields);shot.slowFactor=step.slowFactor;return step.travelTime;
+  }
   function updateShots(dt) {
+    for(let i=fields.length-1;i>=0;i--){fields[i].life-=dt;fields[i].age+=dt;if(fields[i].life<=1e-6)fields.splice(i,1);}
     for (let i = walls.length - 1; i >= 0; i--) { walls[i].life -= dt; if (walls[i].life <= 0 || walls[i].hp <= 0) walls.splice(i, 1); }
     const swept = new Set();
     for (const wave of shots.filter(s => s.style === 'tsunami' && s.phase === 'flying')) {
       if (swept.has(wave)) continue;
-      const end = vadd(wave.p, vmul(wave.v, dt));
+      const end = vadd(wave.p, vmul(wave.v, travelStep(wave,dt)));
       for (const other of shots) {
         if (other === wave || swept.has(other)) continue;
-        const otherEnd = ['forming', 'staged', 'emerging', 'gathering'].includes(other.phase) ? other.p : vadd(other.p, vmul(other.v, dt));
+        if(other.style==='thunder')continue;
+        const otherEnd = ['forming', 'staged', 'emerging', 'gathering'].includes(other.phase) ? other.p : vadd(other.p, vmul(other.v, travelStep(other,dt)));
         if (intersectsWave(other.p, otherEnd, wave.p, end, wave.normal, wave.width, wave.height, other.size, wave.depth)) {
           swept.add(other); wave.carried.push({ color: other.color, style: other.style, owner: other.owner, element: other.element });
           if (wave.carried.length > 24) wave.carried.shift();
@@ -446,6 +482,12 @@ async function main() {
       const shot = shots[i]; shot.old = [...shot.p];
       if (swept.has(shot)) { shots.splice(i, 1); continue; }
       let flightDt = dt;
+      if(shot.style==='thunder') {
+        shot.age+=dt;shot.preludeAge=Math.min(shot.skyTime+shot.returnTime,shot.age);
+        shot.phase=shot.age<shot.chargeTime?'charging':shot.age<shot.skyTime?'striking':shot.age<shot.skyTime+shot.returnTime?'returning':'fading';
+        if(!shot.hitTarget&&shot.age+1e-6>=shot.chargeTime){shot.hitTarget=true;thunderImpact(shot);}
+        if(shot.age>=shot.totalTime)shots.splice(i,1);if(won)break;continue;
+      }
       if (shot.style === 'tsunami') {
         if (shot.phase === 'gathering') {
           shot.age += dt;
@@ -457,7 +499,8 @@ async function main() {
           flightDt = Math.max(0, shot.age - shot.growthTime);
           shot.age = shot.growthTime; shot.phase = 'flying'; shot.introStage = 'flying'; shot.growth = 1;
         }
-        shot.p = vadd(shot.p, vmul(shot.v, flightDt)); shot.age += flightDt; shot.life -= flightDt; shot.flightAge += flightDt;
+        const travelDt=travelStep(shot,flightDt);
+        shot.p = vadd(shot.p, vmul(shot.v, travelDt)); shot.age += flightDt; shot.life -= flightDt; shot.flightAge += travelDt;
         const target = shot.owner === 'enemy' ? camera.p : enemyPos();
         if (!shot.hitTarget && intersectsWave(target, target, shot.old, shot.p, shot.normal, shot.width, shot.height, .54, shot.depth)) {
           shot.hitTarget = true; impact(shot, target);
@@ -476,7 +519,7 @@ async function main() {
           shot.age = shot.riseTime; shot.p = [...shot.origin]; shot.old = [...shot.p]; shot.phase = 'flying';
           if (shot.owner === 'player') { beginDragonView(shot); cameraImpacts.trigger('orb', 1.3); }
         }
-        shot.flightAge = Math.min(shot.travelTime, shot.flightAge + flightDt); shot.age += flightDt;
+        shot.flightAge = Math.min(shot.travelTime, shot.flightAge + travelStep(shot,flightDt)); shot.age += flightDt;
         shot.p = vadd(shot.origin, vmul(shot.v, shot.flightAge));
         const wall = walls.find(w => w.hp > 0 && w.owner !== shot.owner && intersectFireWall(shot.old, shot.p, w));
         if (wall) { wall.hp = Math.max(0, wall.hp - shot.damage); burst(shot.p, 24, 2, shot.color); shots.splice(i, 1); continue; }
@@ -491,13 +534,13 @@ async function main() {
       }
       if (shot.style === 'meteor') {
         // One fixed velocity from first appearance to impact: no bend or pause at a camera transition.
-        shot.age = Math.min(shot.totalTime, shot.age + dt);
+        shot.age += dt;shot.travelAge=Math.min(shot.totalTime,(shot.travelAge||0)+travelStep(shot,dt));
         const prelude = shot.skyTime + shot.returnTime;
         shot.preludeAge = Math.min(prelude, shot.age); shot.fallAge = Math.max(0, shot.age - prelude);
         shot.phase = shot.age < shot.skyTime ? 'sky' : shot.age + 1e-6 < prelude ? 'returning' : 'falling';
-        shot.p = vadd(shot.skyStart, vmul(shot.v, shot.age));
+        shot.p = vadd(shot.skyStart, vmul(shot.v, shot.travelAge));
         emitShotTrail(shot, dt);
-        if (shot.age + 1e-6 >= shot.totalTime) { shot.p = [...shot.target]; meteorImpact(shot); shots.splice(i, 1); }
+        if (shot.travelAge + 1e-6 >= shot.totalTime) { shot.p = [...shot.target]; meteorImpact(shot); shots.splice(i, 1); }
         if (won) break;
         continue;
       }
@@ -517,8 +560,9 @@ async function main() {
         if (shot.owner === 'player') { beginDragonView(shot); cameraImpacts.trigger('dragon'); }
         burst(shot.p, 18, 1.8, '#ffc45e'); tone(85, .25, 'sawtooth', .045);
       }
-      shot.p = vadd(shot.p, vmul(shot.v, flightDt));
-      if (shot.gravity) { shot.p = vadd(shot.p, vmul(shot.gravity, .5 * flightDt * flightDt)); shot.v = vadd(shot.v, vmul(shot.gravity, flightDt)); }
+      const travelDt=travelStep(shot,flightDt);
+      shot.p = vadd(shot.p, vmul(shot.v, travelDt));
+      if (shot.gravity) { shot.p = vadd(shot.p, vmul(shot.gravity, .5 * travelDt * travelDt)); shot.v = vadd(shot.v, vmul(shot.gravity, travelDt)); }
       shot.life -= flightDt; shot.age += flightDt;
       if (shot.phase === 'flying') shot.flightAge += flightDt;
       emitShotTrail(shot, flightDt);
@@ -599,17 +643,18 @@ async function main() {
     $('chakraNumber').textContent = Math.floor(rules.chakra) + ' / 100'; $('chakraFill').style.width = rules.chakra + '%'; $('castCount').textContent = rules.casts + ' thuật';
     $('healthNumber').textContent = Math.ceil(player.hp) + ' / ' + player.maxHp; $('healthFill').style.width = player.hp / player.maxHp * 100 + '%';
     const playerWall = walls.find(w => w.owner === 'player' && w.hp > 0), shieldLabel = player.shieldTime > 0 && (player.shield || player.reflect) ? 'Khiên ' + player.shield + (player.reflect ? ' · phản đòn' : '') : '';
-    $('shieldStatus').textContent = [player.controlTime > 0 ? 'Thủy ngục ' + player.controlTime.toFixed(1) + 's' : '', shieldLabel, playerWall ? (playerWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường ') + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
+    const playerField=fields.find(f=>f.owner==='player'),enemyField=fields.find(f=>f.owner==='enemy');
+    $('shieldStatus').textContent = [player.controlTime > 0 ? 'Thủy ngục ' + player.controlTime.toFixed(1) + 's' : '', shieldLabel,playerField?'Lôi trận '+playerField.life.toFixed(1)+'s':'', playerWall ? (playerWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường ') + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
     $('enemyHP').style.width = enemy.hp / enemy.maxHp * 100 + '%'; $('enemyHealth').textContent = Math.ceil(enemy.hp) + ' / ' + enemy.maxHp;
     const enemyWall = walls.find(w => w.owner === 'enemy' && w.hp > 0);
-    $('enemyChakra').textContent = Math.floor(aiRules.chakra) + ' CH'; $('enemyShield').textContent = [enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '', enemyWall ? (enemyWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường lửa ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
+    $('enemyChakra').textContent = Math.floor(aiRules.chakra) + ' CH'; $('enemyShield').textContent = [enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '',enemyField?'Lôi trận '+enemyField.life.toFixed(1)+'s':'', enemyWall ? (enemyWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường lửa ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
     $('battleClock').textContent = Math.floor(battleTime / 60).toString().padStart(2, '0') + ':' + Math.floor(battleTime % 60).toString().padStart(2, '0');
     $('moveHint').textContent = moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'CHUỘT TRÁI: NÉ TRÁI · CHUỘT PHẢI: NÉ PHẢI';
     $('flash').style.opacity = flashTimer * .32; $('hitMarker').style.opacity = hitTimer > 0 ? 1 : 0;
     const delta = vsub(enemyPos(), camera.p), d = aim(), onTarget = vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7;
     $('reticle').classList.toggle('on-target', onTarget && enemy.hp > 0 && !waveView);
     $('targetInfo').style.opacity = onTarget && running && !waveView ? 1 : 0; $('targetName').textContent = 'ĐỐI THỦ'; $('targetHP').style.width = enemy.hp / enemy.maxHp * 100 + '%';
-    playerShield.visible = !['fire', 'water'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45, camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
+    playerShield.visible = !['fire', 'water', 'lightning'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45, camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
     document.body.classList.toggle('dragon-active', started && !won && (!!dragonView || shots.some(s => s.owner === 'player' && s.phase === 'forming')));
     camera3d.position.fromArray(camera.p); camera3d.rotation.set(camera.pitch, camera.yaw, 0, 'YXZ');
     updateDragonView(running ? dt : 0);
@@ -632,7 +677,7 @@ async function main() {
     reactionEuler.set(...cameraReaction.rotation); reactionRotation.setFromEuler(reactionEuler);
     camera3d.quaternion.multiply(reactionRotation);
     effects.update(paused ? 0 : dt, animationTime, shots, particles, camera3d, quality, walls,
-      [{ owner: 'player', fighter: player, pos: camera.p }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }]);
+      [{ owner: 'player', fighter: player, pos: camera.p }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }],fields);
   }
   function render() { renderer.info.reset(); renderer.clear(); composer.render(); }
   function clearDragonView() {
@@ -686,15 +731,15 @@ async function main() {
     if (!meteorView) return;
     const view = meteorView, shot = view.shot, base = camera3d.quaternion.clone();
     if (!dt && view.renderedRotation) { camera3d.position.copy(view.renderedPosition); camera3d.quaternion.copy(view.renderedRotation); setWorldFov(view.renderedFov); return; }
-    if (!shots.includes(shot) || shot.phase === 'falling') { clearMeteorView(); return; }
-    if (shot.phase === 'sky') {
+    if (!shots.includes(shot) || ['falling','fading'].includes(shot.phase)) { clearMeteorView(); return; }
+    if (shot.phase === 'sky' || shot.phase==='charging' || shot.phase==='striking') {
       const zoomedFov = view.fromFov - meteorZoomAmount;
       const zoomingIn = shot.preludeAge <= meteorZoomInTime;
       const zoomT = zoomingIn ? clamp(shot.preludeAge / meteorZoomInTime, 0, 1)
         : clamp((shot.preludeAge - meteorZoomInTime) / (shot.skyTime - meteorZoomInTime), 0, 1);
       const zoomEase = zoomT * zoomT * (3 - 2 * zoomT);
       setWorldFov(reducedMotion ? view.fromFov : T.MathUtils.lerp(zoomingIn ? view.fromFov : zoomedFov, zoomingIn ? zoomedFov : view.fromFov, zoomEase));
-      camera3d.lookAt(new T.Vector3(...(reducedMotion ? shot.cloudPoint : shot.p)));
+      camera3d.lookAt(new T.Vector3(...(reducedMotion || shot.style==='thunder' ? shot.cloudPoint : shot.p)));
       const t = reducedMotion ? 1 : clamp(shot.preludeAge / .28, 0, 1);
       camera3d.quaternion.slerpQuaternions(view.from, camera3d.quaternion.clone(), t * t * (3 - 2 * t));
       view.lastSkyRotation = camera3d.quaternion.clone();
@@ -777,7 +822,7 @@ async function main() {
     $('enemyElement').textContent = el.glyph + ' ' + el.name + ' / ' + support.name; $('enemyAction').textContent = 'Đang quan sát…';
     try { localStorage.setItem('anhoa-loadout-v3', JSON.stringify(loadout)); } catch {}
     started = true; paused = false; won = false; selected = 0; score = 0; battleTime = 0; aiTimer = 2.2; aiSpell = null; aiStep = 0; aiCycle = 0; aiCasts = 0; aiCastAge = 99; enemyPose = -1; enemyHit = 0;
-    shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; effects.reset(); hands.clearEffects(); recoil = flashTimer = hitTimer = 0; activePose = -1; poseAge = 99; moveTargetX = 0; moveDirection = 0; touchPoint = null;
+    shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; fields.length = 0; effects.reset(); hands.clearEffects(); recoil = flashTimer = hitTimer = 0; activePose = -1; poseAge = 99; moveTargetX = 0; moveDirection = 0; touchPoint = null;
     camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }; opponent.group.position.copy(world.gate.position); opponent.group.rotation.set(0, 0, 0);
     $('score').textContent = '00'; $('roundText').textContent = 'Trận đấu ' + String(round).padStart(2, '0'); $('currentSeal').textContent = 'Sẵn sàng kết ấn';
     document.body.classList.add('playing'); document.body.classList.remove('paused');
@@ -793,7 +838,7 @@ async function main() {
     if (next) round++;
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
     started = false; paused = false; won = false; moveTargetX = 0; moveDirection = 0; aiSpell = null; enemyPose = -1; releaseAimLock();
-    shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; effects.reset(); hands.clearEffects(); player = new Fighter(); enemy = new Fighter(); activePose = -1;
+    shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; fields.length = 0; effects.reset(); hands.clearEffects(); player = new Fighter(); enemy = new Fighter(); activePose = -1;
     opponent.group.rotation.set(0, 0, 0); camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 };
     document.body.classList.remove('playing', 'paused'); ['pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden')); $('startScreen').classList.remove('hidden'); loadoutMessage = ''; renderLoadout();
   }
@@ -835,7 +880,7 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ cameraView: waveView ? 'wave-' + waveView.phase : meteorView ? 'meteor-' + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, introStage: s.introStage || null, visual: effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
+  const state = () => ({ lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, introStage: s.introStage || null, visual: effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
   window.__AN_HOA__ = { state };
   if (testMode) window.__AN_HOA__.launchEnemy = (id, pos = enemyPos(), dir = vnorm(vsub(camera.p, pos))) => {
     if (!started || paused || won) return;

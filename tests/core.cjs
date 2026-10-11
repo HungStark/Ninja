@@ -1,13 +1,13 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert/strict');
 const root = path.join(__dirname, '..'), context = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'game-core.js'), 'utf8'), context);
-const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout, intersectFireWall, intersectsWave, meteorTarget } = context.SealGameCore;
+const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = context.SealGameCore;
 assert.equal(new Set(keys).size, 12);
-assert.equal(elements.length, 9); assert.equal(spells.length, 47);
-assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 47);
+assert.equal(elements.length, 9); assert.equal(spells.length, 48);
+assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 48);
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
-  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
+  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water','lightning'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
 }
 for (const spell of spells) {
   const r = new GameRules([spell.id]); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
@@ -74,6 +74,24 @@ assert.equal(intersectsWave([8,2,-20],[8,2,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),
 assert.equal(intersectsWave([0,8,-20],[0,8,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),false,'Above wave crest');
 assert.equal(intersectsWave([0,2,3],[0,2,3],[0,0,0],[0,0,0],[0,0,-1],12,5,0,7),true,'Thick wave body sweeps a spell behind the crest');
 const trapped=new Fighter();trapped.controlTime=3;trapped.tick(1);assert.equal(trapped.controlTime,2);trapped.tick(4);assert.equal(trapped.controlTime,0);
+const lightning=spells.filter(s=>s.element==='lightning');
+assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[2,4,6,8]);
+assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,5]);
+assert.equal(lightning.find(s=>s.id==='lightning-volley').style,'bird');
+assert.equal(lightning.find(s=>s.style==='stormfield').duration,10);
+const field={owner:'player',p:[0,0,0],radius:9,height:8,life:10,slowFactor:.3};
+const step=(p,v,dt,owner='enemy',fields=[field])=>projectileTimeStep(p,v,dt,owner,fields);
+assert.ok(Math.abs(step([0,2,0],[0,0,20],.1).travelTime-.03)<1e-10);
+assert.ok(Math.abs(step([0,2,0],[0,0,20],1e-16).slowFactor-.3)<1e-10,'Tiny final frame retains the correct slow factor');
+assert.equal(step([0,2,0],[0,0,20],.1,'player').slowFactor,1,'Friendly outgoing shots keep full speed');
+assert.equal(step([0,9,0],[0,0,20],.1).slowFactor,1,'Shots above the field keep full speed');
+assert.equal(step([10,2,0],[0,0,20],.1).slowFactor,1,'Shots outside the radius keep full speed');
+assert.equal(step([0,2,0],[0,0,20],.1,'enemy',[{...field,life:0}]).slowFactor,1,'Expired field restores speed');
+assert.ok(Math.abs(step([0,2,-20],[0,0,40],1).travelTime-.4925)<1e-10,'Fast crossing shots cannot skip the field');
+assert.ok(Math.abs(step([0,2,8],[0,0,20],1).travelTime-(1-1/6+.05))<1e-10,'Exiting restores speed during the same frame');
+assert.ok(Math.abs(step([0,2,0],[0,0,20],.1,'enemy',[field,field]).slowFactor-.3)<1e-10,'Overlapping fields do not multiply the slow');
+let z=-20;for(let i=0;i<100;i++)z+=40*step([0,2,z],[0,0,40],.01).travelTime;
+assert.ok(Math.abs(z-(-20+40*step([0,2,-20],[0,0,40],1).travelTime))<1e-8,'Field traversal is independent of frame size');
 const binary = fs.readFileSync(path.join(root, "assets/ninja-hands.glb"));
 assert.equal(binary.readUInt32LE(0), 1179937895);
 assert.equal(binary.readUInt32LE(4), 2);
@@ -91,4 +109,4 @@ assert.equal(pkg.version, "0.3.0");
 const bundle = fs.readFileSync(path.join(root, "game.js"), "utf8");
 assert.ok(bundle.length > 5e5);
 assert.ok(!/<script[^>]+https?:/.test(fs.readFileSync(path.join(root, "index.html"), "utf8")));
-console.log("PASS: 9 elements; 47 unique spells; six fire and six water arts; exact seal counts; water control timer, circular shield and swept wave collision; short-to-long combos; loadouts, shields, reflection, chakra; offline bundle and GLB.");
+console.log("PASS: 9 elements; 48 unique spells; six fire, water and lightning arts; exact seal counts; swept field slowdown and speed restoration; water control, shields, wave collision; combos, loadouts, chakra; offline bundle and GLB.");
