@@ -59,6 +59,7 @@ export async function createHands() {
     sealPulse = 1;
     shadow.show(poseIndex);
     shadow.update(0, handCenter);
+    if(poseIndex===7)lastPose=-2; // Repeat F opens and bumps the fists together again.
   }
   function cast() {
     clearEffects();
@@ -100,7 +101,7 @@ export async function createHands() {
       for (const [f, name] of ["index", "middle", "ring", "little"].entries()) {
         const curl = pose ? pose.curl[f] : .06 + f * .02;
         for (let j = 0; j < 3; j++) {
-          tempE.set(-curl * (j === 0 ? 0.6 : 0.85), 0, j === 0 ? (f - 1.5) * (pose ? pose.spread : 0.06) : 0);
+          tempE.set(-curl * (pose?.curlJoints?.[j] ?? (j === 0 ? 0.6 : 0.85)), 0, j === 0 ? (f - 1.5) * (pose ? pose.spread : 0.06) : 0);
           tempQ.setFromEuler(tempE);
           const jointName = name + "_" + j;
           joints[jointName].quaternion.slerpQuaternions(hand.fromJoints[jointName], tempQ, close);

@@ -13,7 +13,7 @@ theo ảnh người dùng xác nhận. Hàng/cột bên dưới bắt đầu t�
 | A | Chụm ngang | 2 | 2 | Giữ nguyên |
 | S | Song chỉ | 2 | 3 | Giữ nguyên |
 | D | Xòe chéo — chim dang cánh | 4 | 4 | Giữ nguyên |
-| F | Khóa ngón | 3 | 2 | Giữ nguyên |
+| F | Đối quyền — hai nắm đấm chạm nhau | 3 | 2 | Giữ nguyên |
 | Z | Vòng cung | 3 | 3 | Giữ nguyên |
 | X | Chắp nghiêng | 3 | 4 | Giữ nguyên |
 | C | Mở lòng | 4 | 2 | Giữ nguyên |
