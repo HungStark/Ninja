@@ -1,12 +1,13 @@
 import * as T from 'three';
 import { SHADOW_SHEET } from '../assets/shadow-data.js';
 
-// Match the first four rows of ket_an.jpg to bong.png, not to its 4x4 order.
+// Match each pose to bong.png; D uses the spread-wing bird selected by the user.
 // Q W E / R A S / D F Z / X C V.
-export const sealShadowCells = [0, 1, 2, 4, 5, 6, 7, 9, 10, 11, 13, 8];
-// These two heads face the opposite way in the separated sheet.
-export const sealShadowFacing = [1, 1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1];
+export const sealShadowCells = [0, 1, 2, 4, 5, 6, 15, 9, 10, 11, 13, 8];
+// V faces the opposite way in the separated sheet.
+export const sealShadowFacing = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1];
 export const shadowDuration = .2;
+export const shadowOpacity = .55;
 const bounds = [
   [113, 21, 258, 237], [496, 23, 252, 241], [843, 58, 194, 212], [1135, 85, 323, 139],
   [128, 291, 245, 191], [490, 285, 267, 208], [812, 330, 295, 121], [1183, 297, 255, 196],
@@ -25,15 +26,15 @@ export async function createSealShadow(scene) {
   texture.minFilter = texture.magFilter = T.LinearFilter;
   texture.generateMipmaps = false;
   const material = new T.ShaderMaterial({
-    transparent: true, depthWrite: false, depthTest: false,
-    uniforms: { uMap: { value: texture }, uBounds: { value: new T.Vector4() }, uOpacity: { value: 1 } },
+    transparent: true, depthWrite: false, depthTest: true,
+    uniforms: { uMap: { value: texture }, uBounds: { value: new T.Vector4() }, uOpacity: { value: shadowOpacity } },
     vertexShader: 'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
     // The original white background and eye holes become transparent, preserving the black silhouette.
     fragmentShader: 'uniform sampler2D uMap;uniform vec4 uBounds;uniform float uOpacity;varying vec2 vUv;void main(){vec3 ink=texture2D(uMap,uBounds.xy+vUv*uBounds.zw).rgb;float alpha=(1.0-dot(ink,vec3(.299,.587,.114)))*uOpacity;if(alpha<.01)discard;gl_FragColor=vec4(vec3(.008,.006,.012),alpha);}'
   });
   const mesh = new T.Mesh(new T.PlaneGeometry(1, 1), material);
   mesh.name = 'SealShadow';
-  mesh.renderOrder = 20;
+  mesh.renderOrder = 0;
   mesh.visible = false;
   scene.add(mesh);
   let age = shadowDuration, cell = -1;
@@ -42,10 +43,11 @@ export async function createSealShadow(scene) {
     if (cell < 0) { clear(); return; }
     const [x, y, w, h] = bounds[cell], pad = 3;
     material.uniforms.uBounds.value.set((x - pad) / 1536, 1 - (y + h + pad) / 1024, (w + pad * 2) / 1536, (h + pad * 2) / 1024);
-    const size = .29 / Math.max(w, h);
+    // Compensate for the farther plane so the silhouette remains readable behind the hands.
+    const size = .4 / Math.max(w, h);
     mesh.scale.set(sealShadowFacing[pose] * (w + pad * 2) * size, (h + pad * 2) * size, 1);
     age = 0;
-    material.uniforms.uOpacity.value = 1;
+    material.uniforms.uOpacity.value = shadowOpacity;
     mesh.visible = true;
   }
   function clear() { age = shadowDuration; mesh.visible = false; }
@@ -53,8 +55,10 @@ export async function createSealShadow(scene) {
     age = Math.min(shadowDuration, age + dt);
     mesh.visible = cell >= 0 && age + 1e-9 < shadowDuration;
     mesh.position.copy(center);
-    mesh.position.z += .13;
-    material.uniforms.uOpacity.value = Math.min(1, Math.max(0, (shadowDuration - age) / .05));
+    mesh.position.y += .035;
+    // The hands write depth first, so the silhouette cannot paint over their skin or outlines.
+    mesh.position.z -= .18;
+    material.uniforms.uOpacity.value = shadowOpacity * Math.min(1, Math.max(0, (shadowDuration - age) / .05));
   }
   return { mesh, show, clear, update, state: () => ({ visible: mesh.visible, cell, age, position: mesh.position.toArray(), opacity: material.uniforms.uOpacity.value }) };
 }

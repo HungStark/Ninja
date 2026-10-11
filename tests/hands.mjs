@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHands } from "../src/hands.js";
-import { sealShadowCells, sealShadowFacing, shadowDuration } from '../src/hand-vfx.js';
+import { sealShadowCells, sealShadowFacing, shadowDuration, shadowOpacity } from '../src/hand-vfx.js';
 
 const hands = await createHands();
 const advance = (pose, frames) => {
@@ -20,7 +20,7 @@ advance(1, 1);
 assert.ok(before.distanceTo(hands.hands[0].wrapper.position) < 0.02, "Rapid changes must keep movement continuous");
 console.log("PASS: initial idle, separation, closing into D, interrupted transition continuity.");
 
-assert.deepEqual(sealShadowCells, [0, 1, 2, 4, 5, 6, 7, 9, 10, 11, 13, 8]);
+assert.deepEqual(sealShadowCells, [0, 1, 2, 4, 5, 6, 15, 9, 10, 11, 13, 8]);
 for (let pose = 0; pose < 12; pose++) {
   hands.seal(pose);
   assert.equal(hands.shadow.state().cell, sealShadowCells[pose]);
@@ -28,7 +28,9 @@ for (let pose = 0; pose < 12; pose++) {
   assert.equal(Math.sign(hands.shadow.mesh.scale.x), sealShadowFacing[pose]);
   hands.update(.15, 0, pose, false, false, 0, false);
   assert.equal(hands.shadow.mesh.visible, true);
-  assert.ok(hands.shadow.mesh.position.z > hands.hands[0].wrapper.position.z, 'Shadow sits in front of the hands');
+  assert.ok(hands.shadow.mesh.position.z < hands.hands[0].wrapper.position.z, 'Shadow sits behind the hands');
+  assert.equal(hands.shadow.mesh.material.depthTest, true, 'Hands occlude the shadow');
+  assert.ok(hands.shadow.state().opacity <= shadowOpacity && shadowOpacity < 1, 'Shadow stays translucent');
   hands.update(shadowDuration - .15, 0, pose, false, false, 0, false);
   assert.equal(hands.shadow.mesh.visible, false, 'Hide at exactly .2 seconds');
 }

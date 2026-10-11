@@ -1,7 +1,8 @@
 # Ghép bóng với kết ấn
 
 Đối chiếu 12 ấn đang dùng trong `ket_an.jpg` (3 cột, đọc từ trái sang phải)
-với ảnh `bong.png` (4 cột, đọc từ trái sang phải). Hàng/cột bên dưới bắt đầu từ 1.
+với ảnh `bong.png` (4 cột, đọc từ trái sang phải), riêng D dùng hình chim dang cánh
+theo ảnh người dùng xác nhận. Hàng/cột bên dưới bắt đầu từ 1.
 
 | Phím | Tên ấn | Hàng trong bong.png | Cột | Hướng |
 | --- | --- | --- | --- | --- |
@@ -11,7 +12,7 @@ với ảnh `bong.png` (4 cột, đọc từ trái sang phải). Hàng/cột bê
 | R | Móc tay | 2 | 1 | Giữ nguyên |
 | A | Chụm ngang | 2 | 2 | Giữ nguyên |
 | S | Song chỉ | 2 | 3 | Giữ nguyên |
-| D | Xòe chéo | 2 | 4 | Lật ngang để khớp ảnh gốc |
+| D | Xòe chéo — chim dang cánh | 4 | 4 | Giữ nguyên |
 | F | Khóa ngón | 3 | 2 | Giữ nguyên |
 | Z | Vòng cung | 3 | 3 | Giữ nguyên |
 | X | Chắp nghiêng | 3 | 4 | Giữ nguyên |

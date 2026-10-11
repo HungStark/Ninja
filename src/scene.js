@@ -7,7 +7,7 @@ const rand = () => {
 }, range = (a, b) => a + (b - a) * rand();
 export function createWorld() {
   const scene = new T.Scene();
-  scene.fog = new T.FogExp2("#b6d8de", 9e-3);
+  scene.fog = new T.FogExp2("#43536a", 9e-3);
   const animated = [], lanternLights = [];
   const mats = { stone: toon("#bdc7af"), darkStone: toon("#657c77"), wood: toon("#85664b"), red: toon("#c55c47"), roof: toon("#364f61"), gold: toon("#e5be79"), grass: toon("#8aaf71"), leaf: toon("#4c936b", { wind: true, side: T.DoubleSide }), pink: toon("#f2b5c8", { wind: true }), ground: toon("#89a67d") };
   const geos = { box: new T.BoxGeometry(1, 1, 1), sphere: new T.SphereGeometry(1, 16, 10), ico: new T.IcosahedronGeometry(1, 1), cylinder: new T.CylinderGeometry(1, 1, 1, 12), cone: new T.ConeGeometry(1, 1, 10) };
@@ -25,17 +25,17 @@ export function createWorld() {
     parent.add(g);
     return g;
   }
-  const sky = new T.Mesh(new T.SphereGeometry(180, 32, 20), new T.ShaderMaterial({ side: T.BackSide, depthWrite: false, uniforms: { top: { value: new T.Color("#66b4df") }, horizon: { value: new T.Color("#d8eadc") }, bottom: { value: new T.Color("#c4dccc") } }, vertexShader: "varying vec3 dir;void main(){dir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}", fragmentShader: "uniform vec3 top;uniform vec3 horizon;uniform vec3 bottom;varying vec3 dir;void main(){float h=normalize(dir).y;vec3 col=h>0.0?mix(horizon,top,smoothstep(0.0,.65,h)):mix(horizon,bottom,clamp(-h*3.0,0.0,1.0));gl_FragColor=vec4(col,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}" }));
+  const sky = new T.Mesh(new T.SphereGeometry(180, 32, 20), new T.ShaderMaterial({ side: T.BackSide, depthWrite: false, uniforms: { top: { value: new T.Color("#243b58") }, horizon: { value: new T.Color("#536375") }, bottom: { value: new T.Color("#364450") } }, vertexShader: "varying vec3 dir;void main(){dir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}", fragmentShader: "uniform vec3 top;uniform vec3 horizon;uniform vec3 bottom;varying vec3 dir;void main(){float h=normalize(dir).y;vec3 col=h>0.0?mix(horizon,top,smoothstep(0.0,.65,h)):mix(horizon,bottom,clamp(-h*3.0,0.0,1.0));gl_FragColor=vec4(col,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}" }));
   sky.renderOrder = -10;
   scene.add(sky);
   const glow = glowTexture();
-  const sunGlow = new T.Sprite(new T.SpriteMaterial({ map: glow, color: 16773072, transparent: true, opacity: 0.8, depthWrite: false, blending: T.AdditiveBlending }));
+  const sunGlow = new T.Sprite(new T.SpriteMaterial({ map: glow, color: 16773072, transparent: true, opacity: 0.18, depthWrite: false, blending: T.AdditiveBlending }));
   sunGlow.position.set(31, 28, -84);
   sunGlow.scale.set(35, 35, 1);
   scene.add(sunGlow);
-  const sunDisk = mesh("sphere", new T.MeshBasicMaterial({ color: 16772816 }), [31, 28, -85], [4.3, 4.3, 4.3]);
+  const sunDisk = mesh("sphere", new T.MeshBasicMaterial({ color: '#b2a389' }), [31, 28, -85], [4.3, 4.3, 4.3]);
   sunDisk.castShadow = false;
-  const cloudMat = toon("#fcf8e8", { transparent: true, opacity: 0.82, depthWrite: false, rim: 0 });
+  const cloudMat = toon("#9eacbd", { transparent: true, opacity: 0.60, depthWrite: false, rim: 0 });
   for (let i = 0; i < 12; i++) {
     const cloud = group([range(-85, 85), range(20, 38), range(-125, -50)]);
     for (let j = 0; j < 5; j++) {
@@ -44,8 +44,9 @@ export function createWorld() {
     }
     animated.push({ type: "cloud", object: cloud, origin: cloud.position.clone(), phase: range(0, 6) });
   }
-  scene.add(new T.HemisphereLight("#d9ecf7", "#6e7869", 1.1));
-  const sun = new T.DirectionalLight("#ffe1b0", 2.25);
+  // Dim the environment lights rather than the renderer exposure so spell brightness stays intact.
+  scene.add(new T.HemisphereLight("#aebfd8", "#4b535c", 0.38));
+  const sun = new T.DirectionalLight("#dbc4a9", 0.7);
   sun.position.set(-22, 34, -18);
   sun.target.position.set(0, 0, -10);
   scene.add(sun, sun.target);
@@ -55,7 +56,7 @@ export function createWorld() {
   sun.shadow.bias = -3e-4;
   sun.shadow.normalBias = 0.04;
   sun.shadow.radius = 3;
-  const fill = new T.DirectionalLight("#b5d8ef", 0.5);
+  const fill = new T.DirectionalLight("#9eb8d7", 0.16);
   fill.position.set(10, 10, 20);
   scene.add(fill);
   const groundTex = canvasTexture(512, (c, n) => {

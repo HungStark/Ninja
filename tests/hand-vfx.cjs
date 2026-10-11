@@ -21,7 +21,7 @@ const fs = require('node:fs/promises');
       for (const key of keys) await page.keyboard.press(key);
     };
     await click('startButton');
-    const keys = 'qwerasdfzxcv', cells = [0, 1, 2, 4, 5, 6, 7, 9, 10, 11, 13, 8];
+    const keys = 'qwerasdfzxcv', cells = [0, 1, 2, 4, 5, 6, 15, 9, 10, 11, 13, 8];
     for (let i = 0; i < keys.length; i++) {
       await clear(); await page.keyboard.press(keys[i]);
       assert.equal((await state()).sealShadow.visible, true);
