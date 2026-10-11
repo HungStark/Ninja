@@ -4,6 +4,7 @@ import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { HAND_GLB_BASE64 } from "../assets/hand-data.js";
 import { toon, outlineMaterial } from "./materials.js";
 import { poses } from "./poses.js";
+import { createSealShadow, createHandFire } from './hand-vfx.js';
 export async function createHands() {
   const bytes = Uint8Array.from(atob(HAND_GLB_BASE64), (c) => c.charCodeAt(0));
   const gltf = await new GLTFLoader().parseAsync(bytes.buffer, "");
@@ -49,10 +50,24 @@ export async function createHands() {
   const aura = new T.Mesh(new T.TorusGeometry(0.13, 18e-4, 6, 80), auraMat);
   aura.position.set(0, -0.2, -0.72);
   scene.add(aura);
-  function seal() {
+  const shadow = await createSealShadow(scene), handFire = createHandFire(scene);
+  const handCenter = new T.Vector3(0, -.2, -.7), palm = new T.Vector3();
+  let readyElement = '';
+  function setReady(element) {
+    readyElement = element || '';
+    handFire.setReady(readyElement === 'fire');
+    if (readyElement === 'fire') auraMat.opacity = 0;
+  }
+  function clearEffects() {
+    shadow.clear(); setReady(null); sealPulse = 0; auraMat.opacity = 0;
+  }
+  function seal(poseIndex) {
     sealPulse = 1;
+    shadow.show(poseIndex);
+    shadow.update(0, handCenter);
   }
   function cast() {
+    clearEffects();
     castAge = 0;
     sealPulse = 0.7;
   }
@@ -103,10 +118,21 @@ export async function createHands() {
         joints["thumb_" + j].quaternion.slerpQuaternions(hand.fromJoints["thumb_" + j], tempQ, close);
       }
     }
-    auraMat.opacity = T.MathUtils.damp(auraMat.opacity, ready ? 0.3 : sealPulse * 0.16, 7, dt);
+    handCenter.set(0, 0, 0);
+    for (const { wrapper } of hands) {
+      palm.set(0, .06, 0).applyQuaternion(wrapper.quaternion).add(wrapper.position);
+      handCenter.add(palm);
+    }
+    handCenter.multiplyScalar(.5);
+    shadow.update(dt, handCenter);
+    const fireReady = ready && readyElement === 'fire';
+    handFire.setReady(fireReady);
+    handFire.update(time, handCenter, Math.abs(hands[0].wrapper.position.x), reducedMotion);
+    aura.position.copy(handCenter);
+    auraMat.opacity = fireReady ? 0 : T.MathUtils.damp(auraMat.opacity, ready ? 0.3 : sealPulse * 0.16, 7, dt);
     aura.rotation.z = time * 0.65;
     aura.scale.setScalar(1 + Math.sin(time * 2) * 0.04);
     fireLight.intensity = T.MathUtils.damp(fireLight.intensity, fireIntensity * 2.6, 13, dt);
   }
-  return { scene, root, hands, gltf, update, seal, cast, fireLight };
+  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire };
 }

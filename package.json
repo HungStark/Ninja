@@ -15,7 +15,8 @@
     "test:controls": "node tests/controls.cjs",
     "test:ranks": "node tests/ranks.cjs",
     "test:incantation": "node tests/incantation.cjs",
-    "test:fire": "node tests/fire.cjs"
+    "test:fire": "node tests/fire.cjs",
+    "test:hand-vfx": "node tests/hand-vfx.cjs"
   },
   "dependencies": {
     "three": "0.186.1"
