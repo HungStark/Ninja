@@ -1,13 +1,13 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert/strict');
 const root = path.join(__dirname, '..'), context = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'game-core.js'), 'utf8'), context);
-const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout, intersectFireWall, meteorTarget } = context.SealGameCore;
+const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout, intersectFireWall, intersectsWave, meteorTarget } = context.SealGameCore;
 assert.equal(new Set(keys).size, 12);
-assert.equal(elements.length, 9); assert.equal(spells.length, 46);
-assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 46);
+assert.equal(elements.length, 9); assert.equal(spells.length, 47);
+assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 47);
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
-  assert.equal(list.filter(s=>s.kind==='attack').length,element.id==='fire'?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
+  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
 }
 for (const spell of spells) {
   const r = new GameRules([spell.id]); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
@@ -18,8 +18,8 @@ for (const spell of spells) {
 assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort(),[2,3,4,5,6,8]);
 for(const element of elements){
  const list=spells.filter(s=>s.element===element.id), attack=list.filter(s=>s.kind==='attack').sort((a,b)=>a.sequence.length-b.sequence.length);
- for(let i=1;i<attack.length;i++){assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);assert.ok(attack[i].cost>attack[i-1].cost);}
- const volley=list.find(s=>s.style==='volley'), orb=list.find(s=>s.style==='orb'), chain=new GameRules([orb.id,volley.id]);
+ for(let i=1;i<attack.length;i++){if(element.id!=='water')assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);assert.ok(attack[i].cost>attack[i-1].cost);}
+ const volley=attack.at(-1), orb=list.find(s=>s.style==='orb'), chain=new GameRules([orb.id,volley.id]);
  volley.sequence.slice(0,2).forEach(k=>chain.seal(k));assert.equal(chain.ready().id,orb.id);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);
  volley.sequence.slice(2,-1).forEach(k=>chain.seal(k));assert.equal(chain.ready(),undefined);assert.equal(chain.cast().reason,'sequence');
  chain.seal(volley.sequence.at(-1));assert.equal(chain.cast().spell.id,volley.id);
@@ -58,6 +58,20 @@ assert.equal(intersectFireWall([0,1.7,-3],[0,1.7,-1],wall),null);
 assert.ok(intersectFireWall([-3,1,0],[3,1,0],{...wall,normal:[1,0,0]}),'Wall rotates with aim');
 assert.deepEqual(Array.from(meteorTarget([0,1.72,7],[0,0,-1])),[0,.08,-24]);
 const downward=meteorTarget([0,1.72,7],[0,-.1,-.995]);assert.ok(downward[2]>-11&&downward[2]<-10);
+const water = spells.filter(s=>s.element==='water');
+assert.deepEqual(Array.from(water.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[2,5,6,8]);
+assert.deepEqual(Array.from(water.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,4]);
+assert.equal(water.find(s=>s.style==='prison').controlDuration,3);
+assert.ok(water.find(s=>s.style==='tsunami').damage < water.find(s=>s.style==='orb').damage);
+assert.equal(water.find(s=>s.id==='water-reflect').style,'waterwall');
+const disc={p:[0,1.72,0],normal:[0,0,-1],radius:2.2};
+assert.ok(intersectFireWall([0,1.72,-4],[0,1.72,4],disc));
+assert.equal(intersectFireWall([2,3.72,-4],[2,3.72,4],disc),null,'Outside circular edge even within bounding square');
+assert.equal(intersectFireWall([3,1.72,-4],[3,1.72,4],disc),null);
+assert.equal(intersectsWave([0,2,-20],[0,2,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),true,'Fast crossing projectile is swept');
+assert.equal(intersectsWave([8,2,-20],[8,2,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),false,'Outside wave width');
+assert.equal(intersectsWave([0,8,-20],[0,8,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),false,'Above wave crest');
+const trapped=new Fighter();trapped.controlTime=3;trapped.tick(1);assert.equal(trapped.controlTime,2);trapped.tick(4);assert.equal(trapped.controlTime,0);
 const binary = fs.readFileSync(path.join(root, "assets/ninja-hands.glb"));
 assert.equal(binary.readUInt32LE(0), 1179937895);
 assert.equal(binary.readUInt32LE(4), 2);
@@ -75,4 +89,4 @@ assert.equal(pkg.version, "0.3.0");
 const bundle = fs.readFileSync(path.join(root, "game.js"), "utf8");
 assert.ok(bundle.length > 5e5);
 assert.ok(!/<script[^>]+https?:/.test(fs.readFileSync(path.join(root, "index.html"), "utf8")));
-console.log("PASS: 9 elements; 46 unique spells; six fire arts with 2/4/6/8 attack seals and 3/5 defense seals; total attack power progression; short-to-long combos; five-spell loadout; swept fire-wall collision and meteor targeting; shields/reflection/healing; cooldown and chakra; offline bundle and GLB.");
+console.log("PASS: 9 elements; 47 unique spells; six fire and six water arts; exact seal counts; water control timer, circular shield and swept wave collision; short-to-long combos; loadouts, shields, reflection, chakra; offline bundle and GLB.");

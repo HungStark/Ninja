@@ -10,7 +10,7 @@ import { sealNames as names } from "./poses.js";
 import { createOpponent } from "./opponent.js";
 import { CameraImpacts } from './camera-impact.js';
 async function main() {
-  const $ = id => document.getElementById(id), { keys, spells, elements, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, meteorTarget } = globalThis.SealGameCore;
+  const $ = id => document.getElementById(id), { keys, spells, elements, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget } = globalThis.SealGameCore;
   let rules = new GameRules(), player = new Fighter(), enemy = new Fighter(), aiRules = new GameRules();
   const testMode = new URLSearchParams(location.search).get("test") === "1";
   const canvas = $("world");
@@ -109,7 +109,7 @@ async function main() {
   function spellMarkup(spell, i, preparation = false) {
     if (!preparation) return '<button class="spell ' + (i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-spell="' + i + '"><div class="spell-title">' + spell.name + '</div><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></button>';
     const taken = loadout.includes(spell.id), kind = spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : spell.style === 'firewall' ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
+    const stats = spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spell.glyph + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · CẤP ' + spell.rank + ' · ' + spell.sequence.length + ' ẤN · ' + spell.cost + ' CH</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -165,7 +165,7 @@ async function main() {
     $('comboSlots').innerHTML = spell.sequence.map((k, i) => '<span class="combo-slot ' + (seq[i] === k ? 'done' : seq.length === i ? 'next' : '') + '">' + k.toUpperCase() + '</span>').join('');
     const ready = rules.ready();
     $('comboLabel').textContent = ready?.id === spell.id ? 'ẤN HOÀN CHỈNH · ' + spell.name.toUpperCase() : spell.name.toUpperCase() + ' / ' + seq.length + ' / ' + spell.sequence.length + ' ẤN';
-    $('castButton').disabled = !started || paused || won || !ready || rules.cooldown > 0 || rules.chakra < (ready?.cost || spell.cost);
+    $('castButton').disabled = !started || paused || won || player.controlTime > 0 || !ready || rules.cooldown > 0 || rules.chakra < (ready?.cost || spell.cost);
     // The ready flames follow exactly the same gate as the Space button.
     hands.setReady($('castButton').disabled ? null : ready.element);
     document.querySelectorAll('.seal').forEach(el => { el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
@@ -205,7 +205,7 @@ async function main() {
     src.start();
   }
   function seal(key) {
-    if (!started || paused || won) return;
+    if (!started || paused || won || player.controlTime > 0) return;
     const result = rules.seal(key); activePose = keys.indexOf(key); hands.seal(activePose); poseAge = 0;
     $('currentSeal').textContent = key.toUpperCase() + ' / Ấn ' + String(activePose + 1).padStart(2, '0') + ' · ' + names[activePose];
     tone(290 + activePose * 28, .09, 'triangle');
@@ -225,15 +225,31 @@ async function main() {
   function launch(spell, owner, pos, dir) {
     if (spell.kind === 'defense') {
       if (owner === 'player') cameraImpacts.trigger('defense');
-      if (spell.style === 'firewall') {
+      if (['firewall', 'waterwall'].includes(spell.style)) {
         const normal = vnorm([dir[0], 0, dir[2]]);
         // Casting another wall replaces this owner's previous wall.
         for (let i = walls.length - 1; i >= 0; i--) if (walls[i].owner === owner) walls.splice(i, 1);
-        const p = vadd(pos, vmul(normal, 3)); p[1] = 0;
-        walls.push({ owner, p, normal, width: spell.wallWidth, height: spell.wallHeight, hp: spell.shield, life: spell.duration });
+        const p = vadd(pos, vmul(normal, 3)); p[1] = spell.style === 'waterwall' ? pos[1] : 0;
+        walls.push({ owner, element: spell.element, p, normal, radius: spell.wallRadius, width: spell.wallWidth, height: spell.wallHeight, hp: spell.shield, life: spell.duration });
         burst([p[0], .15, p[2]], 24, 1.5, spell.color); return;
       }
       (owner === 'player' ? player : enemy).defend(spell); burst(pos, 20, .9, spell.color); return;
+    }
+    if (spell.style === 'boat') {
+      const target = volleyTarget(owner, pos, dir), p = vadd(pos, vmul(dir, 3.5));
+      const travelTime = Math.max(.2, vlen(vsub(target, p)) / spell.speed);
+      shots.push({ p, old: [...p], origin: [...p], target, v: vmul(vsub(target, p), 1 / travelTime), travelTime,
+        size: spell.size, damage: spell.damage, blastRadius: spell.blastRadius, style: spell.style, element: spell.element,
+        color: spell.color, owner, unreflectable: true, reflected: false, life: travelTime + .1, trail: 0, age: 0 });
+      if (owner === 'player') cameraImpacts.trigger('orb', 1.3);
+      return;
+    }
+    if (spell.style === 'tsunami') {
+      const normal = vnorm([dir[0], 0, dir[2]]), p = vadd(pos, vmul(normal, 3)); p[1] = 0;
+      shots.push({ p, old: [...p], v: vmul(normal, spell.speed), normal, width: spell.waveWidth, height: spell.waveHeight,
+        size: spell.size, damage: spell.damage, style: spell.style, element: spell.element, color: spell.color,
+        owner, unreflectable: true, reflected: false, life: 5, trail: 0, age: 0, carried: [] });
+      return;
     }
     if (spell.style === 'meteor') {
       const target = meteorTarget(pos, dir), skyStart = [target[0] + 38, 65, target[2] + 7];
@@ -276,7 +292,7 @@ async function main() {
       const spread = (i - (spell.count - 1) / 2) * .12;
       const d = vnorm(vadd(dir, vmul(right, spread)));
       const p = vadd(pos, vmul(d, .85));
-      shots.push({ p, old: [...p], v: vmul(d, spell.speed), size: spell.size, damage: spell.damage, style: spell.style, element: spell.element, color: spell.color, owner, reflected: false, life: 4, trail: 0, age: 0 });
+      shots.push({ p, old: [...p], v: vmul(d, spell.speed), size: spell.size, damage: spell.damage, controlDuration: spell.controlDuration, style: spell.style, element: spell.element, color: spell.color, owner, reflected: false, life: 4, trail: 0, age: 0 });
     }
   }
   function volleyTarget(owner, pos, dir) {
@@ -299,6 +315,7 @@ async function main() {
   }
   function cast() {
     if (!started || paused || won) return;
+    if (player.controlTime > 0) { announce('Đang bị giam trong Thủy ngục!', true); return; }
     const result = rules.cast();
     if (!result.ok) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
     const spell = result.spell;
@@ -364,6 +381,15 @@ async function main() {
       shot.v = vmul(d, vlen(shot.v)); shot.p = vadd(pos, vmul(d, .9)); shot.old = [...shot.p]; shot.life = 4;
       announce('Phản đòn!'); return false;
     }
+    if (shot.style === 'prison' && result.damage > 0) {
+      fighter.controlTime = shot.controlDuration;
+      if (shot.owner === 'player') {
+        aiRules.clear(); aiSpell = null; aiStep = 0; enemyPose = -1;
+        $('enemyAction').textContent = 'Thủy ngục · bị giam 3 giây';
+      } else {
+        rules.clear(); activePose = -1; hands.clearEffects(); moveTargetX = camera.p[0]; moveDirection = 0;
+      }
+    }
     if (cleanVolleyHit) {
       for (let i = particles.length - 1; i >= 0; i--) if (particles[i].source === shot) particles.splice(i, 1);
     } else if (shot.element === 'fire' && shot.style !== 'meteor') effects.arts.blast(pos, shot.style);
@@ -391,9 +417,52 @@ async function main() {
   }
   function updateShots(dt) {
     for (let i = walls.length - 1; i >= 0; i--) { walls[i].life -= dt; if (walls[i].life <= 0 || walls[i].hp <= 0) walls.splice(i, 1); }
+    const swept = new Set();
+    for (const wave of shots.filter(s => s.style === 'tsunami')) {
+      if (swept.has(wave)) continue;
+      const end = vadd(wave.p, vmul(wave.v, dt));
+      for (const other of shots) {
+        if (other === wave || swept.has(other)) continue;
+        const otherEnd = ['forming', 'staged'].includes(other.phase) ? other.p : vadd(other.p, vmul(other.v, dt));
+        if (intersectsWave(other.p, otherEnd, wave.p, end, wave.normal, wave.width, wave.height, other.size)) {
+          swept.add(other); wave.carried.push({ color: other.color, style: other.style, owner: other.owner, element: other.element });
+          if (wave.carried.length > 24) wave.carried.shift();
+        }
+      }
+      for (const wall of walls) {
+        const across = [-wall.normal[2], 0, wall.normal[0]], radius = wall.radius || wall.width / 2;
+        const left = vadd(wall.p, vmul(across, -radius)), right = vadd(wall.p, vmul(across, radius));
+        if (intersectsWave(left, right, wave.p, end, wave.normal, wave.width, wave.height)) wall.hp = 0;
+      }
+    }
     for (let i = shots.length - 1; i >= 0; i--) {
       const shot = shots[i]; shot.old = [...shot.p];
+      if (swept.has(shot)) { shots.splice(i, 1); continue; }
       let flightDt = dt;
+      if (shot.style === 'tsunami') {
+        shot.p = vadd(shot.p, vmul(shot.v, dt)); shot.age += dt; shot.life -= dt;
+        const target = shot.owner === 'enemy' ? camera.p : enemyPos();
+        if (!shot.hitTarget && intersectsWave(target, target, shot.old, shot.p, shot.normal, shot.width, shot.height, .54)) {
+          shot.hitTarget = true; impact(shot, target);
+        }
+        if (shot.life <= 0 || Math.abs(shot.p[0]) > 65 || Math.abs(shot.p[2]) > 65) shots.splice(i, 1);
+        if (won) break;
+        continue;
+      }
+      if (shot.style === 'boat') {
+        shot.age = Math.min(shot.travelTime, shot.age + dt);
+        shot.p = vadd(shot.origin, vmul(shot.v, shot.age));
+        const wall = walls.find(w => w.hp > 0 && w.owner !== shot.owner && intersectFireWall(shot.old, shot.p, w));
+        if (wall) { wall.hp = Math.max(0, wall.hp - shot.damage); burst(shot.p, 24, 2, shot.color); shots.splice(i, 1); continue; }
+        if (shot.age + 1e-6 >= shot.travelTime) {
+          burst(shot.target, 36, 3, shot.color);
+          const target = shot.owner === 'enemy' ? camera.p : enemyPos();
+          if (vlen(vsub(target, shot.target)) <= shot.blastRadius) impact(shot, shot.target);
+          shots.splice(i, 1);
+        }
+        if (won) break;
+        continue;
+      }
       if (shot.style === 'meteor') {
         // One fixed velocity from first appearance to impact: no bend or pause at a camera transition.
         shot.age = Math.min(shot.totalTime, shot.age + dt);
@@ -430,8 +499,9 @@ async function main() {
       const wall = walls.find(w => w.hp > 0 && w.owner !== shot.owner && intersectFireWall(shot.old, shot.p, w));
       if (wall) {
         const point = intersectFireWall(shot.old, shot.p, wall); wall.hp = Math.max(0, wall.hp - shot.damage);
-        burst(point, 15, 1.6, '#ffc45e'); effects.arts.blast(point, 'orb'); shots.splice(i, 1);
-        if (wall.owner === 'player') announce('Tường lửa đã chặn đạn!');
+        burst(point, 15, 1.6, wall.element === 'water' ? '#50baff' : '#ffc45e');
+        if (wall.element !== 'water') effects.arts.blast(point, 'orb'); shots.splice(i, 1);
+        if (wall.owner === 'player') announce(wall.element === 'water' ? 'Thủy thuẫn đã chặn chiêu!' : 'Tường lửa đã chặn đạn!');
         if (wall.owner === 'player') cameraImpacts.trigger('block', .8);
         continue;
       }
@@ -454,7 +524,9 @@ async function main() {
     }
   }
   function updateAI(dt) {
-    aiRules.tick(dt); aiTimer -= dt; aiCastAge += dt;
+    aiRules.tick(dt); aiCastAge += dt;
+    if (enemy.controlTime > 0) { $('enemyAction').textContent = 'Thủy ngục · ' + enemy.controlTime.toFixed(1) + 's'; return; }
+    aiTimer -= dt;
     if (aiTimer > 0) return;
     if (!aiSpell) {
       const incoming = shots.some(s => s.owner === 'player' && vlen(vsub(s.p, enemyPos())) < 11);
@@ -484,7 +556,7 @@ async function main() {
       if (rules.tick(dt)) announce('Chuỗi ấn hết hạn — kết lại từ đầu.', true);
       player.tick(dt); enemy.tick(dt);
       const remaining = moveTargetX - camera.p[0];
-      moveDirection = Math.abs(remaining) > .001 ? Math.sign(remaining) : 0;
+      moveDirection = player.controlTime <= 0 && Math.abs(remaining) > .001 ? Math.sign(remaining) : 0;
       camera.p[0] += moveDirection * Math.min(Math.abs(remaining), 10 * dt);
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
       updateAI(dt); updateShots(dt);
@@ -501,17 +573,17 @@ async function main() {
     $('chakraNumber').textContent = Math.floor(rules.chakra) + ' / 100'; $('chakraFill').style.width = rules.chakra + '%'; $('castCount').textContent = rules.casts + ' thuật';
     $('healthNumber').textContent = Math.ceil(player.hp) + ' / ' + player.maxHp; $('healthFill').style.width = player.hp / player.maxHp * 100 + '%';
     const playerWall = walls.find(w => w.owner === 'player' && w.hp > 0), shieldLabel = player.shieldTime > 0 && (player.shield || player.reflect) ? 'Khiên ' + player.shield + (player.reflect ? ' · phản đòn' : '') : '';
-    $('shieldStatus').textContent = [shieldLabel, playerWall ? 'Tường ' + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
+    $('shieldStatus').textContent = [player.controlTime > 0 ? 'Thủy ngục ' + player.controlTime.toFixed(1) + 's' : '', shieldLabel, playerWall ? (playerWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường ') + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
     $('enemyHP').style.width = enemy.hp / enemy.maxHp * 100 + '%'; $('enemyHealth').textContent = Math.ceil(enemy.hp) + ' / ' + enemy.maxHp;
     const enemyWall = walls.find(w => w.owner === 'enemy' && w.hp > 0);
-    $('enemyChakra').textContent = Math.floor(aiRules.chakra) + ' CH'; $('enemyShield').textContent = [enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '', enemyWall ? 'Tường lửa ' + enemyWall.hp : ''].filter(Boolean).join(' · ');
+    $('enemyChakra').textContent = Math.floor(aiRules.chakra) + ' CH'; $('enemyShield').textContent = [enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '', enemyWall ? (enemyWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường lửa ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
     $('battleClock').textContent = Math.floor(battleTime / 60).toString().padStart(2, '0') + ':' + Math.floor(battleTime % 60).toString().padStart(2, '0');
     $('moveHint').textContent = moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'CHUỘT TRÁI: NÉ TRÁI · CHUỘT PHẢI: NÉ PHẢI';
     $('flash').style.opacity = flashTimer * .32; $('hitMarker').style.opacity = hitTimer > 0 ? 1 : 0;
     const delta = vsub(enemyPos(), camera.p), d = aim(), onTarget = vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7;
     $('reticle').classList.toggle('on-target', onTarget && enemy.hp > 0);
     $('targetInfo').style.opacity = onTarget && running ? 1 : 0; $('targetName').textContent = 'ĐỐI THỦ'; $('targetHP').style.width = enemy.hp / enemy.maxHp * 100 + '%';
-    playerShield.visible = player.defenseElement !== 'fire' && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45, camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
+    playerShield.visible = !['fire', 'water'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45, camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
     document.body.classList.toggle('dragon-active', started && !won && (!!dragonView || shots.some(s => s.owner === 'player' && s.phase === 'forming')));
     camera3d.position.fromArray(camera.p); camera3d.rotation.set(camera.pitch, camera.yaw, 0, 'YXZ');
     updateDragonView(running ? dt : 0);
@@ -636,6 +708,7 @@ async function main() {
     if (document.pointerLockElement === canvas) document.exitPointerLock?.();
   }
   function sidestep(direction) {
+    if (player.controlTime > 0) return;
     moveTargetX = clamp(moveTargetX + direction * 1.8, -6, 6);
   }
   function look(dx, dy) {
@@ -714,8 +787,13 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ cameraView: meteorView ? 'meteor-' + meteorView.phase : dragonView?.phase || 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
+  const state = () => ({ cameraView: meteorView ? 'meteor-' + meteorView.phase : dragonView?.phase || 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
   window.__AN_HOA__ = { state };
+  if (testMode) window.__AN_HOA__.launchEnemy = (id, pos = enemyPos(), dir = vnorm(vsub(camera.p, pos))) => {
+    if (!started || paused || won) return;
+    const spell = spells.find(s => s.id === id); if (!spell) throw new Error('Unknown spell');
+    launch(spell, 'enemy', pos, dir);
+  };
   if (testMode) window.__AN_HOA__.advance = seconds => { for (let t = 0; t < seconds; t += 1 / 60) tick(Math.min(1 / 60, seconds - t)); render(); };
   renderLoadout(); renderGuide(); updateUI(); $('loading').classList.add('hidden'); document.body.dataset.ready = 'true'; tick(.016); render(); if (!testMode) requestAnimationFrame(frame);
 }

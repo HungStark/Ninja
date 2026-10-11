@@ -10,7 +10,7 @@ Nếu có Node.js, chạy **npm start** rồi mở http://127.0.0.1:4173.
 
 ## Quyển trục trước trận
 
-Có **9 hệ, 46 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa có 4 chiêu công, 2 chiêu thủ; các hệ còn lại có 3 công, 2 thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ; có thể thay một chiêu công bằng Hỏa cầu.
+Có **9 hệ, 47 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa và Thủy có 4 chiêu công, 2 chiêu thủ; các hệ còn lại có 3 công, 2 thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ; có thể thay một chiêu công bằng Hỏa cầu.
 
 - Mang **từ 1 đến tối đa 5 chiêu**, tối đa 3 chiêu mỗi loại.
 - Khi mang đủ 5: **3 công + 2 thủ** hoặc **2 công + 3 thủ**.
@@ -43,6 +43,19 @@ Tường đứng yên khi người chơi né, chặn đạn đối phương đi 
 
 Camera giật nhẹ và zoom out khi phóng hỏa cầu/liên đạn; zoom in lúc tích lực rồng rồi giật khi phóng và trúng mục tiêu. Thiên thạch chạm đất gây rung và zoom out theo khoảng cách tới vụ nổ. Khiên, tường, phản đòn và trúng đạn có nhịp rung riêng; hướng ngắm được giữ nguyên. Hiệu ứng dừng khi tạm dừng, được xóa khi bắt đầu lại và tắt rung/zoom nếu trình duyệt yêu cầu giảm chuyển động.
 
+Hệ Thủy có sáu chiêu riêng:
+
+| Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
+| --- | --- | --- | --- | --- |
+| Thủy đạn | 2 | W E | 28 | Ném cầu nước, 38 sát thương |
+| Thủy ngục | 5 | W E Z X C | 38 | 12 sát thương; khi xuyên khiên, giam đối thủ trong cầu nước 3 giây, ngắt chuỗi ấn và khóa di chuyển/thi triển |
+| Ném thuyền | 6 | W E C V Z X | 56 | Triệu hồi thuyền hải tặc và ném theo đường thẳng tới điểm ngắm đã chọn; 90 sát thương trong bán kính 3,5 m |
+| Sóng thần | 8 | W E C V Z X E R | 72 | Sóng rộng 12 m, cao 5 m tiến trên mặt đất, cuốn đạn và mặt chắn của cả hai bên; gây 30 sát thương một lần cho đối thủ |
+| Khiên nước | 3 | W E A | 26 | Bao quanh bản thân, hấp thụ 65 sát thương trong 4,5 giây |
+| Thủy thuẫn | 4 | W E D F | 32 | Mặt chắn nước hình tròn bán kính 2,2 m, dựng cách 3 m phía trước; 95 độ bền, tồn tại 5 giây |
+
+Thủy thuẫn đứng tại vị trí thi triển, chặn chiêu bay qua mặt chắn, không phản đòn và có thể tồn tại cùng khiên bao thân. Sóng thần cuốn chiêu khi chúng thực sự đi qua thể tích sóng; chiêu bay cao hơn hoặc ngoài bề rộng sóng vẫn đi tiếp. Thuyền và sóng thần không bị phản đòn. Giữ các ID Thủy cũ để bộ chiêu đã lưu vẫn dùng được. Thủy ngục và sóng cùng khiên đều dừng thời gian khi tạm dừng, được xóa khi đấu lại.
+
 Các hệ còn lại dùng bảng cấp sau:
 
 | Cấp | Số ấn | Loại chiêu | Cách hoạt động |
@@ -55,7 +68,7 @@ Các hệ còn lại dùng bảng cấp sau:
 
 Chuỗi của mỗi hệ bắt đầu bằng hai ấn nhận diện hệ. Sau hai ấn có thể nhấn Space để dùng chiêu cơ bản, hoặc tiếp tục kết ấn để hoàn thành chiêu mạnh hơn; game không tự tung chiêu. Khi đang xem chiêu dài, quyển trục giữ công thức đó để theo dõi tiến trình. Rồng lửa có thể nối thêm **E R** thành Thiên thạch nếu mang cả hai chiêu.
 
-Chiêu thủ của Mộc và Quang còn hồi 12 sinh lực, không vượt máu tối đa. Thi triển phòng ngự mới thay thế khiên cũ. Đạn đã phản không được phản tiếp để tránh vòng lặp. Mỗi đạn có màu, ánh sáng và vệt theo hệ.
+Chiêu thủ của Mộc và Quang còn hồi 12 sinh lực, không vượt máu tối đa. Thi triển khiên bao thân mới thay thế khiên cũ. Đạn đã phản không được phản tiếp để tránh vòng lặp. Mỗi đạn có màu, ánh sáng và vệt theo hệ.
 
 Hai bên có **220 sinh lực** và **100 chakra**. Chakra hồi 11 mỗi giây, cách hai lần thi triển ít nhất 1 giây. Kết đủ chuỗi 2–8 ấn của chiêu theo quyển trục rồi nhấn Space. Cấp và số ấn được ghi trên từng thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
 
@@ -95,10 +108,11 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 
 - **npm run build:** bundle src/main.js thành game.js để chơi trực tiếp ngoại tuyến.
 - **npm run assets:** xuất lại model tay GLB và dữ liệu nhúng.
-- **npm test:** luật 46 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khiên/phản đòn/hồi máu, va chạm tường và vị trí thiên thạch, GLB, animation và máy chủ.
+- **npm test:** luật 47 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khiên/phản đòn/hồi máu, va chạm tường và vị trí thiên thạch, GLB, animation và máy chủ.
 - **npm run test:browser:** Edge headless, WebGL 2/SwiftShader; kiểm tra chọn chiêu, 12 thế tay, di chuyển chuột, máy kết ấn, sát thương, khiên, phản đòn, thắng/thua, tạm dừng, chọn lại và giao diện nhỏ.
 - **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
 - **npm run test:fire:** kiểm tra sáu chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
+- **npm run test:water:** kiểm tra sáu chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
 - **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, cú trúng không để lại lửa, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
 - **npm run test:incantation:** kiểm tra đọc tên đồng thời tung chiêu công/thủ, trừ chakra ngay, hồi chiêu, nhập chuỗi tiếp khi đang đọc, tạm dừng/hủy giọng đọc, lỗi giọng nói, hiện đủ 5 chiêu ở 8 kích thước màn hình và ẩn banner hình ấn.
 - **npm run test:controls:** kiểm tra khóa con trỏ, hướng bắn trùng tâm ngắm, click trái/phải độc lập vị trí chuột, giữ nút không đi tiếp và giới hạn sân đấu.
@@ -111,12 +125,13 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 
 ## Cấu trúc
 
-- **game-core.js:** 9 hệ, 46 chiêu, kiểm tra bộ chiêu, luật kết ấn/chakra, sinh lực/khiên/phản đòn, va chạm tường và chọn vùng thiên thạch.
+- **game-core.js:** 9 hệ, 47 chiêu, kiểm tra bộ chiêu, luật kết ấn/chakra, sinh lực/khiên/phản đòn, va chạm tường và chọn vùng thiên thạch.
 - **src/main.js:** quyển trục, HUD, điều khiển chuột, AI, va chạm và vòng trận đấu.
 - **src/opponent.js:** nhân vật ninja, tay kết ấn có khớp, tay áo đi theo cổ tay, khiên máy.
 - **src/scene.js:** môi trường anime, toon shading, ánh sáng, bóng, gió, cây hoa và cánh hoa.
 - **src/effects.js:** đạn theo màu hệ, ánh sáng, vệt, khói và vòng va chạm.
 - **src/fire-arts.js:** shader lửa, rồng có thân uốn lượn, thiên thạch, dấu báo vùng rơi, vòm khiên, tường lửa và vụ nổ.
+- **src/water-arts.js:** mặt nước, cầu giam giữ, thuyền hải tặc, sóng cuốn chiêu và hai kiểu khiên nước.
 - **src/hands.js / hand-model.js / poses.js:** model tay, rig và 12 thế kết ấn.
 - **assets/ninja-hands.glb / hand-data.js:** model chỉnh sửa được và dữ liệu nhúng ngoại tuyến.
 

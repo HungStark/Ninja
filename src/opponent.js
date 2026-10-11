@@ -47,7 +47,7 @@ export async function createOpponent(scene, spawnPosition) {
       segment(a.upper, shoulder, elbow); segment(a.lower, elbow, wrist);
     }
     aura.visible = pose >= 0 && fighter.hp > 0; aura.rotation.z = time * 2;
-    shield.visible = fighter.defenseElement !== 'fire' && fighter.shieldTime > 0 && (fighter.shield > 0 || fighter.reflect > 0); shield.material.color.set(fighter.color); shield.rotation.y = time * .4;
+    shield.visible = !['fire', 'water'].includes(fighter.defenseElement) && fighter.shieldTime > 0 && (fighter.shield > 0 || fighter.reflect > 0); shield.material.color.set(fighter.color); shield.rotation.y = time * .4;
   }
   return { group, rig, update, shield, aura };
 }

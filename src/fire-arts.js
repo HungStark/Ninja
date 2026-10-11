@@ -464,7 +464,7 @@ export class FireArts {
       }
       if (art.cloud) this.updateMeteorCloud(art.cloud, shot, quality);
     }
-    const liveWalls = new Set(walls.filter(w => w.life > 0 && w.hp > 0));
+    const liveWalls = new Set(walls.filter(w => w.element !== 'water' && w.life > 0 && w.hp > 0));
     for (const [wall, g] of this.walls) if (!liveWalls.has(wall)) { this.disposeGroup(g); this.walls.delete(wall); }
     for (const wall of liveWalls) {
       if (!this.walls.has(wall)) this.walls.set(wall, this.wall(wall));

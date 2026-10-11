@@ -1,6 +1,7 @@
 import * as T from "three";
 import { glowTexture, smokeTexture } from "./materials.js";
 import { FireArts } from './fire-arts.js';
+import { WaterArts } from './water-arts.js';
 export class FireEffects {
   constructor(scene) {
     this.scene = scene;
@@ -10,6 +11,7 @@ export class FireEffects {
     this.objects = [];
     this.glow = glowTexture();
     this.arts = new FireArts(scene, this.glow);
+    this.waterArts = new WaterArts(scene);
     this.smokeMap = smokeTexture();
     this.lights = [];
     for (let i = 0; i < 3; i++) {
@@ -72,7 +74,7 @@ export class FireEffects {
     while (this.objects.length < shots.length) this.makeShot();
     for (let i = 0; i < this.objects.length; i++) {
       const g = this.objects[i], shot = shots[i];
-      g.visible = !!shot && shot.element !== 'fire';
+      g.visible = !!shot && !['fire', 'water'].includes(shot.element);
       if (!g.visible) continue;
       g.children[0].material.uniforms.uTime.value = time;
       g.children[0].material.uniforms.uColor.value.set(shot.color || '#ff844b');
@@ -133,9 +135,11 @@ export class FireEffects {
       }
     }
     this.arts.update(dt, time, shots, walls, fighters, quality);
+    this.waterArts.update(dt, time, shots, walls, fighters);
   }
   reset() {
     this.arts.reset();
+    this.waterArts.reset();
     this.objects.forEach((o) => o.visible = false);
     this.smoke.length = 0;
     this.rings.forEach((r) => {

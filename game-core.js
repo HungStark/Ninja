@@ -13,7 +13,6 @@
     { id: 'ice', name: 'Băng', glyph: '氷', color: '#a6edff', prefix: 'zx', speed: 21, power: 1.04 }
   ];
   const titles = {
-    water: ['Thủy đạn', 'Thủy long', 'Thủy liên kích', 'Thủy bích', 'Thủy kính'],
     lightning: ['Lôi cầu', 'Lôi thương', 'Lôi liên kích', 'Lôi giáp', 'Lôi phản'],
     wind: ['Phong đạn', 'Phong nhận', 'Phong liên kích', 'Phong bích', 'Phong hồi'],
     earth: ['Thổ đạn', 'Thổ thương', 'Thổ liên kích', 'Thổ thành', 'Thổ phản'],
@@ -38,7 +37,16 @@
     { id: 'fire-barrier', name: 'Khiên lửa', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'qwa'], cost: 26, damage: 0, shield: 75, duration: 4.5, count: 0, subtitle: 'Vòm lửa bao quanh người • hấp thụ 75 sát thương' },
     { id: 'fire-reflect', name: 'Tường lửa', kind: 'defense', style: 'firewall', rank: 'A', sequence: [...'qwzxc'], cost: 36, damage: 0, shield: 120, duration: 5, count: 0, wallWidth: 7, wallHeight: 4.2, subtitle: 'Tường lửa phía trước • chặn đạn, tồn tại 5 giây' }
   ].map(s => ({ ...s, element: 'fire', glyph: '火', color: '#ff844b', heal: 0, shield: s.shield || 0 }));
-  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : variants.map((v, i) => ({
+  // Preserve saved water IDs; the former lance/volley/reflect now have water-specific behavior.
+  const waterSpells = [
+    { id: 'water-orb', name: 'Thủy đạn', kind: 'attack', style: 'orb', rank: 'D', sequence: [...'we'], cost: 28, damage: 38, size: .48, count: 1, speed: 18, subtitle: 'Ném một quả cầu nước vào mục tiêu' },
+    { id: 'water-lance', name: 'Thủy ngục', kind: 'attack', style: 'prison', rank: 'A', sequence: [...'wezxc'], cost: 38, damage: 12, size: .55, count: 1, speed: 21, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
+    { id: 'water-volley', name: 'Ném thuyền', kind: 'attack', style: 'boat', rank: 'S', sequence: [...'wecvzx'], cost: 56, damage: 90, size: 1.7, count: 1, speed: 24, blastRadius: 3.5, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm' },
+    { id: 'water-tsunami', name: 'Sóng thần', kind: 'attack', style: 'tsunami', rank: 'SS', sequence: [...'wecvzxer'], cost: 72, damage: 30, size: 1, count: 1, speed: 12, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức trên đường đi • sát thương vừa phải' },
+    { id: 'water-barrier', name: 'Khiên nước', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, shield: 65, duration: 4.5, count: 0, subtitle: 'Khiên nước bao quanh bản thân • hấp thụ 65 sát thương' },
+    { id: 'water-reflect', name: 'Thủy thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence: [...'wedf'], cost: 32, damage: 0, shield: 95, duration: 5, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
+  ].map(s => ({ ...s, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
+  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
     damage: Math.round(v.damage * el.power), sequence: [...el.prefix, ...v.suffix],
@@ -86,8 +94,8 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 220) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.color = '#ffffff'; this.defenseElement = ''; }
-    tick(dt) { this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
+    constructor(maxHp = 220) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.controlTime = 0; this.color = '#ffffff'; this.defenseElement = ''; }
+    tick(dt) { this.controlTime = Math.max(0, this.controlTime - dt); this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
     receive(damage, reflected = false) {
       if (this.hp <= 0) return { damage: 0, reflected: false };
@@ -104,11 +112,27 @@
     if (a * b > 0 || Math.abs(a - b) < 1e-8) return null;
     const t = a / (a - b), point = start.map((v, i) => v + (end[i] - v) * t);
     const across = (point[0] - wall.p[0]) * -wall.normal[2] + (point[2] - wall.p[2]) * wall.normal[0];
+    if (wall.radius) return Math.hypot(across, point[1] - wall.p[1]) <= wall.radius ? point : null;
     return Math.abs(across) <= wall.width / 2 && point[1] >= 0 && point[1] <= wall.height ? point : null;
+  }
+  // Sweep in the wave's frame to catch crossing projectiles, regardless of their speed or owner.
+  function intersectsWave(start, end, waveStart, waveEnd, normal, width, height, padding = 0) {
+    const local = (p, w) => [(p[0] - w[0]) * -normal[2] + (p[2] - w[2]) * normal[0], p[1], (p[0] - w[0]) * normal[0] + (p[2] - w[2]) * normal[2]];
+    const a = local(start, waveStart), b = local(end, waveEnd);
+    const low = [-width / 2 - padding, -padding, -1.2 - padding], high = [width / 2 + padding, height + padding, 1.2 + padding];
+    let enter = 0, leave = 1;
+    for (let i = 0; i < 3; i++) {
+      const d = b[i] - a[i];
+      if (Math.abs(d) < 1e-8) { if (a[i] < low[i] || a[i] > high[i]) return false; continue; }
+      const t1 = (low[i] - a[i]) / d, t2 = (high[i] - a[i]) / d;
+      enter = Math.max(enter, Math.min(t1, t2)); leave = Math.min(leave, Math.max(t1, t2));
+      if (enter > leave) return false;
+    }
+    return true;
   }
   function meteorTarget(pos, dir) {
     const distance = dir[1] < -.025 ? Math.min(55, Math.max(6, -pos[1] / dir[1])) : 31;
     return [pos[0] + dir[0] * distance, .08, pos[2] + dir[2] * distance];
   }
-  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, meteorTarget };
+  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget };
 })(globalThis);

@@ -61,11 +61,11 @@ const fs = require('node:fs/promises');
     assert.equal((await state()).casts, 1, 'Duplicate Space cannot launch twice');
     assert.equal((await speech()).calls.length, 1);
     await seal('water-lance');
-    assert.equal((await state()).sequence.length, 4, 'Allow the next seals while the voice is still speaking');
+    assert.equal((await state()).sequence.length, 5, 'Allow the next seals while the voice is still speaking');
     await page.keyboard.press('Space'); assert.equal((await state()).casts, 1, 'Keep the existing cooldown');
     await advance(1); await page.keyboard.press('Space');
     assert.equal((await state()).casts, 2, 'A stalled voice cannot block another cast');
-    assert.equal((await speech()).calls.at(-1).text, 'Thủy long!');
+    assert.equal((await speech()).calls.at(-1).text, 'Thủy ngục!');
 
     await page.keyboard.press('Escape'); const frozen = await state();
     assert.ok((await speech()).pauses > 0);
