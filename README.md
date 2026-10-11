@@ -79,6 +79,16 @@ Hết máu sẽ kết thúc trận: có màn hình thắng hoặc thua, thời g
 
 12 hình ấn từ bốn hàng đầu của ket_an.jpg, đọc trái sang phải, trên xuống dưới. Tên mô tả thế tay và chuỗi chiêu là thiết kế của game, không phải công thức chính thức trong Naruto.
 
+## Triển khai trên Vercel
+
+Bản production: https://an-hoa-ninja.vercel.app.
+
+Chạy **npm run build:vercel** để tạo thư mục **dist/** chỉ chứa game và asset công khai.
+Cấu hình **vercel.json** dùng **npm ci**, **npm run build:vercel** và output **dist**.
+
+Để triển khai bằng CLI: chạy **npx vercel login**, sau đó **npx vercel --prod** ở thư mục dự án.
+Cũng có thể import repository GitHub vào Vercel; cấu hình build được đọc từ **vercel.json**.
+
 ## Phát triển
 
 Node.js 20 trở lên; **npm ci** để cài dependency.

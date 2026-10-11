@@ -3,3 +3,5 @@
 .publish-stage/
 node_modules/
 test-results/
+dist/
+.vercel/
