@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { Vector3 } from 'three';
 import { createHands } from "../src/hands.js";
 import { sealShadowCells, sealShadowFacing, shadowDuration, shadowOpacity } from '../src/hand-vfx.js';
 
@@ -50,3 +51,19 @@ hands.setReady('water');hands.update(.01,2,1,false,false,0,false);assert.equal(h
 hands.setReady('fire'); hands.clearEffects(); assert.equal(hands.handFire.mesh.visible, false);
 assert.equal(hands.handWater.mesh.visible,false);
 console.log('PASS: twelve shadow mappings, immediate display, .2-second lifetime, repeated seals, placement, fire readiness and clearing.');
+
+// A joined hand must bend without discontinuous bone assignments tearing its webbing.
+const skin=hands.hands[0].wrapper.getObjectByName('hand_skin');
+const positions=skin.geometry.attributes.position,indices=skin.geometry.index.array;
+const rest=Array.from({length:positions.count},(_,i)=>new Vector3().fromBufferAttribute(positions,i));
+for(let pose=0;pose<12;pose++) {
+  advance(pose,40);hands.scene.updateMatrixWorld(true);skin.skeleton.update();
+  const bent=rest.map((_,i)=>skin.getVertexPosition(i,new Vector3()));
+  assert.ok(bent.every(p=>p.toArray().every(Number.isFinite)),`Pose ${pose} has finite skin vertices`);
+  for(let i=0;i<indices.length;i+=3)for(let edge=0;edge<3;edge++) {
+    const a=indices[i+edge],b=indices[i+(edge+1)%3],length=rest[a].distanceTo(rest[b]);
+    if(length<.0001)continue;
+    assert.ok(bent[a].distanceTo(bent[b])/length<10,`Pose ${pose} tears the skin between vertices ${a} and ${b}`);
+  }
+}
+console.log('PASS: continuous joined skin through all twelve animated seals.');

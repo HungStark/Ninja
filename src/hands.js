@@ -2,7 +2,7 @@ import * as T from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { HAND_GLB_BASE64 } from "../assets/hand-data.js";
-import { toon, outlineMaterial } from "./materials.js";
+import { handMaterials } from './hand-materials.js';
 import { poses } from "./poses.js";
 import { createSealShadow, createHandFire, createHandWater } from './hand-vfx.js';
 export async function createHands() {
@@ -10,37 +10,30 @@ export async function createHands() {
   const gltf = await new GLTFLoader().parseAsync(bytes.buffer, "");
   const scene = new T.Scene(), root = new T.Group();
   scene.add(root);
-  scene.add(new T.HemisphereLight("#dfedff", "#8d705a", 1.65));
-  const key = new T.DirectionalLight("#ffe0ae", 1.9);
+  scene.add(new T.HemisphereLight("#e3e9f2", "#916d61", 1.45));
+  const key = new T.DirectionalLight("#fff1e5", 2.5);
   key.position.set(-1, 2, 2);
   scene.add(key);
+  const fill=new T.DirectionalLight('#e0e8ff',.65);fill.position.set(1,.4,1);scene.add(fill);
   const fireLight = new T.PointLight("#ff9a42", 0, 4, 2);
   fireLight.position.set(0, 0.1, -0.8);
   scene.add(fireLight);
-  const hands = [];
+  const hands = [], materials = handMaterials();
   for (const side of [-1, 1]) {
     const wrapper = new T.Group(), model = clone(gltf.scene);
     wrapper.scale.x = side;
-    wrapper.position.set(side * 0.33, -0.38, -0.76);
-    wrapper.rotation.set(0.16, side * 0.16, side * 0.27);
+    wrapper.position.set(side * .33, -.38, -.76);
+    wrapper.rotation.set(.16, side * .16, side * .27);
     wrapper.add(model);
     root.add(wrapper);
     const joints = {};
     model.traverse((o) => {
       if (o.isBone) joints[o.name] = o;
       if (o.isMesh) {
-        const name = o.material.name, color = o.material.color?.clone() || new T.Color("#f3c8a5");
-        o.material = toon(color, { rim: name === "skin" ? 0.2 : 0.1 });
+        o.material = materials[o.material.name] || materials.nail;
         o.frustumCulled = false;
         o.castShadow = false;
         o.receiveShadow = false;
-        if (o.isSkinnedMesh) {
-          const ink = new T.SkinnedMesh(o.geometry, outlineMaterial());
-          ink.bind(o.skeleton, o.bindMatrix);
-          ink.frustumCulled = false;
-          ink.renderOrder = -1;
-          o.parent.add(ink);
-        }
       }
     });
     hands.push({ side, wrapper, joints, fromPosition: wrapper.position.clone(), fromRotation: wrapper.quaternion.clone(), fromJoints: Object.fromEntries(Object.entries(joints).map(([name, joint]) => [name, joint.quaternion.clone()])) });
@@ -92,7 +85,7 @@ export async function createHands() {
     const separate = smooth(Math.min(1, progress / opening));
     const castPull = Math.exp(-castAge * 7) * Math.sin(Math.min(castAge, 0.5) * 9) * 0.07;
     for (const hand of hands) {
-      const { side, wrapper, joints } = hand, p = pose ? pose.p : [0.33, -0.39, -0.76], r = pose ? pose.r : [0.16, 0.16, 0.27];
+      const { side, wrapper, joints } = hand, p = pose ? pose.p : [.33, -.39, -.76], r = pose ? pose.r : [.16, .16, .27];
       const bob = reducedMotion ? 0 : Math.sin(time * (moving ? 9 : 1.6)) * (moving ? 6e-3 : 3e-3);
       const spreadX = Math.max(0.18, Math.abs(hand.fromPosition.x), p[0] + 0.08);
       const outwardX = T.MathUtils.lerp(hand.fromPosition.x, side * spreadX, separate);
@@ -105,7 +98,7 @@ export async function createHands() {
       tempQ.setFromEuler(tempE);
       wrapper.quaternion.slerpQuaternions(hand.fromRotation, tempQ, close);
       for (const [f, name] of ["index", "middle", "ring", "little"].entries()) {
-        const curl = pose ? pose.curl[f] : 0.24 + f * 0.06;
+        const curl = pose ? pose.curl[f] : .06 + f * .02;
         for (let j = 0; j < 3; j++) {
           tempE.set(-curl * (j === 0 ? 0.6 : 0.85), 0, j === 0 ? (f - 1.5) * (pose ? pose.spread : 0.06) : 0);
           tempQ.setFromEuler(tempE);
@@ -114,7 +107,7 @@ export async function createHands() {
         }
       }
       for (let j = 0; j < 3; j++) {
-        tempE.set(-(pose ? pose.thumb : 0.35) * (j === 0 ? 0.55 : 0.7), 0, j === 0 ? (pose?.thumbAngle ?? 0.92 - (pose ? pose.thumb : 0.35) * 1.05) : 0);
+        tempE.set(-(pose ? pose.thumb : .12) * (j === 0 ? 0.55 : 0.7), 0, j === 0 ? (pose ? (pose.thumbAngle ?? .92 - pose.thumb * 1.05) : .08) : 0);
         tempQ.setFromEuler(tempE);
         joints["thumb_" + j].quaternion.slerpQuaternions(hand.fromJoints["thumb_" + j], tempQ, close);
       }

@@ -89,3 +89,11 @@ body.meteor-camera #targetInfo { visibility: hidden; }
   body.meteor-camera #battleClock{display:none}
   body.dragon-active .enemy-status .meter,body.meteor-camera .enemy-status .meter{margin:6px 0 0}
 }
+/* Keep the opponent readout above the closer first-person hands. */
+@media (min-width:1100px) and (min-height:800px){
+  .enemy-status{top:75px;width:240px;padding:8px 12px}
+  .enemy-health-row{margin-top:5px}
+  .enemy-status .meter{margin:4px 0}
+  #enemyShield{margin-top:2px;min-height:0}
+  #battleClock{margin-top:3px}
+}

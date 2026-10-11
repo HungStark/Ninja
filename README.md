@@ -27,6 +27,8 @@ cho chiêu Hỏa, tay được bao quanh bởi vầng lửa và tàn lửa chuy�
 khi tung chiêu, xóa chuỗi, tạm dừng hoặc chưa đủ chakra/hồi chiêu.
 Chiêu Thủy sẵn sàng tạo vòng nước xanh quanh hai tay, có dòng nước và giọt nước xoay theo vòng; vòng nước dùng cùng điều kiện sẵn sàng và được tắt khi thi triển, xóa chuỗi, tạm dừng hoặc thiếu chakra/hồi chiêu.
 
+Tay được dựng theo mẫu anime: da liền từ lòng bàn tay tới ngón, đầu ngón bo tròn, móng dài ôm theo ngón, giáp xanh đen hình khiên và vòng vàng. Mô hình giữ 16 xương cùng 12 thế kết ấn; phần da được tạo sẵn lúc xuất GLB, không dựng lại trong trận. Texture màu da, nếp gấp và độ nhám được tạo bằng code, nhúng cùng game để chạy ngoại tuyến. Cẳng tay thẳng hàng với bàn tay; góc nhìn và vị trí tay trở về thiết lập ban đầu để không che giữa màn hình. Thanh trạng thái đối thủ trên màn hình lớn được thu gọn.
+
 Phong cảnh dùng ánh sáng chạng vạng, bầu trời và sương tối hơn để chiêu thức nổi bật.
 
 Hệ Hỏa có hiệu ứng và cơ chế riêng:
@@ -134,6 +136,8 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **src/fire-arts.js:** shader lửa, rồng có thân uốn lượn, thiên thạch, dấu báo vùng rơi, vòm khiên, tường lửa và vụ nổ.
 - **src/water-arts.js:** mặt nước, cầu giam giữ, thuyền hải tặc, sóng cuốn chiêu và hai kiểu khiên nước.
 - **src/hands.js / hand-model.js / poses.js:** model tay, rig và 12 thế kết ấn.
+- **src/hand-sculpt.js:** bề mặt da liền, tỷ lệ ngón, UV và trọng số xương khi xuất model.
+- **src/hand-materials.js:** màu da, nếp gấp, độ nhám và vật liệu giáp theo ảnh mẫu.
 - **assets/ninja-hands.glb / hand-data.js:** model chỉnh sửa được và dữ liệu nhúng ngoại tuyến.
 
 Asset nhân vật và môi trường được dựng từ mã nguồn của dự án. Giấy phép Three.js trong THIRD_PARTY_NOTICES.md.
