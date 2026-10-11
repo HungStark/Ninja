@@ -46,6 +46,8 @@ assert.equal(fighter.receive(43).damage,18);fighter.defend(mirror);assert.equal(
 fighter.tick(3);assert.equal(fighter.reflect,0);fighter.receive(999);assert.equal(fighter.hp,0);assert.equal(fighter.receive(99).damage,0);
 const healed=new Fighter();healed.hp=210;healed.defend(spells.find(s=>s.id==='wood-barrier'));assert.equal(healed.hp,220);
 const fire = spells.filter(s=>s.element==='fire');
+const fireVolley = fire.find(s=>s.style==='volley');
+assert.equal(fireVolley.count, 3); assert.equal(fireVolley.holdTime, .5); assert.ok(fireVolley.size < .1);
 assert.deepEqual(Array.from(fire.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[2,4,6,8]);
 assert.deepEqual(Array.from(fire.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,5]);
 const wall={p:[0,0,0],normal:[0,0,-1],width:7,height:4.2};

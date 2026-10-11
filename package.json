@@ -16,7 +16,9 @@
     "test:ranks": "node tests/ranks.cjs",
     "test:incantation": "node tests/incantation.cjs",
     "test:fire": "node tests/fire.cjs",
-    "test:hand-vfx": "node tests/hand-vfx.cjs"
+    "test:hand-vfx": "node tests/hand-vfx.cjs",
+    "test:meteor-zoom": "node tests/meteor-zoom.cjs",
+    "test:impact-motion": "node tests/impact-motion.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

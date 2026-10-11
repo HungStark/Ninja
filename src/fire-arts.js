@@ -269,7 +269,7 @@ export class FireArts {
     return { g, material, puffs };
   }
   updateMeteorCloud(cloud, shot, quality) {
-    const breakTime = shot.skyTime * Math.sqrt((65 - 42) / 45);
+    const breakTime = shot.cloudBreakTime;
     const age = Math.max(0, shot.age - breakTime), fade = Math.max(0, 1 - age / 1.7);
     cloud.g.visible = fade > 0; cloud.material.opacity = .88 * fade;
     for (const { mesh, center, a, origin, scale } of cloud.puffs) {
@@ -445,6 +445,15 @@ export class FireArts {
       g.position.fromArray(shot.p); g.scale.setScalar(shot.size);
       if (shot.style === 'meteor' && shot.phase === 'sky') g.scale.multiplyScalar(1 + .35 * Math.max(0, 1 - shot.preludeAge / shot.skyTime));
       g.quaternion.setFromUnitVectors(forward, new T.Vector3(...shot.v).normalize());
+      if (shot.phase === 'staged') {
+        g.quaternion.identity();
+        g.userData.ribbons.visible = false;
+        for (const child of g.children) if (child.geometry === this.cone) child.visible = false;
+        g.scale.multiplyScalar(.92 + .08 * Math.sin(time * 8 + shot.rowIndex));
+      } else {
+        if (g.userData.ribbons) g.userData.ribbons.visible = true;
+        for (const child of g.children) if (child.geometry === this.cone) child.visible = true;
+      }
       if (g.userData.ribbons) g.userData.ribbons.rotation.z = time * (shot.style === 'meteor' ? 2 : 5);
       if (g.userData.segments) {
         this.updateDragon(g, shot, time, quality);

@@ -28,10 +28,12 @@ const fs = require('node:fs/promises');
     await screenshot('catalog'); await click('startButton');
 
     await cast('fire-volley');
-    assert.equal((await state()).casts, 1); assert.equal((await state()).shots, 1); assert.equal((await state()).salvos, 3);
+    assert.equal((await state()).casts, 1); assert.equal((await state()).shots, 3); assert.equal((await state()).salvos, 0);
+    assert.ok((await state()).projectiles.every(s => s.phase === 'staged'));
     await advance(.35); assert.equal((await state()).shots, 3); await screenshot('salvo');
-    await advance(.1); assert.equal((await state()).shots, 4); assert.equal((await state()).salvos, 0);
-    await advance(1.3); assert.equal((await state()).enemyHealth, 124, 'All four consecutive bolts hit the aim point');
+    await advance(.15); assert.ok((await state()).projectiles.every(s => s.phase === 'flying'));
+    await advance(1.3); assert.equal((await state()).enemyHealth, 148, 'All three small orbs hit the fixed aim point');
+    assert.equal((await state()).fireArt.bursts, 0, 'Volley hits leave no flames on the opponent');
 
     await reset(); await cast('fire-lance');
     assert.equal((await state()).projectiles[0].style, 'dragon'); assert.equal((await state()).chakra, 44);
@@ -93,26 +95,31 @@ const fs = require('node:fs/promises');
     assert.equal((await state()).projectiles[0].style, 'meteor');
     assert.deepEqual((await state()).projectiles[0].target, [0, .08, -24]);
     assert.equal((await state()).cameraView, 'meteor-sky'); assert.equal((await state()).projectiles[0].position[1], 65);
+    assert.equal((await state()).viewFov, 68);
     await advance(.4); await screenshot('meteor-sky');
     const sky = await state();
     assert.equal(sky.fireArt.clouds, 1); assert.equal(sky.handsVisible, false);
     assert.ok(sky.viewRotation[0] > .2, 'Camera looks upward at the meteor');
+    assert.ok(sky.viewFov > 54 && sky.viewFov < 60, 'Sky appearance zooms in, then starts easing out');
     await page.keyboard.press('Escape'); await advance(2);
     assert.deepEqual((await state()).projectiles, sky.projectiles); assert.deepEqual((await state()).viewRotation, sky.viewRotation);
+    assert.equal((await state()).viewFov, sky.viewFov, 'Pause freezes zoom');
     await page.keyboard.press('Enter');
     await page.evaluate(() => document.getElementById('world').dispatchEvent(new MouseEvent('mousemove', { bubbles: true, movementX: 80, movementY: 40 })));
     assert.equal((await state()).yaw, 0); assert.equal((await state()).pitch, 0);
     await page.evaluate(() => document.getElementById('world').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 })));
-    await advance(.65); await screenshot('meteor-cloud-break');
+    await advance(.9); await screenshot('meteor-cloud-break');
     assert.ok((await state()).projectiles[0].position[1] < 42, 'Meteor passes below the cloud layer');
     assert.equal((await state()).projectiles[0].fallAge, 0); assert.equal((await state()).enemyHealth, 220);
-    await advance(.55); assert.equal((await state()).cameraView, 'meteor-returning');
+    assert.ok((await state()).viewFov > sky.viewFov, 'Zoom gradually widens as the meteor passes through clouds');
+    await advance(.3); assert.equal((await state()).cameraView, 'meteor-returning');
     const returnView = await state(); await page.keyboard.press('Escape'); await advance(1);
     assert.deepEqual((await state()).viewRotation, returnView.viewRotation); assert.deepEqual((await state()).projectiles, returnView.projectiles);
     await page.keyboard.press('Enter'); await advance(.22);
     assert.equal((await state()).cameraView, 'first-person'); assert.equal((await state()).handsVisible, true);
     assert.equal((await state()).projectiles[0].phase, 'falling');
-    assert.ok((await state()).projectiles[0].fallAge < .03, 'Old fall begins only after the camera returns');
+    assert.equal((await state()).viewFov, 68, 'Normal field of view returns before the fall');
+    assert.ok((await state()).projectiles[0].fallAge < .03, 'Final flight phase starts after the camera returns');
     assert.equal((await state()).position[0], -1.8); assert.equal((await state()).yaw, 0);
     await advance(1.03); await screenshot('meteor-fall');
     await page.keyboard.press('Escape'); const frozen = await state();
@@ -133,6 +140,7 @@ const fs = require('node:fs/promises');
       assert.equal((await state()).cameraView, 'first-person'); assert.equal((await state()).handsVisible, true);
       assert.equal((await state()).fireArt.clouds, 0); assert.equal((await state()).fireArt.projectiles, 0);
       assert.equal((await state()).fireArt.meteorImpacts.length, 0);
+      assert.equal((await state()).viewFov, 68, 'Reset clears cinematic zoom');
     }
 
     await reset();
@@ -203,6 +211,6 @@ const fs = require('node:fs/promises');
       await screenshot(`meteor-impact-${preset}`);
     }
     assert.deepEqual(errors, []);
-    console.log('PASS fire: six arts and exact seal counts; five-spell loadout; staggered salvo and damage; dragon; meteor sky camera, cloud penetration, return before old fall, debris/dust, hit/miss, pause/reset and all graphics tiers; flame shield; physical wall; responsive guide; no browser/shader errors.');
+    console.log('PASS fire: six arts and exact seal counts; five-spell loadout; three staged volley shots and damage; dragon; straight meteor flight, sky camera, cloud penetration, debris/dust, hit/miss, pause/reset and all graphics tiers; flame shield; physical wall; responsive guide; no browser/shader errors.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });
