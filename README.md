@@ -25,6 +25,7 @@ Mỗi lần kết ấn, bóng tương ứng xuất hiện phía sau hai tay vớ
 nằm trong [assets/seal-shadows.md](assets/seal-shadows.md). Khi nút **SPACE** sẵn sàng
 cho chiêu Hỏa, tay được bao quanh bởi vầng lửa và tàn lửa chuyển động; vầng lửa tắt
 khi tung chiêu, xóa chuỗi, tạm dừng hoặc chưa đủ chakra/hồi chiêu.
+Chiêu Thủy sẵn sàng tạo vòng nước xanh quanh hai tay, có dòng nước và giọt nước xoay theo vòng; vòng nước dùng cùng điều kiện sẵn sàng và được tắt khi thi triển, xóa chuỗi, tạm dừng hoặc thiếu chakra/hồi chiêu.
 
 Phong cảnh dùng ánh sáng chạng vạng, bầu trời và sương tối hơn để chiêu thức nổi bật.
 
@@ -49,8 +50,8 @@ Hệ Thủy có sáu chiêu riêng:
 | --- | --- | --- | --- | --- |
 | Thủy đạn | 2 | W E | 28 | Ném cầu nước, 38 sát thương |
 | Thủy ngục | 5 | W E Z X C | 38 | 12 sát thương; khi xuyên khiên, giam đối thủ trong cầu nước 3 giây, ngắt chuỗi ấn và khóa di chuyển/thi triển |
-| Ném thuyền | 6 | W E C V Z X | 56 | Triệu hồi thuyền hải tặc và ném theo đường thẳng tới điểm ngắm đã chọn; 90 sát thương trong bán kính 3,5 m |
-| Sóng thần | 8 | W E C V Z X E R | 72 | Sóng rộng 12 m, cao 5 m tiến trên mặt đất, cuốn đạn và mặt chắn của cả hai bên; gây 30 sát thương một lần cho đối thủ |
+| Ném thuyền | 6 | W E C V Z X | 56 | Thuyền hải tặc trồi từ dưới đất lên trong 1,2 giây, rồi bay thẳng tới điểm ngắm đã chọn; camera chuyển lên trên như Rồng lửa và trở lại sau cú đánh; 90 sát thương trong bán kính 3,5 m |
+| Sóng thần | 8 | W E C V Z X E R | 72 | Camera nhìn xuống chân, nước tụ và dựng thành sóng trong 1,8 giây rồi trả hướng ngắm; sóng rộng 12 m, cao 5 m, dày khoảng 7 m, có ngọn cuộn, bọt và nước bắn; cuốn đạn/mặt chắn, gây 30 sát thương một lần |
 | Khiên nước | 3 | W E A | 26 | Bao quanh bản thân, hấp thụ 65 sát thương trong 4,5 giây |
 | Thủy thuẫn | 4 | W E D F | 32 | Mặt chắn nước hình tròn bán kính 2,2 m, dựng cách 3 m phía trước; 95 độ bền, tồn tại 5 giây |
 

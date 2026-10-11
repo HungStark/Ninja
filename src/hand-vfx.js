@@ -129,3 +129,51 @@ export function createHandFire(scene) {
   }
   return { mesh, embers, light, setReady, update };
 }
+
+export function createHandWater(scene) {
+  const material = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    uniforms: { uTime: { value: 0 }, uReducedMotion: { value: 0 } },
+    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader: `uniform float uTime;uniform float uReducedMotion;varying vec2 vUv;
+      void main(){vec2 p=(vUv-.5)*3.;float r=length(p),a=atan(p.y,p.x);
+        float t=uTime*mix(1.,.15,uReducedMotion);
+        float edge=1.+.025*sin(a*6.-t*3.)+.015*sin(a*11.+t*2.);
+        float flow=.5+.5*sin(a*5.-t*4.+sin(a*8.+t)*.6);
+        float ring=1.-smoothstep(.025,.075,abs(r-edge));
+        float ripple=(1.-smoothstep(.008,.026,abs(r-edge-.10)))*(.35+.35*flow);
+        float glint=pow(flow,8.)*ring;
+        float alpha=max(ring*.8,ripple);if(alpha<.015)discard;
+        vec3 color=mix(vec3(.03,.36,.9),vec3(.7,1.2,1.5),glint);
+        gl_FragColor=vec4(color,alpha);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`
+  });
+  const mesh = new T.Mesh(new T.PlaneGeometry(1, 1), material);
+  mesh.name = 'ReadyHandWater'; mesh.renderOrder = 10; mesh.visible = false; scene.add(mesh);
+  const count = 28, geometry = new T.BufferGeometry();
+  geometry.setAttribute('position', new T.BufferAttribute(new Float32Array(count * 3), 3));
+  const droplets = new T.Points(geometry, new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    vertexShader: 'void main(){vec4 p=modelViewMatrix*vec4(position,1.);gl_PointSize=clamp(3./max(.3,-p.z),1.,8.);gl_Position=projectionMatrix*p;}',
+    fragmentShader: 'void main(){float r=length(gl_PointCoord-.5);float a=1.-smoothstep(.15,.5,r);gl_FragColor=vec4(.2,.9,1.4,a*.75);}'
+  }));
+  droplets.name = 'ReadyHandWaterDroplets'; droplets.frustumCulled = false; droplets.visible = false; scene.add(droplets);
+  const light = new T.PointLight('#54caff', 0, 1.5, 2); scene.add(light);
+  function setReady(ready) { mesh.visible = droplets.visible = ready; light.intensity = ready ? .035 : 0; }
+  function update(time, center, halfWidth, reducedMotion) {
+    mesh.position.copy(center); mesh.position.z += .08;
+    light.position.copy(center); light.position.z += .2;
+    const rx = Math.max(.19, halfWidth + .115), ry = .20;
+    mesh.scale.set(rx * 3, ry * 3, 1);
+    material.uniforms.uTime.value = time; material.uniforms.uReducedMotion.value = Number(reducedMotion);
+    if (!mesh.visible) return;
+    for (let i = 0; i < count; i++) {
+      const a = i * 2.399 + time * (reducedMotion ? .1 : 1.1), ripple = 1.08 + Math.sin(i + time * 2) * .06;
+      geometry.attributes.position.setXYZ(i, center.x + Math.cos(a) * rx * ripple, center.y + Math.sin(a) * ry * ripple, center.z + .1 + Math.sin(a * 2) * .01);
+    }
+    geometry.attributes.position.needsUpdate = true;
+  }
+  return { mesh, droplets, light, setReady, update };
+}

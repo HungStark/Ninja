@@ -90,7 +90,7 @@ export class FireEffects {
     }
     for (let i = 0; i < this.lights.length; i++) {
       const shot = shots[i], l = this.lights[i];
-      l.intensity = shot ? 18 * shot.size : 0;
+      l.intensity = !shot || shot.style === 'tsunami' ? 0 : shot.style === 'boat' ? 5 : 18 * shot.size;
       if (shot) l.position.fromArray(shot.p);
       if (shot) l.color.set(shot.color || '#ff844b');
     }

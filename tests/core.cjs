@@ -66,11 +66,13 @@ assert.ok(water.find(s=>s.style==='tsunami').damage < water.find(s=>s.style==='o
 assert.equal(water.find(s=>s.id==='water-reflect').style,'waterwall');
 const disc={p:[0,1.72,0],normal:[0,0,-1],radius:2.2};
 assert.ok(intersectFireWall([0,1.72,-4],[0,1.72,4],disc));
+assert.ok(intersectFireWall([0,1.72,-1e-12],[0,1.72,-1],disc),'A projectile beginning on the shield plane cannot slip through due to rounding');
 assert.equal(intersectFireWall([2,3.72,-4],[2,3.72,4],disc),null,'Outside circular edge even within bounding square');
 assert.equal(intersectFireWall([3,1.72,-4],[3,1.72,4],disc),null);
 assert.equal(intersectsWave([0,2,-20],[0,2,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),true,'Fast crossing projectile is swept');
 assert.equal(intersectsWave([8,2,-20],[8,2,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),false,'Outside wave width');
 assert.equal(intersectsWave([0,8,-20],[0,8,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),false,'Above wave crest');
+assert.equal(intersectsWave([0,2,3],[0,2,3],[0,0,0],[0,0,0],[0,0,-1],12,5,0,7),true,'Thick wave body sweeps a spell behind the crest');
 const trapped=new Fighter();trapped.controlTime=3;trapped.tick(1);assert.equal(trapped.controlTime,2);trapped.tick(4);assert.equal(trapped.controlTime,0);
 const binary = fs.readFileSync(path.join(root, "assets/ninja-hands.glb"));
 assert.equal(binary.readUInt32LE(0), 1179937895);

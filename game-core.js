@@ -108,7 +108,8 @@
   // Swept plane intersection prevents fast projectiles from passing through a wall.
   function intersectFireWall(start, end, wall) {
     const side = p => (p[0] - wall.p[0]) * wall.normal[0] + (p[2] - wall.p[2]) * wall.normal[2];
-    const a = side(start), b = side(end);
+    const startSide = side(start), endSide = side(end);
+    const a = Math.abs(startSide) < 1e-8 ? 0 : startSide, b = Math.abs(endSide) < 1e-8 ? 0 : endSide;
     if (a * b > 0 || Math.abs(a - b) < 1e-8) return null;
     const t = a / (a - b), point = start.map((v, i) => v + (end[i] - v) * t);
     const across = (point[0] - wall.p[0]) * -wall.normal[2] + (point[2] - wall.p[2]) * wall.normal[0];
@@ -116,10 +117,10 @@
     return Math.abs(across) <= wall.width / 2 && point[1] >= 0 && point[1] <= wall.height ? point : null;
   }
   // Sweep in the wave's frame to catch crossing projectiles, regardless of their speed or owner.
-  function intersectsWave(start, end, waveStart, waveEnd, normal, width, height, padding = 0) {
+  function intersectsWave(start, end, waveStart, waveEnd, normal, width, height, padding = 0, depth = 2.4) {
     const local = (p, w) => [(p[0] - w[0]) * -normal[2] + (p[2] - w[2]) * normal[0], p[1], (p[0] - w[0]) * normal[0] + (p[2] - w[2]) * normal[2]];
     const a = local(start, waveStart), b = local(end, waveEnd);
-    const low = [-width / 2 - padding, -padding, -1.2 - padding], high = [width / 2 + padding, height + padding, 1.2 + padding];
+    const low = [-width / 2 - padding, -padding, -depth / 2 - padding], high = [width / 2 + padding, height + padding, depth / 2 + padding];
     let enter = 0, leave = 1;
     for (let i = 0; i < 3; i++) {
       const d = b[i] - a[i];

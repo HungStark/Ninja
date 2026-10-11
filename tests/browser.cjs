@@ -85,7 +85,7 @@ const { chromium } = require('playwright');
     assert.equal((await state()).won,true);assert.equal((await state()).victory,true);assert.equal((await state()).score,1);
     await page.screenshot({path:'test-results/victory.png'});
     await click('nextButton');assert.equal((await state()).started,false);assert.equal((await state()).round,2);assert.equal(await page.locator('#startScreen').isVisible(),true);
-    await click('startButton');await center();await advance(30);assert.equal((await state()).won,true);assert.equal((await state()).victory,false);assert.equal((await state()).health,0);
+    await click('startButton');await center();await advance(35);assert.equal((await state()).won,true);assert.equal((await state()).victory,false);assert.equal((await state()).health,0);
     await page.screenshot({path:'test-results/defeat.png'});
     await click('nextButton');await click('presetDefense');await click('startButton');await center();assert.equal((await state()).equipped.filter(id=>id.endsWith('barrier')||id.endsWith('reflect')).length,3);
     await page.keyboard.press('Escape');await click('changeLoadout');await click('presetAttack');await click('startButton');await center();
