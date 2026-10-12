@@ -120,7 +120,7 @@ async function main() {
   function spellMarkup(spell, i, preparation = false) {
     if (!preparation) return '<button class="spell ' + (i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-spell="' + i + '"><div class="spell-title">' + spell.name + '</div><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></button>';
     const taken = loadout.includes(spell.id), kind = spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa kéo và lặn' : spell.style==='shadowclone'?'Thêm 2 phân thân · tối đa 6 trên sân':spell.style==='shadowcommand'?'38 sát thương mỗi phân thân · cần phân thân đã tạo':spell.style==='shadowbind'?'Khóa 4 giây · 5 máu mỗi 0,5 giây':spell.style==='shadowdive'?'Bất khả xâm phạm 4 giây · vẫn thao tác được':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
+    const stats = spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa kéo và lặn' : spell.style==='shadowclone'?'Thêm 1 chó bóng · tối đa 3 mỗi bên':spell.style==='shadowcommand'?'22,8 sát thương mỗi phân thân · không cản đạn':spell.style==='shadowbind'?'Khóa 4 giây · 5 máu mỗi 0,5 giây':spell.style==='shadowdive'?'Bất khả xâm phạm 4 giây · vẫn thao tác được':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spell.glyph + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · CẤP ' + spell.rank + ' · ' + spell.sequence.length + ' ẤN · ' + spell.cost + ' CH</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -177,7 +177,7 @@ async function main() {
     $('comboSlots').innerHTML = spell.sequence.map((k, i) => '<span class="combo-slot ' + (seq[i] === k ? 'done' : seq.length === i ? 'next' : '') + '">' + k.toUpperCase() + '</span>').join('');
     const ready = rules.ready();
     $('comboLabel').textContent = ready?.id === spell.id ? 'ẤN HOÀN CHỈNH · ' + spell.name.toUpperCase() : spell.name.toUpperCase() + ' / ' + seq.length + ' / ' + spell.sequence.length + ' ẤN';
-    $('castButton').disabled = !started || paused || won || !!darkDomain.transition || player.controlTime > 0 || !ready || (ready.requiresDomain&&!darkDomain.usable) || (ready.requiresClones&&!darkDomain.commandable('player').length) || (ready.style==='shadowclone'&&darkDomain.clones.length>=ready.maxClones) || rules.cooldown > 0 || rules.chakra < (ready?.cost || spell.cost);
+    $('castButton').disabled = !started || paused || won || !!darkDomain.transition || player.controlTime > 0 || !ready || (ready.requiresDomain&&!darkDomain.usable) || (ready.requiresClones&&!darkDomain.commandable('player').length) || (ready.style==='shadowclone'&&darkDomain.cloneCount('player')>=ready.maxClones) || rules.cooldown > 0 || rules.chakra < (ready?.cost || spell.cost);
     // Hand readiness effects follow exactly the same gate as the Space button.
     hands.setReady($('castButton').disabled ? null : ready.element);
     document.querySelectorAll('.seal').forEach(el => { el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
@@ -370,8 +370,8 @@ async function main() {
     if (!started || paused || won) return;
     if(darkDomain.transition){announce('Đang chuyển vào hoặc ra khỏi lãnh địa.',true);return;}
     if (player.controlTime > 0) { announce('Đang bị khóa bởi '+player.controlSource+'!', true); return; }
-    const result = rules.cast({darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('player').length,shadowCloneCount:darkDomain.clones.length});
-    if (!result.ok) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Trên sân đã đủ 6 phân thân.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
+    const result = rules.cast({darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('player').length,shadowCloneCount:darkDomain.cloneCount('player')});
+    if (!result.ok) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Bên bạn đã đủ 3 phân thân.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
     const spell = result.spell;
     activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); fireSound();
     launch(spell, 'player', camera.p, aim()); announce(spell.name + '!');
@@ -554,7 +554,7 @@ async function main() {
         }
         shot.flightAge = Math.min(shot.travelTime, shot.flightAge + travelStep(shot,flightDt)); shot.age += flightDt;
         shot.p = vadd(shot.origin, vmul(shot.v, shot.flightAge));
-        darkDomain.intercept(shot,true);
+        darkDomain.intercept(shot);
         const wall = walls.find(w => w.hp > 0 && w.owner !== shot.owner && intersectFireWall(shot.old, shot.p, w));
         if (wall) { wall.hp = Math.max(0, wall.hp - shot.damage); burst(shot.p, 24, 2, shot.color); shots.splice(i, 1); continue; }
         if (shot.flightAge + 1e-6 >= shot.travelTime) {
@@ -613,7 +613,7 @@ async function main() {
       const target = shot.owner === 'enemy' ? camera.p : enemyPos(), delta = vsub(shot.p, shot.old), t = clamp(dot(vsub(target, shot.old), delta) / (dot(delta, delta) || 1), 0, 1), closest = vadd(shot.old, vmul(delta, t));
       const collided = (shot.owner==='enemy'?player:enemy).invulnerableTime<=0&&vlen(vsub(closest, target)) < .54 + shot.size;
       if (shot.element === 'fire' && shot.style === 'volley' && !collided && dot(vsub(shot.target, shot.old), vsub(shot.target, shot.p)) <= 0) { shots.splice(i, 1); continue; }
-      if(darkDomain.intercept(shot)){shots.splice(i,1);continue;}
+      darkDomain.intercept(shot);
       if (collided && impact(shot, closest)) shots.splice(i, 1);
       else if (shot.life <= 0 || Math.abs(shot.p[0]) > 30 || Math.abs(shot.p[2]) > 45 || shot.p[1] < .08) shots.splice(i, 1);
       if (won) break;
@@ -637,7 +637,7 @@ async function main() {
     if (aiTimer > 0) return;
     if (!aiSpell) {
       const incoming = shots.some(s => s.owner === 'player' && vlen(vsub(s.p, enemyPos())) < 11);
-      const available=s=>s.cost<=aiRules.chakra&&(!s.requiresDomain||darkDomain.usable)&&(!s.requiresClones||darkDomain.commandable('enemy').length)&&(s.style!=='shadowclone'||darkDomain.clones.length<s.maxClones);
+      const available=s=>s.cost<=aiRules.chakra&&(!s.requiresDomain||darkDomain.usable)&&(!s.requiresClones||darkDomain.commandable('enemy').length)&&(s.style!=='shadowclone'||darkDomain.cloneCount('enemy')<s.maxClones);
       const defenses = aiRules.spells.filter(s => s.kind === 'defense' && available(s)), attacks = aiRules.spells.filter(s => s.kind === 'attack' && available(s));
       const choices = incoming && enemy.shieldTime <= 0 && defenses.length && aiCycle % 3 === 2 ? defenses : attacks;
       if(aiRules.spells.some(s=>s.style==='shadowclone')){
@@ -652,7 +652,7 @@ async function main() {
       const key = aiSpell.sequence[aiStep++]; aiRules.seal(key); enemyPose = keys.indexOf(key); opponent.rig.seal();
       aiTimer = .42; $('enemyAction').textContent = 'Kết ấn ' + aiStep + '/' + aiSpell.sequence.length + ' · ' + aiSpell.name;
     } else {
-      const result = darkDomain.transition ? {ok:false} : aiRules.cast({darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('enemy').length,shadowCloneCount:darkDomain.clones.length});
+      const result = darkDomain.transition ? {ok:false} : aiRules.cast({darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('enemy').length,shadowCloneCount:darkDomain.cloneCount('enemy')});
       if (result.ok) { launch(aiSpell, 'enemy', enemyPos(), vnorm(vsub(camera.p, enemyPos()))); opponent.rig.cast(); aiCasts++; aiCastAge = 0; $('enemyAction').textContent = 'Thi triển · ' + aiSpell.name; }
       enemyPose = -1; aiSpell = null; aiTimer = 1.65;
     }

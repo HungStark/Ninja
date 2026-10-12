@@ -86,12 +86,12 @@ Kết đủ ấn và sẵn sàng thi triển bất kỳ chiêu Lôi nào sẽ hi
 | Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
 | --- | --- | --- | --- | --- |
 | Hắc lãnh địa | 8 | D F C V Z X E R | 70 | Mở mắt thấy mái vòm đen 3D trước mặt, rồi mực lan ra thành lãnh địa; tồn tại 30 giây sau khi mở xong |
-| Ảnh phân thân | 3 | D F A | 26 | Thêm hai phân thân trồi lên từ vùng bóng, xếp hàng ngang giữa hai bên; tổng tối đa 6 phân thân trên sân |
-| Ảnh tập kích | 2 | D F | 34 | Ra lệnh cho phân thân lao tới điểm ngắm; mỗi phân thân đánh 38 sát thương rồi biến mất |
+| Ảnh phân thân | 3 | D F A | 26 | Thêm một chó bóng ở nửa sân của bên triệu hồi; tối đa 3 phân thân mỗi bên |
+| Ảnh tập kích | 2 | D F | 34 | Ra lệnh cho phân thân lao tới điểm ngắm; mỗi phân thân đánh 22,8 sát thương (3/5 mức 38 cũ) rồi biến mất |
 | Ảnh trói | 6 | D F C V Z X | 56 | Hai dây bóng trồi từ nền bám chân, kéo đối thủ xuống và khóa thao tác 4 giây; trừ 5 máu mỗi 0,5 giây, tổng 40 máu |
 | Ảnh độn | 5 | D F Z X C | 32 | Lặn dưới mực 4 giây, miễn nhiễm mọi đòn tấn công; vẫn ngắm, né và thi triển như thường |
 
-Ám có đúng năm chiêu. Phân thân và lệnh tấn công dùng được ngoài lãnh địa. Phân thân đứng nguyên hàng cho đến khi nhận lệnh; lệnh chọn điểm ngắm cố định, có thể đánh trượt nếu đối thủ né. Phân thân biến mất ngay sau khi tấn công (kể cả đánh trượt) hoặc dính một chiêu: ngoài lãnh địa không hồi lại; trong lãnh địa chờ 0,7 giây rồi trồi lên từ vị trí đứng ban đầu. Mỗi lần triệu hồi thêm tối đa hai phân thân, giữ nguyên các phân thân đã tạo; cả hai bên dùng chung giới hạn 6 trên sân. Phân thân đang chờ hồi vẫn giữ chỗ. Nếu còn một chỗ thì chỉ tạo một con; nếu đã đầy thì không trừ chakra hoặc xóa chuỗi ấn. Ra lệnh khi chưa có phân thân không trừ chakra hoặc xóa chuỗi ấn.
+Ám có đúng năm chiêu. Phân thân và lệnh tấn công dùng được ngoài lãnh địa. Phân thân đứng nguyên hàng cho đến khi nhận lệnh; lệnh chọn điểm ngắm cố định, có thể đánh trượt nếu đối thủ né. Phân thân biến mất ngay sau khi tấn công (kể cả đánh trượt) hoặc dính một chiêu: ngoài lãnh địa không hồi lại; trong lãnh địa chờ 0,7 giây rồi trồi lên từ vị trí đứng ban đầu. Mỗi lần triệu hồi thêm một phân thân, giữ nguyên các phân thân đã tạo; mỗi bên có giới hạn riêng 3 con. Hàng phân thân nằm ở một phần tư khoảng cách từ bên triệu hồi tới đối thủ, thuộc nửa sân của mình. Phân thân đang chờ hồi vẫn giữ chỗ. Nếu bên triệu hồi đã đủ 3 con thì không trừ chakra hoặc xóa chuỗi ấn. Đạn phá hủy mọi phân thân đối phương trên đường bay rồi tiếp tục di chuyển, không mất sát thương hoặc tốc độ do va chạm với phân thân. Ra lệnh khi chưa có phân thân không trừ chakra hoặc xóa chuỗi ấn.
 
 Chỉ Ảnh trói và Ảnh độn cần lãnh địa đã mở. Ảnh trói phải ngắm trúng đối thủ; sát thương định kỳ đi thẳng vào máu, khóa ngắm, né, kết ấn và thi triển, sau đó đối thủ nổi lại. Ảnh độn chặn cả đạn, vụ nổ, Thủy ngục, Thiên lôi và Ảnh trói, không tiêu hao khiên hoặc phản đòn. Hiệu ứng chìm xuống và nổi lại giữ camera ngắm FPS để người chơi tiếp tục thao tác.
 
@@ -154,7 +154,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:browser:** Edge headless, WebGL 2/SwiftShader; kiểm tra chọn chiêu, 12 thế tay, di chuyển chuột, máy kết ấn, sát thương, khiên, phản đòn, hồi đầy máu, tạm dừng, chọn lại và giao diện nhỏ.
 - **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
 - **npm run test:lightning:** sáu chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
-- **npm run test:dark:** năm Ám thuật, mái vòm và lãnh địa, hai phân thân đứng chờ/nhận lệnh, biến mất/hồi lại trong và ngoài lãnh địa, hai dây kéo và sát thương định kỳ, khóa thao tác, lặn miễn nhiễm với thao tác bình thường, hai bên và máy, hết hạn, tạm dừng/reset, đồ họa thấp và giảm chuyển động.
+- **npm run test:dark:** năm Ám thuật, mái vòm và lãnh địa, chó bóng đứng chờ/nhận lệnh, mỗi lần một con, tối đa ba con mỗi bên, đạn xuyên qua, biến mất/hồi lại trong và ngoài lãnh địa, hai dây kéo và sát thương định kỳ, khóa thao tác, lặn miễn nhiễm với thao tác bình thường, hai bên và máy, hết hạn, tạm dừng/reset, đồ họa thấp và giảm chuyển động.
 - **npm run test:fire:** kiểm tra sáu chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra sáu chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
 - **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, cú trúng không để lại lửa, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.

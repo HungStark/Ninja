@@ -97,42 +97,50 @@ export class DarkDomain {
   }
   makeClone(owner,p,target,spell,rowSlot) {
     const root=new T.Group(),body=new T.Group();root.add(body);this.cloneGroup.add(root);
-    this.mesh(body,'cylinder',this.cloneMaterial,[0,1.55,0],[.32,.77,.23]);
-    this.mesh(body,'cone',this.cloneMaterial,[0,1.1,0],[.42,.65,.29]).rotation.z=Math.PI;
-    this.mesh(body,'sphere',this.cloneMaterial,[0,2.27,0],[.24,.3,.24]);
-    this.mesh(body,'sphere',this.faceMaterial,[0,2.19,.14],[.24,.14,.13]);
-    for(const side of [-1,1])this.mesh(body,'box',this.eyeMaterial,[side*.09,2.31,.233],[.09,.019,.012]);
+    // A compact canine body with an elongated chest, muzzle, pointed ears and four legs.
+    this.mesh(body,'sphere',this.cloneMaterial,[0,.66,-.06],[.29,.31,.63]);
+    this.mesh(body,'sphere',this.cloneMaterial,[0,.72,.34],[.31,.36,.30]);
+    this.mesh(body,'sphere',this.cloneMaterial,[0,.86,.48],[.22,.30,.24]);
+    this.mesh(body,'sphere',this.cloneMaterial,[0,1.02,.61],[.25,.23,.28]);
+    this.mesh(body,'sphere',this.faceMaterial,[0,.94,.85],[.18,.13,.25]);
+    this.mesh(body,'sphere',this.cloneMaterial,[0,.98,1.06],[.11,.075,.06]);
+    for(const side of [-1,1]){
+      const ear=this.mesh(body,'cone',this.cloneMaterial,[side*.17,1.29,.55],[.13,.35,.12]);ear.rotation.z=side*-.18;
+      this.mesh(body,'cone',this.faceMaterial,[side*.17,1.30,.60],[.07,.23,.035]).rotation.z=side*-.18;
+      this.mesh(body,'sphere',this.eyeMaterial,[side*.18,1.07,.79],[.055,.033,.035]);
+    }
+    const tail=new T.Group();tail.position.set(0,.71,-.62);body.add(tail);
+    this.mesh(tail,'cone',this.cloneMaterial,[0,.18,-.15],[.12,.47,.12]).rotation.x=-.65;
+    this.mesh(tail,'cone',this.cloneMaterial,[0,.39,-.22],[.085,.34,.085]).rotation.x=.38;
     const limbs=[];
-    for(const side of [-1,1]) {
-      const arm=new T.Group();arm.position.set(side*.34,1.86,0);body.add(arm);
-      this.mesh(arm,'cylinder',this.cloneMaterial,[0,-.25,0],[.105,.5,.105]);
-      const forearm=new T.Group();forearm.position.y=-.5;arm.add(forearm);
-      this.mesh(forearm,'cylinder',this.cloneMaterial,[0,-.19,0],[.085,.38,.085]);
-      this.mesh(forearm,'sphere',this.cloneMaterial,[0,-.4,0],[.10,.13,.10]);
-      const leg=new T.Group();leg.position.set(side*.17,1.04,0);body.add(leg);
-      this.mesh(leg,'cylinder',this.cloneMaterial,[0,-.40,0],[.12,.77,.12]);
-      this.mesh(leg,'sphere',this.faceMaterial,[0,-.94,.09],[.14,.12,.23]);
-      limbs.push({side,arm,forearm,leg});
+    for(const side of [-1,1])for(const front of [-1,1]) {
+      const leg=new T.Group();leg.position.set(side*.22,.58,front*.36);body.add(leg);
+      this.mesh(leg,'sphere',this.cloneMaterial,[0,-.10,0],[.12,.23,.15]);
+      const lower=new T.Group();lower.position.set(0,-.28,front<0?-.035:0);leg.add(lower);
+      this.mesh(lower,'cylinder',this.cloneMaterial,[0,-.11,0],[.065,.24,.065]);
+      this.mesh(lower,'sphere',this.faceMaterial,[0,-.23,.045],[.105,.09,.16]);
+      limbs.push({phase:side*front,leg,lower});
     }
     const pool=this.mesh(root,'pool',this.faceMaterial,[0,.06,0],[.8,.8,1]);pool.rotation.x=-Math.PI/2;
     const ring=this.mesh(root,'ring',this.ringMaterial,[0,.09,0],[.7,.7,.7]);ring.rotation.x=-Math.PI/2;
-    const clone={id:++this.serial,owner,rowSlot,mode:'rising',p:[p[0],0,p[2]],home:[p[0],0,p[2]],target:[...target],age:0,damage:spell.damage,root,body,limbs,ring};
-    root.position.fromArray(clone.p);body.position.y=-2.55;
+    const clone={id:++this.serial,owner,rowSlot,mode:'rising',p:[p[0],0,p[2]],home:[p[0],0,p[2]],target:[...target],age:0,damage:spell.damage,root,body,limbs,tail,ring};
+    root.position.fromArray(clone.p);body.position.y=-1.5;
     this.clones.push(clone);this.splash(p);return clone;
   }
   commandable(owner){return this.clones.filter(c=>c.owner===owner&&c.mode!=='respawning');}
+  cloneCount(owner){return this.clones.filter(c=>c.owner===owner).length;}
   cast(spell,owner,pos,dir,target,fighter,victim) {
     if(this.transition||(spell.requiresDomain&&!this.usable))return false;
     if(spell.style==='shadowclone'){
-      // Reserve slots during resurrection too, so a returning clone cannot exceed the shared cap.
-      const slots=[2,3,1,4,0,5].filter(slot=>!this.clones.some(c=>c.rowSlot===slot));
-      const count=Math.min(spell.cloneCount,spell.maxClones-this.clones.length,slots.length);
+      // Each side reserves its own three slots, including clones waiting to resurface.
+      const slots=[1,0,2].filter(slot=>!this.clones.some(c=>c.owner===owner&&c.rowSlot===slot));
+      const count=Math.min(spell.cloneCount,spell.maxClones-this.cloneCount(owner),slots.length);
       if(count<=0)return false;
       const forward=new T.Vector3(victim.pos[0]-pos[0],0,victim.pos[2]-pos[2]).normalize(),right=new T.Vector3(-forward.z,0,forward.x);
       if(owner==='enemy')right.negate();
-      const center=new T.Vector3((pos[0]+victim.pos[0])/2,0,(pos[2]+victim.pos[2])/2);
+      const center=new T.Vector3(pos[0],0,pos[2]).lerp(new T.Vector3(victim.pos[0],0,victim.pos[2]),.25);
       for(const slot of slots.slice(0,count)){
-        const p=center.clone().addScaledVector(right,(slot-2.5)*2.2);
+        const p=center.clone().addScaledVector(right,(slot-1)*2.2);
         this.makeClone(owner,p.toArray(),victim.pos,spell,slot);
       }
     }else if(spell.style==='shadowcommand'){
@@ -185,9 +193,10 @@ export class DarkDomain {
         }
       }
       c.root.position.fromArray(c.p);c.root.rotation.y=Math.atan2(delta[0],delta[1]);
-      c.body.position.y=c.mode==='rising'?-2.55*(1-ease(c.age/.45)):0;
+      c.body.position.y=c.mode==='rising'?-1.5*(1-ease(c.age/.45)):moving?Math.abs(Math.sin(c.age*16))*.055:0;
       c.body.rotation.z=Math.sin(time*3+c.id)*.018;c.ring.scale.setScalar(.75+Math.sin(time*2+c.id)*.06);
-      for(const l of c.limbs){const run=moving?Math.sin(c.age*16)*l.side*.65:0;l.leg.rotation.x=run;l.arm.rotation.x=-run;l.forearm.rotation.x=-.35;}
+      c.tail.rotation.z=Math.sin(time*4+c.id)*.14;
+      for(const l of c.limbs){const run=moving?Math.sin(c.age*16)*l.phase*.6:0;l.leg.rotation.x=run;l.lower.rotation.x=moving?Math.max(0,-run)*.7:0;}
     }
     this.updateDomainArts(dt,fighters);
   }
@@ -197,14 +206,14 @@ export class DarkDomain {
     else this.removeClone(c);
   }
   vulnerableClones(owner){return this.clones.filter(c=>c.owner!==owner&&c.mode!=='respawning'&&(c.mode!=='rising'||c.age>.2));}
-  intercept(shot,piercing=false) {
+  intercept(shot) {
     const a=shot.old,b=shot.p,d=b.map((v,i)=>v-a[i]),len=d.reduce((s,v)=>s+v*v,0),hits=[];
     for(const c of this.vulnerableClones(shot.owner)){
-      const center=[c.p[0],1.55,c.p[2]],t=clamp(d.reduce((s,v,i)=>s+(center[i]-a[i])*v,0)/(len||1));
+      const center=[c.p[0],.72,c.p[2]],t=clamp(d.reduce((s,v,i)=>s+(center[i]-a[i])*v,0)/(len||1));
       if(Math.hypot(...center.map((v,i)=>v-(a[i]+d[i]*t)))<.6+shot.size)hits.push({c,t});
     }
     hits.sort((a,b)=>a.t-b.t);if(!hits.length)return false;
-    for(const {c} of piercing?hits:[hits[0]])this.destroyClone(c);return true;
+    for(const {c} of hits)this.destroyClone(c);return true;
   }
   blastClones(owner,p,radius){for(const c of this.vulnerableClones(owner))if(distance(c.p,p)<=radius)this.destroyClone(c);}
   updateDomainArts(dt,fighters){
@@ -259,5 +268,5 @@ export class DarkDomain {
   removeClone(c){c.root.removeFromParent();const i=this.clones.indexOf(c);if(i>=0)this.clones.splice(i,1);}
   clearClones(){for(const c of [...this.clones])this.removeClone(c);for(const g of this.projectiles.values())g.removeFromParent();this.projectiles.clear();for(const r of this.ripples)r.ring.removeFromParent();this.ripples=[];}
   reset(){this.transition=null;this.life=0;this.blink=0;this.blinkPhase='idle';this.intro.reset();this.switchEnvironment(false);this.clearClones();this.overlay.classList.remove('blinking');this.overlay.style.setProperty('--lid',0);}
-  state(){return {active:this.active,usable:this.usable,life:this.life,blink:this.blink||0,phase:this.blinkPhase||'idle',intro:this.intro.state(),environmentHidden:this.world.environment.every(o=>!o.visible),clones:this.clones.map(c=>({id:c.id,owner:c.owner,rowSlot:c.rowSlot,mode:c.mode,position:[...c.p],home:[...c.home],age:c.age})),bindings:this.bindings.map(b=>({owner:b.owner,victim:b.victim?.owner||null,position:[...b.p],life:b.life,age:b.age,ticks:b.ticks,sink:b.sink,ropes:b.ropes.length})),dives:this.dives.map(d=>({owner:d.owner,life:d.life,age:d.age,sink:d.sink})),depth:{player:this.depth('player'),enemy:this.depth('enemy')},projectiles:this.projectiles.size};}
+  state(){return {active:this.active,usable:this.usable,life:this.life,blink:this.blink||0,phase:this.blinkPhase||'idle',intro:this.intro.state(),environmentHidden:this.world.environment.every(o=>!o.visible),clones:this.clones.map(c=>({id:c.id,owner:c.owner,form:'dog',legs:c.limbs.length,damage:c.damage,rowSlot:c.rowSlot,mode:c.mode,position:[...c.p],home:[...c.home],age:c.age})),bindings:this.bindings.map(b=>({owner:b.owner,victim:b.victim?.owner||null,position:[...b.p],life:b.life,age:b.age,ticks:b.ticks,sink:b.sink,ropes:b.ropes.length})),dives:this.dives.map(d=>({owner:d.owner,life:d.life,age:d.age,sink:d.sink})),depth:{player:this.depth('player'),enemy:this.depth('enemy')},projectiles:this.projectiles.size};}
 }
