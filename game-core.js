@@ -16,7 +16,6 @@
     wind: ['Phong đạn', 'Phong nhận', 'Phong liên kích', 'Phong bích', 'Phong hồi'],
     earth: ['Thổ đạn', 'Thổ thương', 'Thổ liên kích', 'Thổ thành', 'Thổ phản'],
     light: ['Quang cầu', 'Quang thương', 'Quang liên kích', 'Quang thuẫn', 'Quang kính'],
-    dark: ['Ám cầu', 'Ám thương', 'Ám liên kích', 'Ám bích', 'Ám phản'],
     wood: ['Mộc đạn', 'Mộc thương', 'Mộc liên kích', 'Mộc thành', 'Mộc phản'],
     ice: ['Băng cầu', 'Băng thương', 'Băng liên kích', 'Băng bích', 'Băng kính']
   };
@@ -54,7 +53,15 @@
     { id: 'lightning-barrier', name: 'Lôi thuẫn', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'era'], cost: 26, damage: 0, shield: 80, duration: 5, count: 0, subtitle: 'Khiên điện bao quanh bản thân • hấp thụ 80 sát thương trong 5 giây' },
     { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .3, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 30% tốc độ trong vùng' }
   ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
-  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : variants.map((v, i) => ({
+  const darkSpells = [
+    { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'D', sequence:[...'df'], cost:24, damage:38, count:1, cloneCount:1, duration:5, subtitle:'Gọi một phân thân mực đen lao tới đánh đối thủ' },
+    { id:'dark-lance', name:'Ảnh đạn', kind:'attack', style:'shadowshot', rank:'B', sequence:[...'dfdf'], cost:34, damage:22, count:4, cloneCount:2, duration:4, subtitle:'Hai phân thân đứng hai bên, mỗi phân thân bắn hai đạn mực' },
+    { id:'dark-volley', name:'Ảnh vây sát', kind:'attack', style:'shadowpack', rank:'S', sequence:[...'dfcvzx'], cost:56, damage:24, count:4, cloneCount:4, duration:3, subtitle:'Bốn phân thân trồi lên quanh điểm ngắm rồi cùng lao vào đánh' },
+    { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Nhắm rồi mở mắt trong đầm lầy mực đen · mở khóa Ám thuật trong 30 giây' },
+    { id:'dark-barrier', name:'Ảnh vệ', kind:'defense', style:'shadowguard', rank:'C', sequence:[...'dfa'], cost:26, damage:0, shield:72, count:0, duration:5, subtitle:'Phân thân chắn đạn phía trước · hấp thụ 72 sát thương trong 5 giây' },
+    { id:'dark-reflect', name:'Ảnh hoán', kind:'defense', style:'shadowswap', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:4, subtitle:'Đổi chỗ với phân thân bên cạnh, để lại bóng thế thân hút đạn' }
+  ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:s.shield||0,requiresDomain:s.style!=='domain'}));
+  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
     damage: Math.round(v.damage * el.power), sequence: [...el.prefix, ...v.suffix],
@@ -93,9 +100,10 @@
       return { valid, ready: this.ready() };
     }
     clear() { this.sequence = []; }
-    cast() {
+    cast(context = {}) {
       const spell = this.ready();
       if (!spell) return { ok: false, reason: 'sequence' };
+      if (spell.requiresDomain && !context.darkDomain) return { ok: false, reason: 'domain' };
       if (this.cooldown > 0) return { ok: false, reason: 'cooldown' };
       if (this.chakra < spell.cost) return { ok: false, reason: 'chakra' };
       this.chakra -= spell.cost; this.cooldown = 1; this.casts++; this.clear(); return { ok: true, spell };

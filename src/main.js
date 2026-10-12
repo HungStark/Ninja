@@ -9,10 +9,12 @@ import { FireEffects } from "./effects.js";
 import { sealNames as names } from "./poses.js";
 import { createOpponent } from "./opponent.js";
 import { CameraImpacts } from './camera-impact.js';
+import { DarkDomain } from './dark-domain.js';
 async function main() {
   const $ = id => document.getElementById(id), { keys, spells, elements, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = globalThis.SealGameCore;
   let rules = new GameRules(), player = new Fighter(), enemy = new Fighter(), aiRules = new GameRules();
   const testMode = new URLSearchParams(location.search).get("test") === "1";
+  let testAIDisabled=false;
   const canvas = $("world");
   const renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
   renderer.outputColorSpace = T.SRGBColorSpace;
@@ -66,6 +68,7 @@ async function main() {
   const playerShield = new T.Mesh(new T.SphereGeometry(1, 24, 16), new T.MeshBasicMaterial({ color: '#a6edff', transparent: true, opacity: .09, wireframe: true, depthWrite: false }));
   playerShield.scale.set(1.05, 1.5, 1.05); scene.add(playerShield);
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const darkDomain = new DarkDomain(world,reducedMotion);
   let quality = 1;
   const qualities = [{ name: "Cao", ratio: 1.7, shadow: 2048, bloom: true, grass: 1700 }, { name: "C\xE2n b\u1EB1ng", ratio: 1.25, shadow: 1024, bloom: true, grass: 1200 }, { name: "Th\u1EA5p", ratio: 1, shadow: 512, bloom: false, grass: 650 }];
   function resize() {
@@ -111,7 +114,7 @@ async function main() {
   function spellMarkup(spell, i, preparation = false) {
     if (!preparation) return '<button class="spell ' + (i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-spell="' + i + '"><div class="spell-title">' + spell.name + '</div><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></button>';
     const taken = loadout.includes(spell.id), kind = spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
+    const stats = spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa 5 Ám thuật' : spell.style==='shadowswap' ? 'Đổi chỗ · bóng thế thân tồn tại 4 giây' : spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spell.glyph + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · CẤP ' + spell.rank + ' · ' + spell.sequence.length + ' ẤN · ' + spell.cost + ' CH</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -128,6 +131,7 @@ async function main() {
     const valid = validateLoadout(loadout);
     $('startButton').disabled = !valid.ok;
     $('loadoutNotice').textContent = loadoutMessage || (valid.ok ? 'Bộ chiêu sẵn sàng. Có thể phối hợp nhiều hệ trong một trận.' : valid.reason);
+    if(!loadoutMessage&&valid.ok&&loadout.some(id=>spells.find(s=>s.id===id).requiresDomain))$('loadoutNotice').textContent+=' Ám thuật chỉ dùng trong Hắc lãnh địa; nhớ mang chiêu mở lãnh địa.';
     document.querySelectorAll('[data-equip]').forEach(el => el.onclick = () => toggleEquip(el.dataset.equip));
     document.querySelectorAll('[data-remove]').forEach(el => el.onclick = () => toggleEquip(el.dataset.remove));
     document.querySelectorAll('[data-element]').forEach(el => el.classList.toggle('active', el.dataset.element === filterElement));
@@ -167,11 +171,11 @@ async function main() {
     $('comboSlots').innerHTML = spell.sequence.map((k, i) => '<span class="combo-slot ' + (seq[i] === k ? 'done' : seq.length === i ? 'next' : '') + '">' + k.toUpperCase() + '</span>').join('');
     const ready = rules.ready();
     $('comboLabel').textContent = ready?.id === spell.id ? 'ẤN HOÀN CHỈNH · ' + spell.name.toUpperCase() : spell.name.toUpperCase() + ' / ' + seq.length + ' / ' + spell.sequence.length + ' ẤN';
-    $('castButton').disabled = !started || paused || won || player.controlTime > 0 || !ready || rules.cooldown > 0 || rules.chakra < (ready?.cost || spell.cost);
+    $('castButton').disabled = !started || paused || won || !!darkDomain.transition || player.controlTime > 0 || !ready || (ready.requiresDomain&&!darkDomain.usable) || rules.cooldown > 0 || rules.chakra < (ready?.cost || spell.cost);
     // The ready flames follow exactly the same gate as the Space button.
     hands.setReady($('castButton').disabled ? null : ready.element);
     document.querySelectorAll('.seal').forEach(el => { el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
-    document.querySelectorAll('[data-spell]').forEach((el, i) => { el.classList.toggle('selected', i === selected); el.querySelectorAll('kbd').forEach((k, j) => k.classList.toggle('done', i === selected && seq[j] === k.dataset.seq)); });
+    document.querySelectorAll('[data-spell]').forEach((el, i) => { el.classList.toggle('selected', i === selected); el.classList.toggle('domain-locked',!!rules.spells[i].requiresDomain&&!darkDomain.usable); el.querySelectorAll('kbd').forEach((k, j) => k.classList.toggle('done', i === selected && seq[j] === k.dataset.seq)); });
   }
   function initAudio() {
     if (audio) return;
@@ -207,14 +211,14 @@ async function main() {
     src.start();
   }
   function seal(key) {
-    if (!started || paused || won || player.controlTime > 0) return;
+    if (!started || paused || won || darkDomain.transition || player.controlTime > 0) return;
     const result = rules.seal(key); activePose = keys.indexOf(key); hands.seal(activePose); poseAge = 0;
     $('currentSeal').textContent = key.toUpperCase() + ' / Ấn ' + String(activePose + 1).padStart(2, '0') + ' · ' + names[activePose];
     tone(290 + activePose * 28, .09, 'triangle');
     if (!result.valid) announce('Sai chuỗi. Chỉ dùng các chiêu đã mang vào trận.', true);
     else if (result.ready) {
       const extendable = rules.spells.some(s => s.sequence.length > rules.sequence.length && s.sequence.slice(0, rules.sequence.length).join('') === rules.sequence.join(''));
-      announce(result.ready.name + ' đủ ' + result.ready.sequence.length + ' ấn: SPACE thi triển' + (extendable ? ', hoặc kết tiếp để dùng chiêu mạnh hơn.' : '.'));
+      announce(result.ready.requiresDomain&&!darkDomain.usable ? 'Cần mở Hắc lãnh địa trước khi dùng '+result.ready.name+'.' : result.ready.name + ' đủ ' + result.ready.sequence.length + ' ấn: SPACE thi triển' + (extendable ? ', hoặc kết tiếp để dùng chiêu mạnh hơn.' : '.'));
       tone(670, .23);
     } else {
       const candidate = rules.spells.find(s => s.sequence.slice(0, rules.sequence.length).join('') === rules.sequence.join(''));
@@ -225,6 +229,19 @@ async function main() {
   function aim() { const cp = Math.cos(camera.pitch); return [-Math.sin(camera.yaw) * cp, Math.sin(camera.pitch), -Math.cos(camera.yaw) * cp]; }
   function enemyPos() { return [opponent.group.position.x, 1.72, opponent.group.position.z]; }
   function launch(spell, owner, pos, dir) {
+    if(spell.style==='domain'){
+      clearDragonView();clearMeteorView();setWorldFov(baseFov);hands.clearEffects();
+      return darkDomain.begin(owner,spell.duration);
+    }
+    if(spell.element==='dark'){
+      if(!darkDomain.usable)return false;
+      const destination=darkDomain.cast(spell,owner,pos,dir,volleyTarget(owner,pos,dir),owner==='player'?player:enemy);
+      if(destination){
+        if(owner==='player'){camera.p=[destination[0],1.72,destination[2]];moveTargetX=camera.p[0];moveDirection=0;cameraImpacts.trigger('defense');}
+        else opponent.group.position.set(destination[0],0,destination[2]);
+      }
+      return true;
+    }
     if (spell.kind === 'defense') {
       if (owner === 'player') cameraImpacts.trigger('defense');
       if(spell.style==='stormfield') {
@@ -343,9 +360,10 @@ async function main() {
   }
   function cast() {
     if (!started || paused || won) return;
+    if(darkDomain.transition){announce('Đang chuyển vào hoặc ra khỏi lãnh địa.',true);return;}
     if (player.controlTime > 0) { announce('Đang bị giam trong Thủy ngục!', true); return; }
-    const result = rules.cast();
-    if (!result.ok) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
+    const result = rules.cast({darkDomain:darkDomain.usable});
+    if (!result.ok) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
     const spell = result.spell;
     activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); fireSound();
     launch(spell, 'player', camera.p, aim()); announce(spell.name + '!');
@@ -383,6 +401,7 @@ async function main() {
   function finish(victory) {
     hands.clearEffects();
     if (won) return;
+    darkDomain.reset();clearDarkArts();
     stopSpellVoice();
     clearDragonView();
     clearMeteorView();
@@ -400,7 +419,9 @@ async function main() {
     const fighter = shot.owner === 'enemy' ? player : enemy, result = fighter.receive(shot.damage, shot.reflected || shot.unreflectable);
     if (dragonView?.shot === shot && dragonView.phase === 'overhead') { dragonView.phase = 'impact'; dragonView.hold = 0; }
     const cleanVolleyHit = shot.element === 'fire' && shot.style === 'volley';
-    if(shot.element==='lightning') {
+    if(shot.element==='dark') {
+      darkDomain.splash(pos);
+    } else if(shot.element==='lightning') {
       if(shot.style!=='thunder')effects.lightningArts.blast(pos,shot.style==='bird'?1.8:.7);
       for(let i=0;i<18;i++)particle(pos,[range(-2,2),range(-.5,2),range(-2,2)],.04,.45,shot.color);
     } else if (shot.style !== 'meteor' && !cleanVolleyHit) burst(pos, 14, .9, shot.color);
@@ -578,6 +599,7 @@ async function main() {
       const target = shot.owner === 'enemy' ? camera.p : enemyPos(), delta = vsub(shot.p, shot.old), t = clamp(dot(vsub(target, shot.old), delta) / (dot(delta, delta) || 1), 0, 1), closest = vadd(shot.old, vmul(delta, t));
       const collided = vlen(vsub(closest, target)) < .54 + shot.size;
       if (shot.element === 'fire' && shot.style === 'volley' && !collided && dot(vsub(shot.target, shot.old), vsub(shot.target, shot.p)) <= 0) { shots.splice(i, 1); continue; }
+      if(darkDomain.intercept(shot)){shots.splice(i,1);continue;}
       if (collided && impact(shot, closest)) shots.splice(i, 1);
       else if (shot.life <= 0 || Math.abs(shot.p[0]) > 30 || Math.abs(shot.p[2]) > 45 || shot.p[1] < .08) shots.splice(i, 1);
       if (won) break;
@@ -594,13 +616,15 @@ async function main() {
     }
   }
   function updateAI(dt) {
+    if(testAIDisabled)return;
     aiRules.tick(dt); aiCastAge += dt;
     if (enemy.controlTime > 0) { $('enemyAction').textContent = 'Thủy ngục · ' + enemy.controlTime.toFixed(1) + 's'; return; }
     aiTimer -= dt;
     if (aiTimer > 0) return;
     if (!aiSpell) {
       const incoming = shots.some(s => s.owner === 'player' && vlen(vsub(s.p, enemyPos())) < 11);
-      const defenses = aiRules.spells.filter(s => s.kind === 'defense' && s.cost <= aiRules.chakra), attacks = aiRules.spells.filter(s => s.kind === 'attack' && s.cost <= aiRules.chakra);
+      const available=s=>s.cost<=aiRules.chakra&&(!s.requiresDomain||darkDomain.usable);
+      const defenses = aiRules.spells.filter(s => s.kind === 'defense' && available(s)), attacks = aiRules.spells.filter(s => s.kind === 'attack' && available(s));
       const choices = incoming && enemy.shieldTime <= 0 && defenses.length && aiCycle % 3 === 2 ? defenses : attacks;
       aiSpell = choices[aiCycle % choices.length];
       if (!aiSpell) { aiTimer = .6; return; }
@@ -610,7 +634,7 @@ async function main() {
       const key = aiSpell.sequence[aiStep++]; aiRules.seal(key); enemyPose = keys.indexOf(key); opponent.rig.seal();
       aiTimer = .42; $('enemyAction').textContent = 'Kết ấn ' + aiStep + '/' + aiSpell.sequence.length + ' · ' + aiSpell.name;
     } else {
-      const result = aiRules.cast();
+      const result = darkDomain.transition ? {ok:false} : aiRules.cast({darkDomain:darkDomain.usable});
       if (result.ok) { launch(aiSpell, 'enemy', enemyPos(), vnorm(vsub(camera.p, enemyPos()))); opponent.rig.cast(); aiCasts++; aiCastAge = 0; $('enemyAction').textContent = 'Thi triển · ' + aiSpell.name; }
       enemyPose = -1; aiSpell = null; aiTimer = 1.65;
     }
@@ -618,11 +642,20 @@ async function main() {
   function updateParticles(dt) {
     for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.life -= dt; if (p.life <= 0) { particles.splice(i, 1); continue; } p.p = vadd(p.p, vmul(p.v, dt)); p.v[1] += dt * .35; p.v = vmul(p.v, 1 - dt * .8); }
   }
+  function clearDarkArts(){
+    for(let i=shots.length-1;i>=0;i--)if(shots[i].element==='dark')shots.splice(i,1);
+    for(const f of [player,enemy])if(f.defenseElement==='dark'){f.shield=0;f.shieldTime=0;f.reflect=0;}
+  }
+  function shootInk(clone,pos,target){
+    shots.push({p:[...pos],old:[...pos],v:vmul(vnorm(vsub(target,pos)),24),owner:clone.owner,element:'dark',style:'ink',color:'#9c85bc',damage:clone.damage,size:.34,life:4,age:0,trail:0,reflected:false});
+  }
   function tick(dt) {
     const running = started && !paused && !won;
     if (!paused) animationTime += dt;
     if (running) {
       battleTime += dt;
+      const wasDark=darkDomain.active;darkDomain.advance(dt,animationTime);
+      if(wasDark&&!darkDomain.active)clearDarkArts();
       if (rules.tick(dt)) announce('Chuỗi ấn hết hạn — kết lại từ đầu.', true);
       player.tick(dt); enemy.tick(dt);
       const remaining = moveTargetX - camera.p[0];
@@ -630,6 +663,8 @@ async function main() {
       camera.p[0] += moveDirection * Math.min(Math.abs(remaining), 10 * dt);
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
       updateAI(dt); updateShots(dt);
+      if(!won)darkDomain.updateClones(dt,animationTime,[{owner:'player',pos:camera.p,fighter:player},{owner:'enemy',pos:enemyPos(),fighter:enemy}],
+        (clone,pos)=>impact({owner:clone.owner,element:'dark',style:'shadowstrike',damage:clone.damage,v:vnorm(vsub(pos,clone.p)),unreflectable:true},pos),shootInk);
       messageTime -= dt;
       if (messageTime <= 0) { $('message').textContent = rules.ready() ? 'SPACE thi triển · chuột trái/phải để né' : 'Kết ấn theo quyển trục mang theo'; $('message').style.color = '#c7c5b6'; }
       updateUI();
@@ -654,7 +689,7 @@ async function main() {
     const delta = vsub(enemyPos(), camera.p), d = aim(), onTarget = vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7;
     $('reticle').classList.toggle('on-target', onTarget && enemy.hp > 0 && !waveView);
     $('targetInfo').style.opacity = onTarget && running && !waveView ? 1 : 0; $('targetName').textContent = 'ĐỐI THỦ'; $('targetHP').style.width = enemy.hp / enemy.maxHp * 100 + '%';
-    playerShield.visible = !['fire', 'water', 'lightning'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45, camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
+    playerShield.visible = !['fire', 'water', 'lightning', 'dark'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45, camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
     document.body.classList.toggle('dragon-active', started && !won && (!!dragonView || shots.some(s => s.owner === 'player' && s.phase === 'forming')));
     camera3d.position.fromArray(camera.p); camera3d.rotation.set(camera.pitch, camera.yaw, 0, 'YXZ');
     updateDragonView(running ? dt : 0);
@@ -678,6 +713,7 @@ async function main() {
     camera3d.quaternion.multiply(reactionRotation);
     effects.update(paused ? 0 : dt, animationTime, shots, particles, camera3d, quality, walls,
       [{ owner: 'player', fighter: player, pos: camera.p }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }],fields);
+    darkDomain.visuals(running?dt:0,animationTime,shots);
   }
   function render() { renderer.info.reset(); renderer.clear(); composer.render(); }
   function clearDragonView() {
@@ -805,7 +841,7 @@ async function main() {
     moveTargetX = clamp(moveTargetX + direction * 1.8, -6, 6);
   }
   function look(dx, dy) {
-    if (dragonView || meteorView || waveView) return;
+    if (dragonView || meteorView || waveView || darkDomain.transition) return;
     camera.yaw -= dx * .0025;
     camera.pitch = clamp(camera.pitch - dy * .0025, -.65, .65);
   }
@@ -816,9 +852,10 @@ async function main() {
     clearDragonView();
     clearMeteorView();
     rules = new GameRules(loadout); player = new Fighter(); enemy = new Fighter();
+    darkDomain.reset();
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
     const el = elements[(round - 1) % elements.length], support = elements[(round + 1) % elements.length];
-    aiRules = new GameRules([el.id + '-orb', el.id + '-lance', el.id + (el.id === 'fire' ? '-meteor' : '-volley'), support.id + '-barrier', support.id + '-reflect']);
+    aiRules = new GameRules([el.id + '-orb', el.id + '-lance', el.id + (el.id === 'fire' ? '-meteor' : el.id==='dark'?'-domain':'-volley'), support.id + '-barrier', support.id + '-reflect']);
     $('enemyElement').textContent = el.glyph + ' ' + el.name + ' / ' + support.name; $('enemyAction').textContent = 'Đang quan sát…';
     try { localStorage.setItem('anhoa-loadout-v3', JSON.stringify(loadout)); } catch {}
     started = true; paused = false; won = false; selected = 0; score = 0; battleTime = 0; aiTimer = 2.2; aiSpell = null; aiStep = 0; aiCycle = 0; aiCasts = 0; aiCastAge = 99; enemyPose = -1; enemyHit = 0;
@@ -832,6 +869,7 @@ async function main() {
   function pause() { if (!started || won) return; paused = true; if (spellVoice) { try { window.speechSynthesis.pause(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
   function resume(event) { paused = false; if (spellVoice) { try { window.speechSynthesis.resume(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
+    darkDomain.reset();
     stopSpellVoice();
     clearDragonView();
     clearMeteorView();
@@ -880,8 +918,9 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, introStage: s.introStage || null, visual: effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
+  const state = () => ({ darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, introStage: s.introStage || null, visual: effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
   window.__AN_HOA__ = { state };
+  if(testMode)window.__AN_HOA__.setAIEnabled=enabled=>{testAIDisabled=!enabled;};
   if (testMode) window.__AN_HOA__.launchEnemy = (id, pos = enemyPos(), dir = vnorm(vsub(camera.p, pos))) => {
     if (!started || paused || won) return;
     const spell = spells.find(s => s.id === id); if (!spell) throw new Error('Unknown spell');

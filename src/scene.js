@@ -332,5 +332,6 @@ export function createWorld() {
     }
     petals.instanceMatrix.needsUpdate = true;
   }
-  return { scene, sky, sun, fill, grass, gate, update, lanternLights };
+  const environment = [...scene.children];
+  return { scene, sky, sun, fill, grass, gate, update, lanternLights, environment };
 }

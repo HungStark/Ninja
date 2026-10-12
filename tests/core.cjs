@@ -3,23 +3,31 @@ const root = path.join(__dirname, '..'), context = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'game-core.js'), 'utf8'), context);
 const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = context.SealGameCore;
 assert.equal(new Set(keys).size, 12);
-assert.equal(elements.length, 9); assert.equal(spells.length, 48);
-assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 48);
+assert.equal(elements.length, 9); assert.equal(spells.length, 49);
+assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 49);
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
-  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water','lightning'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
+  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water','lightning','dark'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
 }
 for (const spell of spells) {
   const r = new GameRules([spell.id]); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
   assert.equal(r.ready(),undefined); assert.equal(r.cast().reason,'sequence');
   r.seal(spell.sequence.at(-1));
-  assert.equal(r.ready().id,spell.id); assert.equal(r.cast().ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
+  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({darkDomain:true}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
 }
 assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort(),[2,3,4,5,6,8]);
+const dark=spells.filter(s=>s.element==='dark');
+assert.equal(dark.length,6);assert.equal(dark.find(s=>s.style==='domain').duration,30);
+assert.equal(dark.filter(s=>s.requiresDomain).length,5);
+for(const spell of dark.filter(s=>s.requiresDomain)){
+ const rules=new GameRules([spell.id]);spell.sequence.forEach(k=>rules.seal(k));
+ assert.equal(rules.cast().reason,'domain');assert.equal(rules.casts,0);assert.equal(rules.chakra,100);assert.equal(rules.sequence.length,spell.sequence.length);
+ assert.equal(rules.cast({darkDomain:false}).reason,'domain');assert.equal(rules.cast({darkDomain:true}).ok,true);
+}
 for(const element of elements){
  const list=spells.filter(s=>s.element===element.id), attack=list.filter(s=>s.kind==='attack').sort((a,b)=>a.sequence.length-b.sequence.length);
- for(let i=1;i<attack.length;i++){if(element.id!=='water')assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);assert.ok(attack[i].cost>attack[i-1].cost);}
- const volley=attack.at(-1), orb=list.find(s=>s.style==='orb'), chain=new GameRules([orb.id,volley.id]);
+ for(let i=1;i<attack.length;i++){if(!['water','dark'].includes(element.id))assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);assert.ok(attack[i].cost>attack[i-1].cost);}
+ const volley=attack.at(-1), orb=list.find(s=>s.id===element.id+'-orb'), chain=new GameRules([orb.id,volley.id]);
  volley.sequence.slice(0,2).forEach(k=>chain.seal(k));assert.equal(chain.ready().id,orb.id);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);
  volley.sequence.slice(2,-1).forEach(k=>chain.seal(k));assert.equal(chain.ready(),undefined);assert.equal(chain.cast().reason,'sequence');
  chain.seal(volley.sequence.at(-1));assert.equal(chain.cast().spell.id,volley.id);
@@ -109,4 +117,4 @@ assert.equal(pkg.version, "0.3.0");
 const bundle = fs.readFileSync(path.join(root, "game.js"), "utf8");
 assert.ok(bundle.length > 5e5);
 assert.ok(!/<script[^>]+https?:/.test(fs.readFileSync(path.join(root, "index.html"), "utf8")));
-console.log("PASS: 9 elements; 48 unique spells; six fire, water and lightning arts; exact seal counts; swept field slowdown and speed restoration; water control, shields, wave collision; combos, loadouts, chakra; offline bundle and GLB.");
+console.log("PASS: 9 elements; 49 unique spells; six fire, water, lightning and dark arts; domain gating; exact seal counts; swept field slowdown and speed restoration; water control, shields, wave collision; combos, loadouts, chakra; offline bundle and GLB.");

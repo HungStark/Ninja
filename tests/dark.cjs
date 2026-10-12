@@ -1,0 +1,62 @@
+const {chromium}=require('playwright'),assert=require('node:assert/strict');
+const fs=require('node:fs/promises'),path=require('node:path');
+(async()=>{
+ await fs.mkdir('test-results/dark',{recursive:true});
+ const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+ try{
+  const page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];
+  page.setDefaultNavigationTimeout(90000);
+  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  const state=()=>page.evaluate(()=>window.__AN_HOA__.state());
+  const advance=s=>page.evaluate(s=>window.__AN_HOA__.advance(s),s);
+  const click=id=>page.evaluate(id=>document.getElementById(id).click(),id);
+  const seal=async id=>{await page.keyboard.press('Backspace');for(const key of await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id).sequence,id))await page.keyboard.press(key);};
+  const cast=async id=>{await seal(id);const cost=await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id).cost,id),s=await state();if(s.chakra<cost)await advance((cost-s.chakra)/11+.02);assert.equal(await page.locator('#castButton').isDisabled(),false,id+' ready');await page.keyboard.press('Space');};
+  const enemy=(id,pos,dir)=>page.evaluate(({id,pos,dir})=>window.__AN_HOA__.launchEnemy(id,pos,dir),{id,pos,dir});
+  const reset=async()=>{await page.keyboard.press('Escape');await click('resetButton');};
+  const equip=async ids=>{if((await state()).started){await page.keyboard.press('Escape');await click('changeLoadout');}await click('clearLoadout');for(const id of ids)await page.evaluate(id=>document.querySelector(`[data-equip="${id}"]`).click(),id);await click('startButton');};
+  const shot=name=>page.screenshot({path:`test-results/dark/${name}.png`});
+  const enter=async()=>{await cast('dark-domain');await advance(1.1);assert.equal((await state()).darkDomain.usable,true);};
+  await page.goto('file:///'+path.join(process.cwd(),'index.html').replaceAll('\\','/')+'?test=1');
+  await page.waitForFunction(()=>document.body.dataset.ready==='true',null,{timeout:60000});
+  await click('soundButton');await page.evaluate(()=>window.__AN_HOA__.setAIEnabled(false));
+  await page.locator('[data-element="dark"]').click();assert.equal(await page.locator('[data-equip]').count(),6);
+  for(const [id,count]of[['dark-domain',8],['dark-orb',2],['dark-lance',4],['dark-volley',6],['dark-barrier',3],['dark-reflect',5]])assert.equal(await page.locator(`[data-equip="${id}"] kbd`).count(),count);
+  await shot('catalog');await page.locator('[data-element="all"]').click();
+  await equip(['dark-domain','dark-orb','dark-lance','dark-barrier','dark-reflect']);
+  for(const id of ['dark-orb','dark-lance','dark-barrier','dark-reflect']){
+   await seal(id);const before=await state();assert.equal(await page.locator('#castButton').isDisabled(),true);await page.keyboard.press('Space');
+   const after=await state();assert.equal(after.chakra,before.chakra);assert.equal(after.casts,0);assert.deepEqual(after.sequence,before.sequence);assert.equal(after.darkDomain.clones.length,0);
+  }
+  await shot('locked');await cast('dark-domain');await advance(.2);let s=await state();assert.equal(s.darkDomain.active,false);assert.equal(s.darkDomain.phase,'closing');assert.ok(s.darkDomain.blink>.4);await shot('closing');
+  await advance(.2);s=await state();assert.equal(s.darkDomain.active,true);assert.equal(s.darkDomain.environmentHidden,true);assert.equal(s.darkDomain.blink,1);await shot('closed');
+  await page.keyboard.press('Escape');const frozen=await state();await advance(3);assert.deepEqual((await state()).darkDomain,frozen.darkDomain);await page.keyboard.press('Enter');
+  await advance(.7);s=await state();assert.equal(s.darkDomain.usable,true);assert.ok(s.darkDomain.life>29);assert.equal(s.cameraView,'first-person');assert.equal(s.viewFov,68);await shot('swamp');
+  await cast('dark-orb');await advance(.5);assert.equal((await state()).darkDomain.clones.filter(c=>c.mode==='melee').length,1);await shot('melee');await advance(2);assert.equal((await state()).enemyHealth,182);
+  await reset();await enter();await cast('dark-lance');await advance(.8);s=await state();assert.equal(s.darkDomain.clones.filter(c=>c.mode==='shooter').length,2);assert.equal(s.darkDomain.projectiles,2);await shot('shooters');await advance(1.8);assert.equal((await state()).enemyHealth,132,'Four ink shots hit');
+  await reset();await enter();await cast('dark-barrier');await advance(.5);assert.equal((await state()).shield,72);assert.equal((await state()).darkDomain.clones[0].mode,'guard');await shot('guard');
+  await enemy('fire-orb',[0,1.72,0],[0,0,1]);await advance(.3);s=await state();assert.equal(s.health,220);assert.equal(s.shield,29);assert.equal(s.shots,0,'Guard catches the shot before it reaches the player');
+  await advance(.5);await cast('dark-reflect');await advance(.1);s=await state();assert.equal(s.position[0],-3.6);assert.equal(s.position[2],7);assert.equal(s.darkDomain.clones.filter(c=>c.mode==='decoy').length,1);await shot('swap');
+  await enemy('fire-orb',[0,1.72,0],[0,0,1]);await advance(.35);assert.equal((await state()).shots,0,'Decoy catches shots at the old position');assert.equal((await state()).health,220);
+  await reset();await enter();await cast('dark-lance');await advance(1.05);const clones=(await state()).darkDomain.clones.filter(c=>c.mode==='shooter');await cast('dark-reflect');await advance(.1);s=await state();assert.ok(clones.some(c=>Math.abs(c.position[0]-s.position[0])<.001&&Math.abs(c.position[2]-s.position[2])<.001),'Swap with an existing shooter');
+  await page.keyboard.press('Escape');await click('resetButton');assert.equal((await state()).darkDomain.active,false);assert.equal((await state()).darkDomain.environmentHidden,false);assert.equal((await state()).darkDomain.clones.length,0);
+  await equip(['dark-domain','dark-volley','dark-orb','dark-barrier','dark-reflect']);await seal('dark-volley');assert.equal(await page.locator('#castButton').isDisabled(),true);await page.keyboard.press('Space');assert.equal((await state()).casts,0);
+  await enter();await cast('dark-volley');await advance(.2);assert.equal((await state()).darkDomain.clones.filter(c=>c.mode==='pack').length,4);await shot('surround');await advance(1);assert.equal((await state()).enemyHealth,124);
+  await reset();await enter();await page.evaluate(()=>document.getElementById('world').dispatchEvent(new MouseEvent('mousemove',{bubbles:true,movementX:-300,movementY:0})));await cast('dark-volley');await advance(1.2);assert.equal((await state()).enemyHealth,220,'Aiming away misses');
+  await reset();await enter();await advance(12);await cast('dark-domain');await advance(1.1);assert.ok((await state()).darkDomain.life>29,'Recast refreshes the duration');
+  await page.keyboard.press('Escape');const activePause=await state();await advance(4);assert.deepEqual((await state()).darkDomain,activePause.darkDomain);await page.keyboard.press('Enter');
+  await click('qualityButton');await click('qualityButton');await advance(.1);await shot('swamp-low');assert.equal((await state()).darkDomain.environmentHidden,true);
+  await advance((await state()).darkDomain.life+.4);s=await state();assert.equal(s.darkDomain.active,false);assert.equal(s.darkDomain.environmentHidden,false);assert.equal(s.darkDomain.clones.length,0);assert.equal(s.darkDomain.projectiles,0);await advance(.7);assert.equal((await state()).darkDomain.phase,'idle');await shot('restored');
+  await seal('dark-orb');const chakra=(await state()).chakra;await page.keyboard.press('Space');assert.equal((await state()).chakra,chakra);
+  await cast('dark-domain');await advance(.2);await reset();assert.equal((await state()).darkDomain.phase,'idle');assert.equal((await state()).darkDomain.active,false);
+  await enemy('dark-orb');await advance(.2);assert.equal((await state()).darkDomain.clones.length,0,'Enemy cannot summon outside the domain');
+  await enemy('dark-domain');await advance(1.1);await enemy('dark-orb');await advance(.5);assert.equal((await state()).darkDomain.clones[0].owner,'enemy');await advance(2);assert.equal((await state()).health,182);
+  await reset();await enter();for(let i=0;i<3;i++){await cast('dark-orb');await advance(2.1);}await cast('dark-volley');await advance(1);await advance(1);await cast('dark-orb');await advance(2.1);assert.equal((await state()).won,true);assert.equal((await state()).darkDomain.active,false,'Victory restores the scene');
+  await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await page.waitForFunction(()=>document.body.dataset.ready==='true');await click('soundButton');await page.evaluate(()=>window.__AN_HOA__.setAIEnabled(false));await equip(['dark-domain']);await cast('dark-domain');await advance(.36);assert.equal((await state()).darkDomain.usable,true);assert.equal((await state()).viewFov,68);
+  await page.keyboard.press('Escape');await click('changeLoadout');for(let i=0;i<6;i++)await click('nextButton');
+  await equip(['fire-orb']);await page.evaluate(()=>window.__AN_HOA__.setAIEnabled(true));await advance(6.8);s=await state();assert.equal(s.round,7);assert.equal(s.darkDomain.active,true);assert.equal(s.aiCasts,1,'Dark AI opens the domain before casting summons');
+  await advance(3);assert.ok((await state()).aiCasts>=2,'Dark AI uses summons after opening the domain');
+  assert.deepEqual(errors,[]);await fs.writeFile('test-results/dark/verification.json',JSON.stringify({passed:true,errors},null,2));
+  console.log('PASS: six dark arts, gating without chakra loss, blink, ink environment, 30 seconds, clone damage, shooters, guard interception, decoy, swap, aimed surround, recast, pause, expiration, scene restoration, reset, enemy summons, victory, low quality and reduced motion.');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

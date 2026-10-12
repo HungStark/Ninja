@@ -76,7 +76,7 @@ export class FireEffects {
     while (this.objects.length < shots.length) this.makeShot();
     for (let i = 0; i < this.objects.length; i++) {
       const g = this.objects[i], shot = shots[i];
-      g.visible = !!shot && !['fire', 'water', 'lightning'].includes(shot.element);
+      g.visible = !!shot && !['fire', 'water', 'lightning', 'dark'].includes(shot.element);
       if (!g.visible) continue;
       g.children[0].material.uniforms.uTime.value = time;
       g.children[0].material.uniforms.uColor.value.set(shot.color || '#ff844b');
@@ -92,7 +92,7 @@ export class FireEffects {
     }
     for (let i = 0; i < this.lights.length; i++) {
       const shot = shots[i], l = this.lights[i];
-      l.intensity = !shot || ['tsunami','thunder'].includes(shot.style) ? 0 : shot.style === 'boat' ? 5 : (shot.element==='lightning'?2.5:18) * shot.size;
+      l.intensity = !shot || ['tsunami','thunder'].includes(shot.style) ? 0 : shot.style === 'boat' ? 5 : (['lightning','dark'].includes(shot.element)?2.5:18) * shot.size;
       if (shot) l.position.fromArray(shot.p);
       if (shot) l.color.set(shot.color || '#ff844b');
     }

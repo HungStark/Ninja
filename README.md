@@ -10,7 +10,7 @@ Nếu có Node.js, chạy **npm start** rồi mở http://127.0.0.1:4173.
 
 ## Quyển trục trước trận
 
-Có **9 hệ, 48 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa, Thủy và Lôi có 4 chiêu công, 2 chiêu thủ; các hệ còn lại có 3 công, 2 thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ; có thể thay một chiêu công bằng Hỏa cầu.
+Có **9 hệ, 49 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa, Thủy, Lôi và Ám có 4 chiêu công, 2 chiêu thủ; các hệ còn lại có 3 công, 2 thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ; có thể thay một chiêu công bằng Hỏa cầu.
 
 - Mang **từ 1 đến tối đa 5 chiêu**, tối đa 3 chiêu mỗi loại.
 - Khi mang đủ 5: **3 công + 2 thủ** hoặc **2 công + 3 thủ**.
@@ -73,6 +73,19 @@ Hệ Lôi có sáu chiêu với hiệu ứng điện riêng:
 
 Thiên lôi ngước camera lên đám mây như Thiên thạch, giữ cảnh khi tia sét đánh xuống rồi trả về góc ngắm ban đầu; chiêu của máy không điều khiển camera người chơi. Vòng báo trên đất cho phép né trước khi sét đánh; sét không bị phản đòn. Lôi trận đứng tại vị trí thi triển, giữ nguyên sát thương và vận tốc gốc của đạn: đạn rời vùng sẽ nhanh trở lại, đạn cùng bên không bị làm chậm, vùng chồng nhau không nhân độ chậm. Thi triển lại thay vùng cũ của cùng người chơi. Khiên và trận có thể tồn tại cùng nhau; hiệu ứng, thời gian và camera dừng khi tạm dừng, được xóa khi đấu lại. Giữ các ID Lôi cũ để bộ chiêu đã lưu vẫn dùng được.
 
+### Ám thuật và Hắc lãnh địa
+
+| Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
+| --- | --- | --- | --- | --- |
+| Hắc lãnh địa | 8 | D F C V Z X E R | 70 | Nhắm mắt rồi mở ra trong đầm lầy mực đen; lãnh địa tồn tại 30 giây |
+| Ảnh phân thân | 2 | D F | 24 | Một phân thân lao tới đánh, 38 sát thương |
+| Ảnh đạn | 4 | D F D F | 34 | Hai phân thân, mỗi phân thân bắn hai đạn mực, mỗi đạn 22 sát thương |
+| Ảnh vây sát | 6 | D F C V Z X | 56 | Bốn phân thân trồi lên quanh điểm ngắm rồi đánh vào đó, mỗi phân thân 24 sát thương; có thể đánh trượt |
+| Ảnh vệ | 3 | D F A | 26 | Phân thân phía trước chặn đạn, hấp thụ 72 sát thương trong 5 giây |
+| Ảnh hoán | 5 | D F Z X C | 32 | Đổi chỗ với phân thân bắn đạn hoặc gọi bóng bên cạnh để đổi chỗ; để lại thế thân hút đạn trong 4 giây |
+
+Năm chiêu phân thân chỉ dùng khi lãnh địa đã mở. Ngoài lãnh địa, nút thi triển bị khóa, Space báo lý do và không trừ chakra hoặc xóa chuỗi đang kết; cần mang Hắc lãnh địa trong bộ chiêu nếu muốn tự mở nó. Lãnh địa dùng được cho cả hai bên. Cây, cổng, núi, đường và ánh sáng sân đấu được ẩn khi mắt khép hoàn toàn, thay bằng mặt mực đen chuyển động và chân trời tối. Nhân vật và chiêu thức vẫn hoạt động trong lãnh địa. Thi triển lại làm mới thời gian 30 giây; hết thời gian sẽ khép/mở mắt để trả cảnh cũ, xóa phân thân, đạn mực và Ảnh vệ. Tạm dừng đóng băng cả hoạt ảnh mắt, phân thân và đồng hồ; đấu lại, về chọn chiêu hoặc kết thúc trận trả lại cảnh cũ ngay. Máy dùng hệ Ám tự mở lãnh địa trước khi gọi phân thân.
+
 Các hệ còn lại dùng bảng cấp sau:
 
 | Cấp | Số ấn | Loại chiêu | Cách hoạt động |
@@ -125,10 +138,11 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 
 - **npm run build:** bundle src/main.js thành game.js để chơi trực tiếp ngoại tuyến.
 - **npm run assets:** xuất lại model tay GLB và dữ liệu nhúng.
-- **npm test:** luật 48 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khiên/phản đòn/hồi máu, va chạm tường, vùng làm chậm và vị trí thiên thạch, GLB, animation và máy chủ.
+- **npm test:** luật 49 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khóa Ám thuật ngoài lãnh địa, khiên/phản đòn/hồi máu, va chạm tường, vùng làm chậm và vị trí thiên thạch, GLB, animation và máy chủ.
 - **npm run test:browser:** Edge headless, WebGL 2/SwiftShader; kiểm tra chọn chiêu, 12 thế tay, di chuyển chuột, máy kết ấn, sát thương, khiên, phản đòn, thắng/thua, tạm dừng, chọn lại và giao diện nhỏ.
 - **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
 - **npm run test:lightning:** sáu chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
+- **npm run test:dark:** sáu Ám thuật, khóa chiêu, hoạt ảnh mắt, đổi môi trường, lãnh địa 30 giây, phân thân công/thủ/đổi chỗ, máy mở lãnh địa, hết hạn, tạm dừng/reset/thắng, đồ họa thấp và giảm chuyển động.
 - **npm run test:fire:** kiểm tra sáu chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra sáu chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
 - **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, cú trúng không để lại lửa, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
@@ -143,13 +157,14 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 
 ## Cấu trúc
 
-- **game-core.js:** 9 hệ, 48 chiêu, kiểm tra bộ chiêu, luật kết ấn/chakra, sinh lực/khiên/phản đòn, va chạm tường, vùng làm chậm và chọn vùng thiên thạch.
+- **game-core.js:** 9 hệ, 49 chiêu, kiểm tra bộ chiêu, luật kết ấn/chakra và khóa Ám thuật, sinh lực/khiên/phản đòn, va chạm tường, vùng làm chậm và chọn vùng thiên thạch.
 - **src/main.js:** quyển trục, HUD, điều khiển chuột, AI, va chạm và vòng trận đấu.
 - **src/opponent.js:** nhân vật ninja, tay kết ấn có khớp, tay áo đi theo cổ tay, khiên máy.
 - **src/scene.js:** môi trường anime, toon shading, ánh sáng, bóng, gió, cây hoa và cánh hoa.
 - **src/effects.js:** đạn theo màu hệ, ánh sáng, vệt, khói và vòng va chạm.
 - **src/fire-arts.js:** shader lửa, rồng có thân uốn lượn, thiên thạch, dấu báo vùng rơi, vòm khiên, tường lửa và vụ nổ.
 - **src/lightning-arts.js:** cầu điện, thương sét, chim điện, mây và tia Thiên lôi, khiên và Lôi trận.
+- **src/dark-domain.js:** hoạt ảnh khép/mở mắt, đổi và khôi phục môi trường, shader mực đen, phân thân tấn công/bắn đạn/phòng ngự/đổi chỗ và đạn mực.
 - **src/water-arts.js:** mặt nước, cầu giam giữ, thuyền hải tặc, sóng cuốn chiêu và hai kiểu khiên nước.
 - **src/hands.js / hand-model.js / poses.js:** model tay, rig và 12 thế kết ấn.
 - **src/hand-sculpt.js:** bề mặt da liền, tỷ lệ ngón, UV và trọng số xương khi xuất model.

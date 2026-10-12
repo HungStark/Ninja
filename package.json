@@ -19,6 +19,7 @@
     "test:fire": "node tests/fire.cjs",
     "test:water": "node tests/water.cjs",
     "test:lightning": "node tests/lightning.cjs",
+    "test:dark": "node tests/dark.cjs",
     "test:hand-vfx": "node tests/hand-vfx.cjs",
     "test:meteor-zoom": "node tests/meteor-zoom.cjs",
     "test:impact-motion": "node tests/impact-motion.cjs"
