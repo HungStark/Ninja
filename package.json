@@ -26,7 +26,9 @@
     "test:wind": "node tests/wind.cjs",
     "test:hand-vfx": "node tests/hand-vfx.cjs",
     "test:meteor-zoom": "node tests/meteor-zoom.cjs",
-    "test:impact-motion": "node tests/impact-motion.cjs"
+    "test:impact-motion": "node tests/impact-motion.cjs",
+    "test:wind-camera": "node tests/wind-camera.cjs",
+    "test:wind-spirit": "node tests/wind-spirit.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

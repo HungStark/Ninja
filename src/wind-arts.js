@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { vfxToon } from './vfx-materials.js';
+import { WindSpiritModel } from './wind-spirit.js';
 
 const clamp=v=>Math.max(0,Math.min(1,v)),ease=v=>{v=clamp(v);return v*v*(3-2*v);};
 const forward=new T.Vector3(0,0,1);
@@ -17,7 +18,7 @@ function spiralGeometry(){
 
 export class WindArts {
   constructor(scene){
-    this.scene=scene;this.shots=new Map();this.walls=new Map();this.airborne=[];this.recoveries=[];this.spirits=[];this.cuts=[];this.reflections=0;
+    this.scene=scene;this.spiritModel=new WindSpiritModel();this.shots=new Map();this.walls=new Map();this.airborne=[];this.recoveries=[];this.spirits=[];this.cuts=[];this.reflections=0;
     this.mint=ribbon('#b8f6df',.8);this.white=ribbon('#effff6');this.soft=ribbon('#73c4ac',.16);
     this.gustMaterial=ribbon('#b8f6df',.38);
     this.body=vfxToon('#9bdfc5',{emissive:'#276553',emissiveIntensity:.18});
@@ -46,25 +47,18 @@ export class WindArts {
   release(a,recover=true){a.fighter.windControlTime=0;this.airborne.splice(this.airborne.indexOf(a),1);if(recover)this.recoveries.push({owner:a.victim,height:a.height,age:0});}
   summon(owner,spell,pos,dir){
     for(const s of [...this.spirits])if(s.owner===owner){s.root.removeFromParent();this.spirits.splice(this.spirits.indexOf(s),1);}
-    const root=this.group(),body=new T.Group();root.add(body);
-    this.mesh(body,'sphere',this.face,[0,.65,0],[.28,.32,.27]);
-    this.mesh(body,'sphere',this.hair,[0,.77,-.055],[.31,.26,.29]);
-    this.mesh(body,'sphere',this.hair,[0,.28,-.23],[.31,.50,.17]);
-    this.mesh(body,'cone',this.body,[0,-.10,0],[.37,.90,.3]);
-    for(const side of [-1,1]){
-      this.mesh(body,'sphere',this.eye,[side*.105,.66,.257],[.035,.052,.025]);
-      this.mesh(body,'sphere',this.body,[side*.34,.09,.08],[.12,.30,.12]).rotation.z=side*.65;
-      this.mesh(body,'sphere',this.face,[side*.48,-.05,.15],[.10,.11,.10]);
-      this.mesh(body,'sphere',this.body,[side*.13,-.72,0],[.09,.28,.09]);
-      for(const high of [0,1]){const w=this.mesh(body,'sphere',this.mint,[side*(high?.60:.54),high?.47:-.05,-.24],[high?.55:.40,high?.28:.20,.075]);w.rotation.z=side*(high?.55:-.4);}
-    }
-    this.mesh(body,'ring',this.mint,[0,-1.0,0],[.7,.7,.7]).rotation.x=-Math.PI/2;
+    const root=this.group(),model=this.spiritModel.create(),body=model.body;root.add(body);
     const gusts=new T.Group();root.add(gusts);
     for(let i=0;i<9;i++)this.mesh(gusts,'gust',this.gustMaterial,[0,0,0],[1,1,1]);
-    const s={owner,root,body,gusts,age:0,life:spell.duration+spell.formation,duration:spell.duration,formation:spell.formation,normal:[dir[0],0,dir[2]],position:[...pos],width:spell.guardWidth,range:spell.guardRange,height:spell.guardHeight,reflections:0};
+    const s={owner,root,body,model,gusts,age:0,life:spell.duration+spell.formation,duration:spell.duration,formation:spell.formation,normal:[dir[0],0,dir[2]],position:[...pos],width:spell.guardWidth,range:spell.guardRange,height:spell.guardHeight,reflections:0};
     this.spirits.push(s);this.placeSpirit(s);return s;
   }
-  placeSpirit(s){s.root.position.set(s.position[0],s.position[1]+4.7,s.position[2]);s.root.rotation.y=Math.atan2(s.normal[0],s.normal[2]);}
+  placeSpirit(s){
+    // Keep the guardian in front at eye level, to the right of the aiming ray.
+    const ahead=3.7,side=1.15;
+    s.root.position.set(s.position[0]+s.normal[0]*ahead-s.normal[2]*side,s.position[1]+.20,s.position[2]+s.normal[2]*ahead+s.normal[0]*side);
+    s.root.rotation.y=Math.atan2(s.normal[0],s.normal[2]);
+  }
   advance(dt,actors,damage){
     for(const a of [...this.airborne]){
       a.age+=dt;a.life=Math.max(0,a.life-dt);a.height=3.1*ease(a.age/.28);
@@ -129,22 +123,23 @@ export class WindArts {
     for(const [w,g] of this.walls)if(!wallSet.has(w)){g.removeFromParent();this.walls.delete(w);}
     for(const w of wallSet){let g=this.walls.get(w);if(!g){g=this.makeWall();this.walls.set(w,g);}g.position.fromArray(w.p);g.rotation.y=Math.atan2(w.normal[0],w.normal[2]);for(let i=0;i<7;i++)g.children[i].position.x=Math.sin(time*5+i)*.25;}
     for(const s of this.spirits){
-      s.body.position.y=Math.sin(time*3)*.12;s.body.scale.setScalar(ease(s.age/1.1));
-      // Face the summoner during the overhead reveal, then turn forward to blow.
-      s.body.rotation.x=Math.PI/2*(1-ease((s.age-1.1)/.4));
-      s.body.rotation.z=Math.PI*(1-ease((s.age-1.1)/.4));
+      s.body.position.y=Math.sin(time*3)*.055;s.body.scale.setScalar(.32*ease(s.age/.85));
+      // Greet the caster, then turn toward incoming attacks without a camera cut.
+      s.body.rotation.y=Math.PI*(1-ease((s.age-1.1)/.7));
+      this.spiritModel.update(s.model,time,s.age+1e-6>=s.formation);
       s.gusts.visible=s.age+1e-6>=s.formation;
       for(let i=0;i<s.gusts.children.length;i++){
         const t=(time*1.3+i/9)%1,m=s.gusts.children[i],side=i%2?1:-1;
-        m.position.set(side*(.8+t*1.2),-2-t*2,2+t*(s.range-2));m.scale.setScalar(.55+t*.4);m.rotation.z=time*.4+i*.7;
+        m.position.set(side*(.8+t*1.2),.25-Math.sin(t*Math.PI)*.3,.5+t*(s.range-4));m.scale.setScalar(.55+t*.4);m.rotation.z=time*.4+i*.7;
       }
     }
     for(const c of [...this.cuts]){c.age+=dt;c.root.scale.setScalar(1+c.age*2);c.root.visible=c.age<.22;if(c.age>=.3){c.root.removeFromParent();this.cuts.splice(this.cuts.indexOf(c),1);}}
   }
+  setInkViewport(width,height){this.spiritModel.setInkViewport(width,height);}
   reset(){
     for(const a of [...this.airborne])this.release(a,false);this.recoveries=[];
     for(const g of [...this.shots.values(),...this.walls.values(),...this.spirits.map(s=>s.root),...this.cuts.map(c=>c.root)])g.removeFromParent();
     this.shots.clear();this.walls.clear();this.spirits=[];this.cuts=[];this.reflections=0;
   }
-  state(){return {airborne:this.airborne.map(a=>({owner:a.owner,victim:a.victim,life:a.life,age:a.age,height:a.height,extended:a.extended,comboTicks:a.combo?.ticks||0})),height:{player:this.height('player'),enemy:this.height('enemy')},spirits:this.spirits.map(s=>({owner:s.owner,age:s.age,life:s.life,phase:s.age<s.formation?'forming':'blowing',position:s.root.position.toArray(),normal:[...s.normal],reflections:s.reflections,gusts:s.gusts.visible})),projectiles:this.shots.size,walls:this.walls.size,reflections:this.reflections};}
+  state(){return {airborne:this.airborne.map(a=>({owner:a.owner,victim:a.victim,life:a.life,age:a.age,height:a.height,extended:a.extended,comboTicks:a.combo?.ticks||0})),height:{player:this.height('player'),enemy:this.height('enemy')},spirits:this.spirits.map(s=>({owner:s.owner,age:s.age,life:s.life,model:'toon-butterfly-spirit',bodyRotation:s.body.rotation.toArray(),phase:s.age<s.formation?'forming':'blowing',position:s.root.position.toArray(),normal:[...s.normal],reflections:s.reflections,gusts:s.gusts.visible})),projectiles:this.shots.size,walls:this.walls.size,reflections:this.reflections};}
 }

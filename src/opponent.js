@@ -4,11 +4,11 @@ import { createHands } from './hands.js';
 import { inkMaterial, addInkOutline } from './ink-outline.js';
 
 // The opponent uses the same articulated hands and twelve poses as the player.
-export async function createOpponent(scene, spawnPosition) {
+export async function createOpponent(scene, spawnPosition, playerModel = false) {
   const group = new T.Group();
   group.position.copy(spawnPosition);
   scene.add(group);
-  const cloth = toon('#33495f'), dark = toon('#182b3d'), skin = toon('#e7bb97'), metal = toon('#b6c9ca'), belt = toon('#b67863');
+  const cloth = toon(playerModel ? '#29324a' : '#33495f'), dark = toon(playerModel ? '#191f32' : '#182b3d'), skin = toon('#e7bb97'), metal = toon(playerModel ? '#d1ae6b' : '#b6c9ca'), belt = toon(playerModel ? '#c6a76b' : '#b67863');
   const ink=inkMaterial(.8,'#27323c');
   function mesh(geo, mat, pos, scale = [1, 1, 1]) {
     const m = new T.Mesh(geo, mat); m.position.set(...pos); m.scale.set(...scale); m.castShadow = true; m.receiveShadow = true; group.add(m); addInkOutline(m,ink); return m;
@@ -22,11 +22,14 @@ export async function createOpponent(scene, spawnPosition) {
   mesh(sphere, dark, [0, 2.78, -.02], [.31, .23, .28]);
   mesh(box, metal, [0, 2.7, .263], [.48, .105, .03]);
   mesh(box, belt, [0, 2.7, .286], [.08, .064, .009]);
+  const legs = [];
   for (const side of [-1, 1]) {
     mesh(box, dark, [side * .125, 2.58, .27], [.1, .026, .02]);
-    mesh(sphere, cloth, [side * .23, .68, 0], [.2, .57, .22]);
-    mesh(box, metal, [side * .23, .36, .12], [.28, .25, .12]);
-    mesh(sphere, dark, [side * .23, .13, .1], [.22, .13, .35]);
+    const pivot = new T.Group(); pivot.position.set(side * .23, 1.1, 0); group.add(pivot);
+    for (const part of [mesh(sphere, cloth, [side * .23, .68, 0], [.2, .57, .22]), mesh(box, metal, [side * .23, .36, .12], [.28, .25, .12]), mesh(sphere, dark, [side * .23, .13, .1], [.22, .13, .35])]) {
+      part.position.sub(pivot.position); pivot.add(part);
+    }
+    legs.push({ side, pivot });
   }
   const rig = await createHands();
   rig.scene.remove(rig.root); group.add(rig.root);
@@ -39,8 +42,9 @@ export async function createOpponent(scene, spawnPosition) {
   shield.position.set(0, 1.55, 0); shield.scale.set(1.03, 1.55, .85); group.add(shield);
   const up = new T.Vector3(0, 1, 0);
   function segment(m, a, b) { const delta = b.clone().sub(a); m.position.copy(a).add(b).multiplyScalar(.5); m.scale.y = delta.length(); m.quaternion.setFromUnitVectors(up, delta.normalize()); }
-  function update(dt, time, pose, ready, fighter, hit = 0, casting = false) {
-    rig.update(dt, time, pose, ready, false, casting ? .8 : 0, false);
+  function update(dt, time, pose, ready, fighter, hit = 0, casting = false, moving = false, reducedMotion = false) {
+    rig.update(dt, time, pose, ready, moving, casting ? .8 : 0, reducedMotion);
+    for (const leg of legs) leg.pivot.rotation.x = moving && !reducedMotion ? Math.sin(time * 16 + leg.side * Math.PI / 2) * .38 : 0;
     group.rotation.z = fighter.hp <= 0 ? T.MathUtils.damp(group.rotation.z, -1.4, 4, dt) : Math.sin(hit * 45) * hit * .15;
     group.updateMatrixWorld(true);
     for (let i = 0; i < arms.length; i++) {
@@ -52,5 +56,10 @@ export async function createOpponent(scene, spawnPosition) {
     shield.visible = !['fire', 'water', 'lightning', 'dark'].includes(fighter.defenseElement) && fighter.shieldTime > 0 && (fighter.shield > 0 || fighter.reflect > 0); shield.material.color.set(fighter.color); shield.rotation.y = time * .4;
   }
   const setInkViewport=(width,height)=>{ink.uniforms.viewport.value.set(width,height);rig.setInkViewport(width,height);};
-  return { group, rig, update, shield, aura, setInkViewport };
+  return { group, rig, update, shield, aura, legs, setInkViewport };
+}
+
+// Full-volume body with the same hand skeleton/poses and navy/gold FPS clothing.
+export function createPlayerAvatar(scene) {
+  return createOpponent(scene, new T.Vector3(), true);
 }
