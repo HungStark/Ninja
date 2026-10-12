@@ -13,19 +13,19 @@ export class DarkDomain {
     this.saved=null;this.group=new T.Group();this.group.name='BlackInkDomain';this.group.visible=false;this.scene.add(this.group);
     this.overlay=document.getElementById('darkEyelids');
     this.header=document.querySelector('.header-center');this.headerText=this.header.innerHTML;
-    this.clock={value:0};
-    this.ink=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{uTime:this.clock},
+    this.clock={value:0};this.submerge={value:0};
+    this.ink=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{uTime:this.clock,uSubmerge:this.submerge},
       vertexShader:`varying vec3 p;uniform float uTime;void main(){p=position;vec3 v=position;
         v.z+=sin(position.x*.28+uTime*.75)*.036+sin(position.y*.35-uTime*.6)*.032;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(v,1.);}`,
-      fragmentShader:`varying vec3 p;uniform float uTime;
+      fragmentShader:`varying vec3 p;uniform float uTime;uniform float uSubmerge;
     void main(){
       vec2 q=p.xy;
       float wave=sin(q.x*.32+sin(q.y*.23+uTime*.4)*1.5+uTime*.5)+sin(q.y*.52-q.x*.14-uTime*.35)*.4;
       vec3 c=vec3(.010,.007,.019);
       if(wave>.50)c=vec3(.023,.014,.036);
       if(wave>1.18)c=vec3(.042,.025,.058);
-      gl_FragColor=vec4(c,1.);
+      gl_FragColor=vec4(c,gl_FrontFacing?1.:mix(1.,.14,uSubmerge));
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
     }`});
@@ -43,10 +43,12 @@ export class DarkDomain {
       dummy.position.set(Math.sin(i*19.17)*35,.075,Math.cos(i*13.49)*38-8);dummy.rotation.set(-Math.PI/2,0,i*2.7);
       dummy.scale.set(1.2+(i%5)*.9,.7+(i%4)*.45,1);dummy.updateMatrix();pools.setMatrixAt(i,dummy.matrix);
     }pools.instanceMatrix.needsUpdate=true;this.group.add(pools);
-    this.cloneMaterial=vfxToon('#3a2b47', { emissive:'#261a32', emissiveIntensity:.20 });
+    this.cloneMaterial=vfxToon('#38232f', { emissive:'#701822', emissiveIntensity:.24 });
     this.faceMaterial=vfxToon('#130e1e');
     this.ropeMaterial=vfxToon('#604677',{emissive:'#332045',emissiveIntensity:.25});
     this.eyeMaterial=new T.MeshBasicMaterial({color:'#c2a1ef'});
+    this.dogEyeMaterial=new T.MeshBasicMaterial({color:'#ef686e',toneMapped:false});
+    this.hornMaterial=vfxToon('#8b6a72',{emissive:'#481b23',emissiveIntensity:.14});
     this.ringMaterial=new T.MeshBasicMaterial({color:'#71638a',transparent:true,opacity:.35,depthWrite:false});
     this.geometries={sphere:new T.SphereGeometry(1,14,10),cylinder:new T.CylinderGeometry(1,1,1,10),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,12),pool:new T.CircleGeometry(1,32),ring:new T.TorusGeometry(1,.018,5,48),cuff:new T.TorusGeometry(.18,.055,8,32)};
     this.cloneGroup=new T.Group();this.cloneGroup.name='ShadowSummons';this.scene.add(this.cloneGroup);
@@ -107,7 +109,7 @@ export class DarkDomain {
     for(const side of [-1,1]){
       const ear=this.mesh(body,'cone',this.cloneMaterial,[side*.17,1.29,.55],[.13,.35,.12]);ear.rotation.z=side*-.18;
       this.mesh(body,'cone',this.faceMaterial,[side*.17,1.30,.60],[.07,.23,.035]).rotation.z=side*-.18;
-      this.mesh(body,'sphere',this.eyeMaterial,[side*.18,1.07,.79],[.055,.033,.035]);
+      this.mesh(body,'sphere',this.dogEyeMaterial,[side*.18,1.07,.79],[.055,.033,.035]);
     }
     const tail=new T.Group();tail.position.set(0,.71,-.62);body.add(tail);
     this.mesh(tail,'cone',this.cloneMaterial,[0,.18,-.15],[.12,.47,.12]).rotation.x=-.65;
@@ -123,15 +125,51 @@ export class DarkDomain {
     }
     const pool=this.mesh(root,'pool',this.faceMaterial,[0,.06,0],[.8,.8,1]);pool.rotation.x=-Math.PI/2;
     const ring=this.mesh(root,'ring',this.ringMaterial,[0,.09,0],[.7,.7,.7]);ring.rotation.x=-Math.PI/2;
-    const clone={id:++this.serial,owner,rowSlot,mode:'rising',p:[p[0],0,p[2]],home:[p[0],0,p[2]],target:[...target],age:0,damage:spell.damage,root,body,limbs,tail,ring};
+    const clone={id:++this.serial,owner,rowSlot,form:'dog',riseDepth:1.5,hitHeight:.72,hitRadius:.6,mode:'rising',p:[p[0],0,p[2]],home:[p[0],0,p[2]],target:[...target],age:0,damage:spell.damage,root,body,limbs,tail,pool,ring};
     root.position.fromArray(clone.p);body.position.y=-1.5;
     this.clones.push(clone);this.splash(p);return clone;
   }
   commandable(owner){return this.clones.filter(c=>c.owner===owner&&c.mode!=='respawning');}
   cloneCount(owner){return this.clones.filter(c=>c.owner===owner).length;}
+  upgradable(owner){return this.clones.filter(c=>c.owner===owner&&c.form==='dog');}
+  canSummon(owner,max=3){return this.cloneCount(owner)<max||this.upgradable(owner).length>0;}
+  upgradeClone(c,spell){
+    const body=c.body;body.clear();
+    this.mesh(body,'sphere',this.cloneMaterial,[0,.99,-.13],[.55,.49,.86]);
+    this.mesh(body,'sphere',this.cloneMaterial,[0,1.06,.43],[.60,.55,.44]);
+    this.mesh(body,'sphere',this.cloneMaterial,[0,1.25,.73],[.40,.44,.36]);
+    this.mesh(body,'sphere',this.cloneMaterial,[0,1.27,.96],[.43,.36,.37]);
+    this.mesh(body,'sphere',this.faceMaterial,[0,1.15,1.21],[.33,.22,.22]);
+    for(const side of [-1,1]){
+      this.mesh(body,'sphere',this.faceMaterial,[side*.14,1.20,1.40],[.055,.035,.025]);
+      this.mesh(body,'sphere',this.dogEyeMaterial,[side*.29,1.40,1.20],[.065,.04,.035]);
+      this.mesh(body,'sphere',this.cloneMaterial,[side*.48,1.45,.81],[.23,.085,.13]).rotation.z=side*.2;
+      this.mesh(body,'cone',this.hornMaterial,[side*.43,1.69,.87],[.10,.45,.10]).rotation.z=-side*.85;
+      this.mesh(body,'cone',this.hornMaterial,[side*.61,1.87,.87],[.065,.34,.065]).rotation.z=side*.22;
+    }
+    const tail=new T.Group();tail.position.set(0,1.04,-.93);body.add(tail);
+    this.mesh(tail,'cylinder',this.cloneMaterial,[0,-.25,-.03],[.045,.50,.045]).rotation.x=.12;
+    this.mesh(tail,'sphere',this.faceMaterial,[0,-.51,-.06],[.09,.14,.10]);
+    const limbs=[];
+    for(const side of [-1,1])for(const front of [-1,1]){
+      const leg=new T.Group();leg.position.set(side*.38,.86,front*.54);body.add(leg);
+      this.mesh(leg,'sphere',this.cloneMaterial,[0,-.17,0],[.19,.29,.19]);
+      const lower=new T.Group();lower.position.y=-.38;leg.add(lower);
+      this.mesh(lower,'cylinder',this.cloneMaterial,[0,-.16,0],[.10,.33,.10]);
+      this.mesh(lower,'box',this.faceMaterial,[0,-.36,.02],[.25,.17,.33]);
+      limbs.push({phase:side*front,leg,lower});
+    }
+    c.form='bull';c.damage=spell.damage*spell.upgradeMultiplier;c.limbs=limbs;c.tail=tail;
+    c.riseDepth=2.2;c.hitHeight=1.06;c.hitRadius=.85;c.pool.scale.set(1.15,1.15,1);
+    if(c.mode==='rising')c.body.position.y=-c.riseDepth*(1-ease(c.age/.45));
+    this.splash(c.p);return true;
+  }
   cast(spell,owner,pos,dir,target,fighter,victim) {
     if(this.transition||(spell.requiresDomain&&!this.usable))return false;
     if(spell.style==='shadowclone'){
+      if(this.cloneCount(owner)>=spell.maxClones){
+        const dog=this.upgradable(owner)[0];return dog?this.upgradeClone(dog,spell):false;
+      }
       // Each side reserves its own three slots, including clones waiting to resurface.
       const slots=[1,0,2].filter(slot=>!this.clones.some(c=>c.owner===owner&&c.rowSlot===slot));
       const count=Math.min(spell.cloneCount,spell.maxClones-this.cloneCount(owner),slots.length);
@@ -193,10 +231,11 @@ export class DarkDomain {
         }
       }
       c.root.position.fromArray(c.p);c.root.rotation.y=Math.atan2(delta[0],delta[1]);
-      c.body.position.y=c.mode==='rising'?-1.5*(1-ease(c.age/.45)):moving?Math.abs(Math.sin(c.age*16))*.055:0;
+      const gait=c.age*(c.form==='bull'?12:16);
+      c.body.position.y=c.mode==='rising'?-c.riseDepth*(1-ease(c.age/.45)):moving?Math.abs(Math.sin(gait))*.055:0;
       c.body.rotation.z=Math.sin(time*3+c.id)*.018;c.ring.scale.setScalar(.75+Math.sin(time*2+c.id)*.06);
       c.tail.rotation.z=Math.sin(time*4+c.id)*.14;
-      for(const l of c.limbs){const run=moving?Math.sin(c.age*16)*l.phase*.6:0;l.leg.rotation.x=run;l.lower.rotation.x=moving?Math.max(0,-run)*.7:0;}
+      for(const l of c.limbs){const run=moving?Math.sin(gait)*l.phase*(c.form==='bull'?.45:.6):0;l.leg.rotation.x=run;l.lower.rotation.x=moving?Math.max(0,-run)*.7:0;}
     }
     this.updateDomainArts(dt,fighters);
   }
@@ -209,8 +248,8 @@ export class DarkDomain {
   intercept(shot) {
     const a=shot.old,b=shot.p,d=b.map((v,i)=>v-a[i]),len=d.reduce((s,v)=>s+v*v,0),hits=[];
     for(const c of this.vulnerableClones(shot.owner)){
-      const center=[c.p[0],.72,c.p[2]],t=clamp(d.reduce((s,v,i)=>s+(center[i]-a[i])*v,0)/(len||1));
-      if(Math.hypot(...center.map((v,i)=>v-(a[i]+d[i]*t)))<.6+shot.size)hits.push({c,t});
+      const center=[c.p[0],c.hitHeight,c.p[2]],t=clamp(d.reduce((s,v,i)=>s+(center[i]-a[i])*v,0)/(len||1));
+      if(Math.hypot(...center.map((v,i)=>v-(a[i]+d[i]*t)))<c.hitRadius+shot.size)hits.push({c,t});
     }
     hits.sort((a,b)=>a.t-b.t);if(!hits.length)return false;
     for(const {c} of hits)this.destroyClone(c);return true;
@@ -247,8 +286,14 @@ export class DarkDomain {
     for(const r of [...this.recoveries]){r.age+=dt;if(r.age>=.35)this.recoveries.splice(this.recoveries.indexOf(r),1);}
   }
   depth(owner){return Math.min(0,...this.bindings.filter(b=>b.victim?.owner===owner).map(b=>b.sink),...this.dives.filter(d=>d.owner===owner).map(d=>d.sink),...this.recoveries.filter(r=>r.owner===owner).map(r=>r.sink*(1-ease(r.age/.35))));}
+  diveDepth(owner){return Math.min(0,...this.dives.filter(d=>d.owner===owner).map(d=>d.sink),...this.recoveries.filter(r=>r.owner===owner&&r.kind==='dive').map(r=>r.sink*(1-ease(r.age/.35))));}
+  updateSubmergeView(depth,eyeHeight){
+    this.submerge.value=clamp(-depth/3);
+    const below=eyeHeight<.07&&depth<0;
+    this.ink.transparent=below;this.ink.depthWrite=!below;
+  }
   releaseBinding(b){b.root.removeFromParent();this.bindings.splice(this.bindings.indexOf(b),1);if(b.victim){b.victim.fighter.darkControlTime=0;this.recoveries.push({owner:b.victim.owner,sink:b.sink,age:0});}}
-  removeDive(d){d.root.removeFromParent();this.dives.splice(this.dives.indexOf(d),1);d.fighter.invulnerableTime=0;this.recoveries.push({owner:d.owner,sink:d.sink,age:0});}
+  removeDive(d){d.root.removeFromParent();this.dives.splice(this.dives.indexOf(d),1);d.fighter.invulnerableTime=0;this.recoveries.push({owner:d.owner,kind:'dive',sink:d.sink,age:0});}
   clearDomainArts(){for(const b of [...this.bindings])this.releaseBinding(b);for(const d of [...this.dives])this.removeDive(d);this.recoveries=[];}
   splash(p) {
     const ring=new T.Mesh(this.geometries.ring,this.ringMaterial);ring.position.set(p[0],.13,p[2]);ring.rotation.x=-Math.PI/2;
@@ -267,6 +312,6 @@ export class DarkDomain {
   }
   removeClone(c){c.root.removeFromParent();const i=this.clones.indexOf(c);if(i>=0)this.clones.splice(i,1);}
   clearClones(){for(const c of [...this.clones])this.removeClone(c);for(const g of this.projectiles.values())g.removeFromParent();this.projectiles.clear();for(const r of this.ripples)r.ring.removeFromParent();this.ripples=[];}
-  reset(){this.transition=null;this.life=0;this.blink=0;this.blinkPhase='idle';this.intro.reset();this.switchEnvironment(false);this.clearClones();this.overlay.classList.remove('blinking');this.overlay.style.setProperty('--lid',0);}
-  state(){return {active:this.active,usable:this.usable,life:this.life,blink:this.blink||0,phase:this.blinkPhase||'idle',intro:this.intro.state(),environmentHidden:this.world.environment.every(o=>!o.visible),clones:this.clones.map(c=>({id:c.id,owner:c.owner,form:'dog',legs:c.limbs.length,damage:c.damage,rowSlot:c.rowSlot,mode:c.mode,position:[...c.p],home:[...c.home],age:c.age})),bindings:this.bindings.map(b=>({owner:b.owner,victim:b.victim?.owner||null,position:[...b.p],life:b.life,age:b.age,ticks:b.ticks,sink:b.sink,ropes:b.ropes.length})),dives:this.dives.map(d=>({owner:d.owner,life:d.life,age:d.age,sink:d.sink})),depth:{player:this.depth('player'),enemy:this.depth('enemy')},projectiles:this.projectiles.size};}
+  reset(){this.transition=null;this.life=0;this.blink=0;this.blinkPhase='idle';this.intro.reset();this.switchEnvironment(false);this.clearClones();this.updateSubmergeView(0,1.72);this.overlay.classList.remove('blinking');this.overlay.style.setProperty('--lid',0);}
+  state(){return {active:this.active,usable:this.usable,life:this.life,blink:this.blink||0,phase:this.blinkPhase||'idle',intro:this.intro.state(),environmentHidden:this.world.environment.every(o=>!o.visible),clones:this.clones.map(c=>({id:c.id,owner:c.owner,form:c.form,legs:c.limbs.length,damage:c.damage,rowSlot:c.rowSlot,mode:c.mode,position:[...c.p],home:[...c.home],age:c.age})),bindings:this.bindings.map(b=>({owner:b.owner,victim:b.victim?.owner||null,position:[...b.p],life:b.life,age:b.age,ticks:b.ticks,sink:b.sink,ropes:b.ropes.length})),dives:this.dives.map(d=>({owner:d.owner,life:d.life,age:d.age,sink:d.sink})),depth:{player:this.depth('player'),enemy:this.depth('enemy')},projectiles:this.projectiles.size};}
 }

@@ -54,11 +54,11 @@
     { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .3, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 30% tốc độ trong vùng' }
   ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
   const darkSpells = [
-    { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:22.8, count:1, cloneCount:1, maxClones:3, subtitle:'Mỗi lần thêm một chó bóng ở nửa sân của mình · tối đa 3 mỗi bên, không cản đạn' },
-    { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:22.8, count:1, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm, đánh 22,8 sát thương rồi biến mất · trong lãnh địa tự trồi lên lại' },
+    { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:38, count:1, cloneCount:1, maxClones:3, upgradeMultiplier:1.5, subtitle:'Thêm một chó bóng · đủ 3 con thì mỗi lần thi triển nâng một chó thành bò bóng, sát thương 57 · không cản đạn' },
+    { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:38, count:1, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm, đánh 38 sát thương rồi biến mất · trong lãnh địa tự trồi lên lại' },
     { id:'dark-volley', name:'Ảnh trói', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfcvzx'], cost:56, damage:5, damageInterval:.5, duration:4, count:1, requiresDomain:true, subtitle:'Hai dây bóng trồi từ nền, bám chân và kéo đối thủ xuống · khóa thao tác 4 giây, mất 5 máu mỗi 0,5 giây' },
     { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · mở khóa kéo và lặn, phân thân bị đánh sẽ trồi lên lại' },
-    { id:'dark-reflect', name:'Ảnh độn', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:4, requiresDomain:true, subtitle:'Lặn dưới mực 4 giây · không thể bị tấn công, vẫn ngắm, né và kết ấn như thường' }
+    { id:'dark-reflect', name:'Ảnh độn', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
   ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:0,requiresDomain:!!s.requiresDomain}));
   const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
@@ -104,7 +104,7 @@
       if (!spell) return { ok: false, reason: 'sequence' };
       if (spell.requiresDomain && !context.darkDomain) return { ok: false, reason: 'domain' };
       if (spell.requiresClones && !context.shadowClones) return { ok:false, reason:'clones' };
-      if (spell.style==='shadowclone' && context.shadowCloneCount>=spell.maxClones) return {ok:false,reason:'cloneLimit'};
+      if (spell.style==='shadowclone' && context.shadowCloneCount>=spell.maxClones && !context.shadowUpgrades) return {ok:false,reason:'cloneLimit'};
       if (this.cooldown > 0) return { ok: false, reason: 'cooldown' };
       if (this.chakra < spell.cost) return { ok: false, reason: 'chakra' };
       this.chakra -= spell.cost; this.cooldown = 1; this.casts++; this.clear(); return { ok: true, spell };

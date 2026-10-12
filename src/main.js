@@ -120,7 +120,7 @@ async function main() {
   function spellMarkup(spell, i, preparation = false) {
     if (!preparation) return '<button class="spell ' + (i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-spell="' + i + '"><div class="spell-title">' + spell.name + '</div><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></button>';
     const taken = loadout.includes(spell.id), kind = spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa kéo và lặn' : spell.style==='shadowclone'?'Thêm 1 chó bóng · tối đa 3 mỗi bên':spell.style==='shadowcommand'?'22,8 sát thương mỗi phân thân · không cản đạn':spell.style==='shadowbind'?'Khóa 4 giây · 5 máu mỗi 0,5 giây':spell.style==='shadowdive'?'Bất khả xâm phạm 4 giây · vẫn thao tác được':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
+    const stats = spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa kéo và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 38, nâng thành bò 57':spell.style==='shadowcommand'?'Chó 38 / bò 57 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'Khóa 4 giây · 5 máu mỗi 0,5 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spell.glyph + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · CẤP ' + spell.rank + ' · ' + spell.sequence.length + ' ẤN · ' + spell.cost + ' CH</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -177,7 +177,7 @@ async function main() {
     $('comboSlots').innerHTML = spell.sequence.map((k, i) => '<span class="combo-slot ' + (seq[i] === k ? 'done' : seq.length === i ? 'next' : '') + '">' + k.toUpperCase() + '</span>').join('');
     const ready = rules.ready();
     $('comboLabel').textContent = ready?.id === spell.id ? 'ẤN HOÀN CHỈNH · ' + spell.name.toUpperCase() : spell.name.toUpperCase() + ' / ' + seq.length + ' / ' + spell.sequence.length + ' ẤN';
-    $('castButton').disabled = !started || paused || won || !!darkDomain.transition || player.controlTime > 0 || !ready || (ready.requiresDomain&&!darkDomain.usable) || (ready.requiresClones&&!darkDomain.commandable('player').length) || (ready.style==='shadowclone'&&darkDomain.cloneCount('player')>=ready.maxClones) || rules.cooldown > 0 || rules.chakra < (ready?.cost || spell.cost);
+    $('castButton').disabled = !started || paused || won || !!darkDomain.transition || player.controlTime > 0 || !ready || (ready.requiresDomain&&!darkDomain.usable) || (ready.requiresClones&&!darkDomain.commandable('player').length) || (ready.style==='shadowclone'&&!darkDomain.canSummon('player',ready.maxClones)) || rules.cooldown > 0 || rules.chakra < (ready?.cost || spell.cost);
     // Hand readiness effects follow exactly the same gate as the Space button.
     hands.setReady($('castButton').disabled ? null : ready.element);
     document.querySelectorAll('.seal').forEach(el => { el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
@@ -242,6 +242,9 @@ async function main() {
     if(spell.element==='dark'){
       const victim={owner:owner==='player'?'enemy':'player',pos:owner==='player'?enemyPos():camera.p,fighter:owner==='player'?enemy:player};
       const result=darkDomain.cast(spell,owner,pos,dir,volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
+      if(result&&spell.style==='shadowdive'&&owner==='player'){
+        clearDragonView();clearMeteorView();clearWaveView();setWorldFov(baseFov);cameraImpacts.reset();
+      }
       if(victim.fighter.darkControlTime>0){
         if(victim.owner==='player'){rules.clear();activePose=-1;hands.clearEffects();moveTargetX=camera.p[0];moveDirection=0;}
         else{aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;}
@@ -370,11 +373,12 @@ async function main() {
     if (!started || paused || won) return;
     if(darkDomain.transition){announce('Đang chuyển vào hoặc ra khỏi lãnh địa.',true);return;}
     if (player.controlTime > 0) { announce('Đang bị khóa bởi '+player.controlSource+'!', true); return; }
-    const result = rules.cast({darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('player').length,shadowCloneCount:darkDomain.cloneCount('player')});
-    if (!result.ok) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Bên bạn đã đủ 3 phân thân.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
+    const result = rules.cast({darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('player').length,shadowCloneCount:darkDomain.cloneCount('player'),shadowUpgrades:darkDomain.upgradable('player').length});
+    if (!result.ok) { announce({ sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Bên bạn đã đủ 3 bò bóng, không còn chó để nâng cấp.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
     const spell = result.spell;
     activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); fireSound();
-    launch(spell, 'player', camera.p, aim()); announce(spell.name + '!');
+    const upgrading=spell.style==='shadowclone'&&darkDomain.cloneCount('player')>=spell.maxClones;
+    launch(spell, 'player', camera.p, aim()); announce(upgrading?'Nâng thành bò bóng · 57 sát thương!':spell.name + '!');
     speakSpell(spell);
     updateUI();
   }
@@ -637,7 +641,7 @@ async function main() {
     if (aiTimer > 0) return;
     if (!aiSpell) {
       const incoming = shots.some(s => s.owner === 'player' && vlen(vsub(s.p, enemyPos())) < 11);
-      const available=s=>s.cost<=aiRules.chakra&&(!s.requiresDomain||darkDomain.usable)&&(!s.requiresClones||darkDomain.commandable('enemy').length)&&(s.style!=='shadowclone'||darkDomain.cloneCount('enemy')<s.maxClones);
+      const available=s=>s.cost<=aiRules.chakra&&(!s.requiresDomain||darkDomain.usable)&&(!s.requiresClones||darkDomain.commandable('enemy').length)&&(s.style!=='shadowclone'||darkDomain.canSummon('enemy',s.maxClones));
       const defenses = aiRules.spells.filter(s => s.kind === 'defense' && available(s)), attacks = aiRules.spells.filter(s => s.kind === 'attack' && available(s));
       const choices = incoming && enemy.shieldTime <= 0 && defenses.length && aiCycle % 3 === 2 ? defenses : attacks;
       if(aiRules.spells.some(s=>s.style==='shadowclone')){
@@ -652,7 +656,7 @@ async function main() {
       const key = aiSpell.sequence[aiStep++]; aiRules.seal(key); enemyPose = keys.indexOf(key); opponent.rig.seal();
       aiTimer = .42; $('enemyAction').textContent = 'Kết ấn ' + aiStep + '/' + aiSpell.sequence.length + ' · ' + aiSpell.name;
     } else {
-      const result = darkDomain.transition ? {ok:false} : aiRules.cast({darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('enemy').length,shadowCloneCount:darkDomain.cloneCount('enemy')});
+      const result = darkDomain.transition ? {ok:false} : aiRules.cast({darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('enemy').length,shadowCloneCount:darkDomain.cloneCount('enemy'),shadowUpgrades:darkDomain.upgradable('enemy').length});
       if (result.ok) { launch(aiSpell, 'enemy', enemyPos(), vnorm(vsub(camera.p, enemyPos()))); opponent.rig.cast(); aiCasts++; aiCastAge = 0; $('enemyAction').textContent = 'Thi triển · ' + aiSpell.name; }
       enemyPose = -1; aiSpell = null; aiTimer = 1.65;
     }
@@ -710,6 +714,12 @@ async function main() {
     playerShield.visible = !['fire', 'water', 'lightning', 'dark'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45, camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
     document.body.classList.toggle('dragon-active', started && !won && (!!dragonView || shots.some(s => s.owner === 'player' && s.phase === 'forming')));
     camera3d.position.fromArray(camera.p); camera3d.rotation.set(camera.pitch, camera.yaw, 0, 'YXZ');
+    const diveDepth=darkDomain.diveDepth('player');
+    if(diveDepth<0){
+      camera3d.position.y+=diveDepth;
+      // Preserve the aimed point outside the ink while the eyes descend beneath its surface.
+      const direction=aim();camera3d.lookAt(new T.Vector3(...vadd(camera.p,vmul(direction,31))));
+    }
     updateDragonView(running ? dt : 0);
     updateMeteorView(running ? dt : 0);
     updateWaveView(running ? dt : 0);
@@ -727,6 +737,7 @@ async function main() {
     else setWorldFov(reducedMotion ? baseFov : T.MathUtils.damp(camera3d.fov, baseFov + chargeZoom + cameraReaction.zoom, 20, paused ? 0 : dt));
     reactionPosition.fromArray(cameraReaction.position).applyQuaternion(camera3d.quaternion);
     camera3d.position.add(reactionPosition);
+    darkDomain.updateSubmergeView(diveDepth,camera3d.position.y);
     reactionEuler.set(...cameraReaction.rotation); reactionRotation.setFromEuler(reactionEuler);
     camera3d.quaternion.multiply(reactionRotation);
     effects.update(paused ? 0 : dt, animationTime, shots, particles, camera3d, quality, walls,
@@ -749,6 +760,7 @@ async function main() {
     document.body.classList.remove('dragon-camera', 'dragon-active');
   }
   function beginDragonView(shot) {
+    if(player.invulnerableTime>0||darkDomain.diveDepth('player')<0)return;
     clearWaveView();
     clearMeteorView();
     dragonView = { shot, phase: 'overhead', age: 0, hold: 0,
@@ -762,6 +774,7 @@ async function main() {
     document.body.classList.remove('meteor-camera');
   }
   function beginMeteorView(shot) {
+    if(player.invulnerableTime>0||darkDomain.diveDepth('player')<0)return;
     clearDragonView();
     cameraImpacts.reset(); setWorldFov(baseFov);
     meteorView = { shot, phase: 'sky', from: camera3d.quaternion.clone(), fromFov: baseFov };
@@ -774,6 +787,7 @@ async function main() {
   }
   function clearWaveView() { waveView = null; }
   function beginWaveView(shot) {
+    if(player.invulnerableTime>0||darkDomain.diveDepth('player')<0)return;
     clearDragonView(); clearMeteorView(); cameraImpacts.reset();
     waveView = { shot, phase: 'feet', from: new T.Quaternion().setFromEuler(new T.Euler(camera.pitch, camera.yaw, 0, 'YXZ')) };
   }
