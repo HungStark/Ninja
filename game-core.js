@@ -13,7 +13,6 @@
     { id: 'ice', name: 'Băng', glyph: '氷', color: '#a6edff', prefix: 'zx', speed: 21, power: 1.04 }
   ];
   const titles = {
-    wind: ['Phong đạn', 'Phong nhận', 'Phong liên kích', 'Phong bích', 'Phong hồi'],
     earth: ['Thổ đạn', 'Thổ thương', 'Thổ liên kích', 'Thổ thành', 'Thổ phản'],
     light: ['Quang cầu', 'Quang thương', 'Quang liên kích', 'Quang thuẫn', 'Quang kính'],
     wood: ['Mộc đạn', 'Mộc thương', 'Mộc liên kích', 'Mộc thành', 'Mộc phản'],
@@ -53,6 +52,13 @@
     { id: 'lightning-barrier', name: 'Lôi thuẫn', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'era'], cost: 26, damage: 0, shield: 80, duration: 5, count: 0, subtitle: 'Khiên điện bao quanh bản thân • hấp thụ 80 sát thương trong 5 giây' },
     { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .3, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 30% tốc độ trong vùng' }
   ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
+  const windSpells = [
+    {id:'wind-orb',name:'Phong nhận',kind:'attack',style:'windslash',rank:'D',sequence:[...'ra'],cost:24,damage:36,size:.55,speed:29,count:1,subtitle:'Phóng một nhát chém gió hình lưỡi liềm về phía ngắm'},
+    {id:'wind-volley',name:'Phong lốc',kind:'attack',style:'tornado',rank:'S',sequence:[...'racvzx'],cost:46,damage:70,size:1.15,speed:22,count:1,controlDuration:2,subtitle:'Lốc xoáy 3D lao tới · 70 sát thương, hất tung và khóa đối thủ 2 giây'},
+    {id:'wind-lance',name:'Phong liên trảm',kind:'attack',style:'aircombo',rank:'B',sequence:[...'rad'],cost:22,damage:70,count:8,duration:2,requiresAirborne:true,subtitle:'Nối lốc khi địch còn trên không · chém liên tục tổng 70 sát thương, giữ thêm 2 giây · một lần mỗi lốc'},
+    {id:'wind-barrier',name:'Phong bích',kind:'defense',style:'windwall',rank:'A',sequence:[...'razx'],cost:32,damage:0,shield:110,duration:5,count:0,wallWidth:7,wallHeight:5,subtitle:'Tường gió phía trước · chặn chiêu, 110 độ bền trong 5 giây'},
+    {id:'wind-reflect',name:'Tiên linh gió',kind:'defense',style:'windspirit',rank:'SS',sequence:[...'racvzxer'],cost:70,damage:0,count:0,duration:12,formation:1.8,guardWidth:8,guardRange:10,guardHeight:10,subtitle:'Ngước nhìn tinh linh xuất hiện trên đầu · thổi gió liên tục 12 giây, phản chiêu đang bay tới từ phía trước'}
+  ].map(s=>({...s,element:'wind',glyph:'風',color:'#9fe9ce',heal:0,shield:s.shield||0}));
   const darkSpells = [
     { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:38, count:1, cloneCount:1, maxClones:3, upgradeMultiplier:1.5, subtitle:'Thêm một chó bóng · đủ 3 con thì mỗi lần thi triển nâng một chó thành bò bóng, sát thương 57 · không cản đạn' },
     { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:38, count:1, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm, đánh 38 sát thương rồi biến mất · trong lãnh địa tự trồi lên lại' },
@@ -60,7 +66,7 @@
     { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · mở khóa voi bóng và lặn, phân thân bị đánh sẽ trồi lên lại' },
     { id:'dark-reflect', name:'Ảnh độn', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
   ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:0,requiresDomain:!!s.requiresDomain}));
-  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
+  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'wind' ? windSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
     damage: Math.round(v.damage * el.power), sequence: [...el.prefix, ...v.suffix],
@@ -104,6 +110,7 @@
       if (!spell) return { ok: false, reason: 'sequence' };
       if (spell.requiresDomain && !context.darkDomain) return { ok: false, reason: 'domain' };
       if (spell.requiresClones && !context.shadowClones) return { ok:false, reason:'clones' };
+      if (spell.requiresAirborne && !context.windAirborne) return {ok:false,reason:'airborne'};
       if (spell.style==='shadowclone' && context.shadowCloneCount>=spell.maxClones && !context.shadowUpgrades) return {ok:false,reason:'cloneLimit'};
       if (this.cooldown > 0) return { ok: false, reason: 'cooldown' };
       if (this.chakra < spell.cost) return { ok: false, reason: 'chakra' };
@@ -111,11 +118,11 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; }
-    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime);}
+    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; }
+    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime);}
     set controlTime(value){this.waterControlTime=value;}
-    get controlSource(){return this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh tượng':'Thủy ngục';}
-    tick(dt) { this.waterControlTime = Math.max(0, this.waterControlTime - dt); this.darkControlTime=Math.max(0,this.darkControlTime-dt);this.invulnerableTime=Math.max(0,this.invulnerableTime-dt);this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
+    get controlSource(){return this.windControlTime>0&&this.windControlTime>=Math.max(this.waterControlTime,this.darkControlTime)?'Phong lốc':this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh tượng':'Thủy ngục';}
+    tick(dt) { this.waterControlTime = Math.max(0, this.waterControlTime - dt); this.darkControlTime=Math.max(0,this.darkControlTime-dt);this.windControlTime=Math.max(0,this.windControlTime-dt);this.invulnerableTime=Math.max(0,this.invulnerableTime-dt);this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
     receive(damage, reflected = false, ignoreShield=false) {
       if(this.invulnerableTime>0)return {damage:0,absorbed:0,reflected:false,restored:false,immune:true};

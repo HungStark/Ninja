@@ -14,9 +14,10 @@ for (const spell of spells) {
   const r = new GameRules(loadoutForSpell(spell)); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
   assert.equal(r.ready(),undefined); assert.equal(r.cast().reason,'sequence');
   r.seal(spell.sequence.at(-1));
-  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({darkDomain:true,shadowClones:2}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
+  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({windAirborne:true,darkDomain:true,shadowClones:2}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
 }
 assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort(),[2,3,4,5,6,8]);
+const wind=spells.filter(s=>s.element==='wind');assert.equal(wind.length,5);assert.deepEqual(Array.from(wind.map(s=>s.sequence.length)).sort(),[2,3,4,6,8]);assert.equal(wind.find(s=>s.style==='tornado').controlDuration,2);assert.equal(wind.find(s=>s.style==='aircombo').duration,2);assert.equal(wind.find(s=>s.style==='aircombo').damage,wind.find(s=>s.style==='tornado').damage);const windCombo=new GameRules(['wind-lance']);wind.find(s=>s.style==='aircombo').sequence.forEach(k=>windCombo.seal(k));assert.equal(windCombo.cast().reason,'airborne');assert.equal(windCombo.chakra,100);assert.equal(windCombo.casts,0);assert.equal(windCombo.sequence.length,3);assert.equal(windCombo.cast({windAirborne:true}).ok,true);const airborneFighter=new Fighter();airborneFighter.windControlTime=2;airborneFighter.waterControlTime=3;assert.equal(airborneFighter.controlTime,3);airborneFighter.windControlTime=4;assert.equal(airborneFighter.controlTime,4);assert.equal(airborneFighter.controlSource,'Phong lốc');airborneFighter.tick(4);assert.equal(airborneFighter.controlTime,0);
 const dark=spells.filter(s=>s.element==='dark');
 assert.equal(dark.length,5);assert.equal(dark.find(s=>s.style==='domain').duration,30);
 assert.equal(dark.filter(s=>s.requiresDomain).length,2);
@@ -34,7 +35,7 @@ for(const spell of dark.filter(s=>s.requiresDomain)){
 }
 for(const element of elements){
  const list=spells.filter(s=>s.element===element.id), attack=list.filter(s=>s.kind==='attack').sort((a,b)=>a.sequence.length-b.sequence.length);
- for(let i=1;i<attack.length;i++){if(!['water','dark'].includes(element.id))assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);if(element.id!=='dark')assert.ok(attack[i].cost>attack[i-1].cost);}
+ for(let i=1;i<attack.length;i++){if(!['water','dark','wind'].includes(element.id))assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);if(!['dark','wind'].includes(element.id))assert.ok(attack[i].cost>attack[i-1].cost);}
  const volley=attack.at(-1), orb=list.find(s=>s.id===element.id+'-orb'), chain=new GameRules([orb.id,volley.id]);
  const prefix=element.id==='dark'?orb.sequence.length:2;
  volley.sequence.slice(0,prefix).forEach(k=>chain.seal(k));assert.equal(element.id==='dark'?chain.ready():chain.ready().id,element.id==='dark'?undefined:orb.id);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);

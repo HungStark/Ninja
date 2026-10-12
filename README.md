@@ -34,7 +34,7 @@ Hình khối được kiểm tra riêng bằng vật liệu xám trung tính ở
 
 Phong cảnh dùng ánh sáng chạng vạng, bầu trời và sương tối hơn để chiêu thức nổi bật.
 
-Hiệu ứng Hỏa–Thủy–Lôi–Ám dùng mảng màu cel rõ: lửa có lõi vàng và vùng cam/đỏ, nước có dòng chảy và bọt lớn, Lôi điểu có thân tím rõ với lõi sét trắng mảnh, phân thân và đầm mực dùng các vùng tím đen thay bề mặt bóng. Thuyền Thủy có buồm và cờ rách nhẹ, lỗ thủng thật, miếng vá có đường khâu, ván boong sửa và lan can sứt. Các thay đổi đồ họa giữ thời điểm thi triển, góc nhìn, sát thương và ánh sáng chạng vạng.
+Hiệu ứng Hỏa–Thủy–Lôi–Phong–Ám dùng mảng màu cel rõ: lửa có lõi vàng và vùng cam/đỏ, nước có dòng chảy và bọt lớn, Lôi điểu có thân tím rõ với lõi sét trắng mảnh, phân thân và đầm mực dùng các vùng tím đen thay bề mặt bóng. Thuyền Thủy có buồm và cờ rách nhẹ, lỗ thủng thật, miếng vá có đường khâu, ván boong sửa và lan can sứt. Các thay đổi đồ họa giữ thời điểm thi triển, góc nhìn, sát thương và ánh sáng chạng vạng.
 
 Hệ Hỏa có hiệu ứng và cơ chế riêng:
 
@@ -80,6 +80,20 @@ Thiên lôi ngước camera lên đám mây chớp điện, trả về góc ng�
 Kết đủ ấn và sẵn sàng thi triển bất kỳ chiêu Lôi nào sẽ hiện vòng sét tím trắng cùng tia điện chạy quanh tay. Vòng tắt khi tung chiêu, xóa/sai/hết hạn chuỗi ấn, tạm dừng, đang hồi chiêu hoặc thiếu chakra; khi đủ điều kiện, vòng hiện lại như Hỏa và Thủy. Chế độ giảm chuyển động làm điện và tia sáng chuyển động chậm hơn.
 
 Kết đủ ấn và sẵn sàng thi triển bất kỳ chiêu Lôi nào sẽ hiện vòng sét tím trắng cùng tia điện chạy quanh tay. Vòng tắt khi tung chiêu, xóa/sai/hết hạn chuỗi ấn, tạm dừng, đang hồi chiêu hoặc thiếu chakra; khi đủ điều kiện, vòng hiện lại như Hỏa và Thủy. Chế độ giảm chuyển động làm điện và tia sáng chuyển động chậm hơn.
+
+### Phong thuật
+
+| Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
+| --- | --- | --- | --- | --- |
+| Phong nhận | 2 | R A | 24 | Phóng nhát chém gió lưỡi liềm, 36 sát thương |
+| Phong liên trảm | 3 | R A D | 22 | Chỉ nối khi đối thủ đang bị lốc của mình hất tung; 8 nhát chém trong 2 giây, tổng 70 sát thương và giữ trên không thêm 2 giây |
+| Phong bích | 4 | R A Z X | 32 | Tường gió trước mặt rộng 7 m, cao 5 m, 110 độ bền, tồn tại 5 giây |
+| Phong lốc | 6 | R A C V Z X | 46 | Lốc xoáy 3D lao tới, 70 sát thương và hất tung/khóa thao tác 2 giây |
+| Tiên linh gió | 8 | R A C V Z X E R | 70 | Camera ngước lên tinh linh xuất hiện trên đầu, rồi trở về FPS; thổi gió về phía trước liên tục trong 12 giây |
+
+Phong có đúng năm chiêu, giữ các ID đã lưu. Lốc nâng mô hình đối thủ và góc nhìn của người bị trúng lên thật khỏi mặt đất. Trong cửa sổ 2 giây, người tung lốc có thể kết **R A D → SPACE** để nối liên trảm đúng mục tiêu đó, một lần mỗi lốc; thời gian giữ trên không được cộng thêm 2 giây vào thời gian còn lại. Liên trảm không dùng độc lập hoặc nối lốc của bên kia, không trừ chakra/xóa ấn khi điều kiện không còn hợp lệ. Lốc bị khiên hấp thụ hoàn toàn hoặc đánh trượt không hất tung; có thể né hoặc dùng độn thổ để tránh. Hất tung cộng với các trạng thái khống chế khác mà không xóa chúng.
+
+Tinh linh hình người nhỏ có cánh 3D xuất hiện trong 1,8 giây; sau khi camera trở về, bắt đầu tính 12 giây thổi gió. Tinh linh đi theo người triệu hồi, hướng gió theo hướng ngắm hiện tại; bảo vệ vùng trước mặt rộng 8 m, sâu 10 m, cao 10 m. Chiêu đang bay vào vùng từ phía trước bị thổi ngược về đối thủ, giữ sát thương và tốc độ; phản liên tục nhiều chiêu, gồm cả thuyền và sóng đang di chuyển. Đòn từ bên hông, phía sau, sét đánh thẳng từ trên trời, hoặc chiêu chưa hình thành/bắt đầu bay không bị phản. Phản bởi gió không phụ thuộc thuộc tính phản khiên thông thường; chiêu qua hai tinh linh đối nghịch vẫn có thời gian sống hữu hạn. Tường gió đứng ở vị trí thi triển, có thể tồn tại cùng tinh linh; thi triển lại thay tường/tinh linh cũ của cùng bên. Hoạt ảnh, combo, thời gian bảo vệ và camera đều dừng khi tạm dừng, xóa khi đấu lại. Đồ họa thấp giữ toàn bộ cơ chế.
 
 ### Ám thuật và Hắc lãnh địa
 
@@ -155,6 +169,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
 - **npm run test:lightning:** sáu chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
 - **npm run test:dark:** năm Ám thuật, mái vòm và lãnh địa, chó bóng đứng chờ/nhận lệnh, mỗi lần một con, tối đa ba con mỗi bên, đạn xuyên qua, biến mất/hồi lại trong và ngoài lãnh địa, voi bóng rơi gây 90 sát thương và khóa 2 giây, né hoặc lặn trước khi voi đáp, lặn miễn nhiễm với thao tác bình thường, hai bên và máy, hết hạn, tạm dừng/reset, đồ họa thấp và giảm chuyển động.
+- **npm run test:wind:** năm Phong thuật, combo hất tung 2 + 2 giây, sát thương 70 + 70, tường gió, camera tinh linh, phản liên tục phía trước và theo hướng ngắm, thuyền/sóng đổi hướng, hai bên, tạm dừng/reset/hết hạn, đồ họa thấp, giảm chuyển động và máy nối combo.
 - **npm run test:fire:** kiểm tra sáu chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra sáu chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
 - **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, cú trúng không để lại lửa, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
@@ -180,6 +195,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **src/fire-arts.js:** shader lửa, rồng có thân uốn lượn, thiên thạch, dấu báo vùng rơi, vòm khiên, tường lửa và vụ nổ.
 - **src/lightning-arts.js:** cầu điện, thương sét, chim điện, mây và tia Thiên lôi, khiên và Lôi trận.
 - **src/dark-domain.js:** khép/mở mắt, lãnh địa, thú bóng đứng chờ/nhận lệnh/hồi lại, voi bóng 3D rơi, nhấn chìm đối thủ và lặn miễn nhiễm.
+- **src/wind-arts.js:** lốc xoáy 3D, nâng/hạ đối thủ, liên trảm, tường gió, tinh linh có cánh và luồng gió phản chiêu phía trước.
 - **src/dark-domain-intro.js:** mái vòm đen 3D và vùng mực lan trong không gian 3D, phủ dần môi trường nhưng giữ nhân vật và bàn tay; hỗ trợ tạm dừng/reset và giảm chuyển động.
 - **src/water-arts.js:** mặt nước, cầu giam giữ, thuyền hải tặc, sóng cuốn chiêu và hai kiểu khiên nước.
 - **src/vfx-materials.js:** bảng bốn mức sáng dùng chung cho các vật liệu rắn của chiêu thức.
