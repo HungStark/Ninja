@@ -54,13 +54,12 @@
     { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .3, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 30% tốc độ trong vùng' }
   ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
   const darkSpells = [
-    { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'D', sequence:[...'df'], cost:24, damage:38, count:1, cloneCount:1, duration:5, subtitle:'Gọi một phân thân mực đen lao tới đánh đối thủ' },
-    { id:'dark-lance', name:'Ảnh đạn', kind:'attack', style:'shadowshot', rank:'B', sequence:[...'dfdf'], cost:34, damage:22, count:4, cloneCount:2, duration:4, subtitle:'Hai phân thân đứng hai bên, mỗi phân thân bắn hai đạn mực' },
-    { id:'dark-volley', name:'Ảnh vây sát', kind:'attack', style:'shadowpack', rank:'S', sequence:[...'dfcvzx'], cost:56, damage:24, count:4, cloneCount:4, duration:3, subtitle:'Bốn phân thân trồi lên quanh điểm ngắm rồi cùng lao vào đánh' },
-    { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Nhắm rồi mở mắt trong đầm lầy mực đen · mở khóa Ám thuật trong 30 giây' },
-    { id:'dark-barrier', name:'Ảnh vệ', kind:'defense', style:'shadowguard', rank:'C', sequence:[...'dfa'], cost:26, damage:0, shield:72, count:0, duration:5, subtitle:'Phân thân chắn đạn phía trước · hấp thụ 72 sát thương trong 5 giây' },
-    { id:'dark-reflect', name:'Ảnh hoán', kind:'defense', style:'shadowswap', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:4, subtitle:'Đổi chỗ với phân thân bên cạnh, để lại bóng thế thân hút đạn' }
-  ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:s.shield||0,requiresDomain:s.style!=='domain'}));
+    { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:38, count:2, cloneCount:2, maxClones:6, subtitle:'Mỗi lần thêm hai phân thân đứng chờ lệnh · tối đa 6 trên sân, dùng được ngoài lãnh địa' },
+    { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:38, count:2, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm rồi biến mất · trong lãnh địa tự trồi lên lại' },
+    { id:'dark-volley', name:'Ảnh trói', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfcvzx'], cost:56, damage:5, damageInterval:.5, duration:4, count:1, requiresDomain:true, subtitle:'Hai dây bóng trồi từ nền, bám chân và kéo đối thủ xuống · khóa thao tác 4 giây, mất 5 máu mỗi 0,5 giây' },
+    { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · mở khóa kéo và lặn, phân thân bị đánh sẽ trồi lên lại' },
+    { id:'dark-reflect', name:'Ảnh độn', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:4, requiresDomain:true, subtitle:'Lặn dưới mực 4 giây · không thể bị tấn công, vẫn ngắm, né và kết ấn như thường' }
+  ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:0,requiresDomain:!!s.requiresDomain}));
   const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
@@ -104,18 +103,24 @@
       const spell = this.ready();
       if (!spell) return { ok: false, reason: 'sequence' };
       if (spell.requiresDomain && !context.darkDomain) return { ok: false, reason: 'domain' };
+      if (spell.requiresClones && !context.shadowClones) return { ok:false, reason:'clones' };
+      if (spell.style==='shadowclone' && context.shadowCloneCount>=spell.maxClones) return {ok:false,reason:'cloneLimit'};
       if (this.cooldown > 0) return { ok: false, reason: 'cooldown' };
       if (this.chakra < spell.cost) return { ok: false, reason: 'chakra' };
       this.chakra -= spell.cost; this.cooldown = 1; this.casts++; this.clear(); return { ok: true, spell };
     }
   }
   class Fighter {
-    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.controlTime = 0; this.color = '#ffffff'; this.defenseElement = ''; }
-    tick(dt) { this.controlTime = Math.max(0, this.controlTime - dt); this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
+    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; }
+    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime);}
+    set controlTime(value){this.waterControlTime=value;}
+    get controlSource(){return this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh trói':'Thủy ngục';}
+    tick(dt) { this.waterControlTime = Math.max(0, this.waterControlTime - dt); this.darkControlTime=Math.max(0,this.darkControlTime-dt);this.invulnerableTime=Math.max(0,this.invulnerableTime-dt);this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
-    receive(damage, reflected = false) {
+    receive(damage, reflected = false, ignoreShield=false) {
+      if(this.invulnerableTime>0)return {damage:0,absorbed:0,reflected:false,restored:false,immune:true};
       if (this.reflect && !reflected) { this.reflect--; return { damage: 0, reflected: true }; }
-      const absorbed = Math.min(this.shield, damage); this.shield -= absorbed;
+      const absorbed = ignoreShield?0:Math.min(this.shield, damage); this.shield -= absorbed;
       const actual = Math.min(this.hp, Math.max(0, damage - absorbed)); this.hp -= actual;
       const restored = this.hp <= 0;
       if (restored) this.hp = this.maxHp;

@@ -352,7 +352,7 @@ export class WaterArts {
       });
     this.sync(this.walls, walls.filter(w => w.element === 'water' && w.hp > 0 && w.life > 0), w => this.wall(w), (g, w) => { g.scale.setScalar(Math.min(1, w.life * 2)); });
     for (const { owner, fighter, pos } of fighters) {
-      for (const [map, active, prison] of [[this.shields, fighter.defenseElement === 'water' && fighter.shieldTime > 0 && fighter.shield > 0, false], [this.prisons, fighter.controlTime > 0, true]]) {
+      for (const [map, active, prison] of [[this.shields, fighter.defenseElement === 'water' && fighter.shieldTime > 0 && fighter.shield > 0, false], [this.prisons, fighter.waterControlTime > 0, true]]) {
         if (active && !map.has(owner)) map.set(owner, this.add(this.shell(prison)));
         const g = map.get(owner);
         if (g) { g.visible = active; g.position.set(pos[0], 1.5, pos[2]); g.userData.rings.rotation.y = time * (prison ? 1.8 : .7); }

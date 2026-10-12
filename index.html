@@ -4,6 +4,7 @@
 <body>
 <canvas id="world" aria-label="Đấu trường ninja 3D góc nhìn thứ nhất"></canvas>
 <div id="darkEyelids" aria-hidden="true"><i></i><i></i></div>
+<div id="shadowSubmerge" aria-hidden="true"></div>
 <div class="vignette"></div><div id="flash"></div>
 <header><a class="brand" href="#" aria-label="Ấn Hỏa"><span class="brand-icon">印</span><span>ẤN HỎA<small>ĐẤU TRƯỜNG CỬU HỆ</small></span></a><div class="header-center"><i></i> QUYẾT ĐẤU <span>／</span> THUNG LŨNG HOA ANH ĐÀO</div><button id="helpButton" class="outline">H <span>Quyển trục</span></button><button id="qualityButton" class="outline" title="Đổi chất lượng đồ họa">◈ <span id="qualityLabel">Cân bằng</span></button><button id="soundButton" class="icon-button" title="Bật/tắt âm thanh (M)" aria-label="Bật tắt âm thanh">♪</button></header>
 <main id="hud">
@@ -18,7 +19,7 @@
  <footer><span>Lia chuột: ngắm <b>·</b> Click trái: né trái <b>·</b> Click phải: né phải</span><span><kbd>BACKSPACE</kbd> Xóa chuỗi <b>·</b> <kbd>ESC</kbd> Tạm dừng</span><span class="prototype">CỬU HỆ <i>0.3</i></span></footer>
 </main>
 <section class="overlay" id="startScreen"><div class="scroll-book">
- <div class="scroll-heading"><div><div class="eyebrow">QUYỂN TRỤC NHẪN THUẬT · 9 HỆ · 49 CHIÊU</div><h1>Chọn chiêu.<em> Bước vào trận.</em></h1><p>Mang tối đa 5 chiêu, có <strong>ít nhất 1 chiêu tấn công</strong>.</p></div><span class="scroll-emblem">巻</span></div>
+ <div class="scroll-heading"><div><div class="eyebrow">QUYỂN TRỤC NHẪN THUẬT · 9 HỆ · 48 CHIÊU</div><h1>Chọn chiêu.<em> Bước vào trận.</em></h1><p>Mang tối đa 5 chiêu, có <strong>ít nhất 1 chiêu tấn công</strong>.</p></div><span class="scroll-emblem">巻</span></div>
  <div class="scroll-body"><div class="catalog-pane"><nav id="elementFilters" aria-label="Lọc hệ"></nav><div class="kind-filters" aria-label="Lọc loại chiêu"><button class="active" data-kind="all">Tất cả chiêu</button><button data-kind="attack">Tấn công</button><button data-kind="defense">Phòng ngự</button></div><div id="spellCatalog"></div></div>
  <aside class="loadout-pane"><div class="eyebrow">BỘ CHIÊU CỦA BẠN <span id="loadoutCount">0 / 5</span></div><p id="loadoutBalance"></p><div id="loadoutSlots"></div><div class="loadout-presets"><button id="presetAttack">3 công · 2 thủ</button><button id="presetDefense">2 công · 3 thủ</button><button id="presetFire">Bộ Hỏa</button><button id="clearLoadout">Bỏ hết</button></div><p id="loadoutNotice" role="status" aria-live="polite"></p><button id="startButton" class="primary">VÀO TRẬN <span>→</span></button><div class="control-note"><strong>Click trái: né trái · Click phải: né phải.</strong> Mỗi click né một bước. Lia chuột để ngắm; tâm ngắm chính là con trỏ.<br>Chiêu cấp D–SS cần 2–8 ấn; kết đủ chuỗi rồi <kbd>SPACE</kbd> để tung chiêu. Chiêu thủ tạo khiên, tường hoặc phản đòn.<br><kbd>ENTER</kbd> vào trận · <kbd>ESC</kbd> tạm dừng</div></aside></div>
 </div></section>

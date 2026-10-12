@@ -4,22 +4,29 @@ vm.runInNewContext(fs.readFileSync(path.join(root, 'game-core.js'), 'utf8'), con
 const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = context.SealGameCore;
 const loadoutForSpell = spell => spell.kind === 'attack' ? [spell.id] : [spell.id, spells.find(s => s.kind === 'attack' && s.sequence[0] !== spell.sequence[0]).id];
 assert.equal(new Set(keys).size, 12);
-assert.equal(elements.length, 9); assert.equal(spells.length, 49);
-assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 49);
+assert.equal(elements.length, 9); assert.equal(spells.length, 48);
+assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 48);
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
-  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water','lightning','dark'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
+  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water','lightning','dark'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,element.id==='dark'?1:2);
 }
 for (const spell of spells) {
   const r = new GameRules(loadoutForSpell(spell)); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
   assert.equal(r.ready(),undefined); assert.equal(r.cast().reason,'sequence');
   r.seal(spell.sequence.at(-1));
-  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({darkDomain:true}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
+  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({darkDomain:true,shadowClones:2}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
 }
 assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort(),[2,3,4,5,6,8]);
 const dark=spells.filter(s=>s.element==='dark');
-assert.equal(dark.length,6);assert.equal(dark.find(s=>s.style==='domain').duration,30);
-assert.equal(dark.filter(s=>s.requiresDomain).length,5);
+assert.equal(dark.length,5);assert.equal(dark.find(s=>s.style==='domain').duration,30);
+assert.equal(dark.filter(s=>s.requiresDomain).length,2);
+assert.deepEqual(Array.from(dark.map(s=>s.sequence.length)).sort(),[2,3,5,6,8]);
+assert.equal(dark.find(s=>s.style==='shadowclone').cloneCount,2);assert.equal(dark.find(s=>s.style==='shadowclone').maxClones,6);assert.equal(dark.find(s=>s.style==='shadowcommand').sequence.join(''),'df');
+for(const s of dark.filter(s=>s.requiresDomain))assert.equal(s.duration,4);
+const command=new GameRules(['dark-lance']);dark.find(s=>s.style==='shadowcommand').sequence.forEach(k=>command.seal(k));
+assert.equal(command.cast().reason,'clones');assert.equal(command.chakra,100);assert.equal(command.casts,0);assert.equal(command.sequence.length,2);
+assert.equal(command.cast({shadowClones:2}).ok,true);
+const summons=new GameRules(['dark-orb']);dark.find(s=>s.style==='shadowclone').sequence.forEach(k=>summons.seal(k));assert.equal(summons.cast({shadowCloneCount:6}).reason,'cloneLimit');assert.equal(summons.chakra,100);assert.equal(summons.casts,0);assert.equal(summons.sequence.length,3);assert.equal(summons.cast({shadowCloneCount:5}).ok,true);
 for(const spell of dark.filter(s=>s.requiresDomain)){
  const rules=new GameRules(loadoutForSpell(spell));spell.sequence.forEach(k=>rules.seal(k));
  assert.equal(rules.cast().reason,'domain');assert.equal(rules.casts,0);assert.equal(rules.chakra,100);assert.equal(rules.sequence.length,spell.sequence.length);
@@ -27,10 +34,11 @@ for(const spell of dark.filter(s=>s.requiresDomain)){
 }
 for(const element of elements){
  const list=spells.filter(s=>s.element===element.id), attack=list.filter(s=>s.kind==='attack').sort((a,b)=>a.sequence.length-b.sequence.length);
- for(let i=1;i<attack.length;i++){if(!['water','dark'].includes(element.id))assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);assert.ok(attack[i].cost>attack[i-1].cost);}
+ for(let i=1;i<attack.length;i++){if(!['water','dark'].includes(element.id))assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);if(element.id!=='dark')assert.ok(attack[i].cost>attack[i-1].cost);}
  const volley=attack.at(-1), orb=list.find(s=>s.id===element.id+'-orb'), chain=new GameRules([orb.id,volley.id]);
- volley.sequence.slice(0,2).forEach(k=>chain.seal(k));assert.equal(chain.ready().id,orb.id);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);
- volley.sequence.slice(2,-1).forEach(k=>chain.seal(k));assert.equal(chain.ready(),undefined);assert.equal(chain.cast().reason,'sequence');
+ const prefix=element.id==='dark'?orb.sequence.length:2;
+ volley.sequence.slice(0,prefix).forEach(k=>chain.seal(k));assert.equal(element.id==='dark'?chain.ready():chain.ready().id,element.id==='dark'?undefined:orb.id);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);
+ volley.sequence.slice(prefix,-1).forEach(k=>chain.seal(k));assert.equal(chain.ready(),undefined);assert.equal(chain.cast().reason,'sequence');
  chain.seal(volley.sequence.at(-1));assert.equal(chain.cast().spell.id,volley.id);
 }
 assert.equal(validateLoadout(defaultLoadout).ok,true);
@@ -97,6 +105,10 @@ assert.equal(intersectsWave([8,2,-20],[8,2,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),
 assert.equal(intersectsWave([0,8,-20],[0,8,20],[0,0,0],[0,0,-.2],[0,0,-1],12,5),false,'Above wave crest');
 assert.equal(intersectsWave([0,2,3],[0,2,3],[0,0,0],[0,0,0],[0,0,-1],12,5,0,7),true,'Thick wave body sweeps a spell behind the crest');
 const trapped=new Fighter();trapped.controlTime=3;trapped.tick(1);assert.equal(trapped.controlTime,2);trapped.tick(4);assert.equal(trapped.controlTime,0);
+const hidden=new Fighter();hidden.defend(mirror);hidden.invulnerableTime=4;
+assert.equal(hidden.receive(150).immune,true);assert.equal(hidden.hp,1000);assert.equal(hidden.reflect,1);assert.equal(hidden.shield,25);
+hidden.tick(4);assert.equal(hidden.receive(5,true,true).damage,5);assert.equal(hidden.hp,995);
+const doubleControl=new Fighter();doubleControl.controlTime=3;doubleControl.darkControlTime=4;doubleControl.tick(1);assert.equal(doubleControl.controlTime,3);doubleControl.darkControlTime=0;assert.equal(doubleControl.controlTime,2,'Ending dark control preserves a simultaneous water prison');
 const lightning=spells.filter(s=>s.element==='lightning');
 assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[2,4,6,8]);
 assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,5]);
@@ -135,4 +147,4 @@ assert.equal(pkg.version, "0.3.0");
 const bundle = fs.readFileSync(path.join(root, "game.js"), "utf8");
 assert.ok(bundle.length > 5e5);
 assert.ok(!/<script[^>]+https?:/.test(fs.readFileSync(path.join(root, "index.html"), "utf8")));
-console.log("PASS: 9 elements; 49 unique spells; six fire, water, lightning and dark arts; domain gating; exact seal counts; swept field slowdown and speed restoration; water control, shields, wave collision; combos, loadouts, chakra; offline bundle and GLB.");
+console.log("PASS: 9 elements; 48 unique spells; five dark arts; selective domain and clone-command gating; submerge immunity; overlapping control; exact seal counts; field slowdown, shields, collisions, loadouts, chakra, offline bundle and GLB.");
