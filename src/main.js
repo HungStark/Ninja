@@ -120,7 +120,7 @@ async function main() {
   function spellMarkup(spell, i, preparation = false) {
     if (!preparation) return '<button class="spell ' + (i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-spell="' + i + '"><div class="spell-title">' + spell.name + '</div><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></button>';
     const taken = loadout.includes(spell.id), kind = spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa kéo và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 38, nâng thành bò 57':spell.style==='shadowcommand'?'Chó 38 / bò 57 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'Khóa 4 giây · 5 máu mỗi 0,5 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
+    const stats = spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa voi bóng và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 38, nâng thành bò 57':spell.style==='shadowcommand'?'Chó 38 / bò 57 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spell.glyph + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · CẤP ' + spell.rank + ' · ' + spell.sequence.length + ' ẤN · ' + spell.cost + ' CH</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -137,7 +137,7 @@ async function main() {
     const valid = validateLoadout(loadout);
     $('startButton').disabled = !valid.ok;
     $('loadoutNotice').textContent = loadoutMessage || (valid.ok ? 'Bộ chiêu sẵn sàng. Có thể phối hợp nhiều hệ trong một trận.' : valid.reason);
-    if(!loadoutMessage&&valid.ok&&loadout.some(id=>spells.find(s=>s.id===id).requiresDomain))$('loadoutNotice').textContent+=' Ảnh trói và Ảnh độn cần Hắc lãnh địa; phân thân và lệnh tấn công dùng được ngoài lãnh địa.';
+    if(!loadoutMessage&&valid.ok&&loadout.some(id=>spells.find(s=>s.id===id).requiresDomain))$('loadoutNotice').textContent+=' Ảnh tượng và Ảnh độn cần Hắc lãnh địa; phân thân và lệnh tấn công dùng được ngoài lãnh địa.';
     document.querySelectorAll('[data-equip]').forEach(el => el.onclick = () => toggleEquip(el.dataset.equip));
     document.querySelectorAll('[data-remove]').forEach(el => el.onclick = () => toggleEquip(el.dataset.remove));
     document.querySelectorAll('[data-element]').forEach(el => el.classList.toggle('active', el.dataset.element === filterElement));
@@ -244,10 +244,6 @@ async function main() {
       const result=darkDomain.cast(spell,owner,pos,dir,volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
       if(result&&spell.style==='shadowdive'&&owner==='player'){
         clearDragonView();clearMeteorView();clearWaveView();setWorldFov(baseFov);cameraImpacts.reset();
-      }
-      if(victim.fighter.darkControlTime>0){
-        if(victim.owner==='player'){rules.clear();activePose=-1;hands.clearEffects();moveTargetX=camera.p[0];moveDirection=0;}
-        else{aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;}
       }
       return result;
     }
@@ -470,6 +466,17 @@ async function main() {
     if (result.restored) announce(shot.owner === 'player' ? 'Đối thủ đã hồi đầy 1000 máu!' : 'Bạn đã hồi đầy 1000 máu!');
     return true;
   }
+  function shadowCrushImpact(binding,victim,result) {
+    if(victim.owner==='enemy'){
+      aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;enemyHit=.3;hitTimer=.14;
+      $('enemyAction').textContent='Ảnh tượng · bị nhấn chìm 2 giây';tone(80,.15,'triangle',.06);
+    }else{
+      rules.clear();activePose=-1;hands.clearEffects();moveTargetX=camera.p[0];moveDirection=0;
+      flashTimer=.8;recoil=.3;$('flash').style.background='#e54955';
+      cameraImpacts.trigger('hit',1.5,[0,-.4,.7]);announce('Voi bóng nhấn chìm bạn · khóa thao tác 2 giây!',true);
+    }
+    if(result.restored)announce(victim.owner==='enemy'?'Đối thủ đã hồi đầy 1000 máu!':'Bạn đã hồi đầy 1000 máu!');
+  }
   function meteorImpact(shot) {
     const pos = [shot.p[0], .1, shot.p[2]];
     effects.arts.blast(pos, 'meteor', shot.blastRadius);
@@ -683,7 +690,7 @@ async function main() {
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
       updateAI(dt); updateShots(dt);
       if(!won)darkDomain.updateClones(dt,animationTime,[{owner:'player',pos:camera.p,fighter:player},{owner:'enemy',pos:enemyPos(),fighter:enemy}],
-        (clone,pos)=>impact({owner:clone.owner,element:'dark',style:'shadowstrike',damage:clone.damage,v:vnorm(vsub(pos,clone.p)),unreflectable:true},pos));
+        (clone,pos)=>impact({owner:clone.owner,element:'dark',style:'shadowstrike',damage:clone.damage,v:vnorm(vsub(pos,clone.p)),unreflectable:true},pos),shadowCrushImpact);
       messageTime -= dt;
       if (messageTime <= 0) { $('message').textContent = rules.ready() ? 'SPACE thi triển · chuột trái/phải để né' : 'Kết ấn theo quyển trục mang theo'; $('message').style.color = '#c7c5b6'; }
       updateUI();

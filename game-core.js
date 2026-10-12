@@ -56,8 +56,8 @@
   const darkSpells = [
     { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:38, count:1, cloneCount:1, maxClones:3, upgradeMultiplier:1.5, subtitle:'Thêm một chó bóng · đủ 3 con thì mỗi lần thi triển nâng một chó thành bò bóng, sát thương 57 · không cản đạn' },
     { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:38, count:1, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm, đánh 38 sát thương rồi biến mất · trong lãnh địa tự trồi lên lại' },
-    { id:'dark-volley', name:'Ảnh trói', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfcvzx'], cost:56, damage:5, damageInterval:.5, duration:4, count:1, requiresDomain:true, subtitle:'Hai dây bóng trồi từ nền, bám chân và kéo đối thủ xuống · khóa thao tác 4 giây, mất 5 máu mỗi 0,5 giây' },
-    { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · mở khóa kéo và lặn, phân thân bị đánh sẽ trồi lên lại' },
+    { id:'dark-volley', name:'Ảnh tượng', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfcvzx'], cost:56, damage:90, fallTime:.7, duration:2, count:1, requiresDomain:true, subtitle:'Voi bóng rơi xuống đầu đối thủ, gây 90 sát thương và nhấn chìm, khóa thao tác 2 giây · có thể né trước khi voi đáp' },
+    { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · mở khóa voi bóng và lặn, phân thân bị đánh sẽ trồi lên lại' },
     { id:'dark-reflect', name:'Ảnh độn', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
   ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:0,requiresDomain:!!s.requiresDomain}));
   const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
@@ -114,7 +114,7 @@
     constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; }
     get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime);}
     set controlTime(value){this.waterControlTime=value;}
-    get controlSource(){return this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh trói':'Thủy ngục';}
+    get controlSource(){return this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh tượng':'Thủy ngục';}
     tick(dt) { this.waterControlTime = Math.max(0, this.waterControlTime - dt); this.darkControlTime=Math.max(0,this.darkControlTime-dt);this.invulnerableTime=Math.max(0,this.invulnerableTime-dt);this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
     receive(damage, reflected = false, ignoreShield=false) {

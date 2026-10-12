@@ -22,7 +22,7 @@ assert.equal(dark.length,5);assert.equal(dark.find(s=>s.style==='domain').durati
 assert.equal(dark.filter(s=>s.requiresDomain).length,2);
 assert.deepEqual(Array.from(dark.map(s=>s.sequence.length)).sort(),[2,3,5,6,8]);
 assert.equal(dark.find(s=>s.style==='shadowclone').cloneCount,1);assert.equal(dark.find(s=>s.style==='shadowclone').maxClones,3);assert.equal(dark.find(s=>s.style==='shadowcommand').sequence.join(''),'df');for(const s of dark.filter(s=>['shadowclone','shadowcommand'].includes(s.style)))assert.equal(s.damage,38);
-assert.equal(dark.find(s=>s.style==='shadowbind').duration,4);assert.equal(dark.find(s=>s.style==='shadowdive').duration,3);
+assert.equal(dark.find(s=>s.style==='shadowbind').duration,2);assert.equal(dark.find(s=>s.style==='shadowbind').damage,90);assert.equal(dark.find(s=>s.style==='shadowbind').fallTime,.7);assert.equal(dark.find(s=>s.style==='shadowdive').duration,3);
 const command=new GameRules(['dark-lance']);dark.find(s=>s.style==='shadowcommand').sequence.forEach(k=>command.seal(k));
 assert.equal(command.cast().reason,'clones');assert.equal(command.chakra,100);assert.equal(command.casts,0);assert.equal(command.sequence.length,2);
 assert.equal(command.cast({shadowClones:2}).ok,true);
