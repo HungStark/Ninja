@@ -69,11 +69,11 @@
     heal: v.kind === 'defense' && ['wood', 'light'].includes(el.id) ? 12 : 0
   })));
   const defaultLoadout = ['fire-orb', 'water-lance', 'lightning-volley', 'earth-barrier', 'ice-reflect'];
-  function validateLoadout(ids) {
+  function validateLoadout(ids, { allowDefenseOnly = false } = {}) {
     if (!Array.isArray(ids) || ids.length < 1 || ids.length > 5) return { ok: false, reason: 'Chọn từ 1 đến 5 chiêu.' };
     if (new Set(ids).size !== ids.length || ids.some(id => !spells.some(s => s.id === id))) return { ok: false, reason: 'Bộ chiêu không hợp lệ hoặc bị trùng.' };
     const attack = ids.filter(id => spells.find(s => s.id === id).kind === 'attack').length, defense = ids.length - attack;
-    if (attack > 3 || defense > 3 || (ids.length === 5 && ![2, 3].includes(attack))) return { ok: false, attack, defense, reason: 'Tối đa 3 chiêu mỗi loại. Bộ 5 chiêu: 3 công–2 thủ hoặc 2 công–3 thủ.' };
+    if (!allowDefenseOnly && attack < 1) return { ok: false, attack, defense, reason: 'Cần ít nhất 1 chiêu tấn công để vào trận.' };
     return { ok: true, attack, defense };
   }
   class GameRules {

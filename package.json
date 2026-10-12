@@ -11,6 +11,7 @@
     "test": "node tests/core.cjs && node tests/server.cjs && node tests/hands.mjs && node tests/hand-volume.mjs",
     "test:hand-volume": "node tests/hand-volume.mjs",
     "test:browser": "node tests/browser.cjs",
+    "test:loadout": "node tests/loadout.cjs",
     "test:graphics": "node tests/graphics.cjs",
     "test:anime": "node tests/anime-style.cjs",
     "preview:capture": "node tools/capture.cjs",

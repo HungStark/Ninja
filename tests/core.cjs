@@ -2,6 +2,7 @@ const fs = require('node:fs'), path = require('node:path'), vm = require('node:v
 const root = path.join(__dirname, '..'), context = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'game-core.js'), 'utf8'), context);
 const { GameRules, Fighter, spells, keys, elements, defaultLoadout, validateLoadout, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = context.SealGameCore;
+const loadoutForSpell = spell => spell.kind === 'attack' ? [spell.id] : [spell.id, spells.find(s => s.kind === 'attack' && s.sequence[0] !== spell.sequence[0]).id];
 assert.equal(new Set(keys).size, 12);
 assert.equal(elements.length, 9); assert.equal(spells.length, 49);
 assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 49);
@@ -10,7 +11,7 @@ for (const element of elements) {
   assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water','lightning','dark'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,2);
 }
 for (const spell of spells) {
-  const r = new GameRules([spell.id]); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
+  const r = new GameRules(loadoutForSpell(spell)); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
   assert.equal(r.ready(),undefined); assert.equal(r.cast().reason,'sequence');
   r.seal(spell.sequence.at(-1));
   assert.equal(r.ready().id,spell.id); assert.equal(r.cast({darkDomain:true}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
@@ -20,7 +21,7 @@ const dark=spells.filter(s=>s.element==='dark');
 assert.equal(dark.length,6);assert.equal(dark.find(s=>s.style==='domain').duration,30);
 assert.equal(dark.filter(s=>s.requiresDomain).length,5);
 for(const spell of dark.filter(s=>s.requiresDomain)){
- const rules=new GameRules([spell.id]);spell.sequence.forEach(k=>rules.seal(k));
+ const rules=new GameRules(loadoutForSpell(spell));spell.sequence.forEach(k=>rules.seal(k));
  assert.equal(rules.cast().reason,'domain');assert.equal(rules.casts,0);assert.equal(rules.chakra,100);assert.equal(rules.sequence.length,spell.sequence.length);
  assert.equal(rules.cast({darkDomain:false}).reason,'domain');assert.equal(rules.cast({darkDomain:true}).ok,true);
 }
@@ -36,13 +37,22 @@ assert.equal(validateLoadout(defaultLoadout).ok,true);
 assert.equal(validateLoadout(['fire-orb','water-lance','earth-barrier','ice-reflect','wood-barrier']).ok,true);
 assert.equal(validateLoadout([]).ok,false); assert.equal(validateLoadout([...defaultLoadout,'wood-barrier']).ok,false);
 assert.equal(validateLoadout(['fire-orb','fire-orb']).ok,false); assert.equal(validateLoadout(['unknown']).ok,false);
-assert.equal(validateLoadout(['fire-orb','water-orb','light-orb','ice-orb','earth-barrier']).ok,false);
-assert.equal(validateLoadout(['fire-orb','water-barrier','earth-barrier','ice-reflect','wood-barrier']).ok,false);
+assert.equal(validateLoadout(['fire-orb','water-orb','light-orb','ice-orb','earth-barrier']).ok,true);
+assert.equal(validateLoadout(['fire-orb','water-barrier','earth-barrier','ice-reflect','wood-barrier']).ok,true);
+assert.equal(validateLoadout(['fire-orb','water-orb','light-orb','ice-orb','earth-orb']).ok,true);
+assert.equal(validateLoadout(['fire-orb']).ok,true);
+assert.equal(validateLoadout(['water-barrier']).ok,false);
+const defenseOnly=['fire-barrier','water-barrier','earth-barrier','ice-reflect','wood-barrier'];
+assert.equal(validateLoadout(defenseOnly).ok,false);
+assert.equal(validateLoadout(defenseOnly, { allowDefenseOnly: true }).ok,true,'Preparation permits selecting defenses before the attack');
+assert.equal(validateLoadout([...defenseOnly,'fire-orb'], { allowDefenseOnly: true }).ok,false,'Preparation retains the five-slot limit');
+assert.throws(()=>new GameRules(defenseOnly),/ít nhất 1 chiêu tấn công/);
 const r=new GameRules(); r.seal('q'); r.seal('e'); assert.equal(r.sequence.join(''),'e');
 r.seal('q');r.seal('w');r.seal('a');assert.equal(r.sequence.join(''),'a');r.tick(7.1);assert.equal(r.sequence.length,0);
 assert.equal(r.cast().reason,'sequence');
 const missing=spells.find(s=>s.id==='dark-orb');missing.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().ok,false);
 assert.equal(r.setLoadout([]).ok,false); assert.equal(r.loadout.join(','),defaultLoadout.join(','));r.clear();
+assert.equal(r.setLoadout(defenseOnly).ok,false); assert.equal(r.loadout.join(','),defaultLoadout.join(','));
 const orb=spells.find(s=>s.id==='fire-orb');orb.sequence.forEach(k=>r.seal(k));r.chakra=orb.cost-1;
 assert.equal(r.cast().reason,'chakra');assert.equal(r.sequence.length,orb.sequence.length);r.tick(.2);assert.equal(r.cast().ok,true);
 orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().reason,'cooldown');r.tick(1.1);assert.equal(r.cast().reason,'chakra');r.tick(2);assert.equal(r.cast().ok,true);

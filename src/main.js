@@ -147,7 +147,7 @@ async function main() {
     if (started) return;
     if (loadout.includes(id)) { loadout = loadout.filter(x => x !== id); loadoutMessage = ''; }
     else {
-      const candidate = [...loadout, id], valid = validateLoadout(candidate);
+      const candidate = [...loadout, id], valid = validateLoadout(candidate, { allowDefenseOnly: true });
       if (!valid.ok) loadoutMessage = valid.reason + ' Bỏ một chiêu đã chọn để thay thế.';
       else { loadout = candidate; loadoutMessage = ''; }
     }

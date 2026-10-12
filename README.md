@@ -12,8 +12,8 @@ Nếu có Node.js, chạy **npm start** rồi mở http://127.0.0.1:4173.
 
 Có **9 hệ, 49 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa, Thủy, Lôi và Ám có 4 chiêu công, 2 chiêu thủ; các hệ còn lại có 3 công, 2 thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ; có thể thay một chiêu công bằng Hỏa cầu.
 
-- Mang **từ 1 đến tối đa 5 chiêu**, tối đa 3 chiêu mỗi loại.
-- Khi mang đủ 5: **3 công + 2 thủ** hoặc **2 công + 3 thủ**.
+- Mang **từ 1 đến tối đa 5 chiêu**, có **ít nhất 1 chiêu tấn công**.
+- Tự do phối công/thủ: có thể chọn **5 công**, **4 công + 1 thủ** hoặc **1 công + 4 thủ**. Có thể chọn chiêu thủ trước; nút vào trận chỉ bật khi bộ chiêu có ít nhất một chiêu công.
 - Có thể phối nhiều hệ. Hai nút bộ mẫu giúp chọn nhanh cả hai cách chia.
 - Chỉ các chiêu mang theo mới nhận chuỗi ấn và thi triển được trong trận.
 - Bộ chiêu được lưu trên trình duyệt khi có localStorage. Mỗi trận tiếp theo đều quay lại quyển trục để thay bộ chiêu.
@@ -164,6 +164,8 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:meteor-zoom:** kiểm tra zoom in/out trên trời, tạm dừng, đổi kích thước/chất lượng, khôi phục hướng ngắm, reset và chế độ giảm chuyển động.
 
 Đặt **BROWSER_PATH** để dùng Chrome/Chromium khác đường dẫn Edge mặc định trên Windows. Ảnh và báo cáo kiểm thử nằm trong test-results. Chỉ URL có **test=1** cung cấp bước thời gian xác định; gameplay bình thường dùng requestAnimationFrame.
+
+**npm run test:loadout** kiểm tra chọn thủ trước, bắt buộc ít nhất một chiêu công khi vào trận, bộ 1 công + 4 thủ và 5 công, giới hạn 5 ô, thi triển chiêu và khôi phục bộ đã lưu.
 
 ## Cấu trúc
 
