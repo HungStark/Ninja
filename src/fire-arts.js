@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { vfxToon } from './vfx-materials.js';
 import { canvasTexture } from './materials.js';
 
 const forward = new T.Vector3(0, 0, -1);
@@ -11,7 +12,7 @@ function part(parent, geometry, material, position = [0, 0, 0], scale = [1, 1, 1
   mesh.position.set(...position); mesh.scale.set(...scale); parent.add(mesh); return mesh;
 }
 
-// All fire art is built locally: molten surfaces, sculpted dragons and animated flame curtains.
+// Sculpted spell volumes, banded fire surfaces and graphic flame silhouettes.
 export class FireArts {
   constructor(scene, glow) {
     this.scene = scene; this.glow = glow;
@@ -26,20 +27,25 @@ export class FireArts {
     this.red = additive('#ff491b', .3);
     this.ink = new T.MeshBasicMaterial({ color: '#702116' });
     this.teeth = new T.MeshBasicMaterial({ color: '#ffe6a1' });
-    this.meteorStone = new T.MeshStandardMaterial({ color: '#544033', roughness: 1, flatShading: true });
+    this.meteorStone = vfxToon('#544033', { flatShading: true });
     this.fire = new T.ShaderMaterial({
       uniforms: { uTime: { value: 0 } },
       vertexShader: `varying vec3 vLocal; varying vec3 vNormal; uniform float uTime;
         void main(){vLocal=position;vNormal=normal;vec3 p=position+normal*sin(position.y*9.+position.z*8.-uTime*12.)*.045;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
-      fragmentShader: `varying vec3 vLocal;varying vec3 vNormal;uniform float uTime;
-        float wave(vec3 p){return sin(p.x*7.+p.z*5.+uTime*5.)*sin(p.y*9.-p.z*4.-uTime*8.);}
-        void main(){float n=wave(vLocal)+.3*wave(vLocal*2.3);float vein=pow(1.-abs(sin(vLocal.y*6.+vLocal.z*4.+n*2.-uTime*3.)),5.);
-        vec3 col=mix(vec3(.4,.01,.002),vec3(2.2,.18,.008),smoothstep(-.6,.5,n));
-        col=mix(col,vec3(3.,.8,.055),vein*.6);gl_FragColor=vec4(col,1.);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-        }`
+      fragmentShader: `varying vec3 vLocal; varying vec3 vNormal; uniform float uTime;
+    void main(){
+      vec3 n=normalize(vNormal);
+      float lit=dot(n,normalize(vec3(-.4,.8,.5)))*.5+.5;
+      float flow=sin(vLocal.y*2.3+vLocal.z*2.-uTime*3.+sin(vLocal.x*2.));
+      vec3 c=vec3(.55,.065,.012);
+      if(lit+flow*.045>.23)c=vec3(1.05,.14,.012);
+      if(lit+flow*.045>.52)c=vec3(1.65,.34,.024);
+      if(lit>.83 || (flow>.95 && lit>.65))c=vec3(2.0,.72,.11);
+      gl_FragColor=vec4(c,1.);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
     });
     this.flame = new T.ShaderMaterial({
       transparent: true, blending: T.NormalBlending, depthWrite: false, side: T.DoubleSide,
@@ -47,13 +53,17 @@ export class FireArts {
       vertexShader: `varying vec3 vLocal;uniform float uTime;void main(){vLocal=position;
         vec3 p=position;p.x+=sin(position.y*5.+uTime*9.)*max(0.,position.y+.5)*.16;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
-      fragmentShader: `varying vec3 vLocal;uniform float uTime;void main(){float h=clamp(vLocal.y+.5,0.,1.);
-        float n=sin(vLocal.x*15.+vLocal.y*9.-uTime*13.)*.5+.5;
-        vec3 c=mix(vec3(2.4,.55,.025),vec3(.9,.035,.002),h);
-        gl_FragColor=vec4(c,(1.-h*.8)*(.45+n*.35));
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-        }`
+      fragmentShader: `varying vec3 vLocal;uniform float uTime;
+    void main(){
+      float h=clamp(vLocal.y+.5,0.,1.);
+      float w=sin(vLocal.x*4.+vLocal.y*3.-uTime*7.)*.07;
+      vec3 c=vec3(1.10,.045,.006);
+      if(h<.68+w)c=vec3(1.8,.25,.012);
+      if(h<.30+w)c=vec3(2.0,.68,.08);
+      gl_FragColor=vec4(c,.72*(1.-smoothstep(.88,1.,h)));
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
     });
     this.wallMaterial = new T.ShaderMaterial({
       transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.NormalBlending,
@@ -61,16 +71,19 @@ export class FireArts {
       vertexShader: `varying vec2 vUv;uniform float uTime;void main(){vUv=uv;vec3 p=position;
         p.y+=sin(position.x*3.+uTime*7.)*uv.y*.18;p.z+=sin(position.x*2.+uTime*5.)*.09;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
-      fragmentShader: `varying vec2 vUv;uniform float uTime;void main(){
-        float bend=sin(vUv.y*8.-uTime*4.)*.035;
-        float flame=sin((vUv.x+bend)*65.+sin(vUv.y*14.-uTime*7.)*2.);
-        float top=.67+.18*sin(vUv.x*49.+uTime*8.)+.12*sin(vUv.x*29.-uTime*6.);
-        float mask=(1.-smoothstep(top-.12,top,vUv.y))*smoothstep(0.,.05,vUv.x)*(1.-smoothstep(.95,1.,vUv.x));
-        vec3 c=mix(vec3(1.1,.025,.001),vec3(2.8,.7,.035),pow(max(0.,flame),3.));
-        gl_FragColor=vec4(c,mask*(.2+.45*max(0.,flame)));
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-        }`
+      fragmentShader: `varying vec2 vUv;uniform float uTime;
+    void main(){
+      float x=vUv.x+sin(vUv.y*4.-uTime*4.)*.025;
+      float top=.70+.12*sin(x*25.+uTime*5.)+.09*sin(x*15.-uTime*3.);
+      float edge=(1.-smoothstep(top-.018,top,vUv.y))*smoothstep(0.,.02,x)*(1.-smoothstep(.98,1.,x));
+      float l=.5+.5*sin(x*20.+vUv.y*4.-uTime*5.);
+      vec3 c=vec3(1.10,.04,.003);
+      if(l>.4)c=vec3(1.8,.22,.012);
+      if(l>.78 && vUv.y<.5)c=vec3(2.0,.65,.08);
+      gl_FragColor=vec4(c,edge*.68);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
     });
     this.shieldMaterial = new T.ShaderMaterial({
       transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.AdditiveBlending,
@@ -78,12 +91,14 @@ export class FireArts {
       vertexShader: `varying vec3 vNormal;varying vec3 vView;varying vec3 vLocal;void main(){vLocal=position;
         vec4 mv=modelViewMatrix*vec4(position,1.);vView=-mv.xyz;vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*mv;}`,
       fragmentShader: `varying vec3 vNormal;varying vec3 vView;varying vec3 vLocal;uniform float uTime;
-        void main(){float rim=pow(1.-abs(dot(normalize(vNormal),normalize(vView))),2.);
-        float bands=pow(.5+.5*sin(vLocal.y*24.+atan(vLocal.z,vLocal.x)*5.-uTime*4.),12.);
-        float a=.025+rim*.35+bands*.08;gl_FragColor=vec4(mix(vec3(2.4,.25,.02),vec3(3.,1.5,.3),bands),a);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-        }`
+    void main(){
+      float r=1.-abs(dot(normalize(vNormal),normalize(vView)));
+      float line=step(.96,sin(vLocal.y*12.+atan(vLocal.z,vLocal.x)*3.-uTime*4.));
+      vec3 c=mix(vec3(1.,.12,.01),vec3(1.65,.5,.08),line);
+      gl_FragColor=vec4(c,.015+step(.7,r)*.15+line*.055);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
     });
     this.sigil = canvasTexture(256, (c, n) => {
       c.translate(n / 2, n / 2); c.strokeStyle = '#ffc97c'; c.lineWidth = 2;
@@ -96,18 +111,14 @@ export class FireArts {
     this.sigilMaterial = new T.MeshBasicMaterial({ map: this.sigil, transparent: true, opacity: .7, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide });
     this.sigilGeometry = new T.PlaneGeometry(1, 1);
     this.flameTexture = canvasTexture(128, c => {
-      // Curved translucent flame silhouettes soften the geometry of walls and impact plumes.
-      const outer = c.createRadialGradient(64, 98, 5, 64, 83, 66);
-      outer.addColorStop(0, '#ffe48d'); outer.addColorStop(.35, '#ffb431');
-      outer.addColorStop(.7, 'rgba(255,91,13,.8)'); outer.addColorStop(1, 'rgba(220,35,3,0)');
-      c.filter = 'blur(2px)'; c.fillStyle = outer;
-      c.beginPath(); c.moveTo(65, 3); c.bezierCurveTo(94, 32, 54, 44, 98, 64);
-      c.bezierCurveTo(129, 93, 99, 127, 65, 126); c.bezierCurveTo(21, 126, 8, 102, 30, 75);
-      c.bezierCurveTo(56, 47, 49, 29, 65, 3); c.fill();
-      const core = c.createLinearGradient(0, 65, 0, 126);
-      core.addColorStop(0, 'rgba(255,181,55,0)'); core.addColorStop(.55, '#ffcc55'); core.addColorStop(1, '#fff1af');
-      c.fillStyle = core; c.beginPath(); c.moveTo(64, 56);
-      c.bezierCurveTo(85, 83, 98, 126, 65, 126); c.bezierCurveTo(40, 126, 38, 94, 64, 56); c.fill();
+    c.fillStyle='#ee4b17';c.beginPath();c.moveTo(65,3);
+    c.bezierCurveTo(94,32,54,44,98,64);c.bezierCurveTo(129,93,99,127,65,126);
+    c.bezierCurveTo(21,126,8,102,30,75);c.bezierCurveTo(56,47,49,29,65,3);c.fill();
+    c.fillStyle='#ff9f30';c.beginPath();c.moveTo(67,35);
+    c.bezierCurveTo(63,67,91,73,87,104);c.bezierCurveTo(85,128,34,128,34,101);
+    c.bezierCurveTo(34,76,57,65,67,35);c.fill();
+    c.fillStyle='#ffe495';c.beginPath();c.moveTo(64,77);
+    c.bezierCurveTo(92,117,74,126,64,126);c.bezierCurveTo(41,124,42,105,64,77);c.fill();
     });
   }
   flameSprite(parent, width, height) {
@@ -115,7 +126,7 @@ export class FireArts {
     sprite.scale.set(width, height, 1); parent.add(sprite); return sprite;
   }
   sprite(parent, size, opacity = .45) {
-    const material = new T.SpriteMaterial({ map: this.glow, color: '#ff9d36', transparent: true, opacity, blending: T.AdditiveBlending, depthWrite: false });
+    const material = new T.SpriteMaterial({ map: this.glow, color: '#ff9d36', transparent: true, opacity: opacity * .5, blending: T.AdditiveBlending, depthWrite: false });
     const sprite = new T.Sprite(material); sprite.scale.setScalar(size); parent.add(sprite); return sprite;
   }
   ribbon(parent, turns, length, radius, phase = 0, material = this.gold) {

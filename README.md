@@ -34,6 +34,8 @@ Hình khối được kiểm tra riêng bằng vật liệu xám trung tính ở
 
 Phong cảnh dùng ánh sáng chạng vạng, bầu trời và sương tối hơn để chiêu thức nổi bật.
 
+Hiệu ứng Hỏa–Thủy–Lôi–Ám dùng mảng màu cel rõ: lửa có lõi vàng và vùng cam/đỏ, nước có dòng chảy và bọt lớn, Lôi điểu có thân tím rõ với lõi sét trắng mảnh, phân thân và đầm mực dùng các vùng tím đen thay bề mặt bóng. Thuyền Thủy có buồm và cờ rách nhẹ, lỗ thủng thật, miếng vá có đường khâu, ván boong sửa và lan can sứt. Các thay đổi đồ họa giữ thời điểm thi triển, góc nhìn, sát thương và ánh sáng chạng vạng.
+
 Hệ Hỏa có hiệu ứng và cơ chế riêng:
 
 | Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
@@ -174,6 +176,8 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **src/lightning-arts.js:** cầu điện, thương sét, chim điện, mây và tia Thiên lôi, khiên và Lôi trận.
 - **src/dark-domain.js:** hoạt ảnh khép/mở mắt, đổi và khôi phục môi trường, shader mực đen, phân thân tấn công/bắn đạn/phòng ngự/đổi chỗ và đạn mực.
 - **src/water-arts.js:** mặt nước, cầu giam giữ, thuyền hải tặc, sóng cuốn chiêu và hai kiểu khiên nước.
+- **src/vfx-materials.js:** bảng bốn mức sáng dùng chung cho các vật liệu rắn của chiêu thức.
+- **src/worn-sail.js:** lưới buồm/cờ rách có lỗ thủng, độ cong và miếng vá có đường khâu của thuyền Thủy.
 - **src/hands.js / poses.js:** nạp GLB Blender và điều khiển 12 thế kết ấn.
 - **tools/blender-hands.py / build-hands.mjs:** lưới tay kín có cấu trúc quad, subdivision, móng, nếp ngón, giáp và trọng số xương; kiểm tra lưới manifold trước khi xuất.
 - **tools/reference-hand.py:** nhập bản sao file mẫu, hàn các đỉnh trùng ở seam, giữ topology lòng bàn tay, thay đầu ngón/móng dài, đóng cổ tay, subdivision và gán trọng số 16 xương.

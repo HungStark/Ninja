@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { vfxToon } from './vfx-materials.js';
 
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
@@ -17,16 +18,16 @@ export class DarkDomain {
         v.z+=sin(position.x*.28+uTime*.75)*.036+sin(position.y*.35-uTime*.6)*.032;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(v,1.);}`,
       fragmentShader:`varying vec3 p;uniform float uTime;
-        float hash(vec2 q){return fract(sin(dot(q,vec2(127.1,311.7)))*43758.5453);}
-        float noise(vec2 q){vec2 i=floor(q),f=fract(q);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
-        float wave(vec2 q){return sin(q.x*.47+sin(q.y*.29+uTime*.4)*2.+uTime*.5)+sin(q.y*.82-q.x*.2-uTime*.35)*.45;}
-        void main(){vec2 q=p.xy;vec2 warp=vec2(noise(q*.12+uTime*.035),noise(q*.13-uTime*.024))*5.;float w=wave(q+warp),fine=sin(q.x*1.3+q.y*.9+w*2.+uTime*.55);
-          float streak=pow(max(0.,fine),22.)*smoothstep(.22,.75,noise(q*.28+uTime*.025));float slick=smoothstep(.3,1.4,w)*.26;
-          vec3 col=vec3(.007,.008,.015)+vec3(.085,.078,.12)*slick+vec3(.15,.14,.19)*streak*.3;
-          float fog=1.-exp(-length(q-vec2(0.,-6.))*.022);col=mix(col,vec3(.025,.021,.039),fog*.75);
-          gl_FragColor=vec4(col,1.);
-          #include <tonemapping_fragment>
-          #include <colorspace_fragment>}`});
+    void main(){
+      vec2 q=p.xy;
+      float wave=sin(q.x*.32+sin(q.y*.23+uTime*.4)*1.5+uTime*.5)+sin(q.y*.52-q.x*.14-uTime*.35)*.4;
+      vec3 c=vec3(.010,.007,.019);
+      if(wave>.50)c=vec3(.023,.014,.036);
+      if(wave>1.18)c=vec3(.042,.025,.058);
+      gl_FragColor=vec4(c,1.);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`});
     const floor=new T.Mesh(new T.PlaneGeometry(230,230,120,100),this.ink);floor.rotation.x=-Math.PI/2;floor.position.y=.035;this.group.add(floor);
     const sky=new T.Mesh(new T.SphereGeometry(170,24,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,
       vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
@@ -41,9 +42,9 @@ export class DarkDomain {
       dummy.position.set(Math.sin(i*19.17)*35,.075,Math.cos(i*13.49)*38-8);dummy.rotation.set(-Math.PI/2,0,i*2.7);
       dummy.scale.set(1.2+(i%5)*.9,.7+(i%4)*.45,1);dummy.updateMatrix();pools.setMatrixAt(i,dummy.matrix);
     }pools.instanceMatrix.needsUpdate=true;this.group.add(pools);
-    this.cloneMaterial=new T.MeshStandardMaterial({color:'#0d0b15',roughness:.28,metalness:.14,emissive:'#292039',emissiveIntensity:.28});
-    this.faceMaterial=new T.MeshStandardMaterial({color:'#040409',roughness:.4});
-    this.eyeMaterial=new T.MeshBasicMaterial({color:new T.Color('#c2a1ef').multiplyScalar(1.5)});
+    this.cloneMaterial=vfxToon('#3a2b47', { emissive:'#261a32', emissiveIntensity:.20 });
+    this.faceMaterial=vfxToon('#130e1e');
+    this.eyeMaterial=new T.MeshBasicMaterial({color:'#c2a1ef'});
     this.ringMaterial=new T.MeshBasicMaterial({color:'#71638a',transparent:true,opacity:.35,depthWrite:false});
     this.geometries={sphere:new T.SphereGeometry(1,14,10),cylinder:new T.CylinderGeometry(1,1,1,10),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,12),pool:new T.CircleGeometry(1,32),ring:new T.TorusGeometry(1,.018,5,48)};
     this.cloneGroup=new T.Group();this.group.add(this.cloneGroup);

@@ -1,28 +1,32 @@
 import * as T from 'three';
+import { vfxToon } from './vfx-materials.js';
 
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
-const glow=(color,opacity=1)=>new T.MeshBasicMaterial({color:new T.Color(color).multiplyScalar(1.2),transparent:true,opacity,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide});
+const glow=(color,opacity=1,gain=1.2)=>new T.MeshBasicMaterial({color:new T.Color(color).multiplyScalar(gain),transparent:true,opacity,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide});
 const up=new T.Vector3(0,1,0),dummy=new T.Object3D();
 
 export class LightningArts {
   constructor(scene) {
     this.scene=scene;this.shots=new Map();this.fields=new Map();this.shields=new Map();this.bursts=[];
-    this.white=glow('#dceaff',.65);this.violet=glow('#9973ff',.4);this.body=glow('#847cff',.42);
-    this.birdBody=new T.MeshBasicMaterial({color:'#8975ea',transparent:true,opacity:.8,side:T.DoubleSide,depthWrite:false});
+    this.white=glow('#bed0ff',.65,1);this.violet=glow('#8e68ea',.4,1);this.body=glow('#7461bf',.42,1);
+    this.birdBody=vfxToon('#9172dd', { side:T.DoubleSide, emissive:'#694ca6', emissiveIntensity:.34 });
     this.shell=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending,
       uniforms:{uTime:{value:0},uStrength:{value:1}},vertexShader:'varying vec3 p;varying vec3 n;varying vec3 v;void main(){p=position;n=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);v=-mv.xyz;gl_Position=projectionMatrix*mv;}',
       fragmentShader:`uniform float uTime;uniform float uStrength;varying vec3 p;varying vec3 n;varying vec3 v;
-        void main(){float rim=pow(1.-abs(dot(normalize(n),normalize(v))),3.);
-          float arc=pow(max(0.,1.-abs(sin(p.y*17.+sin(p.x*9.+uTime*2.)*2.+p.z*7.))),20.);
-          gl_FragColor=vec4(vec3(.42,.30,1.)+arc*vec3(.8,.9,1.),(.025+rim*.16+arc*.18)*uStrength);
-          #include <tonemapping_fragment>
-          #include <colorspace_fragment>}`});
+    void main(){
+      float rim=1.-abs(dot(normalize(n),normalize(v)));
+      float arc=step(.985,1.-abs(sin(p.y*9.+sin(p.x*4.+uTime*2.)+p.z*4.)));
+      gl_FragColor=vec4(mix(vec3(.25,.12,.65),vec3(.7,.8,1.),arc),(.012+step(.8,rim)*.10+arc*.08)*uStrength);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`});
   }
   mesh(g,geo,mat,p=[0,0,0],s=[1,1,1]) {
     const m=new T.Mesh(geo,mat);m.position.fromArray(p);m.scale.fromArray(s);g.add(m);return m;
   }
   sphere(g,p,s,mat=this.body) {return this.mesh(g,new T.SphereGeometry(1,18,12),mat,p,s);}
   arc(g,points,radius=.025,material=this.white,owned=false) {
+    radius *= material === this.white ? .65 : .90;
     const mesh=new T.InstancedMesh(new T.CylinderGeometry(1,1,1,6,1,true),material,points.length-1);
     const a=new T.Vector3(),b=new T.Vector3(),dir=new T.Vector3();
     for(let i=1;i<points.length;i++) {

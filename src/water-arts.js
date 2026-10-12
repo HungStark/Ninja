@@ -1,4 +1,6 @@
 import * as T from 'three';
+import { vfxToon } from './vfx-materials.js';
+import { wornSailGeometry, wornFlagGeometry, sailPatchGeometry, sailStitchesGeometry } from './worn-sail.js';
 
 // Water has its own surfaces, foam and solid summoned ship, independent of the fire effects.
 export class WaterArts {
@@ -12,14 +14,20 @@ export class WaterArts {
         void main(){vLocal=position;vec3 p=position+normal*.035*sin(position.y*9.+position.x*5.+uTime*5.);
         vec4 mv=modelViewMatrix*vec4(p,1.);vNormal=normalize(normalMatrix*normal);vView=normalize(-mv.xyz);
         gl_Position=projectionMatrix*mv;}`,
-      fragmentShader: `uniform float uTime; varying vec3 vNormal; varying vec3 vView; varying vec3 vLocal;
-        void main(){float rim=pow(1.-abs(dot(normalize(vNormal),normalize(vView))),2.);
-        float ripple=.5+.5*sin(vLocal.y*13.+vLocal.x*7.-uTime*4.);
-        vec3 color=mix(vec3(.025,.23,.48),vec3(.35,.85,1.),rim*.8+ripple*.15);
-        gl_FragColor=vec4(color,.18+rim*.5+ripple*.07);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-        }`
+      fragmentShader: `uniform float uTime;varying vec3 vNormal;varying vec3 vView;varying vec3 vLocal;
+    void main(){
+      vec3 n=normalize(vNormal);
+      float r=1.-abs(dot(n,normalize(vView)));
+      float l=abs(dot(n,normalize(vec3(-.4,.9,.3))));
+      vec3 c=vec3(.025,.12,.24);
+      if(l>.32)c=vec3(.035,.34,.47);
+      if(l>.78 || r>.73)c=vec3(.20,.70,.84);
+      float line=step(.965,sin(vLocal.y*5.+vLocal.x*3.-uTime*3.));
+      c=mix(c,vec3(.55,.88,.94),line*.35);
+      gl_FragColor=vec4(c,.48+step(.73,r)*.22);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
     });
     this.foam = new T.MeshBasicMaterial({ color: '#d9faff', transparent: true, opacity: .72, depthWrite: false });
     this.waveWater = new T.ShaderMaterial({
@@ -32,43 +40,49 @@ export class WaterArts {
           vLocal=p;vec4 mv=modelViewMatrix*vec4(p,1.);vNormal=normalize(normalMatrix*normal);vView=normalize(-mv.xyz);
           gl_Position=projectionMatrix*mv;}`,
       fragmentShader: `uniform float uTime;uniform float uHeight;varying vec3 vLocal;varying vec3 vNormal;varying vec3 vView;
-        float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-        float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
-        void main(){vec3 n=normalize(vNormal),v=normalize(vView);float fresnel=pow(1.-abs(dot(n,v)),3.);
-          vec2 uv=vec2(vLocal.x*1.5,vLocal.y*2.-uTime*1.8+vLocal.z);
-          float flow=noise(uv)+noise(uv*2.7+uTime*.7)*.35;
-          float streak=pow(max(0.,sin(vLocal.x*5.+flow*6.+vLocal.y*1.6-uTime*3.)),8.);
-          float lit=.55+.45*abs(dot(n,normalize(vec3(-.4,.9,.3))));
-          vec3 color=mix(vec3(.012,.075,.14),vec3(.025,.30,.40),lit*.75+flow*.13);
-          color+=vec3(.07,.15,.19)*(fresnel+streak*.3);
-          float foam=smoothstep(uHeight*.75,uHeight*.97,vLocal.y)*smoothstep(.7,1.15,flow);
-          color=mix(color,vec3(.82,.96,1.),foam);
-          gl_FragColor=vec4(color,.96);
-          #include <tonemapping_fragment>
-          #include <colorspace_fragment>
-        }`
+    void main(){
+      vec3 n=normalize(vNormal);
+      float l=abs(dot(n,normalize(vec3(-.4,.9,.3))));
+      float r=1.-abs(dot(n,normalize(vView)));
+      vec3 c=vec3(.018,.085,.14);
+      if(l>.32)c=vec3(.025,.26,.35);
+      if(l>.76)c=vec3(.07,.45,.53);
+      if(r>.88)c=vec3(.19,.64,.71);
+      float flow=.5+.5*sin(vLocal.x*.85+vLocal.y*.9-vLocal.z*.6-uTime*1.8+sin(vLocal.x*.42-vLocal.y*.7+uTime)*1.6);
+      float stream=smoothstep(.88,.925,flow);
+      c+=vec3(.025,.07,.08)*stream;
+      float crest=.89+.035*sin(vLocal.x*1.8-uTime*3.);
+      float foam=step(uHeight*crest,vLocal.y);
+      c=mix(c,vec3(.75,.91,.96),foam);
+      gl_FragColor=vec4(c,.96);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
     });
     this.waveFoam = new T.ShaderMaterial({
       transparent: true, depthWrite: false, side: T.DoubleSide, uniforms: { uTime: { value: 0 } },
       vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader: `uniform float uTime;varying vec2 vUv;
-        float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-        float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
-        void main(){vec2 uv=vUv*vec2(130.,40.)+vec2(uTime*.6,-uTime*2.);
-          float n=noise(uv)+noise(uv*2.3+uTime*.4)*.45;
-          float patches=smoothstep(.68,1.05,n);
-          float lace=1.-smoothstep(.025,.10,abs(sin(uv.x*1.4+n*3.)*sin(uv.y*1.1+n*4.)));
-          float edge=smoothstep(0.,.06,vUv.y)*(1.-smoothstep(.35,.9,vUv.y));
-          float alpha=edge*(patches*.65+lace*.22);if(alpha<.025)discard;
-          gl_FragColor=vec4(.82,.95,1.,alpha*.9);
-          #include <tonemapping_fragment>
-          #include <colorspace_fragment>
-        }`
+    float hash(vec2 q){return fract(sin(dot(q,vec2(127.1,311.7)))*43758.5453);}
+    float noise(vec2 q){vec2 i=floor(q),f=fract(q);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+    void main(){
+      vec2 q=vUv*vec2(48.,18.)+vec2(uTime*.5,-uTime*2.);
+      float n=noise(q)+noise(q*1.7+uTime*.35)*.3;
+      float edge=smoothstep(0.,.025,vUv.y)*(1.-smoothstep(.32,.70,vUv.y));
+      float alpha=edge*smoothstep(.72,.79,n)*.78;if(alpha<.025)discard;
+      gl_FragColor=vec4(.82,.95,1.,alpha);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
     });
-    this.wood = new T.MeshStandardMaterial({ color: '#623927', emissive: '#623927', emissiveIntensity: .45, roughness: .86 });
-    this.deck = new T.MeshStandardMaterial({ color: '#ad7950', emissive: '#ad7950', emissiveIntensity: .25, roughness: .8 });
-    this.dark = new T.MeshStandardMaterial({ color: '#172936', roughness: .6 });
-    this.sail = new T.MeshStandardMaterial({ color: '#17202d', emissive: '#17202d', emissiveIntensity: .45, side: T.DoubleSide, roughness: .9 });
+    this.wood = vfxToon('#805337', { emissive: '#402918', emissiveIntensity: .15 });
+    this.deck = vfxToon('#bd8a56', { emissive: '#503319', emissiveIntensity: .12 });
+    this.dark = vfxToon('#172936');
+    this.sail = vfxToon('#273449', { emissive: '#17202d', emissiveIntensity: .20, side: T.DoubleSide });
+    this.weatheredWood = vfxToon('#75614a', { emissive: '#352a1d', emissiveIntensity: .12 });
+    this.sailPatch = vfxToon('#666354', { side: T.DoubleSide });
+    this.seams = new T.MeshBasicMaterial({ color: '#44352b' });
+    this.stitches = new T.LineBasicMaterial({ color: '#a99d80' });
   }
   mesh(g, geometry, material, position = [0, 0, 0], scale = [1, 1, 1]) {
     const m = new T.Mesh(geometry, material); m.position.fromArray(position); m.scale.fromArray(scale); g.add(m); return m;
@@ -101,9 +115,27 @@ export class WaterArts {
     const geo = new T.ExtrudeGeometry(hull, { depth: .95, bevelEnabled: true, bevelThickness: .22, bevelSize: .16, bevelSegments: 2, steps: 1 });
     geo.rotateX(Math.PI / 2); geo.translate(0, .4, 0);
     this.mesh(g, geo, this.wood);
-    this.mesh(g, new T.BoxGeometry(2.1, .12, 4.2), this.deck, [0, .44, -.15]);
+    // The deck clears the hull's upper bevel instead of disappearing inside its cap.
+    this.mesh(g, new T.BoxGeometry(2.1, .12, 4.2), this.deck, [0, .60, -.15]);
+    // Broad boards and a few uneven repairs remain readable from the overhead camera.
+    for (let i = 0; i < 11; i++) {
+      const z = -2.08 + i * .38;
+      const board = this.mesh(g, new T.BoxGeometry(2.04 - (i % 3) * .045, .016, .355), i % 4 === 1 ? this.weatheredWood : this.deck, [0, .668, z]);
+      board.rotation.y = (i % 3 - 1) * .008;
+      this.mesh(g, new T.BoxGeometry(1.97, .008, .014), this.seams, [0, .68, z + .18]);
+    }
+    for (const [x, z, angle] of [[-.65, 1.45, .25], [.64, -.85, -.14]]) {
+      const repair = this.mesh(g, new T.BoxGeometry(.38, .025, .78), this.weatheredWood, [x, .692, z]);
+      repair.rotation.y = angle;
+    }
     for (const side of [-1, 1]) {
-      this.mesh(g, new T.BoxGeometry(.1, .5, 4.2), this.wood, [side * 1.06, .72, -.1]);
+      for (let i = 0; i < 5; i++) {
+        const height = .5 - (i % 3) * .025, length = side === -1 && i === 3 ? .34 : .78;
+        const rail = new T.BoxGeometry(.1, height, length), p = rail.attributes.position;
+        for (let j = 0; j < p.count; j++) if (p.getY(j) > 0 && p.getZ(j) > 0 && p.getX(j) * side > 0) p.setY(j, p.getY(j) - .07);
+        rail.computeVertexNormals();
+        this.mesh(g, rail, i === 3 ? this.weatheredWood : this.wood, [side * 1.06, .47 + height / 2, -1.78 + i * .83]);
+      }
       for (let i = 0; i < 3; i++) {
         const cannon = this.mesh(g, new T.CylinderGeometry(.12, .15, .65, 12), this.dark, [side * 1.2, .72, -.9 + i * .9]);
         cannon.rotation.z = Math.PI / 2;
@@ -111,10 +143,12 @@ export class WaterArts {
     }
     this.mesh(g, new T.CylinderGeometry(.07, .12, 4.7, 12), this.wood, [0, 2.65, 0]);
     this.mesh(g, new T.BoxGeometry(3.15, .08, .08), this.deck, [0, 4.35, 0]);
-    const sail = this.mesh(g, new T.PlaneGeometry(2.9, 2.6, 8, 8), this.sail, [0, 3.05, .04]);
-    const positions = sail.geometry.attributes.position;
-    for (let i = 0; i < positions.count; i++) positions.setZ(i, .2 * Math.cos(positions.getX(i)) * Math.cos(positions.getY(i)));
-    sail.geometry.computeVertexNormals();
+    this.mesh(g, wornSailGeometry(), this.sail, [0, 3.05, .04]);
+    for (const face of [-1, 1]) {
+      this.mesh(g, sailPatchGeometry(face), this.sailPatch, [0, 3.05, .04]);
+      const stitches = new T.LineSegments(sailStitchesGeometry(face), this.stitches);
+      stitches.position.set(0, 3.05, .04); g.add(stitches);
+    }
     // A skull and crossed bones make the summoned ship unmistakably a pirate ship.
     for (const face of [-1, 1]) {
       const z = face > 0 ? .32 : -.09;
@@ -125,7 +159,7 @@ export class WaterArts {
         const bone = this.mesh(g, new T.BoxGeometry(.9, .055, .05), this.foam, [0, 2.8, z]); bone.rotation.z = side * .45;
       }
     }
-    this.mesh(g, new T.PlaneGeometry(.85, .4), this.sail, [.42, 4.85, 0]);
+    this.mesh(g, wornFlagGeometry(), this.sail, [.42, 4.85, 0]);
     g.scale.setScalar(.95);
     const wrapper = new T.Group(); wrapper.add(g);
     const wake = new T.Group(); wrapper.add(wake); wrapper.userData.wake = wake;
