@@ -5,28 +5,34 @@ import { HAND_GLB_BASE64 } from "../assets/hand-data.js";
 import { handMaterials } from './hand-materials.js';
 import { poses } from "./poses.js";
 import { createSealShadow, createHandFire, createHandWater, createHandLightning } from './hand-vfx.js';
+import { inkMaterial, addInkOutline } from './ink-outline.js';
 export async function createHands() {
   const bytes = Uint8Array.from(atob(HAND_GLB_BASE64), (c) => c.charCodeAt(0));
   const gltf = await new GLTFLoader().parseAsync(bytes.buffer, "");
   const scene = new T.Scene(), root = new T.Group();
   scene.add(root);
-  scene.add(new T.HemisphereLight("#e3e9f2", "#916d61", 1.45));
-  const key = new T.DirectionalLight("#fff1e5", 2.5);
+  const ambient=new T.HemisphereLight("#e3e9f2", "#916d61", .75);
+  ambient.layers.enable(1);scene.add(ambient);
+  const key = new T.DirectionalLight("#fff1e5", 2.3);
+  key.layers.enable(1);
   key.position.set(-1, 2, 2);
   scene.add(key);
-  const fill=new T.DirectionalLight('#e0e8ff',.65);fill.position.set(1,.4,1);scene.add(fill);
+  const fill=new T.DirectionalLight('#e0e8ff',.35);fill.layers.enable(1);fill.position.set(1,.4,1);scene.add(fill);
   const fireLight = new T.PointLight("#ff9a42", 0, 4, 2);
   fireLight.position.set(0, 0.1, -0.8);
   scene.add(fireLight);
   const hands = [], materials = handMaterials();
+  const ink = inkMaterial(.35, '#60484a'), nailInk = inkMaterial(.18, '#916c70'), armorInk = inkMaterial(.40, '#111827');
+  const inkMaterials = [ink, nailInk, armorInk], outlines = [];
   for (const side of [-1, 1]) {
     const wrapper = new T.Group(), model = clone(gltf.scene);
     wrapper.scale.x = side;
     wrapper.position.set(side * .33, -.38, -.76);
-    wrapper.rotation.set(.16, side * .16, side * .27);
+    wrapper.rotation.set(.10, side * .10, side * .47);
     wrapper.add(model);
     root.add(wrapper);
     const joints = {};
+    const surfaces=[];
     model.traverse((o) => {
       if (o.isBone) joints[o.name] = o;
       if (o.isMesh) {
@@ -34,8 +40,14 @@ export async function createHands() {
         o.frustumCulled = false;
         o.castShadow = false;
         o.receiveShadow = false;
+        surfaces.push(o);
       }
     });
+    for(const surface of surfaces) {
+      if(surface.name==='hand_skin')outlines.push(addInkOutline(surface,ink));
+      else if(surface.name.endsWith('_nail'))outlines.push(addInkOutline(surface,nailInk));
+      else if(['sleeve','wrist_cuff','glove_back','wrist_plate'].includes(surface.name))outlines.push(addInkOutline(surface,armorInk));
+    }
     hands.push({ side, wrapper, joints, fromPosition: wrapper.position.clone(), fromRotation: wrapper.quaternion.clone(), fromJoints: Object.fromEntries(Object.entries(joints).map(([name, joint]) => [name, joint.quaternion.clone()])) });
   }
   let lastPose = -1, transitionAge = 1, castAge = 10, sealPulse = 0;
@@ -88,7 +100,7 @@ export async function createHands() {
     const separate = smooth(Math.min(1, progress / opening));
     const castPull = Math.exp(-castAge * 7) * Math.sin(Math.min(castAge, 0.5) * 9) * 0.07;
     for (const hand of hands) {
-      const { side, wrapper, joints } = hand, p = pose ? pose.p : [.33, -.39, -.76], r = pose ? pose.r : [.16, .16, .27];
+      const { side, wrapper, joints } = hand, p = pose ? pose.p : [.33, -.39, -.76], r = pose ? pose.r : [.10, .10, .47];
       const bob = reducedMotion ? 0 : Math.sin(time * (moving ? 9 : 1.6)) * (moving ? 6e-3 : 3e-3);
       const spreadX = Math.max(0.18, Math.abs(hand.fromPosition.x), p[0] + 0.08);
       const outwardX = T.MathUtils.lerp(hand.fromPosition.x, side * spreadX, separate);
@@ -101,16 +113,16 @@ export async function createHands() {
       tempQ.setFromEuler(tempE);
       wrapper.quaternion.slerpQuaternions(hand.fromRotation, tempQ, close);
       for (const [f, name] of ["index", "middle", "ring", "little"].entries()) {
-        const curl = pose ? pose.curl[f] : .06 + f * .02;
+        const curl = pose ? pose.curl[f] : .025 + f * .012;
         for (let j = 0; j < 3; j++) {
-          tempE.set(-curl * (pose?.curlJoints?.[j] ?? (j === 0 ? 0.6 : 0.85)), 0, j === 0 ? (f - 1.5) * (pose ? pose.spread : 0.06) : 0);
+          tempE.set(-curl * (pose?.curlJoints?.[j] ?? (j === 0 ? 0.6 : 0.85)), 0, j === 0 ? (f - 1.5) * (pose ? pose.spread : 0.018) : 0);
           tempQ.setFromEuler(tempE);
           const jointName = name + "_" + j;
           joints[jointName].quaternion.slerpQuaternions(hand.fromJoints[jointName], tempQ, close);
         }
       }
       for (let j = 0; j < 3; j++) {
-        tempE.set(-(pose ? pose.thumb : .12) * (j === 0 ? 0.55 : 0.7), 0, j === 0 ? (pose ? (pose.thumbAngle ?? .92 - pose.thumb * 1.05) : .08) : 0);
+        tempE.set(-(pose ? pose.thumb : .04) * (j === 0 ? 0.55 : 0.7), 0, j === 0 ? (pose ? (pose.thumbAngle ?? .92 - pose.thumb * 1.05) : .35) : 0);
         tempQ.setFromEuler(tempE);
         joints["thumb_" + j].quaternion.slerpQuaternions(hand.fromJoints["thumb_" + j], tempQ, close);
       }
@@ -137,5 +149,6 @@ export async function createHands() {
     aura.scale.setScalar(1 + Math.sin(time * 2) * 0.04);
     fireLight.intensity = T.MathUtils.damp(fireLight.intensity, fireIntensity * 2.6, 13, dt);
   }
-  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning };
+  const setInkViewport=(width,height)=>inkMaterials.forEach(m=>m.uniforms.viewport.value.set(width,height));
+  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning, outlines, setInkViewport };
 }

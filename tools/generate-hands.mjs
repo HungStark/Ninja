@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import * as T from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
-import { createHandModel } from "../src/hand-model.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { poses } from "../src/poses.js";
 globalThis.FileReader = class {
   readAsArrayBuffer(blob) {
@@ -17,9 +17,10 @@ globalThis.FileReader = class {
     });
   }
 };
-const scene = new T.Scene();
-const hand = createHandModel();
-scene.add(hand);
+// Blender authors the mesh and rig; add the game's twelve clips and embed it.
+const source = await fs.readFile('assets/blender-hands.glb');
+const { scene } = await new GLTFLoader().parseAsync(source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength), '');
+const hand = scene;
 const clips = poses.map((pose, i) => {
   const tracks = [];
   for (const [f, name] of ["index", "middle", "ring", "little"].entries()) for (let j = 0; j < 3; j++) {
@@ -36,4 +37,4 @@ const binary = await new GLTFExporter().parseAsync(scene, { binary: true, trs: t
 await fs.mkdir("assets", { recursive: true });
 await fs.writeFile("assets/ninja-hands.glb", Buffer.from(binary));
 await fs.writeFile("assets/hand-data.js", "export const HAND_GLB_BASE64=" + JSON.stringify(Buffer.from(binary).toString("base64")) + ";\n");
-console.log("Generated original skinned hand GLB: " + binary.byteLength + " bytes, 16 bones, 12 animation clips.");
+console.log("Packaged Blender anime hand GLB: " + binary.byteLength + " bytes, 16 bones, 12 animation clips.");

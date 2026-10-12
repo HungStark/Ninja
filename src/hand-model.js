@@ -14,10 +14,10 @@ export function createHandModel() {
     const j2=new T.Bone();j2.name=f.name+'_2';j2.position.y=f.length*.31;j1.add(j2);
     f.ids=[bones.length,bones.length+1,bones.length+2];bones.push(j0,j1,j2);
     // Rounded nail beds run along the distal phalanx and hug its curved surface.
-    const w=f.radius*.64,low=f.length*.027,high=f.length*.19,shape=new T.Shape();
+    const w=f.radius*.57,low=f.length*.03,high=f.length*.185,shape=new T.Shape();
     shape.moveTo(-w,low+.005);shape.bezierCurveTo(-w,low-.002,w,low-.002,w,low+.005);
     shape.lineTo(w,high-.006);shape.bezierCurveTo(w,high+.003,-w,high+.003,-w,high-.006);shape.closePath();
-    const geo=new T.ExtrudeGeometry(shape,{depth:.00045,bevelEnabled:true,bevelSize:.00045,bevelThickness:.0003,bevelSegments:3,curveSegments:16,steps:1});
+    const geo=new T.ExtrudeGeometry(shape,{depth:.0003,bevelEnabled:true,bevelSize:.0003,bevelThickness:.0002,bevelSegments:3,curveSegments:16,steps:1});
     const p=geo.attributes.position;
     for(let i=0;i<p.count;i++) {
       const x=p.getX(i),y=p.getY(i),along=f.length*.77+y,capStart=f.length-f.radius*.9;

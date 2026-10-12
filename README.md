@@ -28,7 +28,9 @@ cho chiêu Hỏa, tay được bao quanh bởi vầng lửa và tàn lửa chuy�
 khi tung chiêu, xóa chuỗi, tạm dừng hoặc chưa đủ chakra/hồi chiêu.
 Chiêu Thủy sẵn sàng tạo vòng nước xanh quanh hai tay, có dòng nước và giọt nước xoay theo vòng; vòng nước dùng cùng điều kiện sẵn sàng và được tắt khi thi triển, xóa chuỗi, tạm dừng hoặc thiếu chakra/hồi chiêu.
 
-Tay được dựng theo mẫu anime: da liền từ lòng bàn tay tới ngón, đầu ngón bo tròn, móng dài ôm theo ngón, giáp xanh đen hình khiên và vòng vàng. Mô hình giữ 16 xương cùng 12 thế kết ấn; phần da được tạo sẵn lúc xuất GLB, không dựng lại trong trận. Texture màu da, nếp gấp và độ nhám được tạo bằng code, nhúng cùng game để chạy ngoại tuyến. Cẳng tay thẳng hàng với bàn tay; góc nhìn và vị trí tay trở về thiết lập ban đầu để không che giữa màn hình. Thanh trạng thái đối thủ trên màn hình lớn được thu gọn.
+Tay được dựng trong Blender dựa trên mesh 3D `anime_style_hand.glb` do người dùng cung cấp. Giữ cấu trúc lòng bàn tay cong, kẽ ngón và khối cơ gốc ngón cái của mẫu; dựng lại đầu ngón bằng các tiết diện tròn thuôn, đóng cổ tay và dùng subdivision để nối mượt. Các phần móng dài của mẫu được thay bằng móng riêng nhỏ, mỏng và ôm theo bề mặt. Model được gắn 16 xương theo tỷ lệ mới, với trọng số chuyển tiếp mượt và giữ 12 thế kết ấn. Vị trí FPS, giáp xanh đen, vòng vàng và ánh sáng/vật liệu hiện tại được giữ nguyên.
+
+Hình khối được kiểm tra riêng bằng vật liệu xám trung tính ở chính diện, nghiêng 45° và nhìn ngang trước khi áp màu. Trong game, da/móng dùng cel shading nhẹ dựa trên normal của mesh với bốn mức sáng; giáp giữ bảng màu cũ. Viền da rộng 0,35 pixel, móng 0,18 pixel và giáp 0,40 pixel theo kích thước màn hình. Tay được vẽ sau bước chuyển màu của cảnh; vòng Hỏa–Thủy–Lôi vẫn đi qua bloom. Ánh sáng chạng vạng của môi trường được giữ nguyên. Model được xuất sẵn thành GLB và nhúng trong game để chơi ngoại tuyến.
 
 Phong cảnh dùng ánh sáng chạng vạng, bầu trời và sương tối hơn để chiêu thức nổi bật.
 
@@ -141,8 +143,9 @@ Cũng có thể import repository GitHub vào Vercel; cấu hình build được
 Node.js 20 trở lên; **npm ci** để cài dependency.
 
 - **npm run build:** bundle src/main.js thành game.js để chơi trực tiếp ngoại tuyến.
-- **npm run assets:** xuất lại model tay GLB và dữ liệu nhúng.
+- **npm run assets:** chạy Blender Python để dựng model từ `anime_style_hand.glb` ở thư mục gốc, lưu `.blend`, xuất GLB, thêm 12 clip kết ấn và tạo dữ liệu nhúng. File mẫu được giữ nguyên; runtime dùng model đã đóng gói. Cần Blender 4.5 LTS: đặt bản portable trong `.tools/`, đặt biến `BLENDER_PATH` trỏ tới `blender.exe`, hoặc cài Blender vào PATH. `node tools/generate-hands.mjs` chỉ đóng gói lại bản GLB đã xuất từ Blender. `npm run assets -- --procedural` dựng lại bản loft cũ để so sánh.
 - **npm test:** luật 49 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khóa Ám thuật ngoài lãnh địa, khiên/phản đòn/hồi máu, va chạm tường, vùng làm chậm và vị trí thiên thạch, GLB, animation và máy chủ.
+- **npm run test:hand-volume:** đo độ dày lòng bàn tay, khối cơ ngón cái, độ cong mặt lưng, tiết diện ngón, độ sát của móng và vị trí/góc FPS. Kiểm tra trực tiếp geometry của GLB, độc lập với shader.
 - **npm run test:browser:** Edge headless, WebGL 2/SwiftShader; kiểm tra chọn chiêu, 12 thế tay, di chuyển chuột, máy kết ấn, sát thương, khiên, phản đòn, hồi đầy máu, tạm dừng, chọn lại và giao diện nhỏ.
 - **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
 - **npm run test:lightning:** sáu chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
@@ -154,6 +157,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:controls:** kiểm tra khóa con trỏ, hướng bắn trùng tâm ngắm, click trái/phải độc lập vị trí chuột, giữ nút không đi tiếp và giới hạn sân đấu.
 - **npm run test:layout:** kiểm tra nút vào trận trên cửa sổ nhỏ và điện thoại, tâm ngắm ở giữa màn hình, khóa/thả con trỏ, nút HUD không gây né và đổi kích thước cửa sổ.
 - **npm run test:graphics:** kiểm tra pixel môi trường ở ba mức đồ họa và chụp thế tay/giao diện.
+- **npm run test:anime:** chụp dáng nghỉ và đủ 12 thế tay, viền theo khung xương, vòng Hỏa–Thủy–Lôi, camera Lôi điểu, ba mức đồ họa, cửa sổ nhỏ/điện thoại và giảm chuyển động; kiểm tra lỗi shader.
 - **npm run test:hand-vfx:** kiểm tra 12 bóng, thời gian 0,2 giây, kết ấn liên tiếp, vầng lửa khi Space sẵn sàng, hồi chiêu/chakra, tạm dừng/reset và chế độ đồ họa thấp.
 - **npm run test:meteor-zoom:** kiểm tra zoom in/out trên trời, tạm dừng, đổi kích thước/chất lượng, khôi phục hướng ngắm, reset và chế độ giảm chuyển động.
 
@@ -170,9 +174,17 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **src/lightning-arts.js:** cầu điện, thương sét, chim điện, mây và tia Thiên lôi, khiên và Lôi trận.
 - **src/dark-domain.js:** hoạt ảnh khép/mở mắt, đổi và khôi phục môi trường, shader mực đen, phân thân tấn công/bắn đạn/phòng ngự/đổi chỗ và đạn mực.
 - **src/water-arts.js:** mặt nước, cầu giam giữ, thuyền hải tặc, sóng cuốn chiêu và hai kiểu khiên nước.
-- **src/hands.js / hand-model.js / poses.js:** model tay, rig và 12 thế kết ấn.
-- **src/hand-sculpt.js:** bề mặt da liền, tỷ lệ ngón, UV và trọng số xương khi xuất model.
-- **src/hand-materials.js:** màu da, nếp gấp, độ nhám và vật liệu giáp theo ảnh mẫu.
+- **src/hands.js / poses.js:** nạp GLB Blender và điều khiển 12 thế kết ấn.
+- **tools/blender-hands.py / build-hands.mjs:** lưới tay kín có cấu trúc quad, subdivision, móng, nếp ngón, giáp và trọng số xương; kiểm tra lưới manifold trước khi xuất.
+- **tools/reference-hand.py:** nhập bản sao file mẫu, hàn các đỉnh trùng ở seam, giữ topology lòng bàn tay, thay đầu ngón/móng dài, đóng cổ tay, subdivision và gán trọng số 16 xương.
+- **tools/inspect-hand-reference.py:** kiểm tra mesh gốc và xuất ba preview xám của mẫu đã chuẩn hóa góc nhìn; file đầu vào không bị chỉnh sửa.
+- **tools/preview-hand-geometry.py:** render xám không outline ở ba góc, đo mesh và lưu hash trang phục/rig trong `test-results/hand-volume/<stage>/`. Chạy `blender --background assets/anime-hands.blend --python tools/preview-hand-geometry.py -- clay`.
+- **tools/audit-hand-intersections.py:** kiểm tra giao cắt giữa các tam giác của mesh ở tư thế nghỉ; lưu báo cáo trong `test-results/hand-volume/intersections.json`.
+- **tools/capture-hand-turntable.mjs:** chụp ba góc từ GLB và vật liệu cel/viền thực tế trong game; chạy `node tools/capture-hand-turntable.mjs 05-final`.
+- **src/hand-model.js / hand-sculpt.js:** bộ dựng tay Three.js cũ, không còn dùng trong pipeline tạo asset hiện tại.
+- **src/hand-materials.js:** bảng màu anime, cel shading nhẹ cho da/móng và màu phẳng cho giáp.
+- **src/ink-outline.js:** viền mảnh theo kích thước màn hình cho tay có khớp, móng, giáp và vật thể chính; viền cây chuyển động theo gió.
+- **assets/anime-hands.blend / blender-hands.glb:** nguồn Blender chỉnh sửa được và bản xuất trung gian.
 - **assets/ninja-hands.glb / hand-data.js:** model chỉnh sửa được và dữ liệu nhúng ngoại tuyến.
 
 Asset nhân vật và môi trường được dựng từ mã nguồn của dự án. Giấy phép Three.js trong THIRD_PARTY_NOTICES.md.

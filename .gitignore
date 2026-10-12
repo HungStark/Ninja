@@ -5,3 +5,4 @@ node_modules/
 test-results/
 dist/
 .vercel/
+__pycache__/

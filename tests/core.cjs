@@ -110,8 +110,11 @@ assert.equal(binary.readUInt32LE(0), 1179937895);
 assert.equal(binary.readUInt32LE(4), 2);
 assert.equal(binary.readUInt32LE(8), binary.length);
 const jsonLength = binary.readUInt32LE(12), model = JSON.parse(binary.subarray(20, 20 + jsonLength).toString());
-assert.equal(model.skins.length, 1);
-assert.equal(model.skins[0].joints.length, 16);
+assert.ok(model.skins.length > 0);
+for (const skin of model.skins) {
+  assert.equal(skin.joints.length, 16, 'Blender skin, nails, creases and armor use the complete hand rig');
+  assert.deepEqual(skin.joints, model.skins[0].joints, 'All hand surfaces follow the same bones');
+}
 assert.equal(model.animations.length, 12);
 for (const animation of model.animations) assert.ok(animation.channels.length >= 12);
 assert.ok(model.meshes.some((m) => m.primitives.some((p) => p.attributes.JOINTS_0 !== void 0 && p.attributes.WEIGHTS_0 !== void 0)));

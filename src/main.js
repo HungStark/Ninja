@@ -26,6 +26,9 @@ async function main() {
   renderer.info.autoReset = false;
   const world = createWorld(), hands = await createHands();
   const scene = world.scene, opponent = await createOpponent(scene, world.gate.position);
+  // Render the player's cel-lit hand surfaces after world tonemapping. Their
+  // local lights reveal volume; spell auras still use the bloom pass below.
+  hands.root.traverse(o => { if (o.isMesh) o.layers.set(1); });
   const baseFov = 68;
   const camera3d = new T.PerspectiveCamera(baseFov, innerWidth / innerHeight, 0.05, 220), handCamera = new T.PerspectiveCamera(baseFov, innerWidth / innerHeight, 0.02, 10);
   camera3d.rotation.order = "YXZ";
@@ -78,6 +81,9 @@ async function main() {
     composer.setPixelRatio(dpr);
     composer.setSize(innerWidth, innerHeight);
     effects.setPixelRatio(dpr);
+    world.setInkViewport(innerWidth,innerHeight);
+    hands.setInkViewport(innerWidth,innerHeight);
+    opponent.setInkViewport(innerWidth,innerHeight);
     for (const c of [camera3d, handCamera]) {
       c.aspect = innerWidth / innerHeight;
       c.updateProjectionMatrix();
@@ -717,7 +723,15 @@ async function main() {
       [{ owner: 'player', fighter: player, pos: camera.p }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }],fields);
     darkDomain.visuals(running?dt:0,animationTime,shots);
   }
-  function render() { renderer.info.reset(); renderer.clear(); composer.render(); }
+  function render() {
+    renderer.info.reset(); renderer.clear(); composer.render();
+    if (handsPass.enabled) {
+      renderer.clearDepth();
+      handCamera.layers.set(1);
+      renderer.render(hands.scene, handCamera);
+      handCamera.layers.set(0);
+    }
+  }
   function clearDragonView() {
     clearWaveView();
     dragonView = null; handsPass.enabled = !meteorView;

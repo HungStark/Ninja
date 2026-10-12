@@ -1,6 +1,7 @@
 import * as T from 'three';
 import { toon } from './materials.js';
 import { createHands } from './hands.js';
+import { inkMaterial, addInkOutline } from './ink-outline.js';
 
 // The opponent uses the same articulated hands and twelve poses as the player.
 export async function createOpponent(scene, spawnPosition) {
@@ -8,8 +9,9 @@ export async function createOpponent(scene, spawnPosition) {
   group.position.copy(spawnPosition);
   scene.add(group);
   const cloth = toon('#33495f'), dark = toon('#182b3d'), skin = toon('#e7bb97'), metal = toon('#b6c9ca'), belt = toon('#b67863');
+  const ink=inkMaterial(.8,'#27323c');
   function mesh(geo, mat, pos, scale = [1, 1, 1]) {
-    const m = new T.Mesh(geo, mat); m.position.set(...pos); m.scale.set(...scale); m.castShadow = true; m.receiveShadow = true; group.add(m); return m;
+    const m = new T.Mesh(geo, mat); m.position.set(...pos); m.scale.set(...scale); m.castShadow = true; m.receiveShadow = true; group.add(m); addInkOutline(m,ink); return m;
   }
   const sphere = new T.SphereGeometry(1, 18, 14), box = new T.BoxGeometry(1, 1, 1);
   mesh(sphere, cloth, [0, 1.72, 0], [.48, .66, .27]);
@@ -49,5 +51,6 @@ export async function createOpponent(scene, spawnPosition) {
     aura.visible = pose >= 0 && fighter.hp > 0; aura.rotation.z = time * 2;
     shield.visible = !['fire', 'water', 'lightning', 'dark'].includes(fighter.defenseElement) && fighter.shieldTime > 0 && (fighter.shield > 0 || fighter.reflect > 0); shield.material.color.set(fighter.color); shield.rotation.y = time * .4;
   }
-  return { group, rig, update, shield, aura };
+  const setInkViewport=(width,height)=>{ink.uniforms.viewport.value.set(width,height);rig.setInkViewport(width,height);};
+  return { group, rig, update, shield, aura, setInkViewport };
 }

@@ -3,11 +3,11 @@ import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const fingerShapes = [
-  {name:'index',base:[-.049,.079,0],length:.166,radius:.0148,angle:0},
-  {name:'middle',base:[-.016,.092,0],length:.186,radius:.0154,angle:0},
-  {name:'ring',base:[.019,.083,0],length:.173,radius:.0145,angle:0},
-  {name:'little',base:[.050,.060,0],length:.133,radius:.0124,angle:0},
-  {name:'thumb',base:[-.070,.005,0],length:.128,radius:.018,angle:.35}
+  {name:'index',base:[-.047,.079,0],length:.170,radius:.0138,angle:0},
+  {name:'middle',base:[-.015,.092,0],length:.190,radius:.0144,angle:0},
+  {name:'ring',base:[.018,.083,0],length:.175,radius:.0137,angle:0},
+  {name:'little',base:[.048,.060,0],length:.133,radius:.0118,angle:0},
+  {name:'thumb',base:[-.067,.005,0],length:.128,radius:.0164,angle:.35}
 ];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const smooth=(a,b,k)=>{const h=clamp(.5+.5*(b-a)/k,0,1);return b*(1-h)+a*h-k*h*(1-h);};
@@ -15,14 +15,14 @@ export function handUV(part,u,v) {
   return part==='palm'?[.02+.46*u,.02+.96*v]:[.52+.46*u,.02+part*.192+.008+clamp(v,0,1)*.176];
 }
 export function fingerRadius(f,t) {
-  return f.radius*(1.04-.14*clamp(t,0,1)+.035*Math.exp(-Math.pow((t-.46)/.08,2)));
+  return f.radius*(1.02-.16*clamp(t,0,1)+.035*Math.exp(-Math.pow((t-.46)/.08,2)));
 }
 function fingerPoint(f,x,y,z) {
   const dx=x-f.base[0],dy=y-f.base[1],c=Math.cos(f.angle),s=Math.sin(f.angle);
   return [dx*c+dy*s,-dx*s+dy*c,z/ .88];
 }
 function palmDistance(x,y,z) {
-  const width=.042+.025*clamp((y+.13)/.15,0,1);
+  const width=.039+.025*clamp((y+.13)/.17,0,1);
   const qx=Math.abs(x)-(width-.017),qy=Math.abs(y+.018)-.092,qz=Math.abs(z)-.009;
   return Math.hypot(Math.max(qx,0),Math.max(qy,0),Math.max(qz,0))+Math.min(Math.max(qx,qy,qz),0)-.017;
 }

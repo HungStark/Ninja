@@ -1,9 +1,17 @@
 import assert from "node:assert/strict";
-import { Vector3 } from 'three';
+import { Vector3, NearestFilter } from 'three';
 import { createHands } from "../src/hands.js";
 import { sealShadowCells, sealShadowFacing, shadowDuration, shadowOpacity } from '../src/hand-vfx.js';
 
 const hands = await createHands();
+assert.equal(hands.outlines.length,20,'Each hand has skin, five nails and four armor contours');
+for(const hand of hands.hands){
+  const skin=hand.wrapper.getObjectByName('hand_skin'),ink=hand.wrapper.getObjectByName('hand_skin_ink');
+  assert.equal(ink.geometry,skin.geometry);assert.equal(ink.skeleton,skin.skeleton,'Ink follows the live hand skeleton');
+  assert.equal(skin.material.type,'MeshToonMaterial','Cel shading illuminates the real hand normals');
+  assert.equal(skin.material.gradientMap.magFilter,NearestFilter,'Cel bands use nearest filtering');
+}
+hands.setInkViewport(900,650);assert.deepEqual(hands.outlines[0].material.uniforms.viewport.value.toArray(),[900,650]);
 const advance = (pose, frames) => {
   for (let i = 0; i < frames; i++) hands.update(1 / 60, 0, pose, false, false, 0, false);
 };
@@ -68,6 +76,8 @@ const rest=Array.from({length:positions.count},(_,i)=>new Vector3().fromBufferAt
 for(let pose=0;pose<12;pose++) {
   advance(pose,40);hands.scene.updateMatrixWorld(true);skin.skeleton.update();
   const bent=rest.map((_,i)=>skin.getVertexPosition(i,new Vector3()));
+  const outline=hands.hands[0].wrapper.getObjectByName('hand_skin_ink');
+  for(let i=0;i<positions.count;i+=97)assert.ok(outline.getVertexPosition(i,new Vector3()).distanceTo(bent[i])<1e-9,`Pose ${pose} separates the ink from the skin`);
   assert.ok(bent.every(p=>p.toArray().every(Number.isFinite)),`Pose ${pose} has finite skin vertices`);
   for(let i=0;i<indices.length;i+=3)for(let edge=0;edge<3;edge++) {
     const a=indices[i+edge],b=indices[i+(edge+1)%3],length=rest[a].distanceTo(rest[b]);

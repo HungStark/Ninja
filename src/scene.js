@@ -1,5 +1,6 @@
 import * as T from "three";
 import { toon, canvasTexture, windyDepth, glowTexture, windTime } from "./materials.js";
+import { inkMaterial, addInkOutline } from './ink-outline.js';
 let seed = 1681;
 const rand = () => {
   seed = Math.imul(seed, 1664525) + 1013904223 >>> 0;
@@ -64,10 +65,18 @@ export function createWorld() {
     c.fillRect(0, 0, n, n);
     for (let i = 0; i < 1700; i++) {
       const x = rand() * n, y = rand() * n;
-      c.globalAlpha = 0.15;
+      c.globalAlpha = 0.23;
       c.fillStyle = i % 3 ? "#7c9e6e" : "#d5ce9a";
       c.beginPath();
-      c.ellipse(x, y, range(2, 12), range(1, 5), rand() * 6, 0, Math.PI * 2);
+      const rx=range(2,12),ry=range(1,5),angle=rand()*6;
+      // Uneven brush patches instead of a field of smooth dots.
+      for(let j=0;j<7;j++){
+        const a=j/7*Math.PI*2,r=1+.18*Math.sin(i*3.7+j*2.1);
+        const px=Math.cos(a)*rx*r,py=Math.sin(a)*ry*r;
+        const bx=x+px*Math.cos(angle)-py*Math.sin(angle),by=y+px*Math.sin(angle)+py*Math.cos(angle);
+        if(j===0)c.moveTo(bx,by);else c.lineTo(bx,by);
+      }
+      c.closePath();
       c.fill();
     }
     c.globalAlpha = 1;
@@ -89,14 +98,21 @@ export function createWorld() {
     c.fillStyle = "#d4d8bb";
     c.fillRect(0, 0, n, n);
     for (let i = 0; i < 180; i++) {
-      c.globalAlpha = 0.1;
+      c.globalAlpha = i%5===0?.27:0;
       c.fillStyle = i % 2 ? "#7e9183" : "#f6efcf";
       c.beginPath();
-      c.ellipse(rand() * n, rand() * n, range(4, 30), range(2, 12), rand() * 6, 0, 7);
+      const x=rand()*n,y=rand()*n,rx=range(4,30),ry=range(2,12),angle=rand()*6;
+      for(let j=0;j<6;j++){
+        const a=j/6*Math.PI*2,r=1+.22*Math.sin(i*1.8+j*2.3);
+        const px=Math.cos(a)*rx*r,py=Math.sin(a)*ry*r;
+        const bx=x+px*Math.cos(angle)-py*Math.sin(angle),by=y+px*Math.sin(angle)+py*Math.cos(angle);
+        if(j===0)c.moveTo(bx,by);else c.lineTo(bx,by);
+      }
+      c.closePath();
       c.fill();
     }
-    c.strokeStyle = "#9cac99";
-    c.globalAlpha = 0.22;
+    c.strokeStyle = "#677467";
+    c.globalAlpha = 0.38;
     c.lineWidth = 1.5;
     for (let i = 0; i < 8; i++) {
       let x = rand() * n, y = rand() * n;
@@ -115,6 +131,12 @@ export function createWorld() {
   for (let z = 11; z > -28; z -= 2.35) for (let x = -1; x <= 1; x++) {
     const tile = mesh(new T.BoxGeometry(1.87, 0.14, 2.17), pathMat, [x * 1.97, 0.02, z + range(-0.045, 0.045)]);
     tile.rotation.y = range(-0.02, 0.02);
+    const uv=tile.geometry.attributes.uv,turn=(Math.round(z/2.35)+x+40)%4;
+    for(let i=0;i<uv.count;i++){
+      let u=uv.getX(i),v=uv.getY(i);
+      for(let j=0;j<turn;j++){const next=1-v;v=u;u=next;}
+      uv.setXY(i,u,v);
+    }
   }
   function rock(p, s, color) {
     const geometry = new T.IcosahedronGeometry(1, 2), pos = geometry.attributes.position;
@@ -144,7 +166,7 @@ export function createWorld() {
     c.fillStyle = "#967b60";
     c.fillRect(0, 0, n, n);
     c.strokeStyle = "#6c614c";
-    c.globalAlpha = 0.28;
+    c.globalAlpha = 0.38;
     for (let i = 0; i < 28; i++) {
       c.beginPath();
       const x = rand() * n;
@@ -154,6 +176,15 @@ export function createWorld() {
     }
   });
   mats.wood.map = barkTex;
+  const leafTex=canvasTexture(128,(c,n)=>{
+    c.fillStyle='#f0f0eb';c.fillRect(0,0,n,n);
+    for(let i=0;i<28;i++){
+      const x=(Math.sin(i*71.3)*.5+.5)*n,y=(Math.cos(i*33.9)*.5+.5)*n;
+      c.fillStyle=i%3?'#e1e3db':'#c8cec2';
+      c.beginPath();c.moveTo(x-10,y);c.lineTo(x-3,y-6);c.lineTo(x+11,y-3);c.lineTo(x+6,y+5);c.lineTo(x-5,y+7);c.closePath();c.fill();
+    }
+  });
+  mats.leaf.map=leafTex;mats.pink.map=leafTex;
   function branch(a, b, r, parent) {
     const pa = new T.Vector3(...a), pb = new T.Vector3(...b), delta = pb.clone().sub(pa);
     const m = mesh(new T.CylinderGeometry(r * 0.6, r, delta.length(), 8), mats.wood, pa.clone().add(pb).multiplyScalar(0.5).toArray(), [1, 1, 1], parent);
@@ -333,5 +364,15 @@ export function createWorld() {
     petals.instanceMatrix.needsUpdate = true;
   }
   const environment = [...scene.children];
-  return { scene, sky, sun, fill, grass, gate, update, lanternLights, environment };
+  const ink=inkMaterial(.8,'#343d39'),leafInk=inkMaterial(.65,'#3d4543',true),outlines=[];
+  const subjects=[],position=new T.Vector3();scene.updateMatrixWorld(true);
+  scene.traverse(o=>{
+    if(!o.isMesh||o.isInstancedMesh||o.material.transparent||!['BoxGeometry','CylinderGeometry','IcosahedronGeometry'].includes(o.geometry.type))return;
+    o.getWorldPosition(position);
+    if(position.z< -48||Math.abs(position.x)>27)return;
+    subjects.push(o);
+  });
+  for(const subject of subjects)outlines.push(addInkOutline(subject,subject.material.userData.wind?leafInk:ink));
+  const setInkViewport=(width,height)=>[ink,leafInk].forEach(m=>m.uniforms.viewport.value.set(width,height));
+  return { scene, sky, sun, fill, grass, gate, update, lanternLights, environment, outlines, setInkViewport };
 }
