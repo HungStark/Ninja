@@ -85,14 +85,14 @@ Kết đủ ấn và sẵn sàng thi triển bất kỳ chiêu Lôi nào sẽ hi
 
 | Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
 | --- | --- | --- | --- | --- |
-| Hắc lãnh địa | 8 | D F C V Z X E R | 70 | Nhắm mắt rồi mở ra trong đầm lầy mực đen; lãnh địa tồn tại 30 giây |
+| Hắc lãnh địa | 8 | D F C V Z X E R | 70 | Mở mắt thấy mái vòm đen 3D trước mặt, rồi mực lan ra thành lãnh địa; tồn tại 30 giây sau khi mở xong |
 | Ảnh phân thân | 2 | D F | 24 | Một phân thân lao tới đánh, 38 sát thương |
 | Ảnh đạn | 4 | D F D F | 34 | Hai phân thân, mỗi phân thân bắn hai đạn mực, mỗi đạn 22 sát thương |
 | Ảnh vây sát | 6 | D F C V Z X | 56 | Bốn phân thân trồi lên quanh điểm ngắm rồi đánh vào đó, mỗi phân thân 24 sát thương; có thể đánh trượt |
 | Ảnh vệ | 3 | D F A | 26 | Phân thân phía trước chặn đạn, hấp thụ 72 sát thương trong 5 giây |
 | Ảnh hoán | 5 | D F Z X C | 32 | Đổi chỗ với phân thân bắn đạn hoặc gọi bóng bên cạnh để đổi chỗ; để lại thế thân hút đạn trong 4 giây |
 
-Năm chiêu phân thân chỉ dùng khi lãnh địa đã mở. Ngoài lãnh địa, nút thi triển bị khóa, Space báo lý do và không trừ chakra hoặc xóa chuỗi đang kết; cần mang Hắc lãnh địa trong bộ chiêu nếu muốn tự mở nó. Lãnh địa dùng được cho cả hai bên. Cây, cổng, núi, đường và ánh sáng sân đấu được ẩn khi mắt khép hoàn toàn, thay bằng mặt mực đen chuyển động và chân trời tối. Nhân vật và chiêu thức vẫn hoạt động trong lãnh địa. Thi triển lại làm mới thời gian 30 giây; hết thời gian sẽ khép/mở mắt để trả cảnh cũ, xóa phân thân, đạn mực và Ảnh vệ. Tạm dừng đóng băng cả hoạt ảnh mắt, phân thân và đồng hồ; đấu lại, về chọn chiêu hoặc kết thúc trận trả lại cảnh cũ ngay. Máy dùng hệ Ám tự mở lãnh địa trước khi gọi phân thân.
+Năm chiêu phân thân chỉ dùng khi lãnh địa đã mở. Ngoài lãnh địa, nút thi triển bị khóa, Space báo lý do và không trừ chakra hoặc xóa chuỗi đang kết; cần mang Hắc lãnh địa trong bộ chiêu nếu muốn tự mở nó. Lãnh địa dùng được cho cả hai bên. Mở mắt vẫn thấy sân đấu và một mái vòm đen 3D trước mặt theo hướng ngắm. Mái vòm bán cầu hiện rõ rồi nở rộng, mực lan từ tâm ra, lần lượt phủ đường, cây, cổng, núi và bầu trời để thành đầm lầy mực đen hiện tại. Khi chuyển cảnh xong, lãnh địa bắt đầu tính 30 giây và mở khóa các chiêu phân thân. Nhân vật và chiêu thức vẫn hoạt động trong lãnh địa. Thi triển lại làm mới thời gian 30 giây; hết thời gian sẽ khép/mở mắt để trả cảnh cũ, xóa phân thân, đạn mực và Ảnh vệ. Tạm dừng đóng băng cả hoạt ảnh mắt, mái vòm, vùng mực lan, phân thân và đồng hồ; đấu lại, về chọn chiêu hoặc kết thúc trận trả lại cảnh cũ ngay. Máy dùng hệ Ám tự mở lãnh địa trước khi gọi phân thân.
 
 Các hệ còn lại dùng bảng cấp sau:
 
@@ -151,7 +151,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:browser:** Edge headless, WebGL 2/SwiftShader; kiểm tra chọn chiêu, 12 thế tay, di chuyển chuột, máy kết ấn, sát thương, khiên, phản đòn, hồi đầy máu, tạm dừng, chọn lại và giao diện nhỏ.
 - **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
 - **npm run test:lightning:** sáu chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
-- **npm run test:dark:** sáu Ám thuật, khóa chiêu, hoạt ảnh mắt, đổi môi trường, lãnh địa 30 giây, phân thân công/thủ/đổi chỗ, máy mở lãnh địa, hết hạn, tạm dừng/reset/hồi máu, đồ họa thấp và giảm chuyển động.
+- **npm run test:dark:** sáu Ám thuật, khóa chiêu, khép/mở mắt → mái vòm đen 3D → mực lan → lãnh địa 30 giây, phân thân công/thủ/đổi chỗ, máy mở lãnh địa, hết hạn, tạm dừng/reset giữa chuyển cảnh, hồi máu, đồ họa thấp và giảm chuyển động.
 - **npm run test:fire:** kiểm tra sáu chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra sáu chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
 - **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, cú trúng không để lại lửa, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
@@ -177,6 +177,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **src/fire-arts.js:** shader lửa, rồng có thân uốn lượn, thiên thạch, dấu báo vùng rơi, vòm khiên, tường lửa và vụ nổ.
 - **src/lightning-arts.js:** cầu điện, thương sét, chim điện, mây và tia Thiên lôi, khiên và Lôi trận.
 - **src/dark-domain.js:** hoạt ảnh khép/mở mắt, đổi và khôi phục môi trường, shader mực đen, phân thân tấn công/bắn đạn/phòng ngự/đổi chỗ và đạn mực.
+- **src/dark-domain-intro.js:** mái vòm đen 3D và vùng mực lan trong không gian 3D, phủ dần môi trường nhưng giữ nhân vật và bàn tay; hỗ trợ tạm dừng/reset và giảm chuyển động.
 - **src/water-arts.js:** mặt nước, cầu giam giữ, thuyền hải tặc, sóng cuốn chiêu và hai kiểu khiên nước.
 - **src/vfx-materials.js:** bảng bốn mức sáng dùng chung cho các vật liệu rắn của chiêu thức.
 - **src/worn-sail.js:** lưới buồm/cờ rách có lỗ thủng, độ cong và miếng vá có đường khâu của thuyền Thủy.

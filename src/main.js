@@ -237,7 +237,7 @@ async function main() {
   function launch(spell, owner, pos, dir) {
     if(spell.style==='domain'){
       clearDragonView();clearMeteorView();setWorldFov(baseFov);hands.clearEffects();
-      return darkDomain.begin(owner,spell.duration);
+      return darkDomain.begin(owner,spell.duration,camera.p,aim());
     }
     if(spell.element==='dark'){
       if(!darkDomain.usable)return false;
@@ -724,6 +724,7 @@ async function main() {
     darkDomain.visuals(running?dt:0,animationTime,shots);
   }
   function render() {
+    darkDomain.intro.updateCamera(camera3d);
     renderer.info.reset(); renderer.clear(); composer.render();
     if (handsPass.enabled) {
       renderer.clearDepth();

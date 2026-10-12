@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { vfxToon } from './vfx-materials.js';
+import { DarkDomainIntro } from './dark-domain-intro.js';
 
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
@@ -48,11 +49,13 @@ export class DarkDomain {
     this.ringMaterial=new T.MeshBasicMaterial({color:'#71638a',transparent:true,opacity:.35,depthWrite:false});
     this.geometries={sphere:new T.SphereGeometry(1,14,10),cylinder:new T.CylinderGeometry(1,1,1,10),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,12),pool:new T.CircleGeometry(1,32),ring:new T.TorusGeometry(1,.018,5,48)};
     this.cloneGroup=new T.Group();this.group.add(this.cloneGroup);
+    this.intro=new DarkDomainIntro(world,floor,sky,reducedMotion);
   }
   get usable(){return this.active&&!this.transition;}
-  begin(owner,duration=30) {
+  begin(owner,duration=30,position=[0,1.72,7],direction=[0,0,-1]) {
     if(this.transition)return false;
     this.owner=owner;this.duration=duration;
+    this.intro.begin(position,direction,this.active);
     this.transition={age:0,destination:'ink',changed:false};return true;
   }
   switchEnvironment(ink) {
@@ -74,11 +77,16 @@ export class DarkDomain {
     if(this.transition) {
       const t=this.transition;t.age+=dt;
       const close=this.reducedMotion?.12:.38,hold=this.reducedMotion?.05:.16,open=this.reducedMotion?.18:.5;
-      if(t.age>=close&&!t.changed){t.changed=true;this.switchEnvironment(t.destination==='ink');if(this.active)this.life=this.duration;}
+      const entering=t.destination==='ink';
+      if(!entering&&t.age>=close&&!t.changed){t.changed=true;this.switchEnvironment(false);}
       if(t.age<close){lid=ease(t.age/close);phase='closing';}
       else if(t.age<close+hold){lid=1;phase='closed';}
       else{lid=1-ease((t.age-close-hold)/open);phase='opening';}
-      if(t.age>=close+hold+open){this.transition=null;lid=0;phase='idle';}
+      if(entering){
+        const reveal=this.intro.update(t.age,close+hold,close+hold+open,time);
+        if(t.age>=close+hold+open)phase=reveal.phase;
+        if(reveal.done){this.intro.reset();this.switchEnvironment(true);this.life=this.duration;this.transition=null;lid=0;phase='idle';}
+      }else if(t.age>=close+hold+open){this.transition=null;lid=0;phase='idle';}
     }
     this.blink=lid;this.blinkPhase=phase;this.overlay.style.setProperty('--lid',lid);this.overlay.classList.toggle('blinking',lid>0);
     if(this.active)this.header.innerHTML='<i></i> HẮC LÃNH ĐỊA <span>／</span> ĐẦM LẦY MỰC ĐEN · '+Math.ceil(this.life)+' GIÂY';
@@ -201,6 +209,6 @@ export class DarkDomain {
   }
   removeClone(c){c.root.removeFromParent();const i=this.clones.indexOf(c);if(i>=0)this.clones.splice(i,1);}
   clearClones(){for(const c of [...this.clones])this.removeClone(c);for(const g of this.projectiles.values())g.removeFromParent();this.projectiles.clear();for(const r of this.ripples)r.ring.removeFromParent();this.ripples=[];}
-  reset(){this.transition=null;this.life=0;this.blink=0;this.blinkPhase='idle';this.switchEnvironment(false);this.overlay.classList.remove('blinking');this.overlay.style.setProperty('--lid',0);}
-  state(){return {active:this.active,usable:this.usable,life:this.life,blink:this.blink||0,phase:this.blinkPhase||'idle',environmentHidden:this.world.environment.every(o=>!o.visible),clones:this.clones.map(c=>({id:c.id,owner:c.owner,mode:c.mode,position:[...c.p],life:c.life,age:c.age,shots:c.shots})),projectiles:this.projectiles.size};}
+  reset(){this.transition=null;this.life=0;this.blink=0;this.blinkPhase='idle';this.intro.reset();this.switchEnvironment(false);this.overlay.classList.remove('blinking');this.overlay.style.setProperty('--lid',0);}
+  state(){return {active:this.active,usable:this.usable,life:this.life,blink:this.blink||0,phase:this.blinkPhase||'idle',intro:this.intro.state(),environmentHidden:this.world.environment.every(o=>!o.visible),clones:this.clones.map(c=>({id:c.id,owner:c.owner,mode:c.mode,position:[...c.p],life:c.life,age:c.age,shots:c.shots})),projectiles:this.projectiles.size};}
 }
