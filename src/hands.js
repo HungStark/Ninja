@@ -4,7 +4,7 @@ import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { HAND_GLB_BASE64 } from "../assets/hand-data.js";
 import { handMaterials } from './hand-materials.js';
 import { poses } from "./poses.js";
-import { createSealShadow, createHandFire, createHandWater } from './hand-vfx.js';
+import { createSealShadow, createHandFire, createHandWater, createHandLightning } from './hand-vfx.js';
 export async function createHands() {
   const bytes = Uint8Array.from(atob(HAND_GLB_BASE64), (c) => c.charCodeAt(0));
   const gltf = await new GLTFLoader().parseAsync(bytes.buffer, "");
@@ -43,7 +43,7 @@ export async function createHands() {
   const aura = new T.Mesh(new T.TorusGeometry(0.13, 18e-4, 6, 80), auraMat);
   aura.position.set(0, -0.2, -0.72);
   scene.add(aura);
-  const shadow = await createSealShadow(scene), handFire = createHandFire(scene), handWater = createHandWater(scene);
+  const shadow = await createSealShadow(scene), handFire = createHandFire(scene), handWater = createHandWater(scene), handLightning = createHandLightning(scene);
   const handCenter = new T.Vector3(0, -.2, -.7), palm = new T.Vector3();
   let readyElement = '';
   function setReady(element) {
@@ -51,7 +51,8 @@ export async function createHands() {
     auraMat.color.set(readyElement==='lightning'?'#c6a2ff':'#ffcc7a').multiplyScalar(1.5);
     handFire.setReady(readyElement === 'fire');
     handWater.setReady(readyElement === 'water');
-    if (['fire', 'water'].includes(readyElement)) auraMat.opacity = 0;
+    handLightning.setReady(readyElement === 'lightning');
+    if (['fire', 'water', 'lightning'].includes(readyElement)) auraMat.opacity = 0;
   }
   function clearEffects() {
     shadow.clear(); setReady(null); sealPulse = 0; auraMat.opacity = 0;
@@ -127,11 +128,14 @@ export async function createHands() {
     const waterReady = ready && readyElement === 'water';
     handWater.setReady(waterReady);
     handWater.update(time, handCenter, Math.abs(hands[0].wrapper.position.x), reducedMotion);
+    const lightningReady = ready && readyElement === 'lightning';
+    handLightning.setReady(lightningReady);
+    handLightning.update(time, handCenter, Math.abs(hands[0].wrapper.position.x), reducedMotion);
     aura.position.copy(handCenter);
-    auraMat.opacity = fireReady || waterReady ? 0 : T.MathUtils.damp(auraMat.opacity, ready ? 0.3 : sealPulse * 0.16, 7, dt);
+    auraMat.opacity = fireReady || waterReady || lightningReady ? 0 : T.MathUtils.damp(auraMat.opacity, ready ? 0.3 : sealPulse * 0.16, 7, dt);
     aura.rotation.z = time * 0.65;
     aura.scale.setScalar(1 + Math.sin(time * 2) * 0.04);
     fireLight.intensity = T.MathUtils.damp(fireLight.intensity, fireIntensity * 2.6, 13, dt);
   }
-  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater };
+  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning };
 }

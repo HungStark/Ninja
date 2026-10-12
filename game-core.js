@@ -48,8 +48,8 @@
   const lightningSpells = [
     { id: 'lightning-orb', name: 'Lôi cầu', kind: 'attack', style: 'orb', rank: 'D', sequence: [...'er'], cost: 28, damage: 40, size: .46, count: 1, speed: 29, subtitle: 'Cầu điện phóng nhanh • hồ quang bao quanh lõi sáng' },
     { id: 'lightning-lance', name: 'Lôi thương', kind: 'attack', style: 'lance', rank: 'B', sequence: [...'erdf'], cost: 40, damage: 62, size: .3, count: 1, speed: 38, subtitle: 'Thương sét dài • mũi nhọn và đuôi điện' },
-    { id: 'lightning-volley', name: 'Lôi điểu', kind: 'attack', style: 'bird', rank: 'S', sequence: [...'ercvzx'], cost: 56, damage: 102, size: .9, count: 1, speed: 27, subtitle: 'Chim sét dang cánh lao tới • lông cánh và hồ quang chuyển động' },
-    { id: 'lightning-thunder', name: 'Thiên lôi', kind: 'attack', style: 'thunder', rank: 'SS', sequence: [...'ercvzxer'], cost: 82, damage: 150, size: 1, count: 1, speed: 0, blastRadius: 4.5, chargeTime: 1.4, subtitle: 'Ngước nhìn mây tụ điện • một tia sét lớn đánh xuống vùng ngắm' },
+    { id: 'lightning-volley', name: 'Lôi điểu', kind: 'attack', style: 'bird', rank: 'S', sequence: [...'ercvzx'], cost: 56, damage: 102, size: .9, count: 1, speed: 27, subtitle: 'Chim hiện ra từ cầu sét rồi lao tới • góc nhìn trên cao' },
+    { id: 'lightning-thunder', name: 'Thiên lôi', kind: 'attack', style: 'thunder', rank: 'SS', sequence: [...'ercvzxer'], cost: 82, damage: 150, size: 1, count: 1, speed: 0, blastRadius: 4.5, chargeTime: 1.4, subtitle: 'Ngước nhìn mây chớp điện • trả góc nhìn rồi sét đánh xuống' },
     { id: 'lightning-barrier', name: 'Lôi thuẫn', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'era'], cost: 26, damage: 0, shield: 80, duration: 5, count: 0, subtitle: 'Khiên điện bao quanh bản thân • hấp thụ 80 sát thương trong 5 giây' },
     { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .3, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 30% tốc độ trong vùng' }
   ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
@@ -110,15 +110,16 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 220) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.controlTime = 0; this.color = '#ffffff'; this.defenseElement = ''; }
+    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.controlTime = 0; this.color = '#ffffff'; this.defenseElement = ''; }
     tick(dt) { this.controlTime = Math.max(0, this.controlTime - dt); this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
     receive(damage, reflected = false) {
-      if (this.hp <= 0) return { damage: 0, reflected: false };
       if (this.reflect && !reflected) { this.reflect--; return { damage: 0, reflected: true }; }
       const absorbed = Math.min(this.shield, damage); this.shield -= absorbed;
       const actual = Math.min(this.hp, Math.max(0, damage - absorbed)); this.hp -= actual;
-      return { damage: actual, absorbed, reflected: false };
+      const restored = this.hp <= 0;
+      if (restored) this.hp = this.maxHp;
+      return { damage: actual, absorbed, reflected: false, restored };
     }
   }
   // Swept plane intersection prevents fast projectiles from passing through a wall.

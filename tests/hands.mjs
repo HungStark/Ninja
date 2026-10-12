@@ -48,8 +48,17 @@ hands.update(.1,1.5,1,true,false,0,false);
 assert.notDeepEqual(hands.handWater.droplets.geometry.attributes.position.array,waterPositions,'Water droplets orbit the hands');
 hands.cast();assert.equal(hands.handWater.mesh.visible,false);
 hands.setReady('water');hands.update(.01,2,1,false,false,0,false);assert.equal(hands.handWater.mesh.visible,false,'Water ring follows cast readiness');
+hands.setReady('lightning');hands.update(.01,2,1,true,false,0,false);
+assert.equal(hands.handLightning.mesh.visible,true);assert.equal(hands.handWater.mesh.visible,false);assert.equal(hands.handFire.mesh.visible,false);
+const sparkPositions=hands.handLightning.sparks.geometry.attributes.position.array.slice();
+hands.update(.1,2.5,1,true,false,0,false);
+assert.notDeepEqual(hands.handLightning.sparks.geometry.attributes.position.array,sparkPositions,'Electric sparks move around the hands');
+hands.update(.01,2.6,1,false,false,0,false);assert.equal(hands.handLightning.mesh.visible,false);
+hands.setReady('lightning');hands.cast();assert.equal(hands.handLightning.mesh.visible,false);assert.equal(hands.handLightning.light.intensity,0);
+hands.setReady('lightning');hands.update(.01,3,1,true,false,0,true);assert.equal(hands.handLightning.mesh.material.uniforms.uReducedMotion.value,1);
 hands.setReady('fire'); hands.clearEffects(); assert.equal(hands.handFire.mesh.visible, false);
 assert.equal(hands.handWater.mesh.visible,false);
+assert.equal(hands.handLightning.mesh.visible,false);
 console.log('PASS: twelve shadow mappings, immediate display, .2-second lifetime, repeated seals, placement, fire readiness and clearing.');
 
 // A joined hand must bend without discontinuous bone assignments tearing its webbing.

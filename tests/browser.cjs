@@ -63,31 +63,38 @@ const { chromium } = require('playwright');
     await cast('dark-orb');assert.equal((await state()).casts,0);
     await cast('fire-orb');await advance(.15);assert.equal((await state()).casts,1);assert.ok((await state()).light>0);
     assert.equal((await state()).projectiles[0].element,'fire');
-    await page.screenshot({path:'test-results/fire.png'});await advance(1.6);assert.equal((await state()).enemyHealth,177);
+    await page.screenshot({path:'test-results/fire.png'});await advance(1.6);assert.equal((await state()).enemyHealth,957);
     await reset();await advance(2.3);assert.ok((await state()).enemyPose>=0);assert.equal((await state()).enemySequence.length,1);
     await page.screenshot({path:'test-results/enemy-seal.png'});await advance(2.4);
-    assert.ok((await state()).aiCasts>=1);assert.equal((await state()).health,177);
+    assert.ok((await state()).aiCasts>=1);assert.equal((await state()).health,957);
     await reset();await advance(2.7);await cast('earth-barrier');assert.equal((await state()).shield,78);await advance(2);
-    assert.equal((await state()).health,220);assert.equal((await state()).shield,35);
+    assert.equal((await state()).health,1000);assert.equal((await state()).shield,35);
     await page.screenshot({path:'test-results/shield.png'});
     await page.keyboard.press('Escape');const frozen=await state();await advance(3);
     assert.equal((await state()).health,frozen.health);assert.equal((await state()).shieldTime,frozen.shieldTime);assert.equal((await state()).enemySequence.join(''),frozen.enemySequence.join(''));assert.equal((await state()).time,frozen.time);
     await page.keyboard.press('Enter');assert.equal((await state()).paused,false);
     await reset();await advance(2.7);await cast('ice-reflect');await advance(3.5);
-    assert.equal((await state()).health,220);assert.equal((await state()).reflect,0);assert.equal((await state()).enemyHealth,177);
+    assert.equal((await state()).health,1000);assert.equal((await state()).reflect,0);assert.equal((await state()).enemyHealth,957);
     await page.screenshot({path:'test-results/reflect.png'});
     await reset();await cast('water-lance');await advance(.1);assert.equal((await state()).projectiles[0].element,'water');assert.equal((await state()).projectiles[0].color,'#50baff');
     await page.screenshot({path:'test-results/water.png'});
     await reset();await cast('lightning-volley');await advance(.05);assert.equal((await state()).shots,1);assert.equal((await state()).projectiles[0].style,'bird');
     await page.screenshot({path:'test-results/lightning.png'});
     await reset();
-    for(let i=0;i<8 && !(await state()).won;i++){ await cast('fire-orb');await advance(1.5); }
-    assert.equal((await state()).won,true);assert.equal((await state()).victory,true);assert.equal((await state()).score,1);
-    await page.screenshot({path:'test-results/victory.png'});
-    await click('nextButton');assert.equal((await state()).started,false);assert.equal((await state()).round,2);assert.equal(await page.locator('#startScreen').isVisible(),true);
-    await click('startButton');await center();await advance(35);assert.equal((await state()).won,true);assert.equal((await state()).victory,false);assert.equal((await state()).health,0);
-    await page.screenshot({path:'test-results/defeat.png'});
-    await click('nextButton');await click('presetDefense');await click('startButton');await center();assert.equal((await state()).equipped.filter(id=>id.endsWith('barrier')||id.endsWith('reflect')).length,3);
+    await page.evaluate(()=>window.__AN_HOA__.setAIEnabled(false));
+    for(let i=0;i<24;i++){ await cast('fire-orb');await advance(3); }
+    assert.equal((await state()).enemyHealth,1000,'Lethal hit restores the opponent immediately');
+    assert.equal((await state()).won,false);assert.equal((await state()).score,0);assert.equal(await page.locator('#winScreen').isVisible(),false);
+    await cast('fire-orb');await advance(3);assert.equal((await state()).enemyHealth,957,'Opponent still takes damage after refilling');
+    await page.screenshot({path:'test-results/opponent-refill.png'});
+    for(let cycle=0;cycle<2;cycle++){
+      for(let i=0;i<7;i++){await page.evaluate(()=>window.__AN_HOA__.launchEnemy('lightning-thunder'));await advance(2.8);}
+      assert.equal((await state()).health,1000,'Player refills on every lethal hit');assert.equal((await state()).won,false);
+    }
+    await page.evaluate(()=>window.__AN_HOA__.launchEnemy('fire-orb',[0,1.72,3],[0,0,1]));await advance(.3);assert.equal((await state()).health,957);
+    assert.equal(await page.locator('#winScreen').isVisible(),false);await page.screenshot({path:'test-results/player-refill.png'});
+    await page.keyboard.press('Escape');await click('changeLoadout');assert.equal((await state()).started,false);assert.equal(await page.locator('#startScreen').isVisible(),true);
+    await click('presetDefense');await click('startButton');await center();assert.equal((await state()).equipped.filter(id=>id.endsWith('barrier')||id.endsWith('reflect')).length,3);
     await page.keyboard.press('Escape');await click('changeLoadout');await click('presetAttack');await click('startButton');await center();
     for(const expected of ['Thấp','Cao','Cân bằng']){await click('qualityButton');assert.equal((await state()).quality,expected);await advance(.1);}
     await page.setViewportSize({width:900,height:650});await advance(.2);await page.screenshot({path:'test-results/compact.png'});
@@ -96,7 +103,7 @@ const { chromium } = require('playwright');
     assert.equal(await page.locator('#startButton').isEnabled(),true);
     await page.setViewportSize({width:1440,height:960});await click('startButton');await center();await page.screenshot({path:'test-results/final.png'});
     assert.deepEqual(errors,[]);
-    const report={passed:true,renderer:'Edge / WebGL 2 / SwiftShader',checks:['9 elements and 49 catalog spells; 2-8 seals by rank; opponent under the gate at 31m','loadout cap, filters, presets, empty validation','12 distinct skinned poses','equipped-only casting','centered FPS aim; left/right click sidesteps; holding and mouse position do not move player','animated AI seals and real incoming damage','barrier absorbs damage','reflection returns enemy projectile','pause freezes fighters, AI, timers','victory, defeat, reset and reselect loadout','colored projectiles and three graphics tiers','offline loading and responsive scroll'],state:await state(),errors};
+    const report={passed:true,renderer:'Edge / WebGL 2 / SwiftShader',checks:['9 elements and 49 catalog spells; 2-8 seals by rank; opponent under the gate at 31m','loadout cap, filters, presets, empty validation','12 distinct skinned poses','equipped-only casting','centered FPS aim; left/right click sidesteps; holding and mouse position do not move player','animated AI seals and real incoming damage','barrier absorbs damage','reflection returns enemy projectile','pause freezes fighters, AI, timers','1000 health, repeated instant refill for both sides, damage after refill, reset and reselect loadout','colored projectiles and three graphics tiers','offline loading and responsive scroll'],state:await state(),errors};
     await fs.writeFile('test-results/verification.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
   } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

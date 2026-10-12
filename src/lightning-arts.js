@@ -72,6 +72,11 @@ export class LightningArts {
     this.arc(g,[[0,.4,1.1],[.12,.45,.5],[-.1,.44,0],[.1,.4,-.7],[0,.25,-1.1]],.035);
     return g;
   }
+  birdSummon() {
+    const g=new T.Group(),bird=this.bird(),orb=this.orb();
+    g.add(orb,bird);g.userData.bird=bird;g.userData.orb=orb;
+    return g;
+  }
   shield() {
     const g=new T.Group();this.sphere(g,[0,0,0],[1.3,1.8,1.3],this.shell);
     for(let i=0;i<8;i++){const a=this.orbit(g,1.35,i);a.scale.y=1.32;a.rotation.y=i*Math.PI/8;}
@@ -102,7 +107,8 @@ export class LightningArts {
     }
     g.userData.cloudMat=cloudMat;
     const charge=new T.Group();cloud.add(charge);g.userData.charge=charge;
-    for(let i=0;i<3;i++)this.arc(charge,Array.from({length:9},(_,j)=>[-4+i*2.5+j*.35,-3.2+Math.sin(j*2+i)*.3,Math.sin(j*2.7+i)*.7]),.045,this.violet);
+    const chargeMaterial=glow('#c6caff',.7);g.userData.chargeMaterial=chargeMaterial;
+    for(let i=0;i<5;i++)this.arc(charge,Array.from({length:12},(_,j)=>[-6+j*1.05,-1.5+Math.sin(j*2+i)*.6,(i-2)*1.1+Math.sin(j*2.7+i)*.8]),.055,chargeMaterial,i===0);
     const cloudLight=new T.PointLight('#b9afff',0,24,2);cloudLight.position.y=-4;cloud.add(cloudLight);g.userData.cloudLight=cloudLight;
     const marker=this.mesh(g,new T.TorusGeometry(s.blastRadius,.04,6,80),this.violet,[0,.04,0]);marker.rotation.x=Math.PI/2;g.userData.marker=marker;
     const bolt=new T.Group();g.add(bolt);g.userData.bolt=bolt;
@@ -135,19 +141,29 @@ export class LightningArts {
   }
   update(dt,time,shots,fields,fighters,quality) {
     this.shell.uniforms.uTime.value=time;
-    this.sync(this.shots,shots.filter(s=>s.element==='lightning'),s=>s.style==='thunder'?this.thunder(s):s.style==='bird'?this.bird():s.style==='lance'?this.lance():this.orb(),(g,s)=>{
+    this.sync(this.shots,shots.filter(s=>s.element==='lightning'),s=>s.style==='thunder'?this.thunder(s):s.style==='bird'?this.birdSummon():s.style==='lance'?this.lance():this.orb(),(g,s)=>{
       if(s.style==='thunder') {
-        const charged=clamp(s.age/s.chargeTime),strikeAge=s.age-s.chargeTime;
-        g.userData.cloudMat.emissiveIntensity=.01+charged*.025;
-        g.userData.charge.visible=strikeAge<0;g.userData.charge.rotation.y=time*.3;
+        const charged=clamp(s.age/s.chargeTime),strikeAge=s.age-s.strikeTime;
+        const flicker=Math.pow(Math.max(0,Math.sin(s.age*37)+Math.sin(s.age*61)*.45),4);
+        g.userData.cloudMat.emissiveIntensity=.01+charged*.025+(strikeAge<0?flicker*.35:0);
+        g.userData.charge.visible=strikeAge<0;g.userData.charge.rotation.y=Math.floor(s.age*12)*.7;
+        g.userData.chargeMaterial.opacity=.12+clamp(flicker)*.8;
         g.userData.bolt.visible=strikeAge>=0&&strikeAge<.85;
         const fade=clamp(1-Math.max(0,strikeAge-.3)/.55);
-        g.userData.cloudLight.intensity=strikeAge<0?charged*12:fade*32;
+        g.userData.cloudLight.intensity=strikeAge<0?charged*4+flicker*32:fade*32;
         g.userData.boltMaterials[0].opacity=fade*.9;g.userData.boltMaterials[1].opacity=fade*.4;
         g.userData.light.intensity=strikeAge<0?0:fade*55;g.userData.marker.visible=strikeAge<.85;
         return;
       }
       g.position.fromArray(s.p);g.scale.setScalar(s.size);g.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),new T.Vector3(...s.v).normalize());
+      if(s.style==='bird') {
+        const forming=s.phase==='forming',emerge=forming?clamp((s.age-.3)/.65):1;
+        const smooth=emerge*emerge*(3-2*emerge),bird=g.userData.bird,orb=g.userData.orb;
+        bird.visible=emerge>0;bird.scale.setScalar(Math.max(.001,smooth));bird.position.z=(1-smooth)*-.6;
+        bird.userData.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*(.4+Math.sin(s.age*10)*.25));
+        orb.visible=forming;orb.scale.setScalar((.65+Math.min(1,s.age/.25)*.5)*(1-smooth*.85));
+        orb.userData.arcs.rotation.set(s.age*3,s.age*5,s.age*4);
+      }
       if(g.userData.arcs)g.userData.arcs.rotation.set(time*.7,time*1.3,time*.9);
       if(g.userData.wings)g.userData.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*(.4+Math.sin(time*10)*.25));
     });
@@ -165,6 +181,13 @@ export class LightningArts {
       const b=this.bursts[i];b.age+=dt;b.g.scale.setScalar(1+b.age*.8);b.material.opacity=Math.max(0,.8-b.age);b.light.intensity=Math.max(0,20*(1-b.age));
       if(b.age>=1){this.remove(b.g);this.bursts.splice(i,1);}
     }
+  }
+  visualState(shot) {
+    const g=this.shots.get(shot);
+    if(!g)return null;
+    if(shot.style==='bird')return {orbVisible:g.userData.orb.visible,birdVisible:g.userData.bird.visible,birdScale:g.userData.bird.scale.x};
+    if(shot.style==='thunder')return {chargeVisible:g.userData.charge.visible,chargeOpacity:g.userData.chargeMaterial.opacity,boltVisible:g.userData.bolt.visible};
+    return null;
   }
   reset() {
     for(const map of [this.shots,this.fields,this.shields]){for(const g of map.values())this.remove(g);map.clear();}

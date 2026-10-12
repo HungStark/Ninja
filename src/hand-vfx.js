@@ -177,3 +177,55 @@ export function createHandWater(scene) {
   }
   return { mesh, droplets, light, setReady, update };
 }
+
+export function createHandLightning(scene) {
+  const material = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    uniforms: { uTime: { value: 0 }, uReducedMotion: { value: 0 } },
+    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader: `uniform float uTime;uniform float uReducedMotion;varying vec2 vUv;
+      float zig(float x){return abs(fract(x)-.5)*2.;}
+      void main(){
+        vec2 p=(vUv-.5)*3.;float r=length(p),a=atan(p.y,p.x)/6.2831853;
+        float t=uTime*mix(1.,.12,uReducedMotion);
+        float edge=1.+(zig(a*24.+t*2.)-.5)*.11+(zig(a*43.-t*3.)-.5)*.045;
+        float core=1.-smoothstep(.006,.022,abs(r-edge));
+        float halo=(1.-smoothstep(.015,.095,abs(r-edge)))*.38;
+        float branchEdge=edge+.11+(zig(a*17.-t)-.5)*.10;
+        float segment=pow(.5+.5*sin(a*6.2831853*7.+t*5.),6.);
+        float branch=(1.-smoothstep(.007,.024,abs(r-branchEdge)))*segment;
+        float alpha=max(core,max(halo,branch*.75));if(alpha<.015)discard;
+        vec3 color=mix(vec3(.38,.12,1.2),vec3(1.25,1.4,1.7),max(core,branch));
+        gl_FragColor=vec4(color,alpha*.85);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`
+  });
+  const mesh = new T.Mesh(new T.PlaneGeometry(1, 1), material);
+  mesh.name = 'ReadyHandLightning'; mesh.renderOrder = 10; mesh.visible = false; scene.add(mesh);
+  const count = 24, geometry = new T.BufferGeometry();
+  geometry.setAttribute('position', new T.BufferAttribute(new Float32Array(count * 3), 3));
+  const sparks = new T.Points(geometry, new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    vertexShader: 'void main(){vec4 p=modelViewMatrix*vec4(position,1.);gl_PointSize=clamp(2.2/max(.3,-p.z),1.,6.);gl_Position=projectionMatrix*p;}',
+    fragmentShader: 'void main(){float a=1.-smoothstep(.1,.5,length(gl_PointCoord-.5));gl_FragColor=vec4(.8,.65,1.6,a*.75);}'
+  }));
+  sparks.name = 'ReadyHandLightningSparks'; sparks.frustumCulled = false; sparks.visible = false; scene.add(sparks);
+  const light = new T.PointLight('#b9a2ff', 0, 1.5, 2); light.name = 'ReadyHandLightningLight'; scene.add(light);
+  function setReady(ready) { mesh.visible = sparks.visible = ready; light.intensity = ready ? .035 : 0; }
+  function update(time, center, halfWidth, reducedMotion) {
+    mesh.position.copy(center); mesh.position.z += .08;
+    light.position.copy(center); light.position.z += .2;
+    const rx = Math.max(.19, halfWidth + .115), ry = .20;
+    mesh.scale.set(rx * 3, ry * 3, 1);
+    material.uniforms.uTime.value = time; material.uniforms.uReducedMotion.value = Number(reducedMotion);
+    if (!mesh.visible) return;
+    const t = time * (reducedMotion ? .12 : 1);
+    for (let i = 0; i < count; i++) {
+      const a = i * 2.399 + t * .6, radius = 1.05 + ((t * 1.7 + i * .618) % 1) * .2;
+      geometry.attributes.position.setXYZ(i, center.x + Math.cos(a) * rx * radius, center.y + Math.sin(a) * ry * radius, center.z + .1);
+    }
+    geometry.attributes.position.needsUpdate = true;
+  }
+  return { mesh, sparks, light, setReady, update };
+}

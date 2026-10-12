@@ -21,6 +21,7 @@ const fs = require('node:fs/promises');
       for (const key of keys) await page.keyboard.press(key);
     };
     await click('startButton');
+    await page.evaluate(()=>window.__AN_HOA__.setAIEnabled(false));
     const keys = 'qwerasdfzxcv', cells = [0, 1, 2, 4, 5, 6, 15, 9, 10, 11, 13, 8];
     for (let i = 0; i < keys.length; i++) {
       await clear(); await page.keyboard.press(keys[i]);
@@ -80,8 +81,45 @@ const fs = require('node:fs/promises');
     await advance(5.5);
     assert.equal(await page.locator('#castButton').isEnabled(), true);
     assert.equal((await state()).handFlames, true, 'Regenerated chakra restores flames');
+    await page.keyboard.press('Escape');await click('changeLoadout');await click('clearLoadout');
+    await page.locator('[data-element="lightning"]').click();
+    const lightningIds=['lightning-orb','lightning-lance','lightning-volley','lightning-barrier','lightning-reflect'];
+    for(const id of lightningIds)await page.locator(`[data-equip="${id}"]`).click();
+    await click('startButton');
+    await page.keyboard.press('e');assert.equal((await state()).handLightning,false,'Incomplete seals have no electric ring');await clear();
+    for(const id of lightningIds){
+      await seal(id);await advance(.32);
+      assert.equal((await state()).handLightning,true,id+' shows the electric ring');
+      assert.equal((await state()).handFlames,false);assert.equal((await state()).handWater,false);
+      await clear();assert.equal((await state()).handLightning,false);
+    }
+    await seal('lightning-volley');await advance(.32);
+    await page.screenshot({path:'test-results/hand-vfx/lightning-ready.png'});
+    const lightningPosition=(await state()).handLightningPosition;await advance(.25);
+    assert.ok((await state()).handLightningPosition.every((v,i)=>Math.abs(v-lightningPosition[i])<.02));
+    await page.screenshot({path:'test-results/hand-vfx/lightning-ready-animated.png'});
+    await page.keyboard.press('Escape');assert.equal((await state()).handLightning,false);
+    const lightningFrozen=(await state()).handLightningTime;await advance(.5);assert.equal((await state()).handLightningTime,lightningFrozen);
+    await page.keyboard.press('Enter');assert.equal((await state()).handLightning,true);
+    await clear();await seal('lightning-orb');await page.keyboard.press('Space');assert.equal((await state()).handLightning,false);
+    await seal('lightning-volley');assert.equal((await state()).handLightning,false,'Cooldown suppresses lightning');
+    await advance(1.05);assert.equal((await state()).handLightning,true);
+    for(let i=0;i<3;i++){await click('qualityButton');await advance(.1);assert.equal((await state()).handLightning,true);}
+    await page.screenshot({path:'test-results/hand-vfx/lightning-quality.png'});
+    await clear();await page.keyboard.press('e');await page.keyboard.press('q');assert.equal((await state()).handLightning,false,'Wrong seals remove the ring');
+    await clear();await seal('lightning-volley');await advance(7.1);assert.equal((await state()).handLightning,false,'Expired seals remove the ring');
+    await seal('lightning-volley');await page.keyboard.press('Escape');await click('resetButton');assert.equal((await state()).handLightning,false);
+    await page.keyboard.press('Escape');await click('changeLoadout');await click('clearLoadout');
+    await page.locator('[data-equip="lightning-thunder"]').click();await click('startButton');
+    await seal('lightning-thunder');await advance(.32);assert.equal((await state()).handLightning,true,'Eight-seal thunder also gets the ring');
+    await page.keyboard.press('Space');await seal('lightning-thunder');await advance(1.05);
+    assert.equal((await state()).handLightning,false,'Insufficient chakra suppresses lightning');
+    await advance(5.5);assert.equal((await state()).handLightning,true,'Chakra regeneration restores lightning');
+    await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await page.waitForFunction(()=>document.body.dataset.ready==='true');
+    await click('startButton');await seal('lightning-thunder');await advance(.32);assert.equal((await state()).handLightning,true);
+    await page.screenshot({path:'test-results/hand-vfx/lightning-reduced-motion.png'});
     assert.deepEqual(errors, []);
     await fs.writeFile('test-results/hand-vfx/verification.json', JSON.stringify({ passed: true, cells, flamePosition, errors }, null, 2));
-    console.log('PASS: all twelve offline shadows, .2s timing, retriggering, flame readiness, animation, pause/resume, cast, cooldown, chakra, non-fire, reset and low graphics.');
+    console.log('PASS: twelve seal shadows; fire, water and all six lightning readiness rings; animation, pause/resume, casting, cooldown, chakra, invalid/expired seals, reset, graphics tiers and reduced motion; no browser/shader errors.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

@@ -20,9 +20,9 @@
   await seal(['c','v','z']);assert.equal(await page.locator('#castButton').isDisabled(),true);await page.keyboard.press('Space');assert.equal((await state()).casts,0);
   await page.screenshot({path:'test-results/rank-six-incomplete.png'});await seal(['x']);assert.equal(await page.locator('#castButton').isEnabled(),true);
   await page.screenshot({path:'test-results/rank-six-ready.png'});await page.keyboard.press('Space');assert.equal((await state()).casts,1);assert.equal((await state()).chakra,44);assert.equal((await state()).shots,1);
-  await advance(2.4);assert.equal((await state()).enemyHealth,116,'Fire dragon coils then reaches opponent under gate');
+  await advance(2.4);assert.equal((await state()).enemyHealth,896,'Fire dragon coils then reaches opponent under gate');
   await reset();await seal(['q']);assert.equal(await page.locator('#castButton').isDisabled(),true);await seal(['w']);await page.keyboard.press('Space');assert.equal((await state()).casts,1);
-  await advance(.9);assert.equal((await state()).enemyHealth,220,'Far opponent cannot be hit before travel time');await advance(.8);assert.equal((await state()).enemyHealth,177);
+  await advance(.9);assert.equal((await state()).enemyHealth,1000,'Far opponent cannot be hit before travel time');await advance(.8);assert.equal((await state()).enemyHealth,957);
   await reset();await advance(2.3);assert.ok((await page.locator('#enemyAction').textContent()).includes('1/2'));await advance(.5);assert.ok((await page.locator('#enemyAction').textContent()).includes('2/2'));assert.equal((await state()).aiCasts,0);await advance(.4);assert.equal((await state()).aiCasts,1);
   let observedSix=false;for(let i=0;i<100;i++){await advance(.1);if((await page.locator('#enemyAction').textContent()).includes('/6')){observedSix=true;break;}}
   assert.equal(observedSix,true,'AI uses the same six-seal formula as the player');
