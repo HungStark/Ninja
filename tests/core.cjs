@@ -36,7 +36,8 @@ for(const spell of dark.filter(s=>s.requiresDomain)){
 }
 for(const element of elements){
  const list=spells.filter(s=>s.element===element.id), attack=list.filter(s=>s.kind==='attack').sort((a,b)=>a.sequence.length-b.sequence.length);
- for(let i=1;i<attack.length;i++){if(!['water','dark','wind'].includes(element.id))assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);if(!['dark','wind'].includes(element.id))assert.ok(attack[i].cost>attack[i-1].cost);}
+ // Light's mirror dome only damages after a separate laser activates it.
+ for(let i=1;i<attack.length;i++){if(!['water','dark','wind','light'].includes(element.id))assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);if(!['dark','wind'].includes(element.id))assert.ok(attack[i].cost>attack[i-1].cost);}
  const volley=attack.at(-1), orb=list.find(s=>s.id===element.id+'-orb'), chain=new GameRules([orb.id,volley.id]);
  const prefix=element.id==='dark'?orb.sequence.length:2;
  volley.sequence.slice(0,prefix).forEach(k=>chain.seal(k));assert.equal(element.id==='dark'?chain.ready():chain.ready().id,element.id==='dark'?undefined:orb.id);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);

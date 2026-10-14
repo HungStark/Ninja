@@ -61,12 +61,12 @@
   ].map(s=>({...s,element:'wind',glyph:'風',color:'#9fe9ce',heal:0,shield:s.shield||0}));
   // Keep all five saved Light IDs while replacing their spells.
   const lightSpells = [
-    {id:'light-orb',name:'Quang tiễn',kind:'attack',style:'lightray',rank:'D',sequence:[...'sd'],cost:24,damage:40,count:1,chargeTime:.1,range:55,subtitle:'Tia sáng xuyên mục tiêu · 40 sát thương mỗi lượt đi qua, mạnh hơn qua lăng kính và tán qua cột'},
-    {id:'light-barrier',name:'Lăng kính sắc quang',kind:'defense',style:'lightprism',rank:'C',sequence:[...'sda'],cost:26,damage:0,count:0,duration:25,subtitle:'Tự đặt một lăng kính trên đường ngắm · tối đa 3, mỗi kính thêm 50% sức mạnh gốc và nhiều màu cho tia'},
-    {id:'light-reflect',name:'Cột tán quang',kind:'defense',style:'lightpillar',rank:'A',sequence:[...'sdzx'],cost:32,damage:0,count:0,duration:25,subtitle:'Cột sau địch tỏa 5 tia hình quạt · đặt thêm cột trước địch bên trái / phải, chuyền tia thành hình sao · tối đa 3 cột, 25 giây'},
-    {id:'light-lance',name:'Quang tuyến',kind:'attack',style:'lightbeam',rank:'S',sequence:[...'sdcvzx'],cost:48,damage:12,count:6,duration:1.2,range:55,subtitle:'Tia liên tục ngắm bằng chuột trong 1,2 giây · 6 nhịp × 12, xuyên lăng kính và tán hình quạt qua các cột'},
-    {id:'light-volley',name:'Vũ cầu quang',kind:'attack',style:'lightdisco',rank:'SS',sequence:[...'sdcvzxer'],cost:76,damage:20,count:6,duration:3,subtitle:'Cầu disco tối trên đầu địch · bắn tia trúng cầu để bật sáng; sau đó 6 nhịp tia đa sắc trong 3 giây · chờ tối đa 18 giây'}
-  ].map(s=>({...s,element:'light',glyph:'光',color:'#ffe6a0',heal:0,shield:0}));
+    {id:'light-orb',name:'Quang laser',kind:'attack',style:'lightray',rank:'D',sequence:[...'sd'],cost:24,damage:40,count:1,chargeTime:.08,range:55,subtitle:'Tia laser thẳng trắng–vàng · 40 sát thương; qua cầu thủy tinh thành 7 sắc và 70 sát thương'},
+    {id:'light-barrier',name:'Cầu thủy tinh',kind:'defense',style:'lightsphere',rank:'S',sequence:[...'sdcvzx'],cost:32,damage:0,count:0,duration:8,amplification:1.75,subtitle:'Cầu trong suốt ngay trước mặt, tồn tại 8 giây · laser xuyên qua thành tia 7 sắc cầu vồng, tăng 75% sát thương'},
+    {id:'light-lance',name:'Mái vòm gương',kind:'attack',style:'lightdome',rank:'S',sequence:[...'sdzxcv'],cost:54,damage:20,count:0,duration:10,domeRadius:3.8,subtitle:'Mái vòm gương rộng quanh mục tiêu trong 10 giây · mỗi laser nảy gây 20 sát thương/giây, tia 7 sắc giữ nguyên màu và gây 35 · nhiều laser cộng dồn'},
+    {id:'light-reflect',name:'Quang kính',kind:'defense',style:'lightmirror',rank:'A',sequence:[...'sdzxc'],cost:28,damage:0,count:0,duration:2.5,subtitle:'Gương trước mặt tồn tại 2,5 giây · phản các đòn tấn công bay tới từ phía trước, kể cả laser'},
+    {id:'light-volley',name:'Nấc thang của Jacob',kind:'attack',style:'jacob',rank:'SS',sequence:[...'sdcvzxsd'],cost:82,damage:160,count:1,size:1,chargeTime:1.25,blastRadius:3.5,speed:0,subtitle:'Ngước nhìn trời rồi lia xuống theo cột sáng trắng–vàng giáng xuống · 160 sát thương trong bán kính 3,5 m'}
+  ].map(s=>({...s,element:'light',glyph:'光',color:'#fff2bd',heal:0,shield:0}));
   const darkSpells = [
     { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:38, count:1, cloneCount:1, maxClones:3, upgradeMultiplier:1.5, subtitle:'Thêm một chó bóng · đủ 3 con thì mỗi lần thi triển nâng một chó thành bò bóng, sát thương 57 · không cản đạn' },
     { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:38, count:1, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm, đánh 38 sát thương rồi biến mất · trong lãnh địa tự trồi lên lại' },

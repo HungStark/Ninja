@@ -1,4 +1,4 @@
-﻿# Ấn Hỏa — Đấu trường Cửu Hệ
+# Ấn Hỏa — Đấu trường Cửu Hệ
 
 Game ninja 3D góc nhìn thứ nhất, kết ấn bằng hai tay và quyết đấu với đối thủ máy. Bản 0.3 thay sân tập bia bằng trận đấu có sinh lực, chakra, phòng ngự và phản đòn.
 
@@ -114,21 +114,27 @@ Lãnh địa dùng được cho cả hai bên. Mở mắt vẫn thấy sân đ�
 
 ### Quang thuật
 
+Ánh sáng chủ đạo là **trắng và vàng**. Chỉ laser xuyên qua cầu thủy tinh mới chuyển thành đủ **7 sắc cầu vồng**.
+
+Cầu thủy tinh, mái vòm và gương **chỉ xuất hiện sau khi bấm SPACE và thi triển thành công**. Chọn chiêu hoặc kết đủ ấn không dựng mô hình xem trước; kết ấn chiêu khác không tạo thêm vật thể.
+
 | Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
 | --- | --- | --- | --- | --- |
-| Quang tiễn | 2 | S D | 24 | Tia xuyên mục tiêu, 40 sát thương gốc; tích sáng 0,1 giây |
-| Lăng kính sắc quang | 3 | S D A | 26 | Đặt lăng kính trên đường ngắm, 25 giây; tối đa 3 mỗi bên |
-| Cột tán quang | 4 | S D Z X | 32 | Mỗi cột nhận tia phát quạt 5 tia; đặt thêm cột để nối đường tia hình sao; tối đa 3 mỗi bên, 25 giây |
-| Quang tuyến | 6 | S D C V Z X | 48 | Tia ngắm bằng chuột trong 1,2 giây; 6 nhịp × 12 = 72 sát thương gốc |
-| Vũ cầu quang | 8 | S D C V Z X E R | 76 | Tạo cầu disco tối trên địch; phải bắn tia Quang trúng cầu để bật sáng, sau đó 6 nhịp tia trong 3 giây |
+| Quang laser | 2 | S D | 24 | Một tia thẳng trắng–vàng, 40 sát thương; tích sáng 0,08 giây |
+| Cầu thủy tinh | 6 | S D C V Z X | 32 | Cầu trong suốt cách mặt 3 m, tồn tại 8 giây; laser xuyên qua thành 7 sắc và 70 sát thương |
+| Mái vòm gương | 6 | S D Z X C V | 54 | Mái vòm gương bán kính 3,8 m quanh điểm ngắm, tồn tại 10 giây; giữ tia 7 sắc và cộng dồn các laser |
+| Quang kính | 5 | S D Z X C | 28 | Gương cách mặt 2,4 m, tồn tại 2,5 giây; phản đòn bay tới từ phía trước, kể cả laser |
+| Nấc thang của Jacob | 8 | S D C V Z X S D | 82 | Cột sáng giáng từ trời xuống điểm ngắm, 160 sát thương trong bán kính 3,5 m |
 
-**Đặt dễ dùng:** chọn chiêu hoặc kết ấn để thấy mô hình xem trước; hướng ngắm quyết định trục bố trí, Space để đặt. Không cần ngắm xuống đất hoặc xoay vật bằng phím riêng. Lăng kính lần lượt cách người thi triển 4 / 6,4 / 8,8 m. Cột đầu nằm sau mục tiêu 3,5 m; hai cột tiếp theo nằm trước mục tiêu 4 m, bên trái rồi bên phải 4 m. Cụm cột giữ tâm/trục đã đặt đầu tiên, giúp bổ sung hai bên chính xác. Đủ giới hạn thì thay vật cũ nhất. Vật nằm cố định, không đi theo nhân vật.
+**Cầu thủy tinh:** laser phải thực sự xuyên qua cầu của bên thi triển mới được tăng 75% sát thương. Phần tia trước cầu vẫn trắng–vàng; từ cầu trở đi là bảy dải màu. Cầu giữ vị trí lúc tạo. Mỗi bên có một cầu; tạo lại thay cầu cũ.
 
-Lăng kính thêm màu 3 → 5 → 7 dải và **50% sát thương gốc mỗi kính riêng biệt**. Cột tỏa quạt phía trước theo hướng đã đặt; các tia ngoài nối sang cột khác, các tia giữa và tia chéo giao nhau quanh mục tiêu thành hình sao. Mỗi lượt truyền qua cột thêm **25% sức mạnh**. Công thức: sát thương gốc × (1 + 0,5 × số kính riêng biệt) × (1 + 0,25 × số lượt qua cột). Một kính chỉ khuếch đại một lần trên mỗi nhánh. Một cột chỉ phát một quạt trong mỗi lượt bắn, tránh tia chạy qua lại/vòng lặp; tối đa 3 cột và 16 nhánh tia. Quang tiễn không qua kính: tia đầu 40, quạt cột sau địch 50, quạt từ hai cột phía trước 60 mỗi bên nếu đường tia trúng. Qua một kính: tương ứng 60 / 75 / 90 / 90.
+**Mái vòm gương:** không tự gây sát thương. Bắn laser vào vòm của mình để giữ tia bên trong. Tia phản xạ theo các mặt gương và nền, liên tục nảy cho tới khi vòm biến mất. Mỗi tia bị giữ gây 20 sát thương mỗi giây, hoặc 35 nếu đã đi qua cầu thủy tinh. Màu và sức mạnh của tia đã giữ không mất khi cầu thủy tinh hết hạn. Các laser bắn thêm được giữ riêng và cộng dồn sát thương: hai tia thường gây 40/giây, hai tia 7 sắc gây 70/giây, một tia thường và một tia 7 sắc gây 55/giây. Mỗi bên chỉ có một mái vòm. Mục tiêu có thể né ra khỏi vùng vòm để tránh sát thương. Tường nằm trước vòm chặn laser và ngăn kích hoạt.
 
-**Cầu disco:** xuất hiện cao hơn đầu địch 3,2 m, ban đầu tối, không tự gây sát thương. Ngước tâm ngắm lên cầu và dùng Quang tiễn hoặc Quang tuyến bắn trúng để bật sáng. Nếu tia bị tường chắn hoặc ngắm trượt, cầu vẫn tối. Chờ tối đa 18 giây, mỗi bên có một cầu; thi triển lại thay cầu cũ. Khi bật, cầu xoay với mặt đa sắc, phát tia xuống dưới và ra xung quanh, đồng thời dẫn tia vào các cột đang đặt. Mỗi nhịp tia có 20 sát thương gốc; tia giữa gây tối đa 6 × 20 = 120 nếu địch đứng dưới cầu cả 3 giây. Sức mạnh từ lăng kính/cột của tia kích hoạt được truyền vào cầu. Cầu và vùng phát tia giữ vị trí đã đặt, có thể né ra ngoài. Sau khi phát hết, cầu biến mất.
+**Quang kính:** gương đặt cố định theo hướng ngắm lúc tạo, rộng 2,2 m và cao 2,8 m. Các đòn bay tới từ phía trước và chạm mặt gương được phản lại theo góc tới, đổi bên gây sát thương; đạn đi ngoài gương hoặc từ sau lưng không bị phản. Gương không tiêu hao sau một lần phản, nhưng chỉ tồn tại 2,5 giây. Laser trực tiếp cũng bị gương phản. Các đòn giáng từ trời không bay qua gương trước mặt.
 
-Tất cả sát thương dùng đường tia thật: ngắm trượt không tự trúng, tường đối phương chặn và chịu sát thương, khiên vẫn hấp thụ, miễn nhiễm vẫn bảo vệ. Kính/cột/cầu chỉ nhận tia Quang của bên sở hữu. Tia trực tiếp không phải đạn bay nên không bị khiên phản đạn hay tiên linh gió trả lại. Quang tuyến dừng khi bị khóa thao tác hoặc dùng chiêu mới. Cả hai bên dùng đủ năm chiêu, giữ FPS và vòng thuộc tính ở tay. HUD hiển thị số kính/cột và trạng thái cầu. Tạm dừng đóng băng đồng hồ; đấu lại/về quyển trục xóa toàn bộ. Giữ ID/chuỗi ấn cũ cho bộ chiêu đã lưu.
+**Nấc thang của Jacob:** camera ngước lên vòng sáng trên trời trong 1,25 giây, sau đó lia xuống theo cột sáng đang giáng trong 0,55 giây. Cột chạm đất mới gây sát thương, rồi tan trong 1,1 giây. Trả lại hướng ngắm và góc nhìn ban đầu. Điểm rơi giữ nguyên khi đã thi triển nên có thể ngắm trượt hoặc né. Màu cột sáng là trắng với hào quang vàng.
+
+Sát thương vẫn tôn trọng khiên và miễn nhiễm. Cả người chơi và AI dùng bộ chiêu mới. HUD hiển thị thời gian còn lại của cầu, gương và mái vòm. Tạm dừng đóng băng hiệu ứng và camera; đấu lại/về quyển trục xóa toàn bộ. Hỗ trợ đồ họa thấp và giảm chuyển động. Giữ năm ID chiêu cũ để bộ chiêu đã lưu vẫn dùng được, chuỗi ấn được đổi theo bảng trên.
 
 Các hệ Thổ, Mộc và Băng dùng bảng cấp sau:
 
@@ -189,7 +195,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:lightning:** sáu chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
 - **npm run test:dark:** năm Ám thuật, mái vòm và lãnh địa, chó bóng đứng chờ/nhận lệnh, mỗi lần một con, tối đa ba con mỗi bên, đạn xuyên qua, biến mất/hồi lại trong và ngoài lãnh địa, voi bóng rơi gây 90 sát thương và khóa 2 giây, né hoặc lặn trước khi voi đáp, lặn miễn nhiễm với thao tác bình thường, hai bên và máy, hết hạn, tạm dừng/reset, đồ họa thấp và giảm chuyển động.
 - **npm run test:wind:** năm Phong thuật, combo hất tung 2 + 2 giây, sát thương 70 + 70, tường gió, camera tinh linh, phản liên tục phía trước và theo hướng ngắm, thuyền/sóng đổi hướng, hai bên, tạm dừng/reset/hết hạn, đồ họa thấp, giảm chuyển động và máy nối combo.
-- **npm run test:light:** luật và trình duyệt cho năm Quang thuật: đặt kính/cột có xem trước, quạt 5 tia và liên kết hình sao không lặp, màu/sát thương, cầu disco chỉ bật khi trúng tia, ngắm trượt/tường/khiên/miễn nhiễm, hai bên và AI, tạm dừng/reset/FPS, đồ họa thấp và giảm chuyển động; ảnh tại `test-results/light/`.
+- **npm run test:light:** luật và trình duyệt cho laser trắng–vàng, cầu thủy tinh 8 giây/7 sắc, mái vòm 10 giây/laser nảy/sát thương mỗi giây, gương 2,5 giây/phản đòn, Jacob và góc máy; kiểm tra hai bên, AI, ngắm trượt/tường/khiên/miễn nhiễm, tạm dừng/reset, đồ họa thấp và giảm chuyển động; ảnh tại `test-results/light/`.
 - **npm run test:fire:** kiểm tra sáu chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra sáu chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
 - **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, cú trúng không để lại lửa, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
