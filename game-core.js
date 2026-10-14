@@ -59,6 +59,14 @@
     {id:'wind-barrier',name:'Phong bích',kind:'defense',style:'windwall',rank:'A',sequence:[...'razx'],cost:32,damage:0,shield:110,duration:5,count:0,wallWidth:7,wallHeight:5,subtitle:'Tường gió phía trước · chặn chiêu, 110 độ bền trong 5 giây'},
     {id:'wind-reflect',name:'Tiên linh gió',kind:'defense',style:'windspirit',rank:'SS',sequence:[...'racvzxer'],cost:70,damage:0,count:0,duration:5,formation:1.8,guardWidth:8,guardRange:10,guardHeight:10,subtitle:'Tinh linh toon xuất hiện phía trước mặt · giữ góc nhìn FPS · thổi gió liên tục 5 giây, phản chiêu bay tới từ phía trước'}
   ].map(s=>({...s,element:'wind',glyph:'風',color:'#9fe9ce',heal:0,shield:s.shield||0}));
+  // Keep all five saved Light IDs while replacing their spells.
+  const lightSpells = [
+    {id:'light-orb',name:'Quang tiễn',kind:'attack',style:'lightray',rank:'D',sequence:[...'sd'],cost:24,damage:40,count:1,chargeTime:.1,range:55,subtitle:'Tia sáng xuyên mục tiêu · 40 sát thương mỗi lượt đi qua, mạnh hơn qua lăng kính và tán qua cột'},
+    {id:'light-barrier',name:'Lăng kính sắc quang',kind:'defense',style:'lightprism',rank:'C',sequence:[...'sda'],cost:26,damage:0,count:0,duration:25,subtitle:'Tự đặt một lăng kính trên đường ngắm · tối đa 3, mỗi kính thêm 50% sức mạnh gốc và nhiều màu cho tia'},
+    {id:'light-reflect',name:'Cột tán quang',kind:'defense',style:'lightpillar',rank:'A',sequence:[...'sdzx'],cost:32,damage:0,count:0,duration:25,subtitle:'Cột sau địch tỏa 5 tia hình quạt · đặt thêm cột trước địch bên trái / phải, chuyền tia thành hình sao · tối đa 3 cột, 25 giây'},
+    {id:'light-lance',name:'Quang tuyến',kind:'attack',style:'lightbeam',rank:'S',sequence:[...'sdcvzx'],cost:48,damage:12,count:6,duration:1.2,range:55,subtitle:'Tia liên tục ngắm bằng chuột trong 1,2 giây · 6 nhịp × 12, xuyên lăng kính và tán hình quạt qua các cột'},
+    {id:'light-volley',name:'Vũ cầu quang',kind:'attack',style:'lightdisco',rank:'SS',sequence:[...'sdcvzxer'],cost:76,damage:20,count:6,duration:3,subtitle:'Cầu disco tối trên đầu địch · bắn tia trúng cầu để bật sáng; sau đó 6 nhịp tia đa sắc trong 3 giây · chờ tối đa 18 giây'}
+  ].map(s=>({...s,element:'light',glyph:'光',color:'#ffe6a0',heal:0,shield:0}));
   const darkSpells = [
     { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:38, count:1, cloneCount:1, maxClones:3, upgradeMultiplier:1.5, subtitle:'Thêm một chó bóng · đủ 3 con thì mỗi lần thi triển nâng một chó thành bò bóng, sát thương 57 · không cản đạn' },
     { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:38, count:1, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm, đánh 38 sát thương rồi biến mất · trong lãnh địa tự trồi lên lại' },
@@ -66,7 +74,7 @@
     { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · mở khóa voi bóng và lặn, phân thân bị đánh sẽ trồi lên lại' },
     { id:'dark-reflect', name:'Ảnh độn', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
   ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:0,requiresDomain:!!s.requiresDomain}));
-  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'wind' ? windSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
+  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'wind' ? windSpells : el.id === 'light' ? lightSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
     damage: Math.round(v.damage * el.power), sequence: [...el.prefix, ...v.suffix],
@@ -133,6 +141,15 @@
       if (restored) this.hp = this.maxHp;
       return { damage: actual, absorbed, reflected: false, restored };
     }
+  }
+  // A downward aiming ray selects the ground, clamped to a circular six-metre reach.
+  function lightBlinkTarget(position,direction,range=6){
+    if(direction[1]>=-.025)return null;
+    const time=-position[1]/direction[1],dx=direction[0]*time,dz=direction[2]*time,distance=Math.hypot(dx,dz);
+    if(!Number.isFinite(distance)||distance<.15)return null;
+    const scale=Math.min(1,range/distance),x=Math.max(-6,Math.min(6,position[0]+dx*scale)),z=Math.max(-32,Math.min(12,position[2]+dz*scale));
+    if(Math.hypot(x-position[0],z-position[2])<.15)return null;
+    return [x,position[1],z];
   }
   // Swept plane intersection prevents fast projectiles from passing through a wall.
   function intersectFireWall(start, end, wall) {

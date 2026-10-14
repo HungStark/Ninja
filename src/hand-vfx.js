@@ -229,3 +229,114 @@ export function createHandLightning(scene) {
   }
   return { mesh, sparks, light, setReady, update };
 }
+
+// Match the existing hand rings' placement and readiness gate, with a distinct
+// cel palette and motion for wind, shadow and light. Dark ink uses normal alpha
+// blending so its dark band remains visible without bloom.
+export function createHandElement(scene,element) {
+  const kind={wind:0,dark:1,light:2}[element];
+  if(kind===undefined)throw new Error('Unsupported hand ring: '+element);
+  const colors={wind:'#a7f0cd',dark:'#aa71d5',light:'#ffe7a1'};
+  const material=new T.ShaderMaterial({
+    transparent:true,depthWrite:false,blending:element==='dark'?T.NormalBlending:T.AdditiveBlending,
+    uniforms:{uTime:{value:0},uReducedMotion:{value:0},uKind:{value:kind}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:`uniform float uTime;uniform float uReducedMotion;uniform float uKind;varying vec2 vUv;
+      float band(float r,float edge,float width){return 1.-smoothstep(width,width+.018,abs(r-edge));}
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.)),f.x),f.y);}
+      float smokeNoise(vec2 p){return noise(p)*.57+noise(p*2.07+13.2)*.28+noise(p*4.13-7.8)*.15;}
+      void main(){
+        vec2 p=(vUv-.5)*3.;float r=length(p),a=atan(p.y,p.x);
+        float t=uTime*mix(1.,.12,uReducedMotion),alpha;vec3 color;
+        if(uKind<.5){
+          float edge=1.+.018*sin(a*4.-t*2.4);
+          float ring=band(r,edge,.008),gust=0.,mist=0.;
+          // Staggered, tapered air currents sweep around the full circumference.
+          for(int i=0;i<4;i++){
+            float lane=float(i),phase=a-t*(1.8+lane*.19)+lane*1.73;
+            float head=.5+.5*cos(phase);
+            float tail=smoothstep(.64,.97,head);
+            float curve=.90+lane*.074+.035*sin(phase*2.+lane);
+            float width=.003+.009*pow(head,5.);
+            gust=max(gust,band(r,curve,width)*tail);
+            mist=max(mist,(1.-smoothstep(.012,.057,abs(r-curve)))*tail*.22);
+          }
+          alpha=max(ring*.30,max(gust*.72,mist));
+          color=mix(vec3(.19,.56,.40),vec3(.65,.92,.80),gust);
+        }else if(uKind<1.5){
+          // Advect smoke in circular coordinates so there is no angle seam.
+          vec2 orbit=vec2(cos(a+t*.42),sin(a+t*.42));
+          float billow=smokeNoise(orbit*5.3+vec2(t*.24,-t*.38));
+          float detail=smokeNoise(p*12.+orbit*billow*2.-vec2(t*.3,t*.52));
+          float edge=1.+(billow-.5)*.14;
+          float spread=.105+billow*.14;
+          float cloud=(1.-smoothstep(spread*.32,spread,abs(r-edge)))*smoothstep(.15,.58,detail);
+          float ink=band(r,edge,.018),rim=band(r,edge+.024,.006);
+          float rimAlpha=rim*(.30+.22*billow);
+          float smokeAlpha=cloud*.90;
+          alpha=max(smokeAlpha,max(ink*.62,rimAlpha));
+          vec3 soot=mix(vec3(.008,.006,.012),vec3(.055,.041,.066),detail);
+          color=mix(soot,vec3(.32,.14,.44),rimAlpha/max(.001,alpha));
+        }else{
+          float ring=band(r,1.,.013),outer=band(r,1.10,.008)*.55;
+          float angle=a-t*.4;
+          float glint=pow(max(0.,cos(angle*12.)),20.);
+          float rays=band(r,1.075,.048)*glint;
+          alpha=max(ring*.9,max(outer,rays*.8));
+          color=mix(vec3(.78,.51,.14),vec3(1.22,1.12,.78),max(ring,glint));
+        }
+        if(alpha<.015)discard;gl_FragColor=vec4(color,alpha);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`
+  });
+  const mesh=new T.Mesh(new T.PlaneGeometry(1,1),material);
+  mesh.name='ReadyHand'+element[0].toUpperCase()+element.slice(1);mesh.renderOrder=10;mesh.visible=false;scene.add(mesh);
+  const count=element==='dark'?32:12,geometry=new T.BufferGeometry();
+  geometry.setAttribute('position',new T.BufferAttribute(new Float32Array(count*3),3));
+  geometry.setAttribute('aLife',new T.BufferAttribute(new Float32Array(count),1));
+  const motes=new T.Points(geometry,new T.ShaderMaterial({
+    transparent:true,depthWrite:false,blending:element==='dark'?T.NormalBlending:T.AdditiveBlending,
+    uniforms:{uColor:{value:new T.Color(colors[element])},uKind:{value:kind},uTime:{value:0}},
+    vertexShader:`uniform float uKind;attribute float aLife;varying float vLife;
+      void main(){vLife=aLife;vec4 p=modelViewMatrix*vec4(position,1.);
+        float size=uKind>.5&&uKind<1.5?28.+aLife*36.:2.4;
+        gl_PointSize=clamp(size/max(.3,-p.z),1.,uKind>.5&&uKind<1.5?80.:7.);gl_Position=projectionMatrix*p;}`,
+    fragmentShader:`uniform vec3 uColor;uniform float uKind;uniform float uTime;varying float vLife;
+      void main(){vec2 p=gl_PointCoord-.5;
+      if(uKind>.5&&uKind<1.5){
+        float a=atan(p.y,p.x),r=length(p);
+        float edge=.36+.04*sin(a*5.+uTime*.7+vLife*6.)+.025*cos(a*7.-uTime*.4);
+        float cloud=1.-smoothstep(edge*.25,edge,r);
+        float fade=sin(vLife*3.14159265);
+        gl_FragColor=vec4(.009,.006,.014,cloud*fade*.48);return;
+      }
+      float r=uKind>1.5?abs(p.x)+abs(p.y):length(p*vec2(1.3,.8));
+      float alpha=1.-smoothstep(.1,.48,r);gl_FragColor=vec4(uColor,alpha*(uKind>1.5?.7:.32));}`
+  }));
+  motes.name=mesh.name+'Motes';motes.frustumCulled=false;motes.visible=false;scene.add(motes);
+  const light=new T.PointLight(colors[element],0,1.5,2);light.name=mesh.name+'Light';scene.add(light);
+  function setReady(ready){mesh.visible=motes.visible=!!ready;light.intensity=ready ? .025 : 0;}
+  function update(time,center,halfWidth,reducedMotion){
+    const compact=element!=='light';
+    mesh.position.copy(center);mesh.position.y+=compact ? .035 : 0;mesh.position.z+=compact ? -.035 : .08;
+    light.position.copy(center);light.position.z+=.2;
+    // Keep wind and dark behind the palms, with enough room to surround the hands.
+    const rx=compact?Math.max(.21,Math.min(.28,halfWidth+.115)):Math.max(.19,halfWidth+.115),ry=compact ? .17 : .20;
+    mesh.scale.set(rx*3,ry*3,1);
+    material.uniforms.uTime.value=time;material.uniforms.uReducedMotion.value=Number(reducedMotion);
+    if(!mesh.visible)return;
+    const t=time*(reducedMotion ? .12 : 1),speed=element==='wind'?2.1:element==='dark'?-.45:.35;
+    motes.material.uniforms.uTime.value=t;
+    for(let i=0;i<count;i++){
+      const life=(t*.38+i*.618)%1;
+      const a=i*Math.PI*2/count+t*speed,radius=element==='light'?1.13:element==='dark'?.98+life*.22:1.035+Math.sin(i+t*1.2)*.055;
+      geometry.attributes.position.setXYZ(i,mesh.position.x+Math.cos(a)*rx*radius,mesh.position.y+Math.sin(a)*ry*radius+(element==='dark'?life*.022:0),mesh.position.z+(compact ? .015 : .02));
+      geometry.attributes.aLife.setX(i,life);
+    }
+    geometry.attributes.position.needsUpdate=true;
+    geometry.attributes.aLife.needsUpdate=true;
+  }
+  return {mesh,motes,light,setReady,update};
+}

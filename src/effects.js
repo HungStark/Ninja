@@ -76,7 +76,7 @@ export class FireEffects {
     while (this.objects.length < shots.length) this.makeShot();
     for (let i = 0; i < this.objects.length; i++) {
       const g = this.objects[i], shot = shots[i];
-      g.visible = !!shot && !['fire', 'water', 'lightning', 'dark','wind'].includes(shot.element);
+      g.visible = !!shot && !['fire', 'water', 'lightning', 'dark','wind','light'].includes(shot.element);
       if (!g.visible) continue;
       g.children[0].material.uniforms.uTime.value = time;
       g.children[0].material.uniforms.uColor.value.set(shot.color || '#ff844b');

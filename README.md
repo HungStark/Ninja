@@ -27,6 +27,7 @@ nằm trong [assets/seal-shadows.md](assets/seal-shadows.md). Khi nút **SPACE**
 cho chiêu Hỏa, tay được bao quanh bởi vầng lửa và tàn lửa chuyển động; vầng lửa tắt
 khi tung chiêu, xóa chuỗi, tạm dừng hoặc chưa đủ chakra/hồi chiêu.
 Chiêu Thủy sẵn sàng tạo vòng nước xanh quanh hai tay, có dòng nước và giọt nước xoay theo vòng; vòng nước dùng cùng điều kiện sẵn sàng và được tắt khi thi triển, xóa chuỗi, tạm dừng hoặc thiếu chakra/hồi chiêu.
+Phong, Ám và Quang cũng có vòng thuộc tính riêng quanh hai tay khi chiêu sẵn sàng: Phong là một vòng xanh ngọc mảnh, sáng nhẹ theo dòng gió; Ám là vòng tím đen với viền tím mảnh; Quang là vòng trắng vàng với tia và hạt sáng hình thoi. Vòng Phong và Ám thu gọn thành quầng thấp phía sau lòng bàn tay, giới hạn độ rộng, giảm hạt sáng và bỏ các dải xoay lớn bên ngoài. Vòng theo vị trí tay và chỉ sáng khi Space dùng được, gồm cả điều kiện lãnh địa, phân thân, hất tung. Các vòng tắt khi tung chiêu, xóa/sai/hết hạn chuỗi, thiếu chakra, hồi chiêu hoặc tạm dừng; hỗ trợ đồ họa thấp và giảm chuyển động.
 
 Tay được dựng trong Blender dựa trên mesh 3D `anime_style_hand.glb` do người dùng cung cấp. Giữ cấu trúc lòng bàn tay cong, kẽ ngón và khối cơ gốc ngón cái của mẫu; dựng lại đầu ngón bằng các tiết diện tròn thuôn, đóng cổ tay và dùng subdivision để nối mượt. Các phần móng dài của mẫu được thay bằng móng riêng nhỏ, mỏng và ôm theo bề mặt. Model được gắn 16 xương theo tỷ lệ mới, với trọng số chuyển tiếp mượt và giữ 12 thế kết ấn. Vị trí FPS, giáp xanh đen, vòng vàng và ánh sáng/vật liệu hiện tại được giữ nguyên.
 
@@ -111,7 +112,25 @@ Chỉ Ảnh tượng và Ảnh độn cần lãnh địa đã mở. Ảnh tượ
 
 Lãnh địa dùng được cho cả hai bên. Mở mắt vẫn thấy sân đấu và một mái vòm đen 3D trước mặt. Mái vòm bán cầu nở rộng, mực phủ dần đường, cây, cổng, núi và bầu trời. Khi mở xong, lãnh địa bắt đầu tính 30 giây. Thi triển lại làm mới thời gian; hết hạn trả cảnh cũ, kết thúc kéo/lặn và khả năng hồi phân thân, nhưng các phân thân còn sống vẫn đứng chờ ngoài lãnh địa. Tạm dừng đóng băng tất cả hiệu ứng và đồng hồ; đấu lại hoặc về chọn chiêu xóa phân thân, kéo, lặn và khôi phục cảnh. Máy hệ Ám mở lãnh địa, tạo phân thân rồi phát lệnh tấn công.
 
-Các hệ còn lại dùng bảng cấp sau:
+### Quang thuật
+
+| Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
+| --- | --- | --- | --- | --- |
+| Quang tiễn | 2 | S D | 24 | Tia xuyên mục tiêu, 40 sát thương gốc; tích sáng 0,1 giây |
+| Lăng kính sắc quang | 3 | S D A | 26 | Đặt lăng kính trên đường ngắm, 25 giây; tối đa 3 mỗi bên |
+| Cột tán quang | 4 | S D Z X | 32 | Mỗi cột nhận tia phát quạt 5 tia; đặt thêm cột để nối đường tia hình sao; tối đa 3 mỗi bên, 25 giây |
+| Quang tuyến | 6 | S D C V Z X | 48 | Tia ngắm bằng chuột trong 1,2 giây; 6 nhịp × 12 = 72 sát thương gốc |
+| Vũ cầu quang | 8 | S D C V Z X E R | 76 | Tạo cầu disco tối trên địch; phải bắn tia Quang trúng cầu để bật sáng, sau đó 6 nhịp tia trong 3 giây |
+
+**Đặt dễ dùng:** chọn chiêu hoặc kết ấn để thấy mô hình xem trước; hướng ngắm quyết định trục bố trí, Space để đặt. Không cần ngắm xuống đất hoặc xoay vật bằng phím riêng. Lăng kính lần lượt cách người thi triển 4 / 6,4 / 8,8 m. Cột đầu nằm sau mục tiêu 3,5 m; hai cột tiếp theo nằm trước mục tiêu 4 m, bên trái rồi bên phải 4 m. Cụm cột giữ tâm/trục đã đặt đầu tiên, giúp bổ sung hai bên chính xác. Đủ giới hạn thì thay vật cũ nhất. Vật nằm cố định, không đi theo nhân vật.
+
+Lăng kính thêm màu 3 → 5 → 7 dải và **50% sát thương gốc mỗi kính riêng biệt**. Cột tỏa quạt phía trước theo hướng đã đặt; các tia ngoài nối sang cột khác, các tia giữa và tia chéo giao nhau quanh mục tiêu thành hình sao. Mỗi lượt truyền qua cột thêm **25% sức mạnh**. Công thức: sát thương gốc × (1 + 0,5 × số kính riêng biệt) × (1 + 0,25 × số lượt qua cột). Một kính chỉ khuếch đại một lần trên mỗi nhánh. Một cột chỉ phát một quạt trong mỗi lượt bắn, tránh tia chạy qua lại/vòng lặp; tối đa 3 cột và 16 nhánh tia. Quang tiễn không qua kính: tia đầu 40, quạt cột sau địch 50, quạt từ hai cột phía trước 60 mỗi bên nếu đường tia trúng. Qua một kính: tương ứng 60 / 75 / 90 / 90.
+
+**Cầu disco:** xuất hiện cao hơn đầu địch 3,2 m, ban đầu tối, không tự gây sát thương. Ngước tâm ngắm lên cầu và dùng Quang tiễn hoặc Quang tuyến bắn trúng để bật sáng. Nếu tia bị tường chắn hoặc ngắm trượt, cầu vẫn tối. Chờ tối đa 18 giây, mỗi bên có một cầu; thi triển lại thay cầu cũ. Khi bật, cầu xoay với mặt đa sắc, phát tia xuống dưới và ra xung quanh, đồng thời dẫn tia vào các cột đang đặt. Mỗi nhịp tia có 20 sát thương gốc; tia giữa gây tối đa 6 × 20 = 120 nếu địch đứng dưới cầu cả 3 giây. Sức mạnh từ lăng kính/cột của tia kích hoạt được truyền vào cầu. Cầu và vùng phát tia giữ vị trí đã đặt, có thể né ra ngoài. Sau khi phát hết, cầu biến mất.
+
+Tất cả sát thương dùng đường tia thật: ngắm trượt không tự trúng, tường đối phương chặn và chịu sát thương, khiên vẫn hấp thụ, miễn nhiễm vẫn bảo vệ. Kính/cột/cầu chỉ nhận tia Quang của bên sở hữu. Tia trực tiếp không phải đạn bay nên không bị khiên phản đạn hay tiên linh gió trả lại. Quang tuyến dừng khi bị khóa thao tác hoặc dùng chiêu mới. Cả hai bên dùng đủ năm chiêu, giữ FPS và vòng thuộc tính ở tay. HUD hiển thị số kính/cột và trạng thái cầu. Tạm dừng đóng băng đồng hồ; đấu lại/về quyển trục xóa toàn bộ. Giữ ID/chuỗi ấn cũ cho bộ chiêu đã lưu.
+
+Các hệ Thổ, Mộc và Băng dùng bảng cấp sau:
 
 | Cấp | Số ấn | Loại chiêu | Cách hoạt động |
 | --- | --- | --- | --- |
@@ -123,7 +142,7 @@ Các hệ còn lại dùng bảng cấp sau:
 
 Chuỗi của mỗi hệ bắt đầu bằng hai ấn nhận diện hệ. Sau hai ấn có thể nhấn Space để dùng chiêu cơ bản, hoặc tiếp tục kết ấn để hoàn thành chiêu mạnh hơn; game không tự tung chiêu. Khi đang xem chiêu dài, quyển trục giữ công thức đó để theo dõi tiến trình. Rồng lửa có thể nối thêm **E R** thành Thiên thạch nếu mang cả hai chiêu.
 
-Chiêu thủ của Mộc và Quang còn hồi 12 sinh lực, không vượt máu tối đa. Thi triển khiên bao thân mới thay thế khiên cũ. Đạn đã phản không được phản tiếp để tránh vòng lặp. Mỗi đạn có màu, ánh sáng và vệt theo hệ.
+Chiêu thủ của Mộc còn hồi 12 sinh lực, không vượt máu tối đa. Thi triển khiên bao thân mới thay thế khiên cũ. Đạn đã phản không được phản tiếp để tránh vòng lặp. Mỗi đạn có màu, ánh sáng và vệt theo hệ.
 
 Hai bên có **1000 sinh lực** và **100 chakra**. Chakra hồi 11 mỗi giây, cách hai lần thi triển ít nhất 1 giây. Kết đủ chuỗi 2–8 ấn của chiêu theo quyển trục rồi nhấn Space. Cấp và số ấn được ghi trên từng thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
 
@@ -170,6 +189,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:lightning:** sáu chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
 - **npm run test:dark:** năm Ám thuật, mái vòm và lãnh địa, chó bóng đứng chờ/nhận lệnh, mỗi lần một con, tối đa ba con mỗi bên, đạn xuyên qua, biến mất/hồi lại trong và ngoài lãnh địa, voi bóng rơi gây 90 sát thương và khóa 2 giây, né hoặc lặn trước khi voi đáp, lặn miễn nhiễm với thao tác bình thường, hai bên và máy, hết hạn, tạm dừng/reset, đồ họa thấp và giảm chuyển động.
 - **npm run test:wind:** năm Phong thuật, combo hất tung 2 + 2 giây, sát thương 70 + 70, tường gió, camera tinh linh, phản liên tục phía trước và theo hướng ngắm, thuyền/sóng đổi hướng, hai bên, tạm dừng/reset/hết hạn, đồ họa thấp, giảm chuyển động và máy nối combo.
+- **npm run test:light:** luật và trình duyệt cho năm Quang thuật: đặt kính/cột có xem trước, quạt 5 tia và liên kết hình sao không lặp, màu/sát thương, cầu disco chỉ bật khi trúng tia, ngắm trượt/tường/khiên/miễn nhiễm, hai bên và AI, tạm dừng/reset/FPS, đồ họa thấp và giảm chuyển động; ảnh tại `test-results/light/`.
 - **npm run test:fire:** kiểm tra sáu chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra sáu chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
 - **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, cú trúng không để lại lửa, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
@@ -179,6 +199,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:graphics:** kiểm tra pixel môi trường ở ba mức đồ họa và chụp thế tay/giao diện.
 - **npm run test:anime:** chụp dáng nghỉ và đủ 12 thế tay, viền theo khung xương, vòng Hỏa–Thủy–Lôi, camera Lôi điểu, ba mức đồ họa, cửa sổ nhỏ/điện thoại và giảm chuyển động; kiểm tra lỗi shader.
 - **npm run test:hand-vfx:** kiểm tra 12 bóng, thời gian 0,2 giây, kết ấn liên tiếp, vầng lửa khi Space sẵn sàng, hồi chiêu/chakra, tạm dừng/reset và chế độ đồ họa thấp.
+- **npm run test:hand-element-rings:** kiểm tra vòng Phong–Ám–Quang cho cả 15 chiêu, điều kiện thi triển, màu/hoạt ảnh, đi theo tay, chuyển hệ, hồi chiêu/chakra, tạm dừng/reset, đồ họa thấp và giảm chuyển động; xuất ảnh vào `test-results/hand-element-rings/`.
 - **npm run test:meteor-zoom:** kiểm tra zoom in/out trên trời, tạm dừng, đổi kích thước/chất lượng, khôi phục hướng ngắm, reset và chế độ giảm chuyển động.
 
 Đặt **BROWSER_PATH** để dùng Chrome/Chromium khác đường dẫn Edge mặc định trên Windows. Ảnh và báo cáo kiểm thử nằm trong test-results. Chỉ URL có **test=1** cung cấp bước thời gian xác định; gameplay bình thường dùng requestAnimationFrame.

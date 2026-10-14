@@ -4,7 +4,7 @@ import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { HAND_GLB_BASE64 } from "../assets/hand-data.js";
 import { handMaterials } from './hand-materials.js';
 import { poses } from "./poses.js";
-import { createSealShadow, createHandFire, createHandWater, createHandLightning } from './hand-vfx.js';
+import { createSealShadow, createHandFire, createHandWater, createHandLightning, createHandElement } from './hand-vfx.js';
 import { inkMaterial, addInkOutline } from './ink-outline.js';
 export async function createHands() {
   const bytes = Uint8Array.from(atob(HAND_GLB_BASE64), (c) => c.charCodeAt(0));
@@ -56,6 +56,11 @@ export async function createHands() {
   aura.position.set(0, -0.2, -0.72);
   scene.add(aura);
   const shadow = await createSealShadow(scene), handFire = createHandFire(scene), handWater = createHandWater(scene), handLightning = createHandLightning(scene);
+  const handWind=createHandElement(scene,'wind'),handDark=createHandElement(scene,'dark'),handLight=createHandElement(scene,'light');
+  const elementalRings={wind:handWind,dark:handDark,light:handLight};
+  const lightFinger=new T.Mesh(new T.OctahedronGeometry(.012),new T.MeshBasicMaterial({color:'#fff4cc',toneMapped:false}));
+  lightFinger.position.set(0,.02,0);lightFinger.visible=false;hands[1].joints.index_2.add(lightFinger);
+  const lightOrigin=()=>hands[1].joints.index_2.localToWorld(new T.Vector3(0,.02,0));
   const handCenter = new T.Vector3(0, -.2, -.7), palm = new T.Vector3();
   let readyElement = '';
   function setReady(element) {
@@ -64,10 +69,11 @@ export async function createHands() {
     handFire.setReady(readyElement === 'fire');
     handWater.setReady(readyElement === 'water');
     handLightning.setReady(readyElement === 'lightning');
-    if (['fire', 'water', 'lightning'].includes(readyElement)) auraMat.opacity = 0;
+    for(const [element,ring] of Object.entries(elementalRings))ring.setReady(readyElement===element);
+    if (['fire', 'water', 'lightning','wind','dark','light'].includes(readyElement)) auraMat.opacity = 0;
   }
   function clearEffects() {
-    shadow.clear(); setReady(null); sealPulse = 0; auraMat.opacity = 0;
+    shadow.clear(); setReady(null); sealPulse = 0; auraMat.opacity = 0;lightFinger.visible=false;
   }
   function seal(poseIndex) {
     sealPulse = 1;
@@ -143,12 +149,16 @@ export async function createHands() {
     const lightningReady = ready && readyElement === 'lightning';
     handLightning.setReady(lightningReady);
     handLightning.update(time, handCenter, Math.abs(hands[0].wrapper.position.x), reducedMotion);
+    for(const [element,ring] of Object.entries(elementalRings)){
+      ring.setReady(ready&&readyElement===element);
+      ring.update(time,handCenter,Math.abs(hands[0].wrapper.position.x),reducedMotion);
+    }
     aura.position.copy(handCenter);
-    auraMat.opacity = fireReady || waterReady || lightningReady ? 0 : T.MathUtils.damp(auraMat.opacity, ready ? 0.3 : sealPulse * 0.16, 7, dt);
+    auraMat.opacity = fireReady || waterReady || lightningReady || (ready&&!!elementalRings[readyElement]) ? 0 : T.MathUtils.damp(auraMat.opacity, ready ? 0.3 : sealPulse * 0.16, 7, dt);
     aura.rotation.z = time * 0.65;
     aura.scale.setScalar(1 + Math.sin(time * 2) * 0.04);
     fireLight.intensity = T.MathUtils.damp(fireLight.intensity, fireIntensity * 2.6, 13, dt);
   }
   const setInkViewport=(width,height)=>inkMaterials.forEach(m=>m.uniforms.viewport.value.set(width,height));
-  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning, outlines, setInkViewport };
+  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning, handWind,handDark,handLight,lightFinger,lightOrigin,outlines, setInkViewport };
 }

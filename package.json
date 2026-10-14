@@ -28,7 +28,9 @@
     "test:meteor-zoom": "node tests/meteor-zoom.cjs",
     "test:impact-motion": "node tests/impact-motion.cjs",
     "test:wind-camera": "node tests/wind-camera.cjs",
-    "test:wind-spirit": "node tests/wind-spirit.cjs"
+    "test:wind-spirit": "node tests/wind-spirit.cjs",
+    "test:light": "node tests/light-core.mjs && node tests/light.cjs",
+    "test:hand-element-rings": "node tests/hand-element-rings.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

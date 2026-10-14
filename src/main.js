@@ -11,6 +11,7 @@ import { createOpponent, createPlayerAvatar } from "./opponent.js";
 import { CameraImpacts } from './camera-impact.js';
 import { DarkDomain } from './dark-domain.js';
 import { WindArts } from './wind-arts.js';
+import { LightArts } from './light-arts.js';
 async function main() {
   const $ = id => document.getElementById(id), { keys, spells, elements, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = globalThis.SealGameCore;
   let rules = new GameRules(), player = new Fighter(), enemy = new Fighter(), aiRules = new GameRules();
@@ -80,6 +81,7 @@ async function main() {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const darkDomain = new DarkDomain(world,reducedMotion);
   const windArts = new WindArts(scene);
+  const lightArts = new LightArts(scene,intersectFireWall);
   // Retain the overhead camera/avatar for later use; normal gameplay stays in FPS.
   let windCameraEnabled=false,windView=null;
   let quality = 1;
@@ -132,7 +134,7 @@ async function main() {
   function spellMarkup(spell, i, preparation = false) {
     if (!preparation) return '<button class="spell ' + (i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-spell="' + i + '"><div class="spell-title">' + spell.name + '</div><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></button>';
     const taken = loadout.includes(spell.id), kind = spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa voi bóng và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 38, nâng thành bò 57':spell.style==='shadowcommand'?'Chó 38 / bò 57 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
+    const stats = spell.element==='light'?({lightray:'40 mỗi lượt · xuyên mục tiêu',lightprism:'25 giây · tối đa 3 · +50% mỗi kính',lightpillar:'25 giây · 3 cột · quạt 5 tia, liên kết hình sao',lightbeam:'6 × 12 · lia chuột để ngắm · tia tán qua cột',lightdisco:'Cầu tối chờ tia · bật sáng mới gây sát thương'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa voi bóng và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 38, nâng thành bò 57':spell.style==='shadowcommand'?'Chó 38 / bò 57 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spell.glyph + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · CẤP ' + spell.rank + ' · ' + spell.sequence.length + ' ẤN · ' + spell.cost + ' CH</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -247,6 +249,7 @@ async function main() {
   function aim() { const cp = Math.cos(camera.pitch); return [-Math.sin(camera.yaw) * cp, Math.sin(camera.pitch), -Math.cos(camera.yaw) * cp]; }
   function enemyPos() { return [opponent.group.position.x, 1.72+windArts.height('enemy'), opponent.group.position.z]; }
   function playerPos(){return [camera.p[0],camera.p[1]+windArts.height('player'),camera.p[2]];}
+
   function windActors(){return [{owner:'player',pos:playerPos(),dir:aim(),fighter:player},{owner:'enemy',pos:enemyPos(),dir:vnorm(vsub(playerPos(),enemyPos())),fighter:enemy}];}
   function reflectWind(shot){
     if(!windArts.redirect(shot,windActors()))return false;
@@ -255,6 +258,18 @@ async function main() {
     return true;
   }
   function launch(spell, owner, pos, dir) {
+    lightArts.cancel(owner);
+    if(spell.element==='light'){
+      if(owner==='player'){clearWindView();clearDragonView();clearMeteorView();clearWaveView();cameraImpacts.reset();}
+      if(['lightprism','lightpillar'].includes(spell.style))lightArts.place(owner,spell,pos,dir,windActors());
+      else if(spell.style==='lightdisco')lightArts.disco(owner,spell,pos,dir,windActors());
+      else{
+        if(owner==='player'){clearWindView();clearDragonView();clearMeteorView();clearWaveView();cameraImpacts.reset();}
+        if(spell.style==='lightbeam')lightArts.beam(owner,spell,pos,dir);
+        else lightArts.fire(owner,spell,vadd(pos,vmul(dir,.25)),dir);
+      }
+      return true;
+    }
     if(spell.style==='domain'){
       if(!usesWindCamera())clearWindView();
       clearDragonView();clearMeteorView();setWorldFov(baseFov);hands.clearEffects();
@@ -441,7 +456,7 @@ async function main() {
     hands.clearEffects();
     if (won) return;
     darkDomain.reset();clearDarkArts();
-    clearWindView();windArts.reset();
+    clearWindView();windArts.reset();lightArts.reset();
     stopSpellVoice();
     clearDragonView();
     clearMeteorView();
@@ -457,10 +472,13 @@ async function main() {
   }
   function impact(shot, pos) {
     const fighter = shot.owner === 'enemy' ? player : enemy, result = fighter.receive(shot.damage, shot.reflected || shot.unreflectable);
+    shot.hitResult=result;
     if(result.immune)return true;
     if (dragonView?.shot === shot && dragonView.phase === 'overhead') { dragonView.phase = 'impact'; dragonView.hold = 0; }
     const cleanVolleyHit = shot.element === 'fire' && shot.style === 'volley';
-    if(shot.element==='wind'){
+    if(shot.element==='light'){
+      lightArts.flash(pos);
+    }else if(shot.element==='wind'){
       if(shot.style!=='aircut')windArts.cut(pos);
     }else if(shot.element==='dark') {
       darkDomain.splash(pos);
@@ -551,7 +569,8 @@ async function main() {
     const reflectedByWind=new Set();
     if(dt>0)for(const shot of shots){
       const start=[...shot.p];shot.old=[...start];shot.p=vadd(start,vmul(shot.v,travelStep(shot,dt)));
-      if(reflectWind(shot))reflectedByWind.add(shot);else shot.p=start;
+      if(reflectWind(shot))reflectedByWind.add(shot);
+      else shot.p=start;
     }
     const swept = new Set();
     for (const wave of shots.filter(s => s.style === 'tsunami' && s.phase === 'flying'&&!reflectedByWind.has(s))) {
@@ -580,6 +599,7 @@ async function main() {
       shot.old = [...shot.p];
       if (swept.has(shot)) { shots.splice(i, 1); continue; }
       let flightDt = dt;
+
       if(shot.style==='thunder') {
         shot.age+=dt;shot.preludeAge=Math.min(shot.skyTime+shot.returnTime,shot.age);
         shot.phase=shot.age<shot.skyTime?'charging':shot.age+1e-6<shot.skyTime+shot.returnTime?'returning':shot.age+1e-6<shot.strikeTime?'ready':shot.age<shot.strikeTime+.3?'striking':'fading';
@@ -694,6 +714,7 @@ async function main() {
       }
     }
   }
+  function enemyCastDirection(spell){const disco=lightArts.optics.find(o=>o.owner==='enemy'&&o.kind==='disco'&&!o.active);return vnorm(vsub(disco&&spell.element==='light'&&spell.kind==='attack'&&spell.style!=='lightdisco'?disco.center:playerPos(),enemyPos()));}
   function updateAI(dt) {
     if(testAIDisabled)return;
     aiRules.tick(dt); aiCastAge += dt;
@@ -711,6 +732,10 @@ async function main() {
         aiSpell=aiRules.spells.find(s=>s.style===desired&&available(s))||choices.find(s=>hasClones?['shadowcommand','shadowbind','shadowdive'].includes(s.style):s.style==='shadowclone');
       }else if(aiRules.spells.some(s=>s.style==='tornado')){
         aiSpell=windArts.canCombo('enemy')?aiRules.spells.find(s=>s.style==='aircombo'&&available(s)):incoming&&defenses.length?defenses[aiCycle%defenses.length]:aiRules.spells.find(s=>s.style===['tornado','windslash','windspirit','tornado'][aiCycle%4]&&available(s))||choices[aiCycle%choices.length];
+      }else if(aiRules.spells.some(s=>s.element==='light')){
+        const own=lightArts.optics.filter(o=>o.owner==='enemy');
+        const desired=own.some(o=>o.kind==='disco'&&!o.active)?'lightray':!own.some(o=>o.kind==='prism')?'lightprism':own.filter(o=>o.kind==='pillar').length<3?'lightpillar':['lightray','lightbeam','lightpillar','lightdisco'][aiCycle%4];
+        aiSpell=aiRules.spells.find(s=>s.style===desired&&available(s))||choices[aiCycle%choices.length];
       }else aiSpell=choices[aiCycle%choices.length];
       if (!aiSpell) { aiTimer = .6; return; }
       aiRules.clear(); aiStep = 0; aiCycle++;
@@ -720,7 +745,7 @@ async function main() {
       aiTimer = .42; $('enemyAction').textContent = 'Kết ấn ' + aiStep + '/' + aiSpell.sequence.length + ' · ' + aiSpell.name;
     } else {
       const result = darkDomain.transition ? {ok:false} : aiRules.cast({windAirborne:windArts.canCombo('enemy'),darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('enemy').length,shadowCloneCount:darkDomain.cloneCount('enemy'),shadowUpgrades:darkDomain.upgradable('enemy').length});
-      if (result.ok) { launch(aiSpell, 'enemy', enemyPos(), vnorm(vsub(playerPos(), enemyPos()))); opponent.rig.cast(); aiCasts++; aiCastAge = 0; $('enemyAction').textContent = 'Thi triển · ' + aiSpell.name; }
+      if (result.ok) { launch(aiSpell, 'enemy', enemyPos(), enemyCastDirection(aiSpell)); opponent.rig.cast(); aiCasts++; aiCastAge = 0; $('enemyAction').textContent = 'Thi triển · ' + aiSpell.name; }
       enemyPose = -1; aiSpell = null; aiTimer = 1.65;
     }
   }
@@ -745,6 +770,7 @@ async function main() {
       moveDirection = player.controlTime <= 0 && Math.abs(remaining) > .001 ? Math.sign(remaining) : 0;
       camera.p[0] += moveDirection * Math.min(Math.abs(remaining), 10 * dt);
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
+      lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;},shot=>darkDomain.intercept(shot),(owner,p,r)=>darkDomain.blastClones(owner,p,r));
       updateAI(dt); updateShots(dt);
       if(!won)darkDomain.updateClones(dt,animationTime,[{owner:'player',pos:camera.p,fighter:player},{owner:'enemy',pos:enemyPos(),fighter:enemy}],
         (clone,pos)=>impact({owner:clone.owner,element:'dark',style:'shadowstrike',damage:clone.damage,v:vnorm(vsub(pos,clone.p)),unreflectable:true},pos),shadowCrushImpact);
@@ -770,10 +796,10 @@ async function main() {
     const playerWall = walls.find(w => w.owner === 'player' && w.hp > 0), shieldLabel = player.shieldTime > 0 && (player.shield || player.reflect) ? 'Khiên ' + player.shield + (player.reflect ? ' · phản đòn' : '') : '';
     const playerSpirit=windArts.spirits.find(s=>s.owner==='player'),enemySpirit=windArts.spirits.find(s=>s.owner==='enemy');
     const playerField=fields.find(f=>f.owner==='player'),enemyField=fields.find(f=>f.owner==='enemy');
-    $('shieldStatus').textContent = [player.controlTime > 0 ? player.controlSource+' ' + player.controlTime.toFixed(1) + 's' : '',player.invulnerableTime>0?'Ảnh độn · miễn nhiễm '+player.invulnerableTime.toFixed(1)+'s':'', shieldLabel,playerSpirit?'Tiên linh '+Math.max(0,playerSpirit.life-(playerSpirit.age<playerSpirit.formation?playerSpirit.formation-playerSpirit.age:0)).toFixed(1)+'s':'',playerField?'Lôi trận '+playerField.life.toFixed(1)+'s':'', playerWall ? (playerWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường ') + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
+    $('shieldStatus').textContent = [lightArts.status('player'),player.controlTime > 0 ? player.controlSource+' ' + player.controlTime.toFixed(1) + 's' : '',player.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='player')?'Ảnh độn':'Miễn nhiễm')+' · miễn nhiễm '+player.invulnerableTime.toFixed(1)+'s':'', shieldLabel,playerSpirit?'Tiên linh '+Math.max(0,playerSpirit.life-(playerSpirit.age<playerSpirit.formation?playerSpirit.formation-playerSpirit.age:0)).toFixed(1)+'s':'',playerField?'Lôi trận '+playerField.life.toFixed(1)+'s':'', playerWall ? (playerWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường ') + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
     $('enemyHP').style.width = enemy.hp / enemy.maxHp * 100 + '%'; $('enemyHealth').textContent = Math.ceil(enemy.hp) + ' / ' + enemy.maxHp;
     const enemyWall = walls.find(w => w.owner === 'enemy' && w.hp > 0);
-    $('enemyChakra').textContent = Math.floor(aiRules.chakra) + ' CH'; $('enemyShield').textContent = [enemy.invulnerableTime>0?'Ảnh độn '+enemy.invulnerableTime.toFixed(1)+'s':'',enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '',enemySpirit?'Tiên linh '+Math.max(0,enemySpirit.life-(enemySpirit.age<enemySpirit.formation?enemySpirit.formation-enemySpirit.age:0)).toFixed(1)+'s':'',enemyField?'Lôi trận '+enemyField.life.toFixed(1)+'s':'', enemyWall ? (enemyWall.element === 'wind'?'Tường gió ':enemyWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường lửa ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
+    $('enemyChakra').textContent = Math.floor(aiRules.chakra) + ' CH'; $('enemyShield').textContent = [lightArts.status('enemy'),enemy.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='enemy')?'Ảnh độn':'Miễn nhiễm')+' '+enemy.invulnerableTime.toFixed(1)+'s':'',enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '',enemySpirit?'Tiên linh '+Math.max(0,enemySpirit.life-(enemySpirit.age<enemySpirit.formation?enemySpirit.formation-enemySpirit.age:0)).toFixed(1)+'s':'',enemyField?'Lôi trận '+enemyField.life.toFixed(1)+'s':'', enemyWall ? (enemyWall.element === 'wind'?'Tường gió ':enemyWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường lửa ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
     $('battleClock').textContent = Math.floor(battleTime / 60).toString().padStart(2, '0') + ':' + Math.floor(battleTime % 60).toString().padStart(2, '0');
     $('moveHint').textContent = moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'CHUỘT TRÁI: NÉ TRÁI · CHUỘT PHẢI: NÉ PHẢI';
     $('flash').style.opacity = flashTimer * .32; $('hitMarker').style.opacity = hitTimer > 0 ? 1 : 0;
@@ -815,6 +841,14 @@ async function main() {
       [{ owner: 'player', fighter: player, pos: playerPos() }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }],fields);
     darkDomain.visuals(running?dt:0,animationTime,shots);
     windArts.visuals(running?dt:0,animationTime,shots,walls);
+    const opticalSpell=rules.ready()||rules.spells[selected];
+    const placing=running&&['lightprism','lightpillar'].includes(opticalSpell?.style);
+    const opticalPreview=placing?lightArts.placement('player',opticalSpell.style==='lightprism'?'prism':'pillar',playerPos(),aim(),windActors()):null;
+    lightArts.previewTarget(opticalPreview);
+    lightArts.visuals(animationTime,shots,windActors(),walls);
+    hands.lightFinger.visible=started&&!won&&!paused&&rules.ready()?.style==='lightray';
+    if(!placing&&lightArts.optics.some(o=>o.owner==='player'&&o.kind==='disco'&&!o.active)&&['lightray','lightbeam'].includes(rules.ready()?.style))$('message').textContent='Ngước tâm ngắm lên cầu disco tối rồi bắn tia để kích hoạt';
+    if(placing)$('message').textContent=opticalPreview.kind==='prism'?'Lăng kính tự đặt trên đường ngắm · kết ấn rồi Space':['Cột đầu sau địch · nhận tia rồi tỏa quạt phía trước','Cột tiếp theo trước địch, bên trái · nối tia hình sao','Cột tiếp theo trước địch, bên phải · hoàn thành hình sao'][opticalPreview.slot];
   }
   function render() {
     if(!windView)darkDomain.intro.updateCamera(camera3d);
@@ -998,14 +1032,14 @@ async function main() {
     if (started) return;
     const valid = validateLoadout(loadout); if (!valid.ok) { loadoutMessage = valid.reason; renderLoadout(); return; }
     stopSpellVoice();
-    clearWindView();windArts.reset();
+    clearWindView();windArts.reset();lightArts.reset();
     clearDragonView();
     clearMeteorView();
     rules = new GameRules(loadout); player = new Fighter(); enemy = new Fighter();
     darkDomain.reset();
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
     const el = elements[(round - 1) % elements.length], support = elements[(round + 1) % elements.length];
-    aiRules = new GameRules(el.id==='dark'?['dark-domain','dark-orb','dark-lance','dark-volley','dark-reflect']:el.id==='wind'?['wind-orb','wind-lance','wind-volley','wind-barrier','wind-reflect']:[el.id + '-orb', el.id + '-lance', el.id + (el.id === 'fire' ? '-meteor' : '-volley'), support.id==='dark'?'dark-reflect':support.id + '-barrier', support.id + '-reflect'].filter((id,i,list)=>list.indexOf(id)===i));
+    aiRules = new GameRules(el.id==='dark'?['dark-domain','dark-orb','dark-lance','dark-volley','dark-reflect']:el.id==='light'?['light-orb','light-barrier','light-reflect','light-lance','light-volley']:el.id==='wind'?['wind-orb','wind-lance','wind-volley','wind-barrier','wind-reflect']:[el.id + '-orb', el.id + '-lance', el.id + (el.id === 'fire' ? '-meteor' : '-volley'), support.id==='dark'?'dark-reflect':support.id + '-barrier', support.id + '-reflect'].filter((id,i,list)=>list.indexOf(id)===i));
     $('enemyElement').textContent = el.glyph + ' ' + el.name + ' / ' + support.name; $('enemyAction').textContent = 'Đang quan sát…';
     try { localStorage.setItem('anhoa-loadout-v3', JSON.stringify(loadout)); } catch {}
     started = true; paused = false; won = false; selected = 0; score = 0; battleTime = 0; aiTimer = 2.2; aiSpell = null; aiStep = 0; aiCycle = 0; aiCasts = 0; aiCastAge = 99; enemyPose = -1; enemyHit = 0;
@@ -1019,7 +1053,7 @@ async function main() {
   function pause() { if (!started || won) return; paused = true; if (spellVoice) { try { window.speechSynthesis.pause(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
   function resume(event) { paused = false; if (spellVoice) { try { window.speechSynthesis.resume(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
-    clearWindView();windArts.reset();
+    clearWindView();windArts.reset();lightArts.reset();
     darkDomain.reset();
     stopSpellVoice();
     clearDragonView();
@@ -1069,7 +1103,7 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ playerAvatar:{visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, introStage: s.introStage || null, visual: s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, damage:s.damage, rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
+  const state = () => ({ lightArt:lightArts.state(),playerAvatar:{visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.gate.position.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, introStage: s.introStage || null, visual: s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
   window.__AN_HOA__ = { state };
   if(testMode)window.__AN_HOA__.setWindCameraEnabled=enabled=>{windCameraEnabled=!!enabled;if(!enabled)clearWindView();};
   if(testMode)window.__AN_HOA__.setAIEnabled=enabled=>{testAIDisabled=!enabled;};
