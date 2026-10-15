@@ -8,13 +8,13 @@ assert.equal(elements.length, 9); assert.equal(spells.length, 48);
 assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 48);
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
-  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water','lightning','dark'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,element.id==='dark'?1:2);
+  assert.equal(list.filter(s=>s.kind==='attack').length,['fire','water','lightning','dark','earth'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,['dark','earth'].includes(element.id)?1:2);
 }
 for (const spell of spells) {
   const r = new GameRules(loadoutForSpell(spell)); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
   assert.equal(r.ready(),undefined); assert.equal(r.cast().reason,'sequence');
   r.seal(spell.sequence.at(-1));
-  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({windAirborne:true,darkDomain:true,shadowClones:2}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
+  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({earthCrater:true,windAirborne:true,darkDomain:true,shadowClones:2}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
 }
 assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort(),[2,3,4,5,6,8]);
 assert.equal(spells.find(s=>s.id==='wind-reflect').duration,5);
@@ -67,10 +67,10 @@ assert.equal(r.setLoadout(defenseOnly).ok,false); assert.equal(r.loadout.join(',
 const orb=spells.find(s=>s.id==='fire-orb');orb.sequence.forEach(k=>r.seal(k));r.chakra=orb.cost-1;
 assert.equal(r.cast().reason,'chakra');assert.equal(r.sequence.length,orb.sequence.length);r.tick(.2);assert.equal(r.cast().ok,true);
 orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().reason,'cooldown');r.tick(1.1);assert.equal(r.cast().reason,'chakra');r.tick(2);assert.equal(r.cast().ok,true);
-const shield=spells.find(s=>s.id==='earth-barrier'), mirror=spells.find(s=>s.id==='ice-reflect');
-const fighter=new Fighter();fighter.defend(shield);assert.equal(fighter.shield,78);fighter.receive(43);assert.equal(fighter.hp,1000);assert.equal(fighter.shield,35);
-fighter.receive(50);assert.equal(fighter.hp,985);fighter.tick(4.6);assert.equal(fighter.shield,0);
-fighter.defend(mirror);assert.equal(fighter.receive(43).reflected,true);assert.equal(fighter.reflect,0);assert.equal(fighter.hp,985);
+const shield=spells.find(s=>s.id==='fire-barrier'), mirror=spells.find(s=>s.id==='ice-reflect');
+const fighter=new Fighter();fighter.defend(shield);assert.equal(fighter.shield,75);fighter.receive(43);assert.equal(fighter.hp,1000);assert.equal(fighter.shield,32);
+fighter.receive(50);assert.equal(fighter.hp,982);fighter.tick(4.6);assert.equal(fighter.shield,0);
+fighter.defend(mirror);assert.equal(fighter.receive(43).reflected,true);assert.equal(fighter.reflect,0);assert.equal(fighter.hp,982);
 assert.equal(fighter.receive(43).damage,18);fighter.defend(mirror);assert.equal(fighter.receive(43,true).reflected,false);
 fighter.tick(3);assert.equal(fighter.reflect,0);const remaining=fighter.hp;
 assert.equal(fighter.receive(9999).damage,remaining);assert.equal(fighter.hp,1000);

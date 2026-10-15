@@ -10,7 +10,7 @@ Nếu có Node.js, chạy **npm start** rồi mở http://127.0.0.1:4173.
 
 ## Quyển trục trước trận
 
-Có **9 hệ, 48 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa, Thủy và Lôi có 4 chiêu công, 2 chiêu thủ; Ám có 4 chiêu công và 1 chiêu thủ; các hệ còn lại có 3 công, 2 thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ; có thể thay một chiêu công bằng Hỏa cầu.
+Có **9 hệ, 48 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa, Thủy và Lôi có 4 chiêu công, 2 chiêu thủ; Ám và Thổ có 4 chiêu công, 1 chiêu thủ; các hệ còn lại có 3 công, 2 thủ. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ; có thể thay một chiêu công bằng Hỏa cầu.
 
 - Mang **từ 1 đến tối đa 5 chiêu**, có **ít nhất 1 chiêu tấn công**.
 - Tự do phối công/thủ: có thể chọn **5 công**, **4 công + 1 thủ** hoặc **1 công + 4 thủ**. Có thể chọn chiêu thủ trước; nút vào trận chỉ bật khi bộ chiêu có ít nhất một chiêu công.
@@ -112,6 +112,26 @@ Chỉ Ảnh tượng và Ảnh độn cần lãnh địa đã mở. Ảnh tượ
 
 Lãnh địa dùng được cho cả hai bên. Mở mắt vẫn thấy sân đấu và một mái vòm đen 3D trước mặt. Mái vòm bán cầu nở rộng, mực phủ dần đường, cây, cổng, núi và bầu trời. Khi mở xong, lãnh địa bắt đầu tính 30 giây. Thi triển lại làm mới thời gian; hết hạn trả cảnh cũ, kết thúc kéo/lặn và khả năng hồi phân thân, nhưng các phân thân còn sống vẫn đứng chờ ngoài lãnh địa. Tạm dừng đóng băng tất cả hiệu ứng và đồng hồ; đấu lại hoặc về chọn chiêu xóa phân thân, kéo, lặn và khôi phục cảnh. Máy hệ Ám mở lãnh địa, tạo phân thân rồi phát lệnh tấn công.
 
+### Thổ thuật
+
+| Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
+| --- | --- | --- | --- | --- |
+| Thổ Thứ | 2 | A S | 24 | Chạy ngầm với vệt nứt, đất nhô nhẹ và vụn đá dạt sang hai bên theo đường đi; tới đối thủ mới bật cụm gai gây 40 sát thương; để lại gờ đá 3 giây |
+| Địa Ngục Chông | 4 | A S D F | 34 | Phủ chông trong hố Địa Bộc Thiên Tinh của chính bạn; gây 50 sát thương một lần khi địch rơi xuống hoặc bước vào; chông biến mất cùng hố |
+| Sơn Hà Đảo Chuyển | 6 | A S C V Z X | 56 | Địa hình nâng/hạ theo 5 đợt trong 5 giây, mỗi đợt 30 sát thương; còn mô đất và hõm sâu thêm 5 giây |
+| Thổ Bích | 5 | A S Z X C | 32 | Tường đá cong trước mặt, cao 3,2 m, 180 độ bền chung, tồn tại 6 giây; chặn đạn, laser và đường đi; có thể đi vòng |
+| Địa Bộc Thiên Tinh | 8 | A S C V Z X E R | 82 | Ném cầu và nứt đất trong 1 giây; nâng mảng trung tâm trước, đá ngoài bay theo đợt 5 viên cách nhau 0,2 giây, tăng tốc khi gần quả cầu; giam 3 giây gây 80 sát thương, rơi trong 0,65 giây gây 100; hố biến mất 1,5 giây sau cú rơi |
+
+Địa hình thay đổi thật: mặt đất, đường lát đá, cỏ, hoa và đá nhỏ biến dạng theo vùng chiêu; độ cao nhân vật, camera và tốc độ né cùng dùng bề mặt đó. Đòn bay và laser bị địa hình nhô cao chặn. Hết hạn hoặc đấu lại trả bề mặt về trạng thái ban đầu. Vật thể chỉ xuất hiện khi thi triển thành công, không có mô hình xem trước lúc kết ấn.
+
+Địa Bộc Thiên Tinh ném lõi đen theo cung từ tay lên trên vị trí đã ngắm. Khi cầu tới nơi, các vết nứt tỏa ra mặt đất; mảng đất trung tâm nhấc mục tiêu lên trước, rồi các mảnh xung quanh tách khỏi mặt đất và gom thành khối cầu. Đá ngoài được chia thành 20 đợt, mỗi đợt 5 viên, bắt đầu cách nhau 0,2 giây. Mỗi viên tăng tốc liên tục khi bay về quả cầu (vận tốc đầu 10 m/s, gia tốc 42 m/s²), vẫn giữ đường cong và độ xoay riêng để các đợt bay lên từ nhiều hướng. Khối cầu chỉ hoàn thành khi đợt cuối cùng đã tới nơi. Có thể né khỏi vùng hút bán kính 5,5 m trong giây đầu. Người bị bắt bị khóa di chuyển/kết ấn cho tới khi rơi xuống; khiên vẫn hấp thụ sát thương, miễn nhiễm ngăn bắt. Camera theo cầu, hạ xuống vùng đất nứt rồi theo khối đất nâng lên trước khi trở về hướng ngắm. Hố có bán kính 6,5 m, được lấp lại trong 1,5 giây kể từ cú rơi; chông trong hố hết hạn cùng lúc. Các chiêu dùng được cho cả hai bên, gồm AI; tạm dừng đóng băng hiệu ứng, hỗ trợ đồ họa thấp và giảm chuyển động.
+
+Hố bắt đầu dùng được cho Địa Ngục Chông khi đất đá đã gom xong. Có thể đặt chông khi địch còn bị giam để đón cú rơi. Không có hố của mình thì chiêu 4 ấn bị khóa và không tốn chakra. Thổ Thứ chạy ngầm theo hướng đã ngắm, không tự đuổi theo địch né sang bên.
+
+Kết đủ ấn của một chiêu Thổ có thể thi triển sẽ hiện vòng nâu quanh tay, kèm đá vụn nổi và bụi bay. Vòng tắt khi thi triển, xóa/sai/hết hạn chuỗi, tạm dừng hoặc chưa đủ chakra/điều kiện của chiêu.
+
+Giữ năm ID Thổ cũ cho bộ chiêu đã lưu. `earth-lance` nay là Địa Ngục Chông; `earth-reflect` là Địa Bộc Thiên Tinh (chiêu công), còn `earth-barrier` là tường địa hình.
+
 ### Quang thuật
 
 Ánh sáng chủ đạo là **trắng và vàng**. Chỉ laser xuyên qua cầu thủy tinh mới chuyển thành đủ **7 sắc cầu vồng**.
@@ -136,7 +156,7 @@ Cầu thủy tinh, mái vòm và gương **chỉ xuất hiện sau khi bấm SPA
 
 Sát thương vẫn tôn trọng khiên và miễn nhiễm. Cả người chơi và AI dùng bộ chiêu mới. HUD hiển thị thời gian còn lại của cầu, gương và mái vòm. Tạm dừng đóng băng hiệu ứng và camera; đấu lại/về quyển trục xóa toàn bộ. Hỗ trợ đồ họa thấp và giảm chuyển động. Giữ năm ID chiêu cũ để bộ chiêu đã lưu vẫn dùng được, chuỗi ấn được đổi theo bảng trên.
 
-Các hệ Thổ, Mộc và Băng dùng bảng cấp sau:
+Các hệ Mộc và Băng dùng bảng cấp sau:
 
 | Cấp | Số ấn | Loại chiêu | Cách hoạt động |
 | --- | --- | --- | --- |
@@ -195,6 +215,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:lightning:** sáu chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
 - **npm run test:dark:** năm Ám thuật, mái vòm và lãnh địa, chó bóng đứng chờ/nhận lệnh, mỗi lần một con, tối đa ba con mỗi bên, đạn xuyên qua, biến mất/hồi lại trong và ngoài lãnh địa, voi bóng rơi gây 90 sát thương và khóa 2 giây, né hoặc lặn trước khi voi đáp, lặn miễn nhiễm với thao tác bình thường, hai bên và máy, hết hạn, tạm dừng/reset, đồ họa thấp và giảm chuyển động.
 - **npm run test:wind:** năm Phong thuật, combo hất tung 2 + 2 giây, sát thương 70 + 70, tường gió, camera tinh linh, phản liên tục phía trước và theo hướng ngắm, thuyền/sóng đổi hướng, hai bên, tạm dừng/reset/hết hạn, đồ họa thấp, giảm chuyển động và máy nối combo.
+- **npm run test:earth:** luật và trình duyệt cho năm Thổ thuật, địa hình thật, độ cao/chậm bước/khôi phục, gai đá, năm đợt Sơn Hà, tường cong chặn đạn và di chuyển, Địa Bộc Thiên Tinh và góc máy, né/khiên/miễn nhiễm, hai bên/AI, tạm dừng/reset và các chế độ đồ họa; ảnh tại `test-results/earth/`.
 - **npm run test:light:** luật và trình duyệt cho laser trắng–vàng, cầu thủy tinh 8 giây/7 sắc, mái vòm 10 giây/laser nảy/sát thương mỗi giây, gương 2,5 giây/phản đòn, Jacob và góc máy; kiểm tra hai bên, AI, ngắm trượt/tường/khiên/miễn nhiễm, tạm dừng/reset, đồ họa thấp và giảm chuyển động; ảnh tại `test-results/light/`.
 - **npm run test:fire:** kiểm tra sáu chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra sáu chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.

@@ -104,6 +104,8 @@ body.dark-domain .header-center{color:#c3b3e5}
 .spell.domain-locked .spell-title:after{content:' · CẦN LÃNH ĐỊA';font-size:9px;color:#baa2de}
 .spell.combo-locked{opacity:.5}
 .spell.combo-locked .spell-title:after{content:' · CẦN HẤT TUNG';font-size:9px;color:#9fe9ce}
+.spell.crater-locked{opacity:.5}
+.spell.crater-locked .spell-title:after{content:' · CẦN HỐ';font-size:9px;color:#d9ae69}
 .seal[data-key="f"] .thumb{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3Cg%20id%3D%22f%22%20fill%3D%22%23eee8dc%22%20stroke%3D%22%2351483f%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M1%2039H18V66H1%22%2F%3E%3Cpath%20d%3D%22M16%2036H35Q47%2036%2048%2044V61Q48%2069%2037%2069H16Z%22%2F%3E%3Cpath%20d%3D%22M31%2044H47M31%2052H48M31%2060H47%22%20fill%3D%22none%22%2F%3E%3Cpath%20d%3D%22M20%2036Q20%2028%2026%2029L37%2035Q41%2040%2036%2044L25%2040Z%22%2F%3E%3C%2Fg%3E%3C%2Fdefs%3E%3Cuse%20href%3D%22%23f%22%2F%3E%3Cuse%20href%3D%22%23f%22%20transform%3D%22translate(100%200)%20scale(-1%201)%22%2F%3E%3C%2Fsvg%3E");background-size:contain;background-position:center!important;background-repeat:no-repeat}
 @media (min-width:1100px) and (min-height:800px){
   .enemy-status{top:75px;width:240px;padding:8px 12px}

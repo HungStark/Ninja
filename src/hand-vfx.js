@@ -231,14 +231,14 @@ export function createHandLightning(scene) {
 }
 
 // Match the existing hand rings' placement and readiness gate, with a distinct
-// cel palette and motion for wind, shadow and light. Dark ink uses normal alpha
-// blending so its dark band remains visible without bloom.
+// cel palette and motion for each element. Ink and earth use normal alpha
+// blending to preserve their dark colors without bloom.
 export function createHandElement(scene,element) {
-  const kind={wind:0,dark:1,light:2}[element];
+  const kind={wind:0,dark:1,light:2,earth:3}[element];
   if(kind===undefined)throw new Error('Unsupported hand ring: '+element);
-  const colors={wind:'#a7f0cd',dark:'#aa71d5',light:'#ffe7a1'};
+  const colors={wind:'#a7f0cd',dark:'#aa71d5',light:'#ffe7a1',earth:'#b78b57'},opaque=element==='dark'||element==='earth';
   const material=new T.ShaderMaterial({
-    transparent:true,depthWrite:false,blending:element==='dark'?T.NormalBlending:T.AdditiveBlending,
+    transparent:true,depthWrite:false,blending:opaque?T.NormalBlending:T.AdditiveBlending,
     uniforms:{uTime:{value:0},uReducedMotion:{value:0},uKind:{value:kind}},
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:`uniform float uTime;uniform float uReducedMotion;uniform float uKind;varying vec2 vUv;
@@ -278,13 +278,22 @@ export function createHandElement(scene,element) {
           alpha=max(smokeAlpha,max(ink*.62,rimAlpha));
           vec3 soot=mix(vec3(.008,.006,.012),vec3(.055,.041,.066),detail);
           color=mix(soot,vec3(.32,.14,.44),rimAlpha/max(.001,alpha));
-        }else{
+        }else if(uKind<2.5){
           float ring=band(r,1.,.013),outer=band(r,1.10,.008)*.55;
           float angle=a-t*.4;
           float glint=pow(max(0.,cos(angle*12.)),20.);
           float rays=band(r,1.075,.048)*glint;
           alpha=max(ring*.9,max(outer,rays*.8));
           color=mix(vec3(.78,.51,.14),vec3(1.22,1.12,.78),max(ring,glint));
+        }else{
+          vec2 orbit=vec2(cos(a),sin(a));
+          float grain=noise(orbit*18.+vec2(t*.08,-t*.11));
+          float edge=1.+(grain-.5)*.025;
+          float ring=band(r,edge,.014),inner=band(r,.92,.004)*.4;
+          float dust=smokeNoise(p*9.-vec2(t*.17,t*.32));
+          float cloud=(1.-smoothstep(.055,.20,abs(r-1.04)))*smoothstep(.34,.72,dust);
+          alpha=max(max(ring*.85,inner),cloud*.34);
+          color=mix(vec3(.10,.045,.018),vec3(.34,.16,.055),max(ring*.55,dust*.65));
         }
         if(alpha<.015)discard;gl_FragColor=vec4(color,alpha);
         #include <tonemapping_fragment>
@@ -293,18 +302,19 @@ export function createHandElement(scene,element) {
   });
   const mesh=new T.Mesh(new T.PlaneGeometry(1,1),material);
   mesh.name='ReadyHand'+element[0].toUpperCase()+element.slice(1);mesh.renderOrder=10;mesh.visible=false;scene.add(mesh);
-  const count=element==='dark'?32:12,geometry=new T.BufferGeometry();
+  const count=element==='dark'?32:element==='earth'?28:12,geometry=new T.BufferGeometry();
   geometry.setAttribute('position',new T.BufferAttribute(new Float32Array(count*3),3));
   geometry.setAttribute('aLife',new T.BufferAttribute(new Float32Array(count),1));
   const motes=new T.Points(geometry,new T.ShaderMaterial({
-    transparent:true,depthWrite:false,blending:element==='dark'?T.NormalBlending:T.AdditiveBlending,
+    transparent:true,depthWrite:false,blending:opaque?T.NormalBlending:T.AdditiveBlending,
     uniforms:{uColor:{value:new T.Color(colors[element])},uKind:{value:kind},uTime:{value:0}},
     vertexShader:`uniform float uKind;attribute float aLife;varying float vLife;
       void main(){vLife=aLife;vec4 p=modelViewMatrix*vec4(position,1.);
-        float size=uKind>.5&&uKind<1.5?28.+aLife*36.:2.4;
-        gl_PointSize=clamp(size/max(.3,-p.z),1.,uKind>.5&&uKind<1.5?80.:7.);gl_Position=projectionMatrix*p;}`,
+        float size=uKind>2.5?8.+aLife*10.:uKind>.5&&uKind<1.5?28.+aLife*36.:2.4;
+        gl_PointSize=clamp(size/max(.3,-p.z),1.,uKind>2.5?35.:uKind>.5&&uKind<1.5?80.:7.);gl_Position=projectionMatrix*p;}`,
     fragmentShader:`uniform vec3 uColor;uniform float uKind;uniform float uTime;varying float vLife;
       void main(){vec2 p=gl_PointCoord-.5;
+      if(uKind>2.5){float cloud=1.-smoothstep(.08,.48,length(p));gl_FragColor=vec4(uColor,cloud*sin(vLife*3.14159265)*.28);return;}
       if(uKind>.5&&uKind<1.5){
         float a=atan(p.y,p.x),r=length(p);
         float edge=.36+.04*sin(a*5.+uTime*.7+vLife*6.)+.025*cos(a*7.-uTime*.4);
@@ -316,8 +326,15 @@ export function createHandElement(scene,element) {
       float alpha=1.-smoothstep(.1,.48,r);gl_FragColor=vec4(uColor,alpha*(uKind>1.5?.7:.32));}`
   }));
   motes.name=mesh.name+'Motes';motes.frustumCulled=false;motes.visible=false;scene.add(motes);
+  const stones=new T.Group();stones.name=mesh.name+'Stones';stones.visible=false;scene.add(stones);
+  if(element==='earth'){
+    const rockGeometry=new T.DodecahedronGeometry(.009),rockMaterial=new T.MeshBasicMaterial({vertexColors:true,toneMapped:false}),shades=[];
+    for(let i=0;i<rockGeometry.attributes.position.count;i++){const color=new T.Color('#956331').multiplyScalar(.65+(Math.floor(i/3)%6)*.065);shades.push(color.r,color.g,color.b);}
+    rockGeometry.setAttribute('color',new T.Float32BufferAttribute(shades,3));
+    for(let i=0;i<10;i++){const rock=new T.Mesh(rockGeometry,rockMaterial);rock.scale.set(1+(i%3)*.22,.7+(i%2)*.45,.8+(i%4)*.13);stones.add(rock);}
+  }
   const light=new T.PointLight(colors[element],0,1.5,2);light.name=mesh.name+'Light';scene.add(light);
-  function setReady(ready){mesh.visible=motes.visible=!!ready;light.intensity=ready ? .025 : 0;}
+  function setReady(ready){mesh.visible=motes.visible=!!ready;stones.visible=!!ready&&element==='earth';light.intensity=ready ? .025 : 0;}
   function update(time,center,halfWidth,reducedMotion){
     const compact=element!=='light';
     mesh.position.copy(center);mesh.position.y+=compact ? .035 : 0;mesh.position.z+=compact ? -.035 : .08;
@@ -327,16 +344,21 @@ export function createHandElement(scene,element) {
     mesh.scale.set(rx*3,ry*3,1);
     material.uniforms.uTime.value=time;material.uniforms.uReducedMotion.value=Number(reducedMotion);
     if(!mesh.visible)return;
-    const t=time*(reducedMotion ? .12 : 1),speed=element==='wind'?2.1:element==='dark'?-.45:.35;
+    const t=time*(reducedMotion ? .12 : 1),speed=element==='wind'?2.1:element==='dark'?-.45:element==='earth'?.22:.35;
     motes.material.uniforms.uTime.value=t;
     for(let i=0;i<count;i++){
       const life=(t*.38+i*.618)%1;
-      const a=i*Math.PI*2/count+t*speed,radius=element==='light'?1.13:element==='dark'?.98+life*.22:1.035+Math.sin(i+t*1.2)*.055;
-      geometry.attributes.position.setXYZ(i,mesh.position.x+Math.cos(a)*rx*radius,mesh.position.y+Math.sin(a)*ry*radius+(element==='dark'?life*.022:0),mesh.position.z+(compact ? .015 : .02));
+      const a=i*Math.PI*2/count+t*speed,radius=element==='light'?1.13:element==='dark'?.98+life*.22:element==='earth'?.97+life*.3:1.035+Math.sin(i+t*1.2)*.055;
+      geometry.attributes.position.setXYZ(i,mesh.position.x+Math.cos(a)*rx*radius,mesh.position.y+Math.sin(a)*ry*radius+(element==='earth'?life*.065:element==='dark'?life*.022:0),mesh.position.z+(compact ? .015 : .02));
       geometry.attributes.aLife.setX(i,life);
     }
     geometry.attributes.position.needsUpdate=true;
     geometry.attributes.aLife.needsUpdate=true;
+    for(let i=0;i<stones.children.length;i++){
+      const rock=stones.children[i],a=i*2.39996+t*.22+Math.sin(t*.5+i)*.12,r=1.05+Math.sin(t*.7+i)*.065;
+      rock.position.set(mesh.position.x+Math.cos(a)*rx*r,mesh.position.y+Math.sin(a)*ry*r+Math.sin(t+i*1.7)*.009,mesh.position.z+.022+Math.cos(i+t*.3)*.012);
+      rock.rotation.set(t*.35+i,t*.28+i*.7,t*.2);
+    }
   }
-  return {mesh,motes,light,setReady,update};
+  return {mesh,motes,stones,light,setReady,update};
 }

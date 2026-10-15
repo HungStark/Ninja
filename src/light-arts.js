@@ -8,9 +8,10 @@ const basic=(color,opacity=1)=>new T.MeshBasicMaterial({color,opacity,transparen
 
 // Optical objects and ray collisions share the same world geometry.
 export class LightArts {
-  constructor(scene,intersectWall){
+  constructor(scene,intersectWall,intersectTerrain=null){
     this.scene=scene;this.intersectWall=intersectWall;this.optics=[];this.pulses=[];this.flashes=[];this.jacobs=new Map();this.lastPaths=[];this.serial=0;this.reflections=0;this.raycaster=new T.Raycaster();
     this.white=basic('#ffffff');this.gold=basic('#ffdb69');this.soft=basic('#ffe8a5',.24);this.colors=palette.map(c=>basic(c));
+    this.intersectTerrain=intersectTerrain;
     this.geo={tube:new T.CylinderGeometry(1,1,1,10),ring:new T.TorusGeometry(1,.012,5,64),star:new T.OctahedronGeometry(1),sphere:new T.SphereGeometry(1,32,20),mirror:new T.PlaneGeometry(2.2,2.8),dome:new T.SphereGeometry(1,16,6,0,Math.PI*2,0,Math.PI/2)};
     this.glass=new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,
       uniforms:{uTime:{value:0},uMirror:{value:0}},
@@ -90,14 +91,15 @@ export class LightArts {
     const path=[],seen=new Set(),rayRange=range;let pos=[...start],dir=unit(direction),power=1,rayOwner=owner;
     for(let step=0;step<10&&range>EPS;step++){
       let event=null,end=add(pos,mul(dir,range));
+      const terrainPoint=this.intersectTerrain?.(pos,end);if(terrainPoint)event={terrain:true,point:terrainPoint,t:dist(pos,terrainPoint)};
       for(const wall of walls){if(wall.owner===rayOwner||wall.hp<=0||wall.life<=0)continue;const point=this.intersectWall(pos,end,wall);if(point){const t=dist(pos,point);if(!event||t<event.t)event={wall,point,t};}}
       for(const o of this.optics){if(o.life<=0||seen.has(o.id))continue;
         const hit=o.kind==='mirror'?(o.owner!==rayOwner?this.mirrorHit(pos,dir,o,range):null):(o.owner===rayOwner?this.sphereHit(pos,dir,o,range):null);
         if(hit&&(!event||hit.t<event.t))event=hit;
       }
       if(event)end=event.point;
-      path.push({owner:rayOwner,start:[...pos],end:[...end],dir:[...dir],multiplier:power,spectrum:power>1?7:0,event:event?.o?.kind||(event?.wall?'wall':null),optic:event?.o,wall:event?.wall});
-      if(!event||event.wall)break;seen.add(event.o.id);range-=event.t;
+      path.push({owner:rayOwner,start:[...pos],end:[...end],dir:[...dir],multiplier:power,spectrum:power>1?7:0,event:event?.o?.kind||(event?.wall?'wall':event?.terrain?'terrain':null),optic:event?.o,wall:event?.wall});
+      if(!event||event.wall||event.terrain)break;seen.add(event.o.id);range-=event.t;
       if(event.o.kind==='sphere'){power=Math.max(power,event.o.spell.amplification);pos=add(end,mul(dir,EPS));continue;}
       if(event.o.kind==='mirror'){rayOwner=event.o.owner;dir=reflect(dir,event.o.normal);pos=add(end,mul(dir,EPS));range=rayRange;continue;}
       break;

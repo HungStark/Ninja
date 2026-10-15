@@ -87,9 +87,9 @@ const fs = require('node:fs/promises');
       assert.equal((await state()).shots, 1);
     }
     await reset(); await mode('pending'); await cast('earth-barrier');
-    assert.equal((await state()).shield, 78, 'Defense takes effect immediately too');
-    assert.equal((await state()).chakra, 74);
-    assert.equal((await speech()).calls.at(-1).text, 'Thổ thành!');
+    assert.equal((await state()).earthArt.effects.find(e=>e.kind==='wall').hp,180,'Terrain wall takes effect immediately too');
+    assert.equal((await state()).chakra,68);
+    assert.equal((await speech()).calls.at(-1).text, 'Thổ Bích!');
     await page.keyboard.press('Escape'); await click('changeLoadout');
     assert.equal((await state()).shots, 0);
     await click('startButton');

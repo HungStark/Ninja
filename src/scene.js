@@ -1,6 +1,7 @@
 import * as T from "three";
 import { toon, canvasTexture, windyDepth, glowTexture, windTime } from "./materials.js";
 import { inkMaterial, addInkOutline } from './ink-outline.js';
+import { createTerrainGrid, TerrainSurface } from './terrain-surface.js';
 let seed = 1681;
 const rand = () => {
   seed = Math.imul(seed, 1664525) + 1013904223 >>> 0;
@@ -9,7 +10,7 @@ const rand = () => {
 export function createWorld() {
   const scene = new T.Scene();
   scene.fog = new T.FogExp2("#43536a", 9e-3);
-  const animated = [], lanternLights = [];
+  const animated = [], lanternLights = [], terrainMeshes=[], terrainProps=[];
   const mats = { stone: toon("#bdc7af"), darkStone: toon("#657c77"), wood: toon("#85664b"), red: toon("#c55c47"), roof: toon("#364f61"), gold: toon("#e5be79"), grass: toon("#8aaf71"), leaf: toon("#4c936b", { wind: true, side: T.DoubleSide }), pink: toon("#f2b5c8", { wind: true }), ground: toon("#89a67d") };
   const geos = { box: new T.BoxGeometry(1, 1, 1), sphere: new T.SphereGeometry(1, 16, 10), ico: new T.IcosahedronGeometry(1, 1), cylinder: new T.CylinderGeometry(1, 1, 1, 12), cone: new T.ConeGeometry(1, 1, 10) };
   function mesh(geo, mat, p, s = [1, 1, 1], parent = scene) {
@@ -84,15 +85,9 @@ export function createWorld() {
   groundTex.wrapS = groundTex.wrapT = T.RepeatWrapping;
   groundTex.repeat.set(14, 16);
   mats.ground.map = groundTex;
-  const groundGeo = new T.PlaneGeometry(100, 120, 70, 80);
-  groundGeo.rotateX(-Math.PI / 2);
-  const gp = groundGeo.attributes.position;
-  for (let i = 0; i < gp.count; i++) {
-    const x = gp.getX(i), z = gp.getZ(i);
-    gp.setY(i, Math.abs(x) < 15 ? -0.07 : Math.sin(x * 0.21 + z * 0.1) * 0.35 + Math.sin(z * 0.16) * 0.22 - 0.2);
-  }
-  groundGeo.computeVertexNormals();
+  const groundGeo = createTerrainGrid();
   const ground = mesh(groundGeo, mats.ground, [0, 0, -20]);
+  terrainMeshes.push(ground);
   ground.castShadow = false;
   const stoneTex = canvasTexture(256, (c, n) => {
     c.fillStyle = "#d4d8bb";
@@ -129,7 +124,8 @@ export function createWorld() {
   });
   const pathMat = toon("#dedec5", { map: stoneTex });
   for (let z = 11; z > -28; z -= 2.35) for (let x = -1; x <= 1; x++) {
-    const tile = mesh(new T.BoxGeometry(1.87, 0.14, 2.17), pathMat, [x * 1.97, 0.02, z + range(-0.045, 0.045)]);
+    const tile = mesh(new T.BoxGeometry(1.87, 0.14, 2.17,4,1,4), pathMat, [x * 1.97, 0.02, z + range(-0.045, 0.045)]);
+    terrainMeshes.push(tile);
     tile.rotation.y = range(-0.02, 0.02);
     const uv=tile.geometry.attributes.uv,turn=(Math.round(z/2.35)+x+40)%4;
     for(let i=0;i<uv.count;i++){
@@ -147,6 +143,7 @@ export function createWorld() {
     geometry.computeVertexNormals();
     const r = mesh(geometry, toon(color, { flatShading: true }), p, s);
     r.rotation.set(range(-0.2, 0.2), rand() * 6, range(-0.12, 0.12));
+    if(Math.abs(p[0])<27&&p[1]<1&&p[2]>-48)terrainProps.push(r);
     return r;
   }
   for (let i = 0; i < 48; i++) {
@@ -374,5 +371,6 @@ export function createWorld() {
   });
   for(const subject of subjects)outlines.push(addInkOutline(subject,subject.material.userData.wind?leafInk:ink));
   const setInkViewport=(width,height)=>[ink,leafInk].forEach(m=>m.uniforms.viewport.value.set(width,height));
-  return { scene, sky, sun, fill, grass, gate, update, lanternLights, environment, outlines, setInkViewport };
+  const terrain=new TerrainSurface(terrainMeshes,[grass,flowers],terrainProps);
+  return { scene, sky, sun, fill, grass, gate, update, lanternLights, environment, outlines, setInkViewport, terrain };
 }

@@ -13,7 +13,6 @@
     { id: 'ice', name: 'Băng', glyph: '氷', color: '#a6edff', prefix: 'zx', speed: 21, power: 1.04 }
   ];
   const titles = {
-    earth: ['Thổ đạn', 'Thổ thương', 'Thổ liên kích', 'Thổ thành', 'Thổ phản'],
     light: ['Quang cầu', 'Quang thương', 'Quang liên kích', 'Quang thuẫn', 'Quang kính'],
     wood: ['Mộc đạn', 'Mộc thương', 'Mộc liên kích', 'Mộc thành', 'Mộc phản'],
     ice: ['Băng cầu', 'Băng thương', 'Băng liên kích', 'Băng bích', 'Băng kính']
@@ -60,6 +59,13 @@
     {id:'wind-reflect',name:'Tiên linh gió',kind:'defense',style:'windspirit',rank:'SS',sequence:[...'racvzxer'],cost:70,damage:0,count:0,duration:5,formation:1.8,guardWidth:8,guardRange:10,guardHeight:10,subtitle:'Tinh linh toon xuất hiện phía trước mặt · giữ góc nhìn FPS · thổi gió liên tục 5 giây, phản chiêu bay tới từ phía trước'}
   ].map(s=>({...s,element:'wind',glyph:'風',color:'#9fe9ce',heal:0,shield:s.shield||0}));
   // Keep all five saved Light IDs while replacing their spells.
+  const earthSpells = [
+    {id:'earth-orb',name:'Thổ Thứ',kind:'attack',style:'earthspikes',rank:'D',sequence:[...'as'],cost:24,damage:40,count:1,duration:3,range:36,speed:32,subtitle:'Chạy ngầm làm đất nứt và nhô nhẹ, tới đối thủ mới bật gai · 40 sát thương · để lại gờ đá trong 3 giây'},
+    {id:'earth-lance',name:'Địa Ngục Chông',kind:'attack',style:'earthcraterspikes',rank:'B',sequence:[...'asdf'],cost:34,damage:50,count:1,radius:5,requiresCrater:true,subtitle:'Cần hố Địa Bộc Thiên Tinh của bạn · phủ chông dưới đáy hố tới khi hố biến mất · 50 sát thương một lần khi chạm chông'},
+    {id:'earth-volley',name:'Sơn Hà Đảo Chuyển',kind:'attack',style:'earthquake',rank:'S',sequence:[...'ascvzx'],cost:56,damage:30,count:5,duration:5,residualTime:5,radius:5.8,subtitle:'Địa hình nhấp nhô 5 đợt trong 5 giây · mỗi đợt 30 sát thương · địa hình gồ ghề còn lại 5 giây'},
+    {id:'earth-barrier',name:'Thổ Bích',kind:'defense',style:'earthwall',rank:'A',sequence:[...'aszxc'],cost:32,damage:0,count:0,duration:6,shield:180,wallWidth:7,wallHeight:3.2,subtitle:'Tường đá cong trước mặt · chặn đạn và đường đi · 180 độ bền, nứt dần trong 6 giây'},
+    {id:'earth-reflect',name:'Địa Bộc Thiên Tinh',kind:'attack',style:'earthgravity',rank:'SS',sequence:[...'ascvzxer'],cost:82,damage:180,count:1,chargeTime:1,pullTime:5.4,pullSpeed:10,pullAcceleration:42,liftBatchSize:5,liftBatchInterval:.2,holdTime:3,fallTime:.65,craterTime:1.5,radius:5.5,craterRadius:6.5,captureDamage:80,fallDamage:100,subtitle:'Ném lõi đen, nứt đất, nâng mảng trung tâm rồi gom từng đợt đá · giam 3 giây, gây 80 rồi 100 khi rơi · hố biến mất 1,5 giây sau khi địch rơi'}
+  ].map(s=>({...s,element:'earth',glyph:'土',color:'#d9ae69',heal:0,shield:s.shield||0}));
   const lightSpells = [
     {id:'light-orb',name:'Quang laser',kind:'attack',style:'lightray',rank:'D',sequence:[...'sd'],cost:24,damage:40,count:1,chargeTime:.08,range:55,subtitle:'Tia laser thẳng trắng–vàng · 40 sát thương; qua cầu thủy tinh thành 7 sắc và 70 sát thương'},
     {id:'light-barrier',name:'Cầu thủy tinh',kind:'defense',style:'lightsphere',rank:'S',sequence:[...'sdcvzx'],cost:32,damage:0,count:0,duration:8,amplification:1.75,subtitle:'Cầu trong suốt ngay trước mặt, tồn tại 8 giây · laser xuyên qua thành tia 7 sắc cầu vồng, tăng 75% sát thương'},
@@ -74,7 +80,7 @@
     { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · mở khóa voi bóng và lặn, phân thân bị đánh sẽ trồi lên lại' },
     { id:'dark-reflect', name:'Ảnh độn', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfzxc'], cost:32, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
   ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:0,requiresDomain:!!s.requiresDomain}));
-  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'wind' ? windSpells : el.id === 'light' ? lightSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
+  const spells = elements.flatMap(el => el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'wind' ? windSpells : el.id === 'earth' ? earthSpells : el.id === 'light' ? lightSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
     damage: Math.round(v.damage * el.power), sequence: [...el.prefix, ...v.suffix],
@@ -119,6 +125,7 @@
       if (spell.requiresDomain && !context.darkDomain) return { ok: false, reason: 'domain' };
       if (spell.requiresClones && !context.shadowClones) return { ok:false, reason:'clones' };
       if (spell.requiresAirborne && !context.windAirborne) return {ok:false,reason:'airborne'};
+      if (spell.requiresCrater && !context.earthCrater) return {ok:false,reason:'crater'};
       if (spell.style==='shadowclone' && context.shadowCloneCount>=spell.maxClones && !context.shadowUpgrades) return {ok:false,reason:'cloneLimit'};
       if (this.cooldown > 0) return { ok: false, reason: 'cooldown' };
       if (this.chakra < spell.cost) return { ok: false, reason: 'chakra' };
@@ -126,11 +133,11 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; }
-    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime);}
+    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; }
+    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime);}
     set controlTime(value){this.waterControlTime=value;}
-    get controlSource(){return this.windControlTime>0&&this.windControlTime>=Math.max(this.waterControlTime,this.darkControlTime)?'Phong lốc':this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh tượng':'Thủy ngục';}
-    tick(dt) { this.waterControlTime = Math.max(0, this.waterControlTime - dt); this.darkControlTime=Math.max(0,this.darkControlTime-dt);this.windControlTime=Math.max(0,this.windControlTime-dt);this.invulnerableTime=Math.max(0,this.invulnerableTime-dt);this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
+    get controlSource(){return this.earthControlTime>0&&this.earthControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime)?'Địa Bộc Thiên Tinh':this.windControlTime>0&&this.windControlTime>=Math.max(this.waterControlTime,this.darkControlTime)?'Phong lốc':this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh tượng':'Thủy ngục';}
+    tick(dt) { this.waterControlTime = Math.max(0, this.waterControlTime - dt); this.darkControlTime=Math.max(0,this.darkControlTime-dt);this.windControlTime=Math.max(0,this.windControlTime-dt);this.earthControlTime=Math.max(0,this.earthControlTime-dt);this.invulnerableTime=Math.max(0,this.invulnerableTime-dt);this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
     receive(damage, reflected = false, ignoreShield=false) {
       if(this.invulnerableTime>0)return {damage:0,absorbed:0,reflected:false,restored:false,immune:true};
@@ -160,7 +167,8 @@
     const t = a / (a - b), point = start.map((v, i) => v + (end[i] - v) * t);
     const across = (point[0] - wall.p[0]) * -wall.normal[2] + (point[2] - wall.p[2]) * wall.normal[0];
     if (wall.radius) return Math.hypot(across, point[1] - wall.p[1]) <= wall.radius ? point : null;
-    return Math.abs(across) <= wall.width / 2 && point[1] >= 0 && point[1] <= wall.height ? point : null;
+    const bottom=wall.p[1]||0;
+    return Math.abs(across) <= wall.width / 2 && point[1] >= bottom && point[1] <= bottom+wall.height ? point : null;
   }
   // Sweep in the wave's frame to catch crossing projectiles, regardless of their speed or owner.
   function intersectsWave(start, end, waveStart, waveEnd, normal, width, height, padding = 0, depth = 2.4) {

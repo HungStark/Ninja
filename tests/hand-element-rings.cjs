@@ -14,12 +14,13 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
     const expect=async element=>{const s=await state();for(const [e,r] of Object.entries(s.handElementRings)){assert.equal(r.visible,e===element,e+' ring');assert.equal(r.motes,e===element,e+' motes');}assert.equal(s.handFlames,false);assert.equal(s.handWater,false);assert.equal(s.handLightning,false);};
     const capture=async name=>page.screenshot({path:output+'/'+name+'.png'});
     await page.goto('file:///'+path.join(process.cwd(),'index.html').replaceAll('\\','/')+'?test=1');await page.waitForFunction(()=>document.body.dataset.ready==='true',null,{timeout:60000});await click('soundButton');await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));
-    for(const element of ['wind','dark','light']){
+    for(const element of ['wind','dark','light','earth']){
       const ids=await page.evaluate(e=>SealGameCore.spells.filter(s=>s.element===e).map(s=>s.id),element);await equip(ids);await expect(null);
       for(const id of ids){
         await reset();const spell=await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id),id);
         if(spell.requiresDomain){await seal(id);await expect(null);await clear();await page.evaluate(()=>__AN_HOA__.launchEnemy('dark-domain'));await advance(2.5);assert.equal((await state()).darkDomain.usable,true);}
         if(spell.requiresClones){await seal(id);await expect(null);await cast('dark-orb');await advance(1.05);}
+        if(spell.requiresCrater){await seal(id);await expect(null);await clear();await cast('earth-reflect');const g=(await state()).earthArt.effects.find(e=>e.kind==='gravity');await advance(g.formationEndsAt-g.age+.1);}
         if(spell.requiresAirborne){await seal(id);await expect(null);await cast('wind-volley');await advance(1.5);assert.ok((await state()).enemyControlTime>0);}
         await clear();await page.keyboard.press(spell.sequence[0]);await expect(null);
         for(const k of spell.sequence.slice(1))await page.keyboard.press(k);await expect(element);await advance(.32);await expect(element);await clear();await expect(null);
@@ -36,9 +37,9 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
       await reset();while((await state()).quality!=='Thấp')await click('qualityButton');await seal(basic);await advance(.32);await expect(element);await capture(element+'-low');await clear();
     }
     // Selecting a spell from a different element must replace, rather than stack, rings.
-    await equip(['wind-orb','dark-orb','light-orb']);for(const e of ['wind','dark','light']){await seal(e+'-orb');await expect(e);}await clear();await expect(null);
+    await equip(['wind-orb','dark-orb','light-orb','earth-orb']);for(const e of ['wind','dark','light','earth']){await seal(e+'-orb');await expect(e);}await clear();await expect(null);
     await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await page.waitForFunction(()=>document.body.dataset.ready==='true',null,{timeout:60000});await click('soundButton');await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));await click('startButton');
-    for(const e of ['wind','dark','light']){await seal(e+'-orb');await advance(.32);await expect(e);assert.equal((await state()).handElementRings[e].reducedMotion,1);await capture(e+'-reduced-motion');await clear();}
-    assert.deepEqual(errors,[]);await fs.writeFile(output+'/verification.json',JSON.stringify({passed:true,elements:['wind','dark','light'],checks:['all fifteen spells','incomplete seals','domain/clone/airborne gates','ready ring follows hands','animated rings','pause/resume','casting/cooldown','chakra recovery','wrong/expired seals','reset','switching elements','low quality','reduced motion'],errors},null,2));console.log('PASS: wind, dark and light readiness rings, all 15 spells, prerequisite gates, animation, cast/cooldown/chakra, pause/reset, element switching, graphics and reduced motion.');
+    for(const e of ['wind','dark','light','earth']){await seal(e+'-orb');await advance(.32);await expect(e);assert.equal((await state()).handElementRings[e].reducedMotion,1);await capture(e+'-reduced-motion');await clear();}
+    assert.deepEqual(errors,[]);await fs.writeFile(output+'/verification.json',JSON.stringify({passed:true,elements:['wind','dark','light','earth'],checks:['all twenty spells','incomplete seals','domain/clone/airborne/crater gates','ready ring follows hands','animated rings','pause/resume','casting/cooldown','chakra recovery','wrong/expired seals','reset','switching elements','low quality','reduced motion'],errors},null,2));console.log('PASS: wind, dark, light and earth readiness rings, all 20 spells, prerequisite gates, animation, cast/cooldown/chakra, pause/reset, element switching, graphics and reduced motion.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
