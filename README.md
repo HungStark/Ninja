@@ -142,13 +142,13 @@ Cầu thủy tinh, mái vòm và gương **chỉ xuất hiện sau khi bấm SPA
 | --- | --- | --- | --- | --- |
 | Quang laser | 2 | S D | 24 | Một tia thẳng trắng–vàng, 40 sát thương; tích sáng 0,08 giây |
 | Cầu thủy tinh | 6 | S D C V Z X | 32 | Cầu trong suốt cách mặt 3 m, tồn tại 8 giây; laser xuyên qua thành 7 sắc và 70 sát thương |
-| Mái vòm gương | 6 | S D Z X C V | 54 | Mái vòm gương bán kính 3,8 m quanh điểm ngắm, tồn tại 10 giây; giữ tia 7 sắc và cộng dồn các laser |
+| Mái vòm gương | 8 | S D C V Z X S D | 54 | 96 tấm gương rơi ghép vòm trong 1,2 giây; bán kính 6,2 m, đủ 3 nhịp né mỗi phía; giữ địch bên trong, vòm kín tồn tại 10 giây |
 | Quang kính | 5 | S D Z X C | 28 | Gương cách mặt 2,4 m, tồn tại 2,5 giây; phản đòn bay tới từ phía trước, kể cả laser |
-| Nấc thang của Jacob | 8 | S D C V Z X S D | 82 | Cột sáng giáng từ trời xuống điểm ngắm, 160 sát thương trong bán kính 3,5 m |
+| Nấc thang của Jacob | 6 | S D Z X C V | 82 | Cột sáng giáng từ trời xuống điểm ngắm, 160 sát thương trong bán kính 3,5 m |
 
 **Cầu thủy tinh:** laser phải thực sự xuyên qua cầu của bên thi triển mới được tăng 75% sát thương. Phần tia trước cầu vẫn trắng–vàng; từ cầu trở đi là bảy dải màu. Cầu giữ vị trí lúc tạo. Mỗi bên có một cầu; tạo lại thay cầu cũ.
 
-**Mái vòm gương:** không tự gây sát thương. Bắn laser vào vòm của mình để giữ tia bên trong. Tia phản xạ theo các mặt gương và nền, liên tục nảy cho tới khi vòm biến mất. Mỗi tia bị giữ gây 20 sát thương mỗi giây, hoặc 35 nếu đã đi qua cầu thủy tinh. Màu và sức mạnh của tia đã giữ không mất khi cầu thủy tinh hết hạn. Các laser bắn thêm được giữ riêng và cộng dồn sát thương: hai tia thường gây 40/giây, hai tia 7 sắc gây 70/giây, một tia thường và một tia 7 sắc gây 55/giây. Mỗi bên chỉ có một mái vòm. Mục tiêu có thể né ra khỏi vùng vòm để tránh sát thương. Tường nằm trước vòm chặn laser và ngăn kích hoạt.
+**Mái vòm gương:** các tấm gương rơi từ trên cao, xoay và ghép lần lượt từ chân vòm lên đỉnh trong 1,2 giây. Vành chân đánh dấu vùng và chặn mục tiêu đi ra ngoài ngay khi bắt đầu dựng; phạm vi cho phép 3 nhịp né (5,4 m) về mỗi phía. Sau khi ghép kín mới bắt laser, rồi tồn tại đủ 10 giây. Bản thân vòm không gây sát thương. Bắn laser vào vòm kín của mình để giữ tia bên trong. Tia phản xạ theo các mặt gương và nền, liên tục nảy cho tới khi vòm biến mất. Mỗi tia bị giữ gây 20 sát thương mỗi giây, hoặc 35 nếu đã đi qua cầu thủy tinh. Màu và sức mạnh của tia đã giữ không mất khi cầu thủy tinh hết hạn. Các laser bắn thêm được giữ riêng và cộng dồn sát thương: hai tia thường gây 40/giây, hai tia 7 sắc gây 70/giây, một tia thường và một tia 7 sắc gây 55/giây. Mỗi bên chỉ có một mái vòm. Mục tiêu có thể di chuyển trong vòm nhưng không vượt qua thành; hết hạn hoặc thay vòm sẽ giải phóng đường đi. Tường nằm trước vòm chặn laser và ngăn kích hoạt.
 
 **Quang kính:** gương đặt cố định theo hướng ngắm lúc tạo, rộng 2,2 m và cao 2,8 m. Các đòn bay tới từ phía trước và chạm mặt gương được phản lại theo góc tới, đổi bên gây sát thương; đạn đi ngoài gương hoặc từ sau lưng không bị phản. Gương không tiêu hao sau một lần phản, nhưng chỉ tồn tại 2,5 giây. Laser trực tiếp cũng bị gương phản. Các đòn giáng từ trời không bay qua gương trước mặt.
 

@@ -11,15 +11,16 @@ let actors,walls,hits;
 const setup=()=>{arts.reset();walls=[];hits=[];actors=[{owner:'player',pos:[0,1.72,0],dir:[0,0,-1],fighter:new Fighter()},{owner:'enemy',pos:[0,1.72,-15],dir:[0,0,1],fighter:new Fighter()}];};
 const damage=(s,p)=>{hits.push({...s});return actors.find(a=>a.owner!==s.owner).fighter.receive(s.damage,true);};
 const advance=t=>{for(let age=0;age<t-1e-9;age+=1/60)arts.advance(Math.min(1/60,t-age),actors,walls,damage);};
-const place=(id,owner='player')=>{const a=actors.find(a=>a.owner===owner);return arts.place(owner,spell(id),a.pos,a.dir,actors);};
+const place=(id,owner='player',finish=true)=>{const a=actors.find(a=>a.owner===owner),o=arts.place(owner,spell(id),a.pos,a.dir,actors);if(o.kind==='dome'&&finish)advance(o.buildTime);return o;};
 const fire=(owner='player')=>{const a=actors.find(a=>a.owner===owner);arts.fire(owner,spell('light-orb'),a.pos,a.dir);advance(.1);};
-assert.deepEqual(Array.from(spells.filter(s=>s.element==='light').map(s=>s.sequence.length)),[2,6,6,5,8]);
+assert.deepEqual(Array.from(spells.filter(s=>s.element==='light').map(s=>s.sequence.length)),[2,6,8,5,6]);
 assert.equal(spell('light-barrier').duration,8);assert.equal(spell('light-lance').duration,10);assert.equal(spell('light-reflect').duration,2.5);
 for(const id of ['light-barrier','light-lance','light-reflect']){
-  setup();const optic=place(id);advance(spell(id).duration-.01);assert.ok(arts.optics.includes(optic),id+' remains until its full lifetime');close(optic.life,.01);
+  setup();const optic=place(id,'player',false);advance(spell(id).duration+(optic.buildTime||0)-.01);assert.ok(arts.optics.includes(optic),id+' remains until its full lifetime');close(optic.life,.01);
   advance(.01);assert.ok(!arts.optics.includes(optic),id+' expires at its exact lifetime');
 }
-assert.equal(spell('light-lance').sequence.join(''),'sdzxcv');assert.equal(spell('light-lance').domeRadius,3.8);
+assert.equal(spell('light-lance').sequence.join(''),'sdcvzxsd');assert.equal(spell('light-lance').domeRadius,6.2);
+setup();const assembly=place('light-lance','player',false);assert.equal(arts.domeReady(assembly),false);assert.equal(arts.state().domes[0].landedPanels,0);assert.equal(assembly.assembly.panels.length,96);advance(.45);arts.visuals(.45,[],actors);assert.ok(assembly.assembly.panels.some(p=>p.part.visible&&p.part.position.y>p.target.y+2));assert.equal(arts.state().domes[0].landedPanels,0);fire();assert.equal(assembly.rays.length,0,'Unassembled roof cannot trap lasers');close(actors[1].fighter.hp,960);advance(assembly.buildTime-assembly.age);assert.equal(arts.domeReady(assembly),true);assert.equal(arts.state().domes[0].landedPanels,96);close(assembly.life,10);arts.visuals(1.2,[],actors);assert.ok(assembly.assembly.panels.every(p=>p.part.position.distanceTo(p.target)<1e-6));fire();assert.equal(assembly.rays.length,1);
 setup();fire();close(actors[1].fighter.hp,960);assert.equal(hits.length,1);assert.equal(arts.lastPaths[0].spectrum,0);
 setup();actors[0].dir=[1,0,0];fire();assert.equal(hits.length,0,'Laser must be aimed at the target');
 setup();const sphere=place('light-barrier');close(sphere.center[2],-3);fire();close(actors[1].fighter.hp,930);assert.equal(arts.lastPaths.at(-1).spectrum,7);assert.equal(arts.lastPaths.at(-1).multiplier,1.75);
@@ -51,7 +52,7 @@ for(const powers of [[1,1],[1.75,1.75],[1.75,1]]){
   arts.visuals(2,[],actors);if(powers.some(p=>p>1))assert.ok(arts.colors.every(material=>stacked.root.userData.lines.some(m=>m.visible&&m.material===material)),'Render all seven colors while bouncing');
   advance(stacked.life+.01);const hp=actors[1].fighter.hp;assert.equal(arts.optics.length,0);advance(1);close(actors[1].fighter.hp,hp,'All stacked laser damage stops with the dome');
 }
-setup();const escape=place('light-lance');fire();actors[1].pos[0]=8;advance(3);close(actors[1].fighter.hp,1000,'Leaving the stationary dome dodges ticking damage');
+setup();const escape=place('light-lance');fire();const origin=[...actors[1].pos];for(const sign of [-1,1]){const three=arts.constrainMovement('enemy',origin,[sign*5.4,1.72,-15]);close(three[0],sign*5.4);const beyond=arts.constrainMovement('enemy',origin,[sign*20,1.72,-15]);assert.ok(Math.abs(beyond[0])>5.4&&Math.abs(beyond[0])<6.2,'Wall allows three dodge cells and blocks escape');}actors[1].pos=arts.constrainMovement('enemy',origin,[8,1.72,-15]);advance(3);close(actors[1].fighter.hp,940,'Trapped enemy keeps taking laser damage after moving to the wall');advance(escape.life);close(arts.constrainMovement('enemy',actors[1].pos,[8,1.72,-15])[0],8,'Movement is freed at expiry');
 setup();place('light-lance');walls.push({owner:'enemy',p:[0,0,-5],normal:[0,0,1],width:8,height:5,hp:110,life:5});fire();assert.equal(arts.optics[0].rays.length,0);advance(2);close(actors[1].fighter.hp,1000);
 setup();place('light-lance','enemy');fire('enemy');advance(1);close(actors[0].fighter.hp,980);close(actors[1].fighter.hp,1000);
 setup();const mirror=place('light-reflect');fire('enemy');close(actors[0].fighter.hp,1000);close(actors[1].fighter.hp,960);assert.equal(mirror.reflections,1);assert.equal(arts.lastPaths.at(-1).owner,'player');

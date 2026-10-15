@@ -137,7 +137,7 @@ async function main() {
   function spellMarkup(spell, i, preparation = false) {
     if (!preparation) return '<button class="spell ' + (i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-spell="' + i + '"><div class="spell-title">' + spell.name + '</div><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></button>';
     const taken = loadout.includes(spell.id), kind = spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 40 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 30 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'180 độ bền · tường cong 6 giây · chặn đường',earthgravity:'80 khi giam + 100 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 40 / 70 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'6 ấn · 10 giây · 20 / 35 sát thương mỗi laser/giây · cộng dồn',lightmirror:'2,5 giây · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 160 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa voi bóng và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 38, nâng thành bò 57':spell.style==='shadowcommand'?'Chó 38 / bò 57 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
+    const stats = spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 40 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 30 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'180 độ bền · tường cong 6 giây · chặn đường',earthgravity:'80 khi giam + 100 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 40 / 70 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'Gương rơi ghép vòm · 3 ô né · 10 giây · laser cộng dồn',lightmirror:'2,5 giây · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 160 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa voi bóng và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 38, nâng thành bò 57':spell.style==='shadowcommand'?'Chó 38 / bò 57 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : '');
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spell.glyph + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · CẤP ' + spell.rank + ' · ' + spell.sequence.length + ' ẤN · ' + spell.cost + ' CH</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -795,7 +795,7 @@ async function main() {
       const remaining = moveTargetX - camera.p[0];
       moveDirection = player.controlTime <= 0 && Math.abs(remaining) > .001 ? Math.sign(remaining) : 0;
       const goal=[camera.p[0]+moveDirection*Math.min(Math.abs(remaining),10*dt*earthArts.slowAt(camera.p[0],camera.p[2])),playerPos()[1],camera.p[2]];
-      camera.p[0]=earthArts.move(playerPos(),goal)[0];
+      camera.p[0]=lightArts.constrainMovement('player',playerPos(),earthArts.move(playerPos(),goal))[0];
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
       lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;},shot=>darkDomain.intercept(shot),(owner,p,r)=>darkDomain.blastClones(owner,p,r));
       updateAI(dt); updateShots(dt);
@@ -873,7 +873,7 @@ async function main() {
     hands.lightFinger.visible=started&&!won&&!paused&&rules.ready()?.style==='lightray';
     const readyLightStyle=running?rules.ready()?.style:null;
     if(readyLightStyle==='lightray'&&lightArts.optics.some(o=>o.owner==='player'&&o.kind==='dome'&&!o.rays.length))$('message').textContent='Bắn laser vào mái vòm để tia nảy và gây sát thương mỗi giây';
-    const opticalHint={lightsphere:'SPACE tạo cầu thủy tinh trước mặt · 8 giây · laser xuyên qua thành 7 sắc',lightdome:'SPACE tạo mái vòm · 10 giây · giữ tia 7 sắc, cộng dồn mọi laser',lightmirror:'SPACE tạo gương trước mặt · phản đòn phía trước trong 2,5 giây'}[readyLightStyle];
+    const opticalHint={lightsphere:'SPACE tạo cầu thủy tinh trước mặt · 8 giây · laser xuyên qua thành 7 sắc',lightdome:'SPACE gọi gương rơi ghép vòm · đủ 3 ô né · chặn thoát · vòm kín 10 giây',lightmirror:'SPACE tạo gương trước mặt · phản đòn phía trước trong 2,5 giây'}[readyLightStyle];
     if(opticalHint)$('message').textContent=opticalHint;
   }
   function render() {
@@ -889,6 +889,7 @@ async function main() {
     }
   }
   function setEarthActorPosition(owner,p){
+    p=lightArts.constrainMovement(owner,owner==='player'?playerPos():enemyPos(),p);
     if(owner==='player'){camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}
     else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}
   }

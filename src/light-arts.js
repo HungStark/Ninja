@@ -4,6 +4,7 @@ const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),len=a=>Math.hypot(...a),unit=a=>m
 const reflect=(d,n)=>unit(sub(d,mul(n,2*dot(d,n))));
 const up=new T.Vector3(0,1,0),forward=new T.Vector3(0,0,1),EPS=.015;
 const palette=['#ff3549','#ff962b','#ffe84c','#59ed83','#48ddff','#5264ff','#bb65ff'];
+const clamp=v=>Math.max(0,Math.min(1,v)),ease=v=>{v=clamp(v);return v*v*(3-2*v);};
 const basic=(color,opacity=1)=>new T.MeshBasicMaterial({color,opacity,transparent:opacity<1,depthWrite:opacity===1,side:T.DoubleSide,toneMapped:false});
 
 // Optical objects and ray collisions share the same world geometry.
@@ -23,12 +24,39 @@ export class LightArts {
           float alpha=mix(.018+edge*.24+shine*.055,.25+shine*.24,uMirror);
           gl_FragColor=vec4(color,alpha);}`});
     this.mirrorGlass=this.glass.clone();this.mirrorGlass.uniforms.uMirror.value=1;
+    this.domeGlass=this.glass.clone();this.domeGlass.uniforms.uMirror.value=.16;
     this.edgeMat=new T.LineBasicMaterial({color:'#fff1b5',transparent:true,opacity:.48,toneMapped:false});
     this.domeEdges=new T.EdgesGeometry(this.geo.dome,1);this.mirrorEdges=new T.EdgesGeometry(this.geo.mirror);
   }
   group(){const g=new T.Group();this.scene.add(g);return g;}
   mesh(parent,geometry,material,p=[0,0,0],scale=[1,1,1]){const m=new T.Mesh(this.geo[geometry],material);m.position.fromArray(p);m.scale.fromArray(scale);parent.add(m);return m;}
   line(m,a,b,r=.035){const d=sub(b,a);m.position.fromArray(mul(add(a,b),.5));m.scale.set(r,len(d),r);m.quaternion.setFromUnitVectors(up,new T.Vector3(...unit(d)));m.visible=len(d)>.001;}
+  domeModel(parent,radius,buildTime){
+    const model=new T.Group();parent.add(model);const panels=[],geometries=[],rows=6,columns=16;
+    const point=(theta,phi)=>new T.Vector3(-radius*Math.cos(phi)*Math.sin(theta),radius*Math.cos(theta),radius*Math.sin(phi)*Math.sin(theta));
+    for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
+      const theta=row/rows*Math.PI/2,next=(row+1)/rows*Math.PI/2,phi=col/columns*Math.PI*2,end=(col+1)/columns*Math.PI*2;
+      const corners=row===0?[point(theta,phi),point(next,phi),point(next,end)]:[point(theta,phi),point(theta,end),point(next,phi),point(next,end)];
+      const target=corners.reduce((sum,p)=>sum.add(p),new T.Vector3()).multiplyScalar(1/corners.length),vertices=corners.flatMap(p=>p.clone().sub(target).toArray());
+      const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geometry.setIndex(row===0?[0,1,2]:[0,2,1,2,3,1]);geometry.computeVertexNormals();
+      const frame=new T.EdgesGeometry(geometry,1),part=new T.Group();model.add(part);part.add(new T.Mesh(geometry,this.domeGlass));part.add(new T.LineSegments(frame,this.edgeMat));geometries.push(geometry,frame);
+      const seed=row*31+col*17,fallTime=buildTime*.52,delay=(rows-1-row)*buildTime*.068+(col*7%columns)/columns*buildTime*.1;
+      const offset=new T.Vector3(Math.sin(seed*1.7)*1.5,13+(seed%5)*.8,Math.cos(seed*2.3)*1.5),rotation=new T.Quaternion().setFromEuler(new T.Euler(Math.sin(seed)*.6,Math.cos(seed*1.3)*.45,Math.sin(seed*.7)*.45));
+      part.position.copy(target).add(offset);part.quaternion.copy(rotation);part.visible=false;panels.push({part,target,offset,rotation,delay,fallTime});
+    }
+    const rim=this.mesh(model,'ring',this.gold,[0,.05,0],[radius,radius,radius]);rim.rotation.x=-Math.PI/2;rim.visible=false;
+    return {model,panels,geometries,rim};
+  }
+  domeReady(o){return o.kind!=='dome'||o.age+1e-6>=o.buildTime;}
+  constrainMovement(owner,start,end){
+    let result=[...end];
+    for(const o of this.optics){if(o.kind!=='dome'||o.life<=0||!o.trapped.has(owner))continue;
+      // The ground rim seals the enclosure while the roof panels descend.
+      const bodyHeight=Math.max(1.72,Math.min(2,result[1]-o.center[1])),inner=o.radius*Math.cos(Math.PI/16)-.35,limit=Math.sqrt(Math.max(0,inner*inner-bodyHeight*bodyHeight));
+      const dx=result[0]-o.center[0],dz=result[2]-o.center[2],distance=Math.hypot(dx,dz);if(distance>limit){result[0]=o.center[0]+dx/distance*limit;result[2]=o.center[2]+dz/distance*limit;}
+    }
+    return result;
+  }
   model(parent,kind,radius=.8){
     const g=new T.Group();parent.add(g);
     if(kind==='sphere'){
@@ -49,7 +77,7 @@ export class LightArts {
     if(kind==='dome'){
       const victim=actors.find(a=>a.owner!==owner),delta=victim&&sub(victim.pos,pos),along=delta&&dot(delta,normal);
       const aimed=victim&&along>0&&dist(add(pos,mul(normal,along)),victim.pos)<2.5;
-      center=aimed?[victim.pos[0],.03,victim.pos[2]]:add(pos,mul(normal,dir[1]<-.025?Math.min(55,Math.max(6,-pos[1]/dir[1])):31));center[1]=.03;radius=3.8;
+      center=aimed?[victim.pos[0],.03,victim.pos[2]]:add(pos,mul(normal,dir[1]<-.025?Math.min(55,Math.max(6,-pos[1]/dir[1])):31));center[1]=.03;radius=6.2;
     }else{center=add(pos,mul(normal,kind==='sphere'?3:2.4));radius=kind==='sphere'?.8:1.4;}
     return {owner,kind,center,normal,radius};
   }
@@ -57,19 +85,21 @@ export class LightArts {
     const kind={lightsphere:'sphere',lightdome:'dome',lightmirror:'mirror'}[spell.style];if(!kind)throw new Error('Unknown light optic: '+spell.style);
     const data=this.placement(owner,kind,pos,dir,actors);if(kind==='dome')data.radius=spell.domeRadius;
     for(const o of [...this.optics])if(o.owner===owner&&o.kind===kind)this.remove(this.optics,o);
-    const root=this.rayRoot();this.model(root,kind,data.radius);root.position.fromArray(data.center);
+    const root=this.rayRoot(),buildTime=kind==='dome'?spell.domeBuildTime:0,assembly=kind==='dome'?this.domeModel(root,data.radius,buildTime):null;if(!assembly)this.model(root,kind,data.radius);root.position.fromArray(data.center);
     if(kind==='mirror')root.quaternion.setFromUnitVectors(forward,new T.Vector3(...data.normal));
-    const o={...data,id:++this.serial,spell,root,life:spell.duration,age:0,rays:[],reflections:0};
+    const o={...data,id:++this.serial,spell,root,life:spell.duration+buildTime,age:0,buildTime,assembly,trapped:new Set(),rays:[],reflections:0};
+    if(kind==='dome')for(const actor of actors)if(actor.owner!==owner&&Math.hypot(actor.pos[0]-data.center[0],actor.pos[2]-data.center[2])<data.radius-.35)o.trapped.add(actor.owner);
     if(kind==='dome'){o.collider=new T.Mesh(this.geo.dome,this.glass);o.collider.position.fromArray(data.center);o.collider.scale.setScalar(data.radius);o.collider.updateMatrixWorld(true);}
     this.optics.push(o);return o;
   }
-  remove(list,item){item.root.removeFromParent();const i=list.indexOf(item);if(i>=0)list.splice(i,1);}
+  remove(list,item){item.root.removeFromParent();for(const geometry of item.assembly?.geometries||[])geometry.dispose();const i=list.indexOf(item);if(i>=0)list.splice(i,1);}
   cancel(){} // Single pulses finish independently when the next spell is placed.
   flash(pos,scale=1){const root=this.group();root.position.fromArray(pos);for(let i=0;i<6;i++){const a=i*Math.PI/3;this.mesh(root,'star',this.gold,[Math.cos(a)*.18,Math.sin(a)*.18,0],[.025,.08,.025]);}this.flashes.push({root,age:0,duration:.22,scale});}
   rayRoot(){const root=this.group();root.userData.lines=[];return root;}
   fire(owner,spell,pos,dir){const p={owner,spell,pos:[...pos],dir:unit(dir),age:0,ticks:0,root:this.rayRoot(),path:[],lastPulse:-10};this.pulses.push(p);return p;}
   sphereHit(start,dir,o,range,exit=false){
     if(o.kind==='dome'){
+      if(!this.domeReady(o))return null;
       this.raycaster.set(new T.Vector3(...start),new T.Vector3(...dir));this.raycaster.near=EPS*.5;this.raycaster.far=range;
       const hit=this.raycaster.intersectObject(o.collider,false)[0];
       if(!hit)return null;
@@ -146,6 +176,7 @@ export class LightArts {
   }
   advance(dt,actors,walls,damage,intercept){
     for(const o of [...this.optics]){const step=Math.min(dt,o.life);o.age+=step;o.life-=step;
+      if(o.kind==='dome')for(const actor of actors)if(actor.owner!==o.owner&&Math.hypot(actor.pos[0]-o.center[0],actor.pos[2]-o.center[2])<o.radius-.5)o.trapped.add(actor.owner);
       if(o.kind==='dome')for(const ray of o.rays){ray.age+=step;const total=Math.floor(ray.age+1e-6);
         while(ray.ticks<total){ray.ticks++;const victim=actors.find(a=>a.owner!==o.owner);
           if(victim&&victim.pos[1]>=o.center[1]&&dist(victim.pos,o.center)<=o.radius+.4)this.hit(o.owner,o.spell,ray.power,[0,0,-1],victim.pos,damage);}}
@@ -179,8 +210,12 @@ export class LightArts {
     const art={root,portal,core,glow,gold,floor,stairs};this.jacobs.set(shot,art);return art;
   }
   visuals(time,shots,actors){
-    this.glass.uniforms.uTime.value=time;this.mirrorGlass.uniforms.uTime.value=time;const eye=actors.find(a=>a.owner==='player')?.pos;
-    for(const o of this.optics){o.root.children[0].scale.setScalar(Math.min(1,o.age/.18));
+    this.glass.uniforms.uTime.value=time;this.mirrorGlass.uniforms.uTime.value=time;this.domeGlass.uniforms.uTime.value=time;const eye=actors.find(a=>a.owner==='player')?.pos;
+    for(const o of this.optics){
+      if(o.assembly){
+        o.assembly.rim.visible=o.age>0;o.assembly.rim.scale.setScalar(o.radius*(.98+.02*ease(o.age/.18)));
+        for(const p of o.assembly.panels){const t=clamp((o.age-p.delay)/p.fallTime);p.part.visible=o.age>=p.delay;p.part.position.copy(p.target).addScaledVector(p.offset,1-t*t);p.part.quaternion.copy(p.rotation).slerp(new T.Quaternion(),ease(t));}
+      }else o.root.children[0].scale.setScalar(Math.min(1,o.age/.18));
       if(o.kind==='dome'){const path=o.rays.flatMap(ray=>{const head=Math.floor(ray.age*12)%Math.max(1,ray.path.length);return ray.path.map((leg,i)=>({...leg,brightness:i===head||i===(head+1)%ray.path.length?1:.23}));});this.draw(o,path,1,eye);}}
     for(const p of this.pulses)this.draw(p,p.path,Math.max(0,1-(p.age-p.lastPulse)/.32),eye);
     for(const f of this.flashes)f.root.scale.setScalar(f.scale*(1+f.age/f.duration));
@@ -193,9 +228,9 @@ export class LightArts {
       a.floor.scale.setScalar(shot.blastRadius*(1+Math.max(0,shot.age-shot.impactTime)*.4));
       for(const rung of a.stairs){rung.visible=shot.age>=shot.strikeTime&&rung.position.y>=bottom;rung.rotation.z=time*.3;}}
   }
-  status(owner){return this.optics.filter(o=>o.owner===owner).map(o=>`${{sphere:'Cầu thủy tinh',mirror:'Quang kính',dome:o.rays.length?`Vòm · ${o.rays.length} laser · ${o.rays.reduce((sum,r)=>sum+o.spell.damage*r.power,0)} sát thương/s`:'Vòm chờ laser'}[o.kind]} ${o.life.toFixed(1)}s`).join(' · ');}
+  status(owner){return this.optics.filter(o=>o.owner===owner).map(o=>`${{sphere:'Cầu thủy tinh',mirror:'Quang kính',dome:!this.domeReady(o)?'Vòm đang ghép gương':o.rays.length?`Vòm · ${o.rays.length} laser · ${o.rays.reduce((sum,r)=>sum+o.spell.damage*r.power,0)} sát thương/s`:'Vòm chờ laser'}[o.kind]} ${(!this.domeReady(o)?o.buildTime-o.age:o.life).toFixed(1)}s`).join(' · ');}
   serialize(path){return path.map(({owner,start,end,multiplier,spectrum,event})=>({owner,start:[...start],end:[...end],multiplier,spectrum,event}));}
-  state(){const optic=o=>({id:o.id,owner:o.owner,kind:o.kind,life:o.life,center:[...o.center],normal:[...o.normal],radius:o.radius,reflections:o.reflections,rays:o.rays.map(r=>({age:r.age,ticks:r.ticks,power:r.power,spectrum:r.spectrum,path:this.serialize(r.path)}))});
+  state(){const optic=o=>({id:o.id,owner:o.owner,kind:o.kind,life:o.life,age:o.age,phase:this.domeReady(o)?'active':'assembling',buildTime:o.buildTime,panels:o.assembly?.panels.length||0,landedPanels:o.assembly?.panels.filter(p=>o.age>=p.delay+p.fallTime).length||0,trapped:[...o.trapped],center:[...o.center],normal:[...o.normal],radius:o.radius,reflections:o.reflections,rays:o.rays.map(r=>({age:r.age,ticks:r.ticks,power:r.power,spectrum:r.spectrum,path:this.serialize(r.path)}))});
     return {spheres:this.optics.filter(o=>o.kind==='sphere').map(optic),domes:this.optics.filter(o=>o.kind==='dome').map(optic),mirrors:this.optics.filter(o=>o.kind==='mirror').map(optic),pulses:this.pulses.map(p=>({owner:p.owner,age:p.age,ticks:p.ticks,path:this.serialize(p.path)})),jacobs:[...this.jacobs.keys()].map(s=>({owner:s.owner,target:[...s.target],phase:s.phase,age:s.age})),reflections:this.reflections,lastPath:this.lastPaths,preview:null};}
-  reset(){for(const list of [this.optics,this.pulses,this.flashes]){for(const x of list)x.root.removeFromParent();list.length=0;}for(const a of this.jacobs.values()){a.root.removeFromParent();a.gold.material.dispose();}this.jacobs.clear();this.serial=0;this.reflections=0;this.lastPaths=[];}
+  reset(){for(const list of [this.optics,this.pulses,this.flashes])for(const x of [...list])this.remove(list,x);for(const a of this.jacobs.values()){a.root.removeFromParent();a.gold.material.dispose();}this.jacobs.clear();this.serial=0;this.reflections=0;this.lastPaths=[];}
 }
