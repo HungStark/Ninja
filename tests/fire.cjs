@@ -23,7 +23,7 @@ const fs = require('node:fs/promises');
     const reset = async () => { await page.keyboard.press('Escape'); await click('resetButton'); };
     const screenshot = name => page.screenshot({ path: `test-results/fire/${name}.png` });
     await click('soundButton'); await click('presetFire');
-    assert.equal(await page.locator('[data-equip]').count(), 6);
+    assert.equal(await page.locator('[data-equip]').count(), 5);
     assert.equal(await page.locator('#loadoutSlots .filled').count(), 5);
     await screenshot('catalog'); await click('startButton');
 
@@ -34,7 +34,7 @@ const fs = require('node:fs/promises');
     await advance(.15); assert.equal((await state()).projectiles.filter(s => s.phase === 'flying').length, 1);
     await advance(.1); assert.equal((await state()).projectiles.filter(s => s.phase === 'flying').length, 2);
     await advance(.1); assert.ok((await state()).projectiles.every(s => s.phase === 'flying'));
-    await advance(1.3); assert.equal((await state()).enemyHealth, 928, 'All three small orbs hit the fixed aim point');
+    await advance(1.3); assert.ok(Math.abs((await state()).enemyHealth-971.2)<1e-6, 'All three small orbs deal 40% of their former damage');
     assert.equal((await state()).fireArt.bursts, 0, 'Volley hits leave no flames on the opponent');
 
     await reset(); await cast('fire-lance');
@@ -158,14 +158,14 @@ const fs = require('node:fs/promises');
     await reset(); await advance(2.7); await cast('fire-barrier');
     assert.equal((await state()).shield, 75); await advance(.25);
     assert.equal((await state()).fireArt.shields, 1); await screenshot('shield');
-    await advance(1.75); assert.equal((await state()).health, 1000); assert.equal((await state()).shield, 32);
+    await advance(3.25); assert.equal((await state()).health, 1000); assert.ok(Math.abs((await state()).shield-46.2)<1e-6);
 
     await reset(); await advance(2.7); await cast('fire-reflect');
     assert.equal((await state()).shield, 0); assert.equal((await state()).reflect, 0);
     assert.equal((await state()).walls.length, 1); assert.equal((await state()).walls[0].hp, 120);
     assert.deepEqual((await state()).walls[0].position, [0, 0, 4]);
     await advance(.3); await screenshot('wall');
-    await advance(1.7); assert.equal((await state()).health, 1000); assert.equal((await state()).walls[0].hp, 77);
+    await advance(3.2); assert.equal((await state()).health, 1000); assert.ok(Math.abs((await state()).walls[0].hp-91.2)<1e-6);
     const wallPosition = (await state()).walls[0].position;
     await page.evaluate(() => document.getElementById('world').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 })));
     await advance(.3); assert.deepEqual((await state()).walls[0].position, wallPosition, 'Wall stays where it was cast when player dodges');
@@ -178,12 +178,9 @@ const fs = require('node:fs/promises');
     assert.equal((await state()).salvos, pausedSalvo.salvos); assert.deepEqual((await state()).projectiles, pausedSalvo.projectiles);
     await click('changeLoadout');
     assert.equal((await state()).salvos, 0); assert.equal((await state()).shots, 0); assert.equal((await state()).fireArt.projectiles, 0);
-    await page.evaluate(() => {
-      document.querySelector('[data-remove="fire-volley"]').click();
-      document.querySelector('[data-equip="fire-orb"]').click();
-    });
-    await click('startButton'); await cast('fire-orb'); await advance(.25); await screenshot('orb');
-    await advance(1.35); assert.equal((await state()).enemyHealth, 957);
+    assert.equal(await page.locator('[data-equip="fire-orb"]').count(),0);
+    await click('startButton'); await cast('fire-volley'); await advance(2);
+    assert.ok(Math.abs((await state()).enemyHealth-971.2)<1e-6);
     // The 8-seal formula must still fit the five-spell guide on phones.
     await reset();
     for (const [width, height] of [[900, 650], [390, 844], [320, 568], [640, 360]]) {
@@ -213,6 +210,6 @@ const fs = require('node:fs/promises');
       await screenshot(`meteor-impact-${preset}`);
     }
     assert.deepEqual(errors, []);
-    console.log('PASS fire: six arts and exact seal counts; five-spell loadout; three staged volley shots and damage; dragon; straight meteor flight, sky camera, cloud penetration, debris/dust, hit/miss, pause/reset and all graphics tiers; flame shield; physical wall; responsive guide; no browser/shader errors.');
+    console.log('PASS fire: five arts and exact seal counts; five-spell loadout; three staged volley shots and damage; dragon; straight meteor flight, sky camera, cloud penetration, debris/dust, hit/miss, pause/reset and all graphics tiers; flame shield; physical wall; responsive guide; no browser/shader errors.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

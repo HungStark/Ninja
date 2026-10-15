@@ -19,7 +19,7 @@ const path = require('node:path');
     await click('soundButton');
     await click('clearLoadout');
     assert.equal(await page.locator('#startButton').isDisabled(), true);
-    const defenses = ['water-barrier', 'earth-barrier', 'ice-reflect', 'wood-barrier'];
+    const defenses = ['water-barrier', 'earth-barrier', 'ice-barrier', 'wood-barrier'];
     for (const id of defenses) await equip(id);
     assert.deepEqual((await state()).loadout, defenses, 'Defense spells can be selected first');
     assert.equal(await page.locator('#startButton').isDisabled(), true);
