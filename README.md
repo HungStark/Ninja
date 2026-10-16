@@ -4,16 +4,19 @@
 
 Mở `index.html` hoặc chạy `npm start`. Màn hình đầu cho phép tạo nhân vật chibi (tên, màu áo, màu tóc), tiếp tục bản lưu, hoặc vào đấu trường luyện tập cũ. Khi chạy máy chủ, giữ thêm `adventure.css` cùng các file game.
 
-- Khám phá 3D góc nhìn thứ ba: click mặt đất để tìm đường vòng qua nhà cửa, đá, cây và hồ; click nhãn nhân vật/cổng để tự đi tới và tương tác. Có thể chọn đích trên bản đồ nhỏ. Phím **E** tương tác gần, **M** mở bản đồ thế giới, **Esc** mở menu.
-- Bản đồ gồm **10 map** theo bố cục tham chiếu: Làng Vô Danh và chín làng Hỏa, Thủy, Lôi, Thổ, Phong, Quang, Băng, Mộc, Ám. Mỗi làng có màu sắc, cảnh quan, công trình đặc trưng, nhiệm vụ và điểm hồi sinh. Đi qua cổng để sang làng kề; xuất hiện tại phía cổng tương ứng ở map mới. Bản đồ thế giới giúp chọn đường tới cổng, không dịch chuyển tức thời.
-- Trưởng làng giao một nhiệm vụ cố định riêng cho từng vùng. Nhận nhiệm vụ, hạ địch phía bắc rồi trở lại nhận thưởng. Ninja lưu vong xuất hiện ngẫu nhiên khi di chuyển ngoài trung tâm an toàn và đuổi theo người chơi.
-- Khi chạm trán, chọn chiêu và chuyển sang hệ thống chiến đấu kết ấn hiện có. Trong hành trình, hết máu kết thúc trận. Thắng nhận xu/kinh nghiệm và tiếp tục tại vị trí khám phá; thua hoặc rút lui từ menu chiến đấu sẽ hồi sinh ở điểm đã kích hoạt gần nhất. Đấu trường luyện tập vẫn giữ cơ chế tự hồi máu cũ.
+- Khám phá 3D góc nhìn thứ ba: click mặt đất hoặc bản đồ nhỏ để tìm đường, click nhãn nhân vật/cổng để tự đi tới và tương tác. **E** tương tác gần, **M** mở địa đồ, **J** mở nhật ký, **Esc** tạm dừng/đóng cửa sổ. Nút **Tiếp bước hành trình** dẫn tới cổng, cao nhân, địa danh hoặc đối thủ của mục tiêu hiện tại.
+- Mỗi vùng rộng **140 × 140 m**, gồm bốn khu có tên, địa hình cao thấp thật và kiến trúc riêng. Có 40 địa danh và 30 cư dân có tên, bên cạnh trưởng làng, sứ giả và đại diện hội nghị. Vô Danh có ruộng bậc thang/cầu cổ; Thủy có thủy trấn/thác; Hỏa có miệng núi lửa/bazan; Lôi có cao nguyên/tháp sét; Thổ có hẻm núi/thành đá; Phong có đồng diều/guồng gió; Quang có cầu kính/thánh điện; Băng có hang pha lê/sông băng; Mộc có rừng trúc/cổ thụ; Ám có hồ trăng/đền nguyệt thực.
+- **Chương I:** nhân vật mới ở Vô Danh chỉ biết **Thủy phi tiêu** (`water-barrier`, chuỗi `W E A`), buff phi tiêu 30 giây. Sang Thủy gặp Lưu Thủy, nhận lời chỉ giáo, tự khám phá hai địa danh rồi trở lại học Thủy ngục, Thủy thuẫn và Ném thuyền. Đánh bại **Thủy Ảnh Hải Châu** để mở đường sang Hỏa và Lôi.
+- **Chương II–III:** học thuật và đánh bại **Hỏa Ảnh Xích Nham**, **Lôi Ảnh Chấn Thiên** theo thứ tự tùy chọn. Ba đại diện cùng nhân vật trở về Vô Danh; tương tác bàn hội nghị để ký hiệp ước hòa bình. Cổng các vùng tiếp theo mở sau lễ ký.
+- **Chương IV–V:** mang hiệp ước tới sứ giả thường trú ở **Thổ, Phong, Quang, Băng, Mộc**. Tại từng làng, trao hiệp ước, học nghệ từ cao nhân và đánh bại thế lực phá hoại. Khi đủ năm làng hưởng ứng và năm thủ lĩnh bị đánh bại, cổng Ám mở. Đối đầu **Ám Ảnh Vô Nguyệt**, thủ lĩnh Ám và kẻ chủ mưu, để kết thúc câu chuyện; có thể tiếp tục khám phá sau đoạn kết.
+- Cao nhân giao nhiệm vụ khám phá yên bình, không đòi hạ quái. Nhận bài học, tới hai địa danh được chỉ định, trở lại để lĩnh hội chiêu có thể trang bị thật. Thắng thủ lĩnh nhận bí thuật còn lại của hệ; đủ **45 chiêu** đều có đường học trong chiến dịch. Các nhiệm vụ việc làng và ninja lưu vong bổ sung giao chiến, xu và kinh nghiệm.
+- Thủ lĩnh có mô hình trấn giữ riêng, sinh lực 1.500–2.450, cả năm thuật của hệ, nhịp ra đòn nhanh và trạng thái cuồng nộ khi còn nửa máu. Mỗi thủ lĩnh chỉ trao thưởng một lần. Trong hành trình, hết máu kết thúc trận; thua/rút lui hồi sinh tại ấn đã kích hoạt. Đấu trường luyện tập giữ cơ chế và bộ sưu tập riêng.
 - Ấn hồi sinh tại **Làng Vô Danh** được kích hoạt từ đầu. Tới ấn ở làng khác rồi click hoặc nhấn **E** để đặt điểm hồi sinh mới. Ghé qua một làng chưa tự đổi điểm hồi sinh.
-- Nhân vật, vị trí, làng đã thăm, điểm hồi sinh, nhiệm vụ, xu và kinh nghiệm được lưu bằng localStorage trên trình duyệt hiện tại. Chọn hành trình mới sẽ thay bản lưu. Bậc nhân vật hiện phản ánh kinh nghiệm; chưa tăng chỉ số chiến đấu hay có cửa hàng tiêu xu.
+- Nhân vật, vị trí, làng đã thăm, điểm hồi sinh, nhiệm vụ, địa danh, bài học, thuật đã học, thủ lĩnh đã thắng và hiệp ước được lưu bằng localStorage. Bản lưu cũ giữ quyền dùng những chiêu đã có; chọn hành trình mới bắt đầu lại với một thuật Thủy. Bậc nhân vật phản ánh kinh nghiệm, chưa tăng chỉ số hay có cửa hàng tiêu xu.
 
-`npm run test:adventure` kiểm tra liên thông bản đồ, đường đi/tường chắn, tạo nhân vật, nhiệm vụ, thắng/thua qua hệ chiến đấu cũ, đổi điểm hồi sinh, tải lại bản lưu, chạm trán ngẫu nhiên và giao diện điện thoại. Ảnh kiểm tra nằm trong `test-results/adventure/`. Thêm `?mode=duel` để mở thẳng luyện tập. Trong kiểm thử, `?test=1` giữ luồng đấu trường cũ; `?test=1&adventure=1` bật kiểm thử khám phá.
+`npm run test:adventure` kiểm tra địa hình, tất cả lối tương tác/cổng, luật chiến dịch, lưu cũ/mới, nhiệm vụ, chiến thắng/thất bại, hồi sinh, chạm trán và điện thoại. `npm run test:world-journey` chạy toàn bộ tuyến truyện qua UI từ một thuật Thủy tới lễ ký, năm chuyến truyền hòa ước và trận cuối. Ảnh ở `test-results/adventure/` và `test-results/world-journey/`. Thêm `?mode=duel` để mở luyện tập; `?test=1&adventure=1` bật kiểm thử khám phá.
 
-Nguồn phần mới: `src/adventure.js` quản lý hành trình và UI; `src/adventure-scene.js` dựng nhân vật/cảnh 3D; `src/adventure-data.js` chứa địa đồ, nhiệm vụ, bản lưu và tìm đường A*. Đồ họa hiện là các mô hình low-poly dựng bằng mã, có thể thay bằng asset mỹ thuật chi tiết ở vòng tiếp theo.
+Nguồn: `src/adventure.js` quản lý hành trình/UI; `src/adventure-scene.js` dựng cảnh, nhân vật và địa hình; `src/adventure-landmarks.js` dựng kiến trúc, địa danh và thủ hộ; `src/adventure-world.js` chứa các vùng, cư dân, bài học và bề mặt địa hình; `src/adventure-data.js` chứa luật chiến dịch, bản lưu và A*. Mô hình low-poly dựng bằng mã, cảnh tĩnh gộp theo vật liệu và thực vật dùng instancing.
 
 Game ninja 3D góc nhìn thứ nhất, kết ấn bằng hai tay và quyết đấu với đối thủ máy. Bản 0.3 thay sân tập bia bằng trận đấu có sinh lực, chakra, phòng ngự và phản đòn.
 
@@ -25,7 +28,7 @@ Nếu có Node.js, chạy **npm start** rồi mở http://127.0.0.1:4173.
 
 ## Quyển trục trước trận
 
-Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Quyển trục lọc theo hệ và **Tất cả chiêu / Đã học / Chưa học**. Trạng thái học được lưu riêng trong `anhoa-learned-spells-v1`; lần đầu khởi tạo cả 45 chiêu hiện có là đã học. Bỏ chiêu hoặc đổi bộ mang theo không làm mất trạng thái học.
+Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Quyển trục lọc theo hệ và **Tất cả chiêu / Đã học / Chưa học**. Hành trình mới chỉ cho trang bị chiêu đã học từ một thuật Thủy ban đầu; bài học/bí thuật lưu cùng hành trình. Luyện tập giữ bộ sưu tập riêng trong `anhoa-learned-spells-v1` (mặc định đủ 45 chiêu), và bộ mang theo riêng. Bỏ chiêu không làm mất trạng thái học.
 
 - Mang **từ 1 đến tối đa 5 chiêu**, có thể mang toàn chiêu phòng ngự.
 - Bấm thẻ chiêu để chọn/bỏ; nút **Bỏ hết** ở cột bộ chiêu xóa toàn bộ lựa chọn.

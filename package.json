@@ -37,7 +37,8 @@
     "test:hand-element-rings": "node tests/hand-element-rings.cjs",
     "test:cooldowns": "node tests/cooldowns-shuriken.cjs",
     "test:combat": "node tests/combat-core.mjs && node tests/combat.cjs",
-    "test:adventure": "node tests/adventure-core.mjs && node tests/adventure.cjs"
+    "test:adventure": "node tests/adventure-core.mjs && node tests/campaign-core.mjs && node tests/adventure.cjs",
+    "test:world-journey": "node tests/world-journey.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

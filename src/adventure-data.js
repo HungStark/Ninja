@@ -1,3 +1,6 @@
+import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS} from './adventure-world.js';
+export {STARTER_SPELLS,MENTOR_SPELLS} from './adventure-world.js';
+
 // The atlas is also the source of truth for walking between village maps.
 export const VILLAGES = [
   {id:'fire',name:'Làng Hỏa',glyph:'火',element:'fire',color:'#e47646',ground:'#635344',path:'#b19474',roof:'#813b32',sky:'#797f89',tree:'#ac593b',title:'Tro tàn dưới cổng đỏ',desc:'Mái ngói đỏ, đá núi lửa và những rặng phong giữa thung lũng khói.',x:25,y:22,polygon:'9,15 25,6 34,9 43,25 38,34 40,38 30,38 15,32 7,28',links:['water','nameless','wind','earth']},
@@ -13,20 +16,75 @@ export const VILLAGES = [
 ];
 export const village = id => VILLAGES.find(v=>v.id===id);
 export const QUESTS={
-  nameless:{title:'Ngọn ấn đầu tiên',enemy:'Kẻ phá ấn',story:'Một kẻ lạ đang phá phong ấn ở con đường phía bắc. Hãy hạ hắn để bảo vệ lữ khách đi qua đây.'},
-  fire:{title:'Tro tàn chưa nguội',enemy:'Nhẫn giả Tro Đỏ',story:'Một nhẫn giả phản bội đang cướp than hỏa ấn để nuôi ngọn lửa cấm. Hắn đang đợi trên con đường phía bắc.'},
-  water:{title:'Lời thề bên bến nước',enemy:'Thủy tặc Sương Mù',story:'Bến thuyền đã bị thủy tặc phong tỏa. Hạ tên canh gác phía bắc để mở lại đường đưa thuốc vào làng.'},
-  lightning:{title:'Tiếng sét lạc nhịp',enemy:'Kẻ trộm Lôi Thạch',story:'Lôi thạch của tháp dẫn sét đã bị đánh cắp. Chặn kẻ trộm đang trốn trên lối bắc trước khi cơn giông kéo đến.'},
-  earth:{title:'Người giữ cửa núi',enemy:'Thổ nhẫn Lưu Vong',story:'Một thổ nhẫn lưu vong đã chiếm đường vào mỏ đá. Đánh bại hắn ở lối bắc để đoàn thợ có thể trở về.'},
-  wind:{title:'Cánh cờ trong gió',enemy:'Du nhẫn Cuồng Phong',story:'Những lá cờ dẫn đường bị chém đứt mỗi đêm. Kẻ gây chuyện vừa xuất hiện phía bắc. Hãy ngăn hắn lại.'},
-  light:{title:'Bình minh bị đánh cắp',enemy:'Kẻ giữ Kính Vỡ',story:'Một kẻ lạ dùng kính cổ đánh cắp ánh sáng của thánh điện. Hãy phá vòng vây của hắn trên đường phía bắc.'},
-  ice:{title:'Đường về qua tuyết',enemy:'Băng nhẫn Vô Thanh',story:'Lối đón đoàn lữ hành bị một băng nhẫn canh giữ. Hạ hắn ở phía bắc trước khi tuyết lấp hết dấu chân.'},
-  wood:{title:'Lời khẩn của cổ thụ',enemy:'Kẻ săn Mộc Ấn',story:'Có người đang hút sinh khí từ rễ cổ thụ. Lần theo con đường phía bắc và đánh bại kẻ săn mộc ấn.'},
-  dark:{title:'Đèn lồng cuối ngõ',enemy:'Ảnh nhẫn Không Tên',story:'Đèn dẫn hồn tắt dần dưới bóng một ảnh nhẫn. Hắn đang ẩn ở đường phía bắc. Hãy giữ ngọn đèn cuối cùng.'}
+  nameless:{title:'Ngọn ấn bên cầu cổ',enemy:'Kẻ Phá Cầu',x:-34,z:-25,location:'Cầu Đá Vọng Âm',story:'Một kẻ lạ đang lấy đá ấn khỏi Cầu Đá Vọng Âm, cắt đường những người hái trà trở về. Hãy theo đường tây lên cầu và ngăn hắn lại.'},
+  fire:{title:'Than hồng của người thợ',enemy:'Nhẫn giả Tro Đỏ',x:-33,z:18,location:'Phố Lò Rèn',story:'Tro Đỏ cướp than hỏa ấn của các lò rèn phía tây. Trả lại ngọn lửa cho thợ trước khi vũ khí của cả làng hóa lạnh.'},
+  water:{title:'Lời thề bên bến nước',enemy:'Thủy tặc Sương Mù',x:29,z:18,location:'Chợ Nổi Bạch Liên',story:'Thủy tặc đã chặn những thuyền thuốc ở Chợ Nổi Bạch Liên, phía đông làng. Mở lại bến để dược liệu tới được người bệnh.'},
+  lightning:{title:'Nhịp sáng của cao nguyên',enemy:'Kẻ Trộm Tử Tinh',x:31,z:24,location:'Rừng Tử Tinh',story:'Một kẻ trộm giấu lôi thạch giữa Rừng Tử Tinh phía đông nam. Hãy lấy lại nó trước khi những ngọn đèn tiếp lôi tắt.'},
+  earth:{title:'Đoàn thợ dưới lòng núi',enemy:'Thổ nhẫn Lưu Vong',x:32,z:23,location:'Mỏ Hoàng Thạch',story:'Thổ nhẫn lưu vong đã chiếm Mỏ Hoàng Thạch ở sườn núi phía đông. Đánh bại hắn để đưa đoàn thợ đang mắc kẹt trở về.'},
+  wind:{title:'Cánh diều đứt dây',enemy:'Du nhẫn Cuồng Phong',x:31,z:24,location:'Đồng Diều Lục Sắc',story:'Cuồng Phong chém đứt những dây diều dẫn gió của làng. Tìm hắn giữa Đồng Diều Lục Sắc, nơi những đứa trẻ không còn dám chơi.'},
+  light:{title:'Bình minh trong gương vỡ',enemy:'Kẻ Giữ Kính Vỡ',x:30,z:23,location:'Vườn Lăng Kính',story:'Những mảnh gương bị đánh cắp đang hút hết màu sắc của Vườn Lăng Kính. Hãy tới khu vườn phía đông và phá vòng vây của kẻ giữ kính.'},
+  ice:{title:'Dấu chân trên hồ băng',enemy:'Băng nhẫn Vô Thanh',x:31,z:22,location:'Hồ Gương Băng',story:'Vô Thanh chặn đoàn lữ hành trên Hồ Gương Băng. Theo những dấu chân về phía đông, giải thoát họ trước khi cơn tuyết mới xóa hết lối về.'},
+  wood:{title:'Lời khẩn của vườn thuốc',enemy:'Kẻ Săn Mộc Ấn',x:31,z:23,location:'Vườn Dược Linh Chi',story:'Kẻ săn Mộc Ấn đang hút sinh lực của Vườn Dược Linh Chi phía đông. Ngăn hắn để những cây thuốc có thể cứu dân làng.'},
+  dark:{title:'Ngọn đèn cho người trở về',enemy:'Ảnh nhẫn Không Tên',x:-32,z:23,location:'Phố Đèn Lồng Tím',story:'Ảnh nhẫn Không Tên lần lượt dập đèn ở Phố Đèn Lồng Tím phía tây. Hãy giữ những ngọn đèn còn lại để khách đi muộn tìm được đường về.'}
 };
+export const CAMPAIGN_REGIONS=Object.freeze(['earth','wind','light','ice','wood']);
+const firstLeaders=['water','fire','lightning'];
+const treatyDelivered=(save,id)=>save.campaign?.deliveries?.includes(id)===true;
+const regionArtsLearned=(save,id)=>save.mentors?.[id]===true&&REGIONS[id].mentor.spellIds.every(spellId=>save.learnedSpells?.includes(spellId));
+export function campaignStage(save) {
+  if(!save.bosses?.water)return 'water';
+  if(!save.bosses?.fire||!save.bosses?.lightning)return 'fire-lightning';
+  if(!save.campaign?.treatySigned)return 'treaty';
+  if(!CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.bosses?.[id]))return 'envoy';
+  return save.bosses?.dark?'complete':'dark';
+}
+export function canTravel(save,target) {
+  if(!village(target))return {allowed:false,reason:'Miền đất này không tồn tại trên địa đồ.'};
+  if(target==='dark'){
+    const ready=save.campaign?.treatySigned&&CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.bosses?.[id]);
+    return {allowed:!!ready,reason:ready?'Hòa ước đã nối liền năm miền. Đã đến lúc đối mặt kẻ chủ mưu.':'Trao hòa ước và đánh bại thế lực canh giữ tại Thổ, Phong, Quang, Băng, Mộc trước khi tới Làng Ám.'};
+  }
+  if(target===save.village||target==='nameless'||target==='water'||save.visited?.includes(target))return {allowed:true,reason:''};
+  if(!save.bosses?.water)return {allowed:false,reason:'Hãy tới Làng Thủy, học thủy thuật từ Lưu Thủy và đánh bại thủ lĩnh Hải Châu trước.'};
+  if(target==='fire'||target==='lightning')return {allowed:true,reason:''};
+  if(!save.campaign?.treatySigned)return {allowed:false,reason:'Thuyết phục thủ lĩnh Hỏa và Lôi, rồi trở về Làng Vô Danh để ba làng ký hòa ước.'};
+  return {allowed:true,reason:''};
+}
+export function canSignTreaty(save) {
+  return save.village==='nameless'&&!save.campaign?.treatySigned&&firstLeaders.every(id=>save.bosses?.[id]===true);
+}
+export function signTreaty(save) {
+  if(!canSignTreaty(save))return false;
+  save.campaign??={treatySigned:false,deliveries:[]};
+  save.campaign.treatySigned=true;save.campaign.deliveries??=[];return true;
+}
+export function deliverTreaty(save,id) {
+  if(!save.campaign?.treatySigned||save.village!==id||!CAMPAIGN_REGIONS.includes(id)||treatyDelivered(save,id))return false;
+  save.campaign.deliveries??=[];save.campaign.deliveries.push(id);return true;
+}
+export function campaignObjective(save) {
+  const stage=campaignStage(save);
+  const lesson=id=>({title:`Học thuật tại ${village(id).name}`,description:REGIONS[id].mentor.clue,targetVillage:id,targetKind:'mentor'});
+  const challenge=id=>({title:`Đối mặt ${REGIONS[id].boss.name}`,description:`Tìm ${REGIONS[id].boss.title} tại ${REGIONS[id].zones[3].name}. Chiến thắng để nhận bí thuật và tiếp tục hành trình.`,targetVillage:id,targetKind:'boss'});
+  if(stage==='water')return regionArtsLearned(save,'water')?challenge('water'):lesson('water');
+  if(stage==='fire-lightning'){
+    const local=['fire','lightning'].includes(save.village)&&!save.bosses?.[save.village]?save.village:['fire','lightning'].find(id=>!save.bosses?.[id]);
+    return regionArtsLearned(save,local)?challenge(local):lesson(local);
+  }
+  if(stage==='treaty')return {title:'Ba làng ký hòa ước',description:'Hải Châu, Xích Nham và Chấn Thiên đang chờ ở Làng Vô Danh. Trở về dự lễ ký kết và nhận hòa ước để mang tới năm miền.',targetVillage:'nameless',targetKind:'treaty'};
+  if(stage==='envoy'){
+    const unfinished=id=>!treatyDelivered(save,id)||!save.bosses?.[id];
+    const id=CAMPAIGN_REGIONS.includes(save.village)&&unfinished(save.village)?save.village:CAMPAIGN_REGIONS.find(unfinished);
+    if(!treatyDelivered(save,id))return {title:`Trao hòa ước cho ${village(id).name}`,description:'Mang bản hòa ước đã ký tới sứ giả thường trú, giúp người dân chống các thế lực phá ấn và học nghệ thuật của miền đất này.',targetVillage:id,targetKind:'envoy'};
+    return regionArtsLearned(save,id)?challenge(id):lesson(id);
+  }
+  if(stage==='dark')return regionArtsLearned(save,'dark')?challenge('dark'):lesson('dark');
+  return {title:'Hòa ước của chín miền',description:'Vô Nguyệt đã thất bại. Chín làng nối lại thủy lộ và đường núi; những người thầy vẫn chờ bạn trên hành trình tự do.',targetVillage:'nameless',targetKind:'complete'};
+}
+
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#345c63',hair='#252b32') {
-  return {version:1,hero:{name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},gold:0,xp:0,wins:0};
+  return {version:1,hero:{name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -35,33 +93,86 @@ export function readJourney(storage) {
     const hex=c=>/^#[\da-f]{6}$/i.test(c);
     const clean=newJourney(s.hero.name,hex(s.hero.coat)?s.hero.coat:'#345c63',hex(s.hero.hair)?s.hero.hair:'#252b32');
     clean.village=s.village;clean.checkpoint=s.checkpoint;
-    clean.position=Array.isArray(s.position)&&s.position.length===2&&s.position.every(n=>Number.isFinite(n)&&Math.abs(n)<=25)?s.position:[0,7];
+    clean.position=Array.isArray(s.position)&&s.position.length===2&&s.position.every(n=>Number.isFinite(n)&&Math.abs(n)<=WORLD_LIMIT)?s.position:[0,7];
     for(const key of ['visited','activated'])clean[key]=[...new Set(['nameless',...(Array.isArray(s[key])?s[key].filter(id=>village(id)):[])])];
     clean.activated=[...new Set([...clean.activated,s.checkpoint])];
-    for(const v of VILLAGES)if([1,2,3].includes(s.quests?.[v.id]))clean.quests[v.id]=s.quests[v.id];
+    for(const v of VILLAGES){
+      if([1,2,3].includes(s.quests?.[v.id]))clean.quests[v.id]=s.quests[v.id];
+      if(s.lessons?.[v.id]===1)clean.lessons[v.id]=1;
+      if(s.mentors?.[v.id]===true)clean.mentors[v.id]=true;
+      if(s.bosses?.[v.id]===true)clean.bosses[v.id]=true;
+    }
+    const zones=new Set(Object.entries(REGIONS).flatMap(([id,r])=>r.zones.map(zone=>`${id}:${zone.id}`)));
+    clean.discoveries=[...new Set(Array.isArray(s.discoveries)?s.discoveries.filter(key=>zones.has(key)):[])];
+    clean.campaign.treatySigned=s.campaign?.treatySigned===true;
+    clean.campaign.deliveries=clean.campaign.treatySigned?[...new Set(Array.isArray(s.campaign?.deliveries)?s.campaign.deliveries.filter(id=>CAMPAIGN_REGIONS.includes(id)):[])]:[];
+    // Saves made before the exploration update already owned every art. Keep that progress.
+    const known=Array.isArray(s.learnedSpells)?s.learnedSpells.filter(id=>ALL_ADVENTURE_SPELLS.includes(id)):ALL_ADVENTURE_SPELLS;
+    clean.learnedSpells=[...new Set([...STARTER_SPELLS,...known])];
+    for(const v of VILLAGES){
+      if(clean.mentors[v.id])clean.learnedSpells.push(...REGIONS[v.id].mentor.spellIds);
+      if(clean.bosses[v.id])clean.learnedSpells.push(...bossRewardSpells(v.id));
+    }
+    clean.learnedSpells=[...new Set(clean.learnedSpells)];
     for(const key of ['gold','xp','wins'])clean[key]=Number.isSafeInteger(s[key])&&s[key]>=0?s[key]:0;
     return clean;
   }catch{return null;}
 }
+export function discoverZone(save,id,zoneId) {
+  if(!REGIONS[id]?.zones.some(zone=>zone.id===zoneId))return false;
+  const key=`${id}:${zoneId}`;
+  save.discoveries??=[];
+  if(save.discoveries.includes(key))return false;
+  save.discoveries.push(key);return true;
+}
+export function mentorReady(save,id) {
+  const mentor=REGIONS[id]?.mentor;
+  return !!mentor&&(id!=='nameless'||save.campaign?.treatySigned===true)&&save.lessons?.[id]===1&&!save.mentors?.[id]&&mentor.zoneIds.every(zoneId=>save.discoveries?.includes(`${id}:${zoneId}`));
+}
+export function completeLesson(save,id) {
+  const mentor=REGIONS[id]?.mentor;
+  if(!mentorReady(save,id))return {learned:false,spellId:mentor?.spellId||null,spellIds:[]};
+  save.mentors??={};save.mentors[id]=true;
+  save.learnedSpells??=[...STARTER_SPELLS];
+  const spellIds=mentor.spellIds.filter(spellId=>!save.learnedSpells.includes(spellId));
+  save.learnedSpells.push(...spellIds);
+  return {learned:spellIds.length>0,spellId:mentor.spellId,spellIds};
+}
+export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
 export function resolveBattle(save,encounter,victory) {
-  if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
+  if(victory&&encounter.kind==='boss'){
+    const boss=REGIONS[encounter.village]?.boss;
+    save.bosses??={};
+    if(boss&&!save.bosses[encounter.village]){
+      save.bosses[encounter.village]=true;save.gold+=boss.rewardGold;save.xp+=boss.rewardXp;save.wins++;
+      save.learnedSpells=[...new Set([...(save.learnedSpells||STARTER_SPELLS),...bossRewardSpells(encounter.village)])];
+    }
+  }
+  else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
   else{save.village=save.checkpoint;save.position=[0,7];}
   return save;
 }
 
 // A* over a one-unit grid. Diagonal moves cannot cut across solid corners.
 export function findPath(from,to,blocked) {
-  const grid=26,key=(x,z)=>`${x},${z}`,snap=p=>p.map(Math.round);
+  if(!Array.isArray(from)||!Array.isArray(to)||from.length!==2||to.length!==2||![...from,...to].every(Number.isFinite))return [];
+  const grid=WORLD_LIMIT,key=(x,z)=>`${x},${z}`,snap=p=>p.map(Math.round);
   const start=snap(from),end=snap(to),valid=(x,z)=>Math.abs(x)<=grid&&Math.abs(z)<=grid&&!blocked(x,z);
   if(!valid(...end)||Math.abs(to[0])>grid||Math.abs(to[1])>grid||blocked(...to))return [];
-  const open=[{x:start[0],z:start[1],g:0,f:0}],cost=new Map([[key(...start),0]]),parent=new Map(),closed=new Set();
+  if(start.some(n=>Math.abs(n)>grid))return [];
+  const open=[],cost=new Map([[key(...start),0]]),parent=new Map(),closed=new Set();
+  // A binary heap keeps long routes across the expanded villages responsive.
+  let serial=0;const earlier=(a,b)=>a.f<b.f||(a.f===b.f&&a.order<b.order);
+  const push=node=>{node.order=serial++;let i=open.length;open.push(node);while(i){const p=(i-1)>>1;if(!earlier(node,open[p]))break;open[i]=open[p];i=p;}open[i]=node;};
+  const pop=()=>{const first=open[0],last=open.pop();if(open.length){let i=0;while(true){const l=i*2+1,r=l+1;if(l>=open.length)break;const child=r<open.length&&earlier(open[r],open[l])?r:l;if(!earlier(open[child],last))break;open[i]=open[child];i=child;}open[i]=last;}return first;};
+  push({x:start[0],z:start[1],g:0,f:Math.hypot(start[0]-end[0],start[1]-end[1])});
   while(open.length){
-    open.sort((a,b)=>a.f-b.f);const c=open.shift(),k=key(c.x,c.z);if(closed.has(k))continue;closed.add(k);
+    const c=pop(),k=key(c.x,c.z);if(closed.has(k))continue;closed.add(k);
     if(c.x===end[0]&&c.z===end[1]){const path=[[...to]];let at=k;while(parent.has(at)){const prev=parent.get(at);path.push(prev.split(',').map(Number));at=prev;}path.reverse();path.shift();return path;}
     for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
       const x=c.x+dx,z=c.z+dz;if(!valid(x,z)||(dx&&dz&&(!valid(c.x+dx,c.z)||!valid(c.x,c.z+dz))))continue;
       const nk=key(x,z),g=c.g+Math.hypot(dx,dz);if(g>=(cost.get(nk)??Infinity))continue;
-      cost.set(nk,g);parent.set(nk,k);open.push({x,z,g,f:g+Math.hypot(x-end[0],z-end[1])});
+      cost.set(nk,g);parent.set(nk,k);push({x,z,g,f:g+Math.hypot(x-end[0],z-end[1])});
     }
   }return [];
 }
