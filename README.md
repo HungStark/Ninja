@@ -25,11 +25,12 @@ Nếu có Node.js, chạy **npm start** rồi mở http://127.0.0.1:4173.
 
 ## Quyển trục trước trận
 
-Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Hỏa, Thủy và Lôi có 3 chiêu công, 2 chiêu thủ; Ám và Thổ có 4 chiêu công, 1 chiêu thủ; Phong và Quang có 3 công, 2 thủ. Mộc có 3 công, 1 thủ và 1 chiêu gieo hạt; Băng có 3 chiêu câu giờ, 1 chiêu tạo tuyết và 1 chiêu kết thúc trận. Lọc theo hệ hoặc loại chiêu, bấm một chiêu để mang theo; bấm lại hoặc bấm ô chiêu đã chọn để bỏ. Nút **Bộ Hỏa** chọn nhanh liên đạn, rồng, thiên thạch và hai chiêu thủ.
+Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc và Băng. Quyển trục lọc theo hệ và **Tất cả chiêu / Đã học / Chưa học**. Trạng thái học được lưu riêng trong `anhoa-learned-spells-v1`; lần đầu khởi tạo cả 45 chiêu hiện có là đã học. Bỏ chiêu hoặc đổi bộ mang theo không làm mất trạng thái học.
 
-- Mang **từ 1 đến tối đa 5 chiêu**, có **ít nhất 1 chiêu tấn công**.
-- Tự do phối công/thủ: có thể chọn **5 công**, **4 công + 1 thủ** hoặc **1 công + 4 thủ**. Có thể chọn chiêu thủ trước; nút vào trận chỉ bật khi bộ chiêu có ít nhất một chiêu công.
-- Có thể phối nhiều hệ. Hai nút bộ mẫu giúp chọn nhanh cả hai cách chia.
+- Mang **từ 1 đến tối đa 5 chiêu**, có thể mang toàn chiêu phòng ngự.
+- Bấm thẻ chiêu để chọn/bỏ; nút **Bỏ hết** ở cột bộ chiêu xóa toàn bộ lựa chọn.
+- Khi lọc một hệ cụ thể, nút **Chọn hết** cạnh **Chưa học** thay toàn bộ bộ đang mang bằng 5 chiêu của hệ đó; ở **Tất cả** nút này được ẩn.
+- Thẻ chiêu giữ loại, chakra và **Hồi chiêu**, bỏ nhãn cấp và số ấn; chuỗi phím vẫn hiển thị để tra cứu.
 - Chỉ các chiêu mang theo mới nhận chuỗi ấn và thi triển được trong trận.
 - Bộ chiêu được lưu trên trình duyệt khi có localStorage. Mỗi trận tiếp theo đều quay lại quyển trục để thay bộ chiêu.
 
@@ -216,7 +217,7 @@ Chuỗi của mỗi hệ bắt đầu bằng hai ấn nhận diện hệ. Nếu 
 
 Thi triển khiên bao thân mới thay thế khiên cũ. Đạn đã phản không được phản tiếp để tránh vòng lặp. Mỗi đạn có màu, ánh sáng và vệt theo hệ.
 
-Hai bên có **1000 sinh lực** và **100 chakra**. Chakra hồi 5 mỗi giây; mỗi chiêu hồi riêng 2–15 giây (Ảnh phân thân 2 giây, các chiêu khác theo cấp), cách hai lần thi triển thuật ít nhất 1 giây. Kết đủ chuỗi 2–10 ấn của chiêu theo quyển trục rồi nhấn Space. Cấp và số ấn được ghi trên từng thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
+Hai bên có **1000 sinh lực** và **100 chakra**. Chakra hồi 5 mỗi giây; mỗi chiêu hồi riêng 2–15 giây (Ảnh phân thân 2 giây, các chiêu khác theo cấp), cách hai lần thi triển thuật ít nhất 1 giây. Kết đủ chuỗi 2–10 ấn của chiêu theo quyển trục rồi nhấn Space. Chuỗi phím kết ấn vẫn hiển thị trên thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
 
 Quyển trục mang theo trong trận hiện đủ tên và phím kết ấn của cả 5 chiêu, không cần cuộn; trên màn hình nhỏ, bảng chiêu nằm phía dưới. Nhấn Space khi đủ ấn sẽ thi triển chiêu ngay, đồng thời đọc tên chiêu và trừ chakra. Có thể kết chuỗi tiếp theo khi giọng đọc vẫn đang chạy; khoảng cách giữa hai lần thi triển vẫn là 1 giây. Giọng đọc dùng tính năng tổng hợp tiếng nói của trình duyệt, ưu tiên giọng tiếng Việt trên máy. Tắt âm thanh, thiếu giọng đọc hoặc lỗi dịch vụ giọng nói không làm chậm chiêu. Tạm dừng cũng dừng giọng đọc; đấu lại hoặc về chọn chiêu sẽ hủy giọng đang đọc. Banner 12 hình kết ấn được ẩn.
 
@@ -280,7 +281,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 
 Đặt **BROWSER_PATH** để dùng Chrome/Chromium khác đường dẫn Edge mặc định trên Windows. Ảnh và báo cáo kiểm thử nằm trong test-results. Chỉ URL có **test=1** cung cấp bước thời gian xác định; gameplay bình thường dùng requestAnimationFrame.
 
-**npm run test:loadout** kiểm tra chọn thủ trước, bắt buộc ít nhất một chiêu công khi vào trận, bộ 1 công + 4 thủ và 5 công, giới hạn 5 ô, thi triển chiêu và khôi phục bộ đã lưu.
+**npm run test:loadout** kiểm tra bộ toàn chiêu phòng ngự, giới hạn 1–5 ô, bộ lọc trạng thái học độc lập, thay bộ theo cả 9 hệ, bỏ hết, thông tin thẻ và khôi phục bộ đã lưu.
 
 ## Cấu trúc
 

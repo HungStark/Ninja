@@ -105,11 +105,10 @@
   for(const spell of spells)spell.cooldown=spell.cooldown??cooldownByRank[spell.rank]??6;
   for(const spell of spells){if(spell.element==='fire'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tầng bỏng/viên, tối đa 5, mỗi tầng 10 giây';if(spell.element==='lightning'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tĩnh điện, tối đa 3, mỗi điểm 10 giây';}
   const shuriken={name:'Phi tiêu',damage:6,speed:36,size:.075,interval:.45};
-  function validateLoadout(ids, { allowDefenseOnly = false } = {}) {
+  function validateLoadout(ids) {
     if (!Array.isArray(ids) || ids.length < 1 || ids.length > 5) return { ok: false, reason: 'Chọn từ 1 đến 5 chiêu.' };
     if (new Set(ids).size !== ids.length || ids.some(id => !spells.some(s => s.id === id))) return { ok: false, reason: 'Bộ chiêu không hợp lệ hoặc bị trùng.' };
     const attack = ids.filter(id => spells.find(s => s.id === id).kind === 'attack').length, defense = ids.length - attack;
-    if (!allowDefenseOnly && attack < 1) return { ok: false, attack, defense, reason: 'Cần ít nhất 1 chiêu tấn công để vào trận.' };
     return { ok: true, attack, defense };
   }
   class GameRules {
