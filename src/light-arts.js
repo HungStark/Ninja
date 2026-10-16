@@ -1,4 +1,5 @@
-﻿import * as T from 'three';
+import * as T from 'three';
+import { absorbDurability, crossWalls } from './combat.js';
 const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),mul=(a,s)=>a.map(v=>v*s);
 const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),len=a=>Math.hypot(...a),unit=a=>mul(a,1/(len(a)||1)),dist=(a,b)=>len(sub(a,b));
 const reflect=(d,n)=>unit(sub(d,mul(n,2*dot(d,n))));
@@ -87,7 +88,7 @@ export class LightArts {
     for(const o of [...this.optics])if(o.owner===owner&&o.kind===kind)this.remove(this.optics,o);
     const root=this.rayRoot(),buildTime=kind==='dome'?spell.domeBuildTime:0,assembly=kind==='dome'?this.domeModel(root,data.radius,buildTime):null;if(!assembly)this.model(root,kind,data.radius);root.position.fromArray(data.center);
     if(kind==='mirror')root.quaternion.setFromUnitVectors(forward,new T.Vector3(...data.normal));
-    const o={...data,id:++this.serial,spell,root,life:spell.duration+buildTime,age:0,buildTime,assembly,trapped:new Set(),rays:[],reflections:0};
+    const o={...data,id:++this.serial,spell,root,hp:kind==='mirror'?(spell.shield||120):undefined,life:spell.duration+buildTime,age:0,buildTime,assembly,trapped:new Set(),rays:[],reflections:0};
     if(kind==='dome')for(const actor of actors)if(actor.owner!==owner&&Math.hypot(actor.pos[0]-data.center[0],actor.pos[2]-data.center[2])<data.radius-.35)o.trapped.add(actor.owner);
     if(kind==='dome'){o.collider=new T.Mesh(this.geo.dome,this.glass);o.collider.position.fromArray(data.center);o.collider.scale.setScalar(data.radius);o.collider.updateMatrixWorld(true);}
     this.optics.push(o);return o;
@@ -112,13 +113,14 @@ export class LightArts {
     return {o,point,t};
   }
   mirrorHit(start,dir,o,range,padding=0){
+    if(o.hp<=0)return null;
     const denominator=dot(dir,o.normal);if(denominator>=-.000001)return null;
     const t=dot(sub(o.center,start),o.normal)/denominator;if(t<0||t>range)return null;
     const point=add(start,mul(dir,t)),local=new T.Vector3(...sub(point,o.center));local.applyQuaternion(o.root.quaternion.clone().invert());
     return Math.abs(local.x)<=1.1+padding&&Math.abs(local.y)<=1.4+padding?{o,point,t}:null;
   }
-  trace(owner,start,direction,walls=[],range=55){
-    const path=[],seen=new Set(),rayRange=range;let pos=[...start],dir=unit(direction),power=1,rayOwner=owner;
+  trace(owner,start,direction,walls=[],range=55,baseDamage=null){
+    const path=[],seen=new Set(),rayRange=range;let pos=[...start],dir=unit(direction),power=1,amplification=1,spectrum=0,rayOwner=owner;
     for(let step=0;step<10&&range>EPS;step++){
       let event=null,end=add(pos,mul(dir,range));
       const terrainPoint=this.intersectTerrain?.(pos,end);if(terrainPoint)event={terrain:true,point:terrainPoint,t:dist(pos,terrainPoint)};
@@ -128,9 +130,20 @@ export class LightArts {
         if(hit&&(!event||hit.t<event.t))event=hit;
       }
       if(event)end=event.point;
-      path.push({owner:rayOwner,start:[...pos],end:[...end],dir:[...dir],multiplier:power,spectrum:power>1?7:0,event:event?.o?.kind||(event?.wall?'wall':event?.terrain?'terrain':null),optic:event?.o,wall:event?.wall});
-      if(!event||event.wall||event.terrain)break;seen.add(event.o.id);range-=event.t;
-      if(event.o.kind==='sphere'){power=Math.max(power,event.o.spell.amplification);pos=add(end,mul(dir,EPS));continue;}
+      path.push({owner:rayOwner,start:[...pos],end:[...end],dir:[...dir],multiplier:power,spectrum,event:event?.o?.kind||(event?.wall?'wall':event?.terrain?'terrain':null),optic:event?.o,wall:event?.wall});
+      if(!event||event.terrain)break;
+      range-=event.t;
+      if(event.wall){
+        if(baseDamage===null)break;
+        const result=absorbDurability(event.wall,baseDamage*power);if(result.remaining<=1e-7)break;
+        power=result.remaining/baseDamage;pos=add(end,mul(dir,EPS));continue;
+      }
+      seen.add(event.o.id);
+      if(event.o.kind==='sphere'){const gain=Math.max(amplification,event.o.spell.amplification);power*=gain/amplification;amplification=gain;spectrum=7;pos=add(end,mul(dir,EPS));continue;}
+      if(event.o.kind==='mirror'&&baseDamage!==null){
+        const result=absorbDurability(event.o,baseDamage*power);
+        if(result.broken){event.o.life=0;if(result.remaining<=1e-7)break;power=result.remaining/baseDamage;pos=add(end,mul(dir,EPS));continue;}
+      }
       if(event.o.kind==='mirror'){rayOwner=event.o.owner;dir=reflect(dir,event.o.normal);pos=add(end,mul(dir,EPS));range=rayRange;continue;}
       break;
     }
@@ -150,22 +163,28 @@ export class LightArts {
     return path;
   }
   resolve(p,actors,walls,damage,intercept){
-    p.path=this.trace(p.owner,p.pos,p.dir,walls,p.spell.range);const hitOwners=new Set();
+    p.path=this.trace(p.owner,p.pos,p.dir,walls,p.spell.range,p.spell.damage);const hitOwners=new Set();
     for(const leg of p.path){
       const victim=actors.find(a=>a.owner!==leg.owner);intercept?.({owner:leg.owner,element:'light',style:p.spell.style,old:leg.start,p:leg.end,size:.07,damage:p.spell.damage*leg.multiplier});
       if(victim&&!hitOwners.has(leg.owner)){const along=dot(sub(victim.pos,leg.start),leg.dir),reach=dist(leg.start,leg.end);
         if(along>=0&&along<=reach&&dist(add(leg.start,mul(leg.dir,along)),victim.pos)<=.67){this.hit(leg.owner,p.spell,leg.multiplier,leg.dir,victim.pos,damage);hitOwners.add(leg.owner);}}
-      if(leg.wall){leg.wall.hp=Math.max(0,leg.wall.hp-p.spell.damage*leg.multiplier);this.flash(leg.end,.3);}
-      if(leg.event==='mirror'){leg.optic.reflections++;this.reflections++;this.flash(leg.end,.6);}
+      if(leg.wall)this.flash(leg.end,.3);
+      if(leg.event==='mirror'&&leg.optic.hp>0){leg.optic.reflections++;this.reflections++;this.flash(leg.end,.6);}
       if(leg.event==='dome'){const dome=leg.optic;dome.rays.push({age:0,ticks:0,power:leg.multiplier,spectrum:leg.spectrum,path:this.bouncePath(dome,leg.end,leg.dir,leg.multiplier,leg.spectrum)});this.flash(leg.end,.5);}
     }
     this.lastPaths=this.serialize(p.path);p.lastPulse=p.age;
   }
   redirect(shot,actors,walls=[]){
+    if(shot.style==='tsunami')return false;
     if(len(shot.v)<.001||['forming','staged','emerging','gathering','charging'].includes(shot.phase))return false;
     const delta=sub(shot.p,shot.old),range=len(delta);if(range<.000001)return false;const dir=unit(delta);let hit=null;
     for(const o of this.optics){if(o.kind!=='mirror'||o.owner===shot.owner||o.life<=0)continue;const h=this.mirrorHit(shot.old,dir,o,range,Math.min(.5,shot.size||0));if(h&&(!hit||h.t<hit.t))hit=h;}
-    if(!hit)return false;if(walls.some(w=>w.owner!==shot.owner&&w.hp>0&&w.life>0&&this.intersectWall(shot.old,hit.point,w)))return false;
+    if(!hit)return false;
+    const approach={...shot,p:hit.point};
+    const blocked=crossWalls(approach,walls,this.intersectWall,(w,p)=>this.flash(p,.3));shot.damage=approach.damage;
+    if(blocked){shot.life=0;shot.consumedByDefense=true;return true;}
+    const result=absorbDurability(hit.o,shot.damage);
+    if(result.broken){hit.o.life=0;this.flash(hit.point,.8);shot.damage=result.remaining;if(shot.damage<=1e-7){shot.p=[...hit.point];shot.life=0;shot.consumedByDefense=true;return true;}return false;}
     const speed=len(shot.v),out=reflect(unit(shot.v),hit.o.normal),remaining=Math.max(0,range-hit.t);
     shot.owner=hit.o.owner;shot.reflected=true;shot.v=mul(out,speed);shot.old=add(hit.point,mul(out,EPS));shot.p=add(shot.old,mul(out,remaining));
     shot.target=add(shot.p,mul(out,Math.min(55,(shot.life||4)*speed)));
@@ -228,9 +247,9 @@ export class LightArts {
       a.floor.scale.setScalar(shot.blastRadius*(1+Math.max(0,shot.age-shot.impactTime)*.4));
       for(const rung of a.stairs){rung.visible=shot.age>=shot.strikeTime&&rung.position.y>=bottom;rung.rotation.z=time*.3;}}
   }
-  status(owner){return this.optics.filter(o=>o.owner===owner).map(o=>`${{sphere:'Cầu thủy tinh',mirror:'Quang kính',dome:!this.domeReady(o)?'Vòm đang ghép gương':o.rays.length?`Vòm · ${o.rays.length} laser · ${o.rays.reduce((sum,r)=>sum+o.spell.damage*r.power,0)} sát thương/s`:'Vòm chờ laser'}[o.kind]} ${(!this.domeReady(o)?o.buildTime-o.age:o.life).toFixed(1)}s`).join(' · ');}
+  status(owner){return this.optics.filter(o=>o.owner===owner).map(o=>`${{sphere:'Cầu thủy tinh',mirror:'Quang kính',dome:!this.domeReady(o)?'Vòm đang ghép gương':o.rays.length?`Vòm · ${o.rays.length} laser · ${o.rays.reduce((sum,r)=>sum+o.spell.damage*r.power,0)} sát thương/s`:'Vòm chờ laser'}[o.kind]} ${(!this.domeReady(o)?o.buildTime-o.age:o.life).toFixed(1)}s${o.kind==='mirror'?' · '+Math.ceil(o.hp)+' bền':''}`).join(' · ');}
   serialize(path){return path.map(({owner,start,end,multiplier,spectrum,event})=>({owner,start:[...start],end:[...end],multiplier,spectrum,event}));}
-  state(){const optic=o=>({id:o.id,owner:o.owner,kind:o.kind,life:o.life,age:o.age,phase:this.domeReady(o)?'active':'assembling',buildTime:o.buildTime,panels:o.assembly?.panels.length||0,landedPanels:o.assembly?.panels.filter(p=>o.age>=p.delay+p.fallTime).length||0,trapped:[...o.trapped],center:[...o.center],normal:[...o.normal],radius:o.radius,reflections:o.reflections,rays:o.rays.map(r=>({age:r.age,ticks:r.ticks,power:r.power,spectrum:r.spectrum,path:this.serialize(r.path)}))});
+  state(){const optic=o=>({id:o.id,owner:o.owner,kind:o.kind,hp:o.hp??null,life:o.life,age:o.age,phase:this.domeReady(o)?'active':'assembling',buildTime:o.buildTime,panels:o.assembly?.panels.length||0,landedPanels:o.assembly?.panels.filter(p=>o.age>=p.delay+p.fallTime).length||0,trapped:[...o.trapped],center:[...o.center],normal:[...o.normal],radius:o.radius,reflections:o.reflections,rays:o.rays.map(r=>({age:r.age,ticks:r.ticks,power:r.power,spectrum:r.spectrum,path:this.serialize(r.path)}))});
     return {spheres:this.optics.filter(o=>o.kind==='sphere').map(optic),domes:this.optics.filter(o=>o.kind==='dome').map(optic),mirrors:this.optics.filter(o=>o.kind==='mirror').map(optic),pulses:this.pulses.map(p=>({owner:p.owner,age:p.age,ticks:p.ticks,path:this.serialize(p.path)})),jacobs:[...this.jacobs.keys()].map(s=>({owner:s.owner,target:[...s.target],phase:s.phase,age:s.age})),reflections:this.reflections,lastPath:this.lastPaths,preview:null};}
   reset(){for(const list of [this.optics,this.pulses,this.flashes])for(const x of [...list])this.remove(list,x);for(const a of this.jacobs.values()){a.root.removeFromParent();a.gold.material.dispose();}this.jacobs.clear();this.serial=0;this.reflections=0;this.lastPaths=[];}
 }

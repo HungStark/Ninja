@@ -8,7 +8,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
     const state=()=>page.evaluate(()=>__AN_HOA__.state()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t),click=id=>page.evaluate(id=>document.getElementById(id).click(),id);
     const clear=()=>page.keyboard.press('Backspace');
     const seal=async id=>{await clear();for(const k of await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id).sequence,id))await page.keyboard.press(k);};
-    const cast=async id=>{await seal(id);assert.equal(await page.locator('#castButton').isDisabled(),false,id);await page.keyboard.press('Space');};
+    const cast=async id=>{const s=await state(),spell=await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id),id);await advance(Math.max(0,s.cooldown+.001,(s.cooldowns[id]||0)+.001,(spell.cost-s.chakra)/s.chakraRegen+.001));await seal(id);assert.equal(await page.locator('#castButton').isDisabled(),false,id);await page.keyboard.press('Space');};
     const reset=async()=>{await page.keyboard.press('Escape');await click('resetButton');};
     const equip=async ids=>{if((await state()).started){await page.keyboard.press('Escape');await click('changeLoadout');}await click('clearLoadout');for(const id of ids)await page.evaluate(id=>document.querySelector('[data-equip="'+id+'"]').click(),id);await click('startButton');};
     const expect=async element=>{const s=await state();for(const [e,r] of Object.entries(s.handElementRings)){assert.equal(r.visible,e===element,e+' ring');assert.equal(r.motes,e===element,e+' motes');}assert.equal(s.handFlames,false);assert.equal(s.handWater,false);assert.equal(s.handLightning,false);};
@@ -28,12 +28,12 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
       await reset();const basic=element==='dark'?'dark-orb':element+'-orb';await seal(basic);await advance(.32);await expect(element);await capture(element+'-ready');
       const before=(await state()).handElementRings[element];await advance(.35);const after=(await state()).handElementRings[element];assert.ok(after.time>before.time);assert.ok(after.position.every((v,i)=>Math.abs(v-before.position[i])<.02));
       await page.keyboard.press('Escape');await expect(null);const frozen=(await state()).handElementRings;await advance(2);assert.deepEqual((await state()).handElementRings,frozen);await page.keyboard.press('Enter');await expect(element);
-      await page.keyboard.press('Space');await expect(null);await seal(basic);await expect(null);await advance(1.05);await expect(element);
+      await page.keyboard.press('Space');await expect(null);await seal(basic);await expect(null);await advance(Math.max(1.05,((await state()).cooldowns[basic]||0)+.01));await expect(element);
       await clear();await page.keyboard.press('w');await expect(null);await seal(basic);await advance(7.1);await expect(null);
       await seal(basic);await reset();await expect(null);
       const expensive=ids.find(id=>id.endsWith(element==='dark'?'-domain':element==='wind'?'-reflect':'-volley'));await cast(expensive);
       if(element==='dark')await advance(2.5);else await advance(1.05);
-      await seal(expensive);await expect(null);assert.equal(await page.locator('#castButton').isDisabled(),true);await advance(5.5);await expect(element);await clear();
+      await seal(expensive);await expect(null);assert.equal(await page.locator('#castButton').isDisabled(),true);const blocked=await state(),cost=await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id).cost,expensive);await advance(Math.max(0,(blocked.cooldowns[expensive]||0)+.01,(cost-blocked.chakra)/blocked.chakraRegen+.01));await seal(expensive);await expect(element);await clear();
       await reset();while((await state()).quality!=='Thấp')await click('qualityButton');await seal(basic);await advance(.32);await expect(element);await capture(element+'-low');await clear();
     }
     for(const element of ['wood','ice']){

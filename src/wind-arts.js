@@ -78,7 +78,7 @@ export class WindArts {
     }
   }
   redirect(shot,actors){
-    if(shot.style==='thunder'||['forming','staged','emerging','gathering','lightcharging'].includes(shot.phase))return false;
+    if(['thunder','tsunami'].includes(shot.style)||['forming','staged','emerging','gathering','lightcharging'].includes(shot.phase))return false;
     for(const s of this.spirits){
       if(s.owner===shot.owner||s.age+1e-6<s.formation)continue;
       const n=s.normal;if(shot.v[0]*n[0]+shot.v[2]*n[2]>=-.001)continue;

@@ -67,9 +67,9 @@
     {id:'light-orb',name:'Quang laser',kind:'attack',style:'lightray',rank:'D',sequence:[...'sd'],cost:24,damage:40,count:1,chargeTime:.08,range:55,subtitle:'Tia laser thẳng trắng–vàng · 40 sát thương; qua cầu thủy tinh thành 7 sắc và 70 sát thương'},
     {id:'light-barrier',name:'Cầu thủy tinh',kind:'defense',style:'lightsphere',rank:'S',sequence:[...'sdcvzx'],cost:32,damage:0,count:0,duration:8,amplification:1.75,subtitle:'Cầu trong suốt ngay trước mặt, tồn tại 8 giây · laser xuyên qua thành tia 7 sắc cầu vồng, tăng 75% sát thương'},
     {id:'light-lance',name:'Mái vòm gương',kind:'attack',style:'lightdome',rank:'S',sequence:[...'sdcvzxsd'],cost:54,damage:20,count:0,duration:10,domeRadius:6.2,domeBuildTime:1.2,subtitle:'Gương rơi ghép vòm trong 1,2 giây · đủ 3 ô né, chặn đường thoát · vòm kín tồn tại 10 giây · mỗi laser nảy gây 20 sát thương/giây, tia 7 sắc giữ nguyên màu và gây 35 · nhiều laser cộng dồn'},
-    {id:'light-reflect',name:'Quang kính',kind:'defense',style:'lightmirror',rank:'A',sequence:[...'sdzxc'],cost:28,damage:0,count:0,duration:2.5,subtitle:'Gương trước mặt tồn tại 2,5 giây · phản các đòn tấn công bay tới từ phía trước, kể cả laser'},
+    {id:'light-reflect',name:'Quang kính',kind:'defense',style:'lightmirror',rank:'A',sequence:[...'sdzxc'],cost:28,damage:0,count:0,shield:120,duration:2.5,subtitle:'Gương trước mặt tồn tại 2,5 giây · 120 độ bền · phản các đòn tấn công bay tới từ phía trước, kể cả laser'},
     {id:'light-volley',name:'Nấc thang của Jacob',kind:'attack',style:'jacob',rank:'SS',sequence:[...'sdzxcv'],cost:82,damage:160,count:1,size:1,chargeTime:1.25,blastRadius:3.5,speed:0,subtitle:'Ngước nhìn trời rồi lia xuống theo cột sáng trắng–vàng giáng xuống · 160 sát thương trong bán kính 3,5 m'}
-  ].map(s=>({...s,element:'light',glyph:'光',color:'#fff2bd',heal:0,shield:0}));
+  ].map(s=>({...s,element:'light',glyph:'光',color:'#fff2bd',heal:0,shield:s.shield||0}));
   const darkSpells = [
     { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:38, count:1, cloneCount:1, maxClones:3, upgradeMultiplier:1.5, subtitle:'Thêm một chó bóng · đủ 3 con thì mỗi lần thi triển nâng một chó thành bò bóng, sát thương 57 · không cản đạn' },
     { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:38, count:1, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm, đánh 38 sát thương rồi biến mất · trong lãnh địa tự trồi lên lại' },
@@ -99,6 +99,9 @@
     heal: v.kind === 'defense' && ['wood', 'light'].includes(el.id) ? 12 : 0
   })));
   const defaultLoadout = ['fire-volley', 'water-lance', 'lightning-volley', 'earth-barrier', 'ice-reflect'];
+  const chakraRegen=5,cooldownByRank={D:3,C:4,B:6,A:8,S:11,SS:15};
+  for(const spell of spells)spell.cooldown=cooldownByRank[spell.rank]||6;
+  const shuriken={name:'Phi tiêu',damage:6,speed:36,size:.075,interval:.45};
   function validateLoadout(ids, { allowDefenseOnly = false } = {}) {
     if (!Array.isArray(ids) || ids.length < 1 || ids.length > 5) return { ok: false, reason: 'Chọn từ 1 đến 5 chiêu.' };
     if (new Set(ids).size !== ids.length || ids.some(id => !spells.some(s => s.id === id))) return { ok: false, reason: 'Bộ chiêu không hợp lệ hoặc bị trùng.' };
@@ -109,6 +112,7 @@
   class GameRules {
     constructor(ids = defaultLoadout) {
       this.sequence = []; this.chakra = 100; this.time = 0; this.lastSeal = -Infinity; this.cooldown = 0; this.casts = 0;this.usedOnce=new Set();
+      this.cooldowns={};this.shurikenCooldown=0;this.shurikenThrows=0;
       const result = this.setLoadout(ids);
       if (!result.ok) throw new RangeError(result.reason);
     }
@@ -118,7 +122,9 @@
       this.loadout = [...ids]; this.spells = ids.map(id => spells.find(s => s.id === id)); this.clear(); return result;
     }
     tick(dt) {
-      this.time += dt; this.chakra = Math.min(100, this.chakra + dt * 11); this.cooldown = Math.max(0, this.cooldown - dt);
+      this.time += dt; this.chakra = Math.min(100, this.chakra + dt * chakraRegen); this.cooldown = Math.max(0, this.cooldown - dt);this.shurikenCooldown=Math.max(0,this.shurikenCooldown-dt);
+      if(this.shurikenCooldown<1e-7)this.shurikenCooldown=0;
+      for(const id of Object.keys(this.cooldowns)){this.cooldowns[id]=Math.max(0,this.cooldowns[id]-dt);if(this.cooldowns[id]<1e-7)delete this.cooldowns[id];}
       if (this.sequence.length && this.time - this.lastSeal > 7) { this.clear(); return 'expired'; }
     }
     ready() { return this.spells.find(s => s.sequence.join('') === this.sequence.join('')); }
@@ -130,10 +136,17 @@
       return { valid, ready: this.ready() };
     }
     clear() { this.sequence = []; }
+    remaining(id){return this.cooldowns[id]||0;}
+    throwShuriken(){
+      if(this.ready())return {ok:false,reason:'spellReady'};
+      if(this.shurikenCooldown>1e-7)return {ok:false,reason:'shurikenCooldown'};
+      this.shurikenCooldown=shuriken.interval;this.shurikenThrows++;this.clear();return {ok:true,weapon:shuriken};
+    }
     cast(context = {}) {
       const spell = this.ready();
       if (!spell) return { ok: false, reason: 'sequence' };
       if(spell.oncePerMatch&&this.usedOnce.has(spell.id))return {ok:false,reason:'once'};
+      if(this.remaining(spell.id)>1e-7)return {ok:false,reason:'spellCooldown',remaining:this.remaining(spell.id)};
       if(spell.requiresSnowFull&&!context.snowFull)return {ok:false,reason:'snow'};
       if(spell.snowCost&&(context.snowAmount||0)+1e-6<spell.snowCost)return {ok:false,reason:'snowCost'};
       if(spell.requiresGarden&&!context.woodGarden)return {ok:false,reason:'garden'};
@@ -144,7 +157,7 @@
       if (spell.style==='shadowclone' && context.shadowCloneCount>=spell.maxClones && !context.shadowUpgrades) return {ok:false,reason:'cloneLimit'};
       if (this.cooldown > 0) return { ok: false, reason: 'cooldown' };
       if (this.chakra < spell.cost) return { ok: false, reason: 'chakra' };
-      this.chakra -= spell.cost; this.cooldown = 1; this.casts++;if(spell.oncePerMatch)this.usedOnce.add(spell.id); this.clear(); return { ok: true, spell };
+      this.chakra -= spell.cost; this.cooldown = 1;this.cooldowns[spell.id]=spell.cooldown; this.casts++;if(spell.oncePerMatch)this.usedOnce.add(spell.id); this.clear(); return { ok: true, spell };
     }
   }
   class Fighter {
@@ -158,6 +171,7 @@
       if(this.invulnerableTime>0)return {damage:0,absorbed:0,reflected:false,restored:false,immune:true};
       if (this.reflect && !reflected) { this.reflect--; return { damage: 0, reflected: true }; }
       const absorbed = ignoreShield?0:Math.min(this.shield, damage); this.shield -= absorbed;
+      if(absorbed>0&&this.shield<=1e-7){this.shield=0;this.shieldTime=0;this.reflect=0;}
       const actual = Math.min(this.hp, Math.max(0, damage - absorbed)); this.hp -= actual;
       const restored = this.hp <= 0;
       if (restored) this.hp = this.maxHp;
@@ -236,5 +250,5 @@
     }
     return { travelTime, slowFactor: travelTime/dt };
   }
-  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep };
+  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter, chakraRegen, cooldownByRank, shuriken, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep };
 })(globalThis);

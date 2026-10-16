@@ -3,6 +3,7 @@ import { glowTexture, smokeTexture } from "./materials.js";
 import { FireArts } from './fire-arts.js';
 import { WaterArts } from './water-arts.js';
 import { LightningArts } from './lightning-arts.js';
+import { ShurikenVisuals } from './shuriken.js';
 export class FireEffects {
   constructor(scene) {
     this.scene = scene;
@@ -14,6 +15,7 @@ export class FireEffects {
     this.arts = new FireArts(scene, this.glow);
     this.waterArts = new WaterArts(scene);
     this.lightningArts = new LightningArts(scene);
+    this.shurikens=new ShurikenVisuals(scene);
     this.smokeMap = smokeTexture();
     this.lights = [];
     for (let i = 0; i < 3; i++) {
@@ -76,7 +78,7 @@ export class FireEffects {
     while (this.objects.length < shots.length) this.makeShot();
     for (let i = 0; i < this.objects.length; i++) {
       const g = this.objects[i], shot = shots[i];
-      g.visible = !!shot && !['fire', 'water', 'lightning', 'dark','wind','light','wood','ice'].includes(shot.element);
+      g.visible = !!shot && !['fire', 'water', 'lightning', 'dark','wind','light','wood','ice','weapon'].includes(shot.element);
       if (!g.visible) continue;
       g.children[0].material.uniforms.uTime.value = time;
       g.children[0].material.uniforms.uColor.value.set(shot.color || '#ff844b');
@@ -92,7 +94,7 @@ export class FireEffects {
     }
     for (let i = 0; i < this.lights.length; i++) {
       const shot = shots[i], l = this.lights[i];
-      l.intensity = !shot || ['tsunami','thunder'].includes(shot.style) ? 0 : shot.style==='icebind'?(shot.phase==='blooming'?.18:.5):shot.style === 'boat' ? 5 : (['lightning','dark','wind'].includes(shot.element)?2.5:18) * shot.size;
+      l.intensity = !shot || ['tsunami','thunder','shuriken'].includes(shot.style) ? 0 : shot.style==='icebind'?(shot.phase==='blooming'?.18:.5):shot.style === 'boat' ? 5 : (['lightning','dark','wind'].includes(shot.element)?2.5:18) * shot.size;
       if (shot) l.position.fromArray(shot.p);
       if (shot) l.color.set(shot.color || '#ff844b');
     }
@@ -139,11 +141,13 @@ export class FireEffects {
     this.arts.update(dt, time, shots, walls, fighters, quality);
     this.waterArts.update(dt, time, shots, walls, fighters);
     this.lightningArts.update(dt,time,shots,fields,fighters,quality);
+    this.shurikens.update(shots);
   }
   reset() {
     this.arts.reset();
     this.waterArts.reset();
     this.lightningArts.reset();
+    this.shurikens.reset();
     this.objects.forEach((o) => o.visible = false);
     this.smoke.length = 0;
     this.rings.forEach((r) => {

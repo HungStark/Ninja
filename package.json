@@ -32,7 +32,9 @@
     "test:light": "node tests/light-core.mjs && node tests/light.cjs",
     "test:earth": "node tests/earth-core.mjs && node tests/earth.cjs",
     "test:nature": "node tests/nature-core.mjs && node tests/nature.cjs",
-    "test:hand-element-rings": "node tests/hand-element-rings.cjs"
+    "test:hand-element-rings": "node tests/hand-element-rings.cjs",
+    "test:cooldowns": "node tests/cooldowns-shuriken.cjs",
+    "test:combat": "node tests/combat-core.mjs && node tests/combat.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

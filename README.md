@@ -20,6 +20,14 @@ Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc 
 
 ## Chiêu thức và trận đấu
 
+Mỗi chiêu có hồi chiêu riêng theo cấp: **D 3 giây, C 4 giây, B 6 giây, A 8 giây, S 11 giây, SS 15 giây**. Thời gian còn lại hiện trên quyển trục trong trận; vẫn có nhịp nghỉ chung 1 giây giữa hai lần thi triển thuật. Chakra hồi **5 điểm/giây**. Các chiêu giới hạn một lần mỗi trận vẫn giữ giới hạn đó.
+
+Nhấn **SPACE** khi chưa kết đủ chuỗi ấn hợp lệ sẽ ném một phi tiêu nhỏ bốn cánh xoay theo hướng ngắm: **6 sát thương, không tốn chakra**, cách mỗi lần ném ít nhất **0,45 giây**. Ném phi tiêu xóa chuỗi ấn đang dở. Chuỗi đã hoàn chỉnh nhưng thiếu chakra, chưa đủ điều kiện hoặc còn hồi chiêu sẽ được giữ lại.
+
+Giáp bao thân và các mặt chắn đều có độ bền. Đòn mạnh hơn độ bền còn lại sẽ phá lớp chắn và tiếp tục với sát thương dư; ví dụ 100 sát thương gặp mặt chắn còn 30 độ bền thì còn 70 sát thương để đi tiếp. Từng lớp chắn trừ sát thương riêng, theo thứ tự trên đường bay, áp dụng cả thuyền và laser bảy màu. Quang kính có 120 độ bền: phản đòn khi còn chịu được, vỡ khi quá tải.
+
+**Sóng thần** cuốn các chiêu, mặt chắn, giáp đối thủ, bóng Ám, gương và tinh linh nằm trong thể tích sóng, tiếp tục gây 30 sát thương một lần và không bị phản lại. Bóng bị cuốn biến mất hẳn, không hồi lại trong lãnh địa. Tuyết tích lũy, quả cầu Tuyết Táng và các cây sống của vườn Mộc được giữ nguyên; tường băng và quả óc chó đang chắn đòn vẫn bị cuốn.
+
 Mỗi lần kết ấn, bóng tương ứng xuất hiện phía sau hai tay với độ đậm **55%** và ẩn sau **0,2 giây**.
 Ấn **F — Đối quyền**: co cả bốn ngón, ôm ngón cái ngoài nắm tay rồi đưa hai nắm đấm chạm khớp ngón ở giữa.
 Ấn mới thay bóng cũ và bắt đầu lại thời gian hiển thị. Bảng ghép 12 ấn với ảnh bóng
@@ -91,7 +99,7 @@ Kết đủ ấn và sẵn sàng thi triển bất kỳ chiêu Lôi nào sẽ hi
 
 Phong có đúng năm chiêu, giữ các ID đã lưu. Lốc nâng mô hình đối thủ và góc nhìn của người bị trúng lên thật khỏi mặt đất. Trong cửa sổ 2 giây, người tung lốc có thể kết **R A D → SPACE** để nối liên trảm đúng mục tiêu đó, một lần mỗi lốc; thời gian giữ trên không được cộng thêm 2 giây vào thời gian còn lại. Liên trảm không dùng độc lập hoặc nối lốc của bên kia, không trừ chakra/xóa ấn khi điều kiện không còn hợp lệ. Lốc bị khiên hấp thụ hoàn toàn hoặc đánh trượt không hất tung; có thể né hoặc dùng độn thổ để tránh. Hất tung cộng với các trạng thái khống chế khác mà không xóa chúng.
 
-Tinh linh nhỏ xinh dạng tiên bướm, hai đôi cánh 3D tròn mềm, râu bướm, ánh xanh lá nhẹ và đốm sáng bay quanh; vật liệu cel với viền rất mảnh xuất hiện trong 1,8 giây, sau đó thổi gió và bảo vệ trong 5 giây. Tinh linh xuất hiện trước mặt ở tầm mắt, lệch nhẹ khỏi đường ngắm, chào người triệu hồi rồi quay về phía đối thủ. Camera giữ FPS trong toàn bộ quá trình; vẫn kết ấn, ngắm và né bình thường. Mã camera nhìn thẳng xuống 90°, mô hình người chơi 3D và mũi tên hướng ngắm vẫn được giữ, mặc định tắt; kiểm tra bằng `test:wind-camera` có thể bật riêng qua hook test `setWindCameraEnabled(true)`. Tinh linh đi theo người triệu hồi, hướng gió theo hướng ngắm hiện tại; bảo vệ vùng trước mặt rộng 8 m, sâu 10 m, cao 10 m. Chiêu đang bay vào vùng từ phía trước bị thổi ngược về đối thủ, giữ sát thương và tốc độ; phản liên tục nhiều chiêu, gồm cả thuyền và sóng đang di chuyển. Đòn từ bên hông, phía sau, sét đánh thẳng từ trên trời, hoặc chiêu chưa hình thành/bắt đầu bay không bị phản. Phản bởi gió không phụ thuộc thuộc tính phản khiên thông thường; chiêu qua hai tinh linh đối nghịch vẫn có thời gian sống hữu hạn. Tường gió đứng ở vị trí thi triển, có thể tồn tại cùng tinh linh; thi triển lại thay tường/tinh linh cũ của cùng bên. Hoạt ảnh, combo, thời gian bảo vệ và camera đều dừng khi tạm dừng, xóa khi đấu lại. Đồ họa thấp giữ toàn bộ cơ chế.
+Tinh linh nhỏ xinh dạng tiên bướm, hai đôi cánh 3D tròn mềm, râu bướm, ánh xanh lá nhẹ và đốm sáng bay quanh; vật liệu cel với viền rất mảnh xuất hiện trong 1,8 giây, sau đó thổi gió và bảo vệ trong 5 giây. Tinh linh xuất hiện trước mặt ở tầm mắt, lệch nhẹ khỏi đường ngắm, chào người triệu hồi rồi quay về phía đối thủ. Camera giữ FPS trong toàn bộ quá trình; vẫn kết ấn, ngắm và né bình thường. Mã camera nhìn thẳng xuống 90°, mô hình người chơi 3D và mũi tên hướng ngắm vẫn được giữ, mặc định tắt; kiểm tra bằng `test:wind-camera` có thể bật riêng qua hook test `setWindCameraEnabled(true)`. Tinh linh đi theo người triệu hồi, hướng gió theo hướng ngắm hiện tại; bảo vệ vùng trước mặt rộng 8 m, sâu 10 m, cao 10 m. Chiêu đang bay vào vùng từ phía trước bị thổi ngược về đối thủ, giữ sát thương và tốc độ; phản liên tục nhiều chiêu, gồm cả thuyền đang di chuyển. Sóng thần cuốn tinh linh thay vì bị phản. Đòn từ bên hông, phía sau, sét đánh thẳng từ trên trời, hoặc chiêu chưa hình thành/bắt đầu bay không bị phản. Phản bởi gió không phụ thuộc thuộc tính phản khiên thông thường; chiêu qua hai tinh linh đối nghịch vẫn có thời gian sống hữu hạn. Tường gió đứng ở vị trí thi triển, có thể tồn tại cùng tinh linh; thi triển lại thay tường/tinh linh cũ của cùng bên. Hoạt ảnh, combo, thời gian bảo vệ và camera đều dừng khi tạm dừng, xóa khi đấu lại. Đồ họa thấp giữ toàn bộ cơ chế.
 
 ### Ám thuật và Hắc lãnh địa
 
@@ -183,9 +191,9 @@ Chuỗi của mỗi hệ bắt đầu bằng hai ấn nhận diện hệ. Nếu 
 
 Thi triển khiên bao thân mới thay thế khiên cũ. Đạn đã phản không được phản tiếp để tránh vòng lặp. Mỗi đạn có màu, ánh sáng và vệt theo hệ.
 
-Hai bên có **1000 sinh lực** và **100 chakra**. Chakra hồi 11 mỗi giây, cách hai lần thi triển ít nhất 1 giây. Kết đủ chuỗi 2–10 ấn của chiêu theo quyển trục rồi nhấn Space. Cấp và số ấn được ghi trên từng thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
+Hai bên có **1000 sinh lực** và **100 chakra**. Chakra hồi 5 mỗi giây; mỗi chiêu hồi riêng 3–15 giây, cách hai lần thi triển thuật ít nhất 1 giây. Kết đủ chuỗi 2–10 ấn của chiêu theo quyển trục rồi nhấn Space. Cấp và số ấn được ghi trên từng thẻ chiêu. Nhập sai sẽ thử bắt đầu chuỗi mới từ phím vừa bấm; chuỗi hết hạn sau 7 giây không nhập ấn.
 
-Quyển trục mang theo trong trận hiện đủ tên và phím kết ấn của cả 5 chiêu, không cần cuộn; trên màn hình nhỏ, bảng chiêu nằm phía dưới. Nhấn Space sẽ tung đạn hoặc tạo khiên ngay, đồng thời đọc tên chiêu và trừ chakra. Có thể kết chuỗi tiếp theo khi giọng đọc vẫn đang chạy; khoảng cách giữa hai lần thi triển vẫn là 1 giây. Giọng đọc dùng tính năng tổng hợp tiếng nói của trình duyệt, ưu tiên giọng tiếng Việt trên máy. Tắt âm thanh, thiếu giọng đọc hoặc lỗi dịch vụ giọng nói không làm chậm chiêu. Tạm dừng cũng dừng giọng đọc; đấu lại hoặc về chọn chiêu sẽ hủy giọng đang đọc. Banner 12 hình kết ấn được ẩn.
+Quyển trục mang theo trong trận hiện đủ tên và phím kết ấn của cả 5 chiêu, không cần cuộn; trên màn hình nhỏ, bảng chiêu nằm phía dưới. Nhấn Space khi đủ ấn sẽ thi triển chiêu ngay, đồng thời đọc tên chiêu và trừ chakra. Có thể kết chuỗi tiếp theo khi giọng đọc vẫn đang chạy; khoảng cách giữa hai lần thi triển vẫn là 1 giây. Giọng đọc dùng tính năng tổng hợp tiếng nói của trình duyệt, ưu tiên giọng tiếng Việt trên máy. Tắt âm thanh, thiếu giọng đọc hoặc lỗi dịch vụ giọng nói không làm chậm chiêu. Tạm dừng cũng dừng giọng đọc; đấu lại hoặc về chọn chiêu sẽ hủy giọng đang đọc. Banner 12 hình kết ấn được ẩn.
 
 Đối thủ đứng ở đầu sân bên kia, cách vị trí xuất phát của người chơi 31 m, sử dụng model tay có khớp và bộ 12 thế tay như người chơi. Máy kết từng ấn theo đúng độ dài của từng chiêu trước khi tung chiêu, ngắm vị trí của người chơi lúc phóng đạn, có chakra và có thể chọn phòng ngự khi bị tấn công. Thanh trên cùng cho biết máu, hệ, chakra và chiêu đang kết ấn. Qua mỗi trận, máy dùng tổ hợp hệ khác.
 
@@ -194,7 +202,7 @@ Tuyết Táng kết thúc trận khi chôn vùi và cuốn đối thủ đi. V�
 ## Điều khiển
 
 - **Q W E R A S D F Z X C V:** 12 ấn. Xem chuỗi phím trên quyển trục mang theo; banner hình ấn được ẩn.
-- **Space:** thi triển chiêu đã kết đủ ấn. **Backspace:** xóa chuỗi.
+- **Space:** thi triển chiêu đã kết đủ ấn; nếu chưa có chuỗi hoàn chỉnh, ném phi tiêu không tốn chakra. **Backspace:** xóa chuỗi.
 - **Lia chuột:** xoay hướng ngắm. Con trỏ được khóa và thay bằng tâm ngắm chính giữa màn hình khi vào trận. Hướng bắn luôn đi qua tâm ngắm.
 - **Click chuột trái:** né một bước 1,8 m sang trái. **Click chuột phải:** né một bước 1,8 m sang phải. Hướng né theo nút bấm, độc lập vị trí hoặc hướng lia chuột. Giữ nút không tự di chuyển tiếp; bấm thêm để né tiếp, trong giới hạn sân đấu.
 - Không còn di chuyển tiến/lùi hoặc di chuyển bằng phím mũi tên. Q/W/A/S/D dành cho kết ấn.
@@ -227,7 +235,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:ranks:** kiểm tra vị trí xuất phát của đối thủ, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
 - **npm run test:lightning:** năm chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
 - **npm run test:dark:** năm Ám thuật, mái vòm và lãnh địa, chó bóng đứng chờ/nhận lệnh, mỗi lần một con, tối đa ba con mỗi bên, đạn xuyên qua, biến mất/hồi lại trong và ngoài lãnh địa, voi bóng rơi gây 90 sát thương và khóa 2 giây, né hoặc lặn trước khi voi đáp, lặn miễn nhiễm với thao tác bình thường, hai bên và máy, hết hạn, tạm dừng/reset, đồ họa thấp và giảm chuyển động.
-- **npm run test:wind:** năm Phong thuật, combo hất tung 2 + 2 giây, sát thương 70 + 70, tường gió, camera tinh linh, phản liên tục phía trước và theo hướng ngắm, thuyền/sóng đổi hướng, hai bên, tạm dừng/reset/hết hạn, đồ họa thấp, giảm chuyển động và máy nối combo.
+- **npm run test:wind:** năm Phong thuật, combo hất tung 2 + 2 giây, sát thương 70 + 70, tường gió, camera tinh linh, phản liên tục phía trước và theo hướng ngắm, thuyền đổi hướng, hai bên, tạm dừng/reset/hết hạn, đồ họa thấp, giảm chuyển động và máy nối combo.
 - **npm run test:earth:** luật và trình duyệt cho năm Thổ thuật, địa hình thật, độ cao/chậm bước/khôi phục, gai đá, năm đợt Sơn Hà, tường cong chặn đạn và di chuyển, Địa Bộc Thiên Tinh và góc máy, né/khiên/miễn nhiễm, hai bên/AI, tạm dừng/reset và các chế độ đồ họa; ảnh tại `test-results/earth/`.
 - **npm run test:nature:** luật và trình duyệt cho Băng/Mộc: chiêu 10 ấn một lần mỗi trận, vườn bốn loại cây, giới hạn chiều cao, độc theo thời gian, dây leo/trúc/quả óc chó chắn trước, hoạt ảnh và mật độ phun theo tăng trưởng, tuyết đủ 90 giây và gom thành cầu, sương mù và ảo ảnh, cầu tuyết không thể chặn, thắng/thua, AI hai hệ, tạm dừng/reset và đồ họa thấp; ảnh tại `test-results/nature/`.
 - **npm run test:light:** luật và trình duyệt cho laser trắng–vàng, cầu thủy tinh 8 giây/7 sắc, mái vòm 10 giây/laser nảy/sát thương mỗi giây, gương 2,5 giây/phản đòn, Jacob và góc máy; kiểm tra hai bên, AI, ngắm trượt/tường/khiên/miễn nhiễm, tạm dừng/reset, đồ họa thấp và giảm chuyển động; ảnh tại `test-results/light/`.
@@ -240,6 +248,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:graphics:** kiểm tra pixel môi trường ở ba mức đồ họa và chụp thế tay/giao diện.
 - **npm run test:anime:** chụp dáng nghỉ và đủ 12 thế tay, viền theo khung xương, vòng Hỏa–Thủy–Lôi, camera Lôi điểu, ba mức đồ họa, cửa sổ nhỏ/điện thoại và giảm chuyển động; kiểm tra lỗi shader.
 - **npm run test:hand-vfx:** kiểm tra 12 bóng, thời gian 0,2 giây, kết ấn liên tiếp, vầng lửa khi Space sẵn sàng, hồi chiêu/chakra, tạm dừng/reset và chế độ đồ họa thấp.
+- **npm run test:cooldowns:** hồi chiêu riêng, chakra hồi 5/giây, phi tiêu xoay bốn cánh không tốn chakra, hướng ngắm/sát thương/chặn tường, chuỗi ấn bị khóa, tạm dừng/reset và máy.
 - **npm run test:hand-element-rings:** kiểm tra vòng Phong–Ám–Quang–Thổ–Mộc–Băng cho cả 30 chiêu, điều kiện thi triển, màu/hoạt ảnh, đi theo tay, chuyển hệ, hồi chiêu/chakra, tạm dừng/reset, đồ họa thấp và giảm chuyển động; xuất ảnh vào `test-results/hand-element-rings/`.
 - **npm run test:meteor-zoom:** kiểm tra zoom in/out trên trời, tạm dừng, đổi kích thước/chất lượng, khôi phục hướng ngắm, reset và chế độ giảm chuyển động.
 

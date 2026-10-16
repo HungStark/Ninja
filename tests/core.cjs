@@ -6,6 +6,11 @@ const loadoutForSpell = spell => spell.kind === 'attack' ? [spell.id] : [spell.i
 assert.equal(new Set(keys).size, 12);
 assert.equal(elements.length, 9); assert.equal(spells.length, 45);
 assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 45);
+for(const spell of spells)assert.ok(spell.cooldown>=3&&spell.cooldown<=15);
+const balance=new GameRules(['fire-volley','fire-barrier']);balance.chakra=0;balance.tick(2);assert.equal(balance.chakra,10);balance.chakra=100;
+spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.equal(balance.remaining('fire-volley'),6);balance.tick(1.01);
+spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.ok(balance.remaining('fire-volley')>0&&balance.remaining('fire-barrier')>0);balance.clear();spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));const savedChakra=balance.chakra;assert.equal(balance.cast().reason,'spellCooldown');assert.equal(balance.chakra,savedChakra);assert.equal(balance.sequence.join(''),'qwdf');balance.tick(16);assert.equal(Object.keys(balance.cooldowns).length,0);
+const weapons=new GameRules(['fire-volley']);weapons.chakra=0;weapons.seal('q');assert.equal(weapons.throwShuriken().weapon.damage,6);assert.equal(weapons.chakra,0);assert.equal(weapons.casts,0);assert.equal(weapons.shurikenThrows,1);assert.equal(weapons.sequence.length,0);assert.equal(weapons.throwShuriken().ok,false);weapons.tick(.45);assert.equal(weapons.throwShuriken().ok,true);spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>weapons.seal(k));assert.equal(weapons.throwShuriken().reason,'spellReady');assert.equal(weapons.sequence.join(''),'qwdf');
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
   assert.equal(list.filter(s=>s.kind==='attack').length,['dark','earth','wood'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,['dark','earth','wood'].includes(element.id)?1:2);
@@ -66,7 +71,7 @@ assert.equal(r.setLoadout([]).ok,false); assert.equal(r.loadout.join(','),defaul
 assert.equal(r.setLoadout(defenseOnly).ok,false); assert.equal(r.loadout.join(','),defaultLoadout.join(','));
 const orb=spells.find(s=>s.id==='fire-volley');orb.sequence.forEach(k=>r.seal(k));r.chakra=orb.cost-1;
 assert.equal(r.cast().reason,'chakra');assert.equal(r.sequence.length,orb.sequence.length);r.tick(.2);assert.equal(r.cast().ok,true);
-orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().reason,'cooldown');r.tick(1.1);assert.equal(r.cast().reason,'chakra');r.tick(3);assert.equal(r.cast().ok,true);
+orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().reason,'spellCooldown');r.tick(orb.cooldown+.01);assert.equal(r.cast().reason,'chakra');r.tick(2.1);r.clear();orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().ok,true);
 const shield=spells.find(s=>s.id==='fire-barrier'), mirror={style:'reflect',shield:25,duration:2.8,color:'#a6edff',element:'ice',heal:0};
 const fighter=new Fighter();fighter.defend(shield);assert.equal(fighter.shield,75);fighter.receive(43);assert.equal(fighter.hp,1000);assert.equal(fighter.shield,32);
 fighter.receive(50);assert.equal(fighter.hp,982);fighter.tick(4.6);assert.equal(fighter.shield,0);
