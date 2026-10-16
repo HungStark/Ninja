@@ -11,11 +11,19 @@ export class ShurikenVisuals {
     this.edges=new T.EdgesGeometry(this.geometry,25);
     this.material=vfxToon('#c0cbd6',{side:T.DoubleSide,emissive:'#263849',emissiveIntensity:.35});
     this.ink=new T.LineBasicMaterial({color:'#263747'});
+    this.waterMaterial=new T.MeshBasicMaterial({color:'#59cfff',transparent:true,opacity:.35,depthWrite:false,blending:T.AdditiveBlending});
+    this.waterShell=new T.SphereGeometry(.18,12,8);this.waterRing=new T.TorusGeometry(.17,.018,4,24);
   }
   update(shots){
     for(const [shot,root] of this.objects)if(!shots.includes(shot)){root.removeFromParent();this.objects.delete(shot);}
     for(const shot of shots){if(shot.style!=='shuriken')continue;let root=this.objects.get(shot);
-      if(!root){root=new T.Group();const spinner=new T.Group();spinner.add(new T.Mesh(this.geometry,this.material),new T.LineSegments(this.edges,this.ink));root.add(spinner);root.userData.spinner=spinner;this.scene.add(root);this.objects.set(shot,root);}
+      if(!root){root=new T.Group();const spinner=new T.Group();spinner.add(new T.Mesh(this.geometry,this.material),new T.LineSegments(this.edges,this.ink));root.add(spinner);root.userData.spinner=spinner;
+        if(shot.waterInfused){
+          const shell=new T.Mesh(this.waterShell,this.waterMaterial);shell.scale.set(1,1,.55);spinner.add(shell);
+          for(let i=0;i<2;i++){const ring=new T.Mesh(this.waterRing,this.waterMaterial);ring.rotation.set(i*.9,.7+i*.4,0);spinner.add(ring);}
+          for(let i=0;i<5;i++){const drop=new T.Mesh(this.waterShell,this.waterMaterial);drop.scale.set(.18,.18,.4+i*.13);drop.position.set(Math.sin(i*2.4)*.12,Math.cos(i*2.4)*.12,-.2-i*.1);root.add(drop);}
+        }
+        this.scene.add(root);this.objects.set(shot,root);}
       root.position.fromArray(shot.p);this.direction.fromArray(shot.v).normalize();root.quaternion.setFromUnitVectors(this.forward,this.direction);root.userData.spinner.rotation.z=shot.age*38;
     }
   }

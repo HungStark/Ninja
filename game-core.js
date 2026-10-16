@@ -31,24 +31,24 @@
     { id: 'fire-volley', name: 'Hỏa liên đạn', kind: 'attack', style: 'volley', rank: 'B', sequence: [...'qwdf'], cost: 40, damage: 9.6, size: .075, count: 3, speed: flightSpeeds.quick, holdTime: .5, salvoInterval: .1, subtitle: 'Ba hỏa cầu nhỏ xếp ngang • mỗi viên 9,6 sát thương • giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây' },
     { id: 'fire-lance', name: 'Rồng lửa', kind: 'attack', style: 'dragon', rank: 'S', sequence: [...'qwcvzx'], cost: 56, damage: 104, size: .72, count: 1, speed: flightSpeeds.heavy, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
     { id: 'fire-meteor', name: 'Thiên thạch', kind: 'attack', style: 'meteor', rank: 'SS', sequence: [...'qwcvzxer'], cost: 82, damage: 150, size: 1.5, count: 1, speed: flightSpeeds.heavy, blastRadius: 5.5, subtitle: 'Thiên thạch từ trời • nổ lan bán kính 5,5 m' },
-    { id: 'fire-barrier', name: 'Khiên lửa', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'qwa'], cost: 26, damage: 0, shield: 75, duration: 4.5, count: 0, subtitle: 'Vòm lửa bao quanh người • hấp thụ 75 sát thương' },
+    { id: 'fire-barrier', name: 'Phóng hỏa', kind: 'defense', style: 'ignite', rank: 'C', sequence: [...'qwa'], cost: 26, damage: 0, count: 0, requiresBurn:true, subtitle: 'Tiêu thụ 1–5 tầng bỏng • bốc cháy gây 10 / 20 / 30 / 45 / 60 sát thương' },
     { id: 'fire-reflect', name: 'Tường lửa', kind: 'defense', style: 'firewall', rank: 'A', sequence: [...'qwzxc'], cost: 36, damage: 0, shield: 120, duration: 5, count: 0, wallWidth: 7, wallHeight: 4.2, subtitle: 'Tường lửa phía trước • chặn đạn, tồn tại 5 giây' }
   ].map(s => ({ ...s, element: 'fire', glyph: '火', color: '#ff844b', heal: 0, shield: s.shield || 0 }));
   // Preserve saved water IDs; the former lance/volley/reflect now have water-specific behavior.
   const waterSpells = [
     { id: 'water-lance', name: 'Thủy ngục', kind: 'attack', style: 'prison', rank: 'A', sequence: [...'wezxc'], cost: 38, damage: 12, size: .55, count: 1, speed: flightSpeeds.quick, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
-    { id: 'water-volley', name: 'Ném thuyền', kind: 'attack', style: 'boat', rank: 'S', sequence: [...'wecvzx'], cost: 56, damage: 90, size: 1.7, count: 1, speed: flightSpeeds.heavy, blastRadius: 3.5, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm' },
+    { id: 'water-volley', name: 'Ném thuyền', kind: 'attack', style: 'boat', rank: 'S', sequence: [...'wecvzx'], cost: 56, damage: 90, size: 1.7, count: 1, speed: flightSpeeds.heavy, blastRadius: 3.5, controlDuration:1, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm • 108 sát thương và choáng 1 giây khi trúng' },
     { id: 'water-tsunami', name: 'Sóng thần', kind: 'attack', style: 'tsunami', rank: 'SS', sequence: [...'wecvzxer'], cost: 72, damage: 30, size: 1, count: 1, speed: flightSpeeds.heavy, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức • đẩy phân thân ra sau đối thủ, không phá hủy • sát thương vừa phải' },
-    { id: 'water-barrier', name: 'Khiên nước', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, shield: 65, duration: 4.5, count: 0, subtitle: 'Khiên nước bao quanh bản thân • hấp thụ 65 sát thương' },
+    { id: 'water-barrier', name: 'Thủy phi tiêu', kind: 'defense', style: 'waterweapon', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, duration:30, weaponDamage:15, weaponSpeedMultiplier:2, count:0, subtitle:'Phủ nước lên phi tiêu trong 30 giây • mỗi phi tiêu 15 sát thương, tốc độ gấp đôi' },
     { id: 'water-reflect', name: 'Thủy thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence: [...'wedf'], cost: 32, damage: 0, shield: 95, duration: 5, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
-  ].map(s => ({ ...s, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
+  ].map(s => ({ ...s, damage:Math.round(s.damage*1.2*100)/100, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
   // Keep saved lightning IDs while giving each art its own behavior.
   const lightningSpells = [
     { id: 'lightning-lance', name: 'Lôi thương', kind: 'attack', style: 'lance', rank: 'B', sequence: [...'erdf'], cost: 40, damage: 62, size: .3, count: 1, speed: 38, subtitle: 'Thương sét dài • mũi nhọn và đuôi điện' },
     { id: 'lightning-volley', name: 'Lôi điểu', kind: 'attack', style: 'bird', rank: 'S', sequence: [...'ercvzx'], cost: 56, damage: 102, size: .9, count: 1, speed: 27, subtitle: 'Chim hiện ra từ cầu sét rồi lao tới • góc nhìn trên cao' },
     { id: 'lightning-thunder', name: 'Thiên lôi', kind: 'attack', style: 'thunder', rank: 'SS', sequence: [...'ercvzxer'], cost: 82, damage: 150, size: 1, count: 1, speed: 0, blastRadius: 4.5, chargeTime: 1.4, subtitle: 'Ngước nhìn mây chớp điện • trả góc nhìn rồi sét đánh xuống' },
-    { id: 'lightning-barrier', name: 'Lôi thuẫn', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'era'], cost: 26, damage: 0, shield: 80, duration: 5, count: 0, subtitle: 'Khiên điện bao quanh bản thân • hấp thụ 80 sát thương trong 5 giây' },
-    { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .3, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 30% tốc độ trong vùng' }
+    { id: 'lightning-barrier', name: 'Điện giật', kind: 'defense', style: 'discharge', rank: 'C', sequence: [...'era'], cost: 26, damage: 0, count: 0, requiresStatic:true, subtitle: 'Tiêu thụ 1–3 điểm tĩnh điện • choáng 0,5 / 1 / 2 giây, sau đó từ tính hút chiêu Lôi 3 / 5 / 7 giây' },
+    { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .15, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 15% tốc độ trong vùng' }
   ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
   const windSpells = [
     {id:'wind-orb',name:'Phong nhận',kind:'attack',style:'windslash',rank:'D',sequence:[...'ra'],cost:24,damage:36,size:.55,speed:flightSpeeds.quick,count:1,subtitle:'Phóng một nhát chém gió hình lưỡi liềm về phía ngắm'},
@@ -103,6 +103,7 @@
   const defaultLoadout = ['fire-volley', 'water-lance', 'lightning-volley', 'earth-barrier', 'ice-reflect'];
   const chakraRegen=5,cooldownByRank={D:3,C:4,B:6,A:8,S:11,SS:15};
   for(const spell of spells)spell.cooldown=spell.cooldown??cooldownByRank[spell.rank]??6;
+  for(const spell of spells){if(spell.element==='fire'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tầng bỏng/viên, tối đa 5, mỗi tầng 10 giây';if(spell.element==='lightning'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tĩnh điện, tối đa 3, mỗi điểm 10 giây';}
   const shuriken={name:'Phi tiêu',damage:6,speed:36,size:.075,interval:.45};
   function validateLoadout(ids, { allowDefenseOnly = false } = {}) {
     if (!Array.isArray(ids) || ids.length < 1 || ids.length > 5) return { ok: false, reason: 'Chọn từ 1 đến 5 chiêu.' };
@@ -156,6 +157,8 @@
       if (spell.requiresClones && !context.shadowClones) return { ok:false, reason:'clones' };
       if (spell.requiresAirborne && !context.windAirborne) return {ok:false,reason:'airborne'};
       if (spell.requiresCrater && !context.earthCrater) return {ok:false,reason:'crater'};
+      if (spell.requiresBurn && !context.burnStacks) return {ok:false,reason:'burn'};
+      if (spell.requiresStatic && !context.staticStacks) return {ok:false,reason:'static'};
       if (spell.style==='shadowclone' && context.shadowCloneCount>=spell.maxClones && !context.shadowUpgrades) return {ok:false,reason:'cloneLimit'};
       if (this.cooldown > 0) return { ok: false, reason: 'cooldown' };
       if (this.chakra < spell.cost) return { ok: false, reason: 'chakra' };
@@ -163,11 +166,43 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; }
-    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime||0,this.woodControlTime||0);}
+    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.waterWeaponTime=0;this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
+    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime||0,this.woodControlTime||0,this.lightningControlTime,this.boatControlTime);}
     set controlTime(value){this.waterControlTime=value;}
-    get controlSource(){if(this.snowBuried)return 'Tuyết Táng';if(this.woodControlTime>0&&this.woodControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime))return 'Dây leo';return this.iceControlTime>0&&this.iceControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime)?'Băng Phược':this.earthControlTime>0&&this.earthControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime)?'Địa Bộc Thiên Tinh':this.windControlTime>0&&this.windControlTime>=Math.max(this.waterControlTime,this.darkControlTime)?'Phong lốc':this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh tượng':'Thủy ngục';}
-    tick(dt) { this.woodControlTime=Math.max(0,(this.woodControlTime||0)-dt);this.iceControlTime=Math.max(0,(this.iceControlTime||0)-dt);this.waterControlTime = Math.max(0, this.waterControlTime - dt); this.darkControlTime=Math.max(0,this.darkControlTime-dt);this.windControlTime=Math.max(0,this.windControlTime-dt);this.earthControlTime=Math.max(0,this.earthControlTime-dt);this.invulnerableTime=Math.max(0,this.invulnerableTime-dt);this.shieldTime = Math.max(0, this.shieldTime - dt); if (!this.shieldTime) { this.shield = 0; this.reflect = 0; } }
+    get staticStacks(){return this.staticCharges.length;}
+    get controlSource(){if(this.snowBuried)return 'Tuyết Táng';if(this.lightningControlTime>0&&this.lightningControlTime>=this.controlTime)return 'Điện giật';if(this.boatControlTime>0&&this.boatControlTime>=this.controlTime)return 'Ném thuyền';if(this.woodControlTime>0&&this.woodControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime))return 'Dây leo';return this.iceControlTime>0&&this.iceControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime)?'Băng Phược':this.earthControlTime>0&&this.earthControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime)?'Địa Bộc Thiên Tinh':this.windControlTime>0&&this.windControlTime>=Math.max(this.waterControlTime,this.darkControlTime)?'Phong lốc':this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'Ảnh tượng':'Thủy ngục';}
+    get magneticActive(){return this.magneticTime>1e-7&&this.magneticDelay<=1e-7;}
+    tick(dt) {
+      this.burns=this.burns.map(t=>t-dt).filter(t=>t>1e-7);
+      this.staticCharges=this.staticCharges.map(t=>t-dt).filter(t=>t>1e-7);
+      const magneticDt=Math.max(0,dt-this.magneticDelay);this.magneticDelay=Math.max(0,this.magneticDelay-dt);this.magneticTime=Math.max(0,this.magneticTime-magneticDt);
+      for(const key of ['waterWeaponTime','lightningControlTime','boatControlTime','ignitionTime','woodControlTime','iceControlTime','waterControlTime','darkControlTime','windControlTime','earthControlTime','invulnerableTime','shieldTime']){this[key]=Math.max(0,(this[key]||0)-dt);if(this[key]<1e-7)this[key]=0;}
+      if(!this.ignitionTime)this.ignitionLevel=0;
+      if (!this.shieldTime) { this.shield = 0; this.reflect = 0; }
+    }
+    applyElementHit(element,result,style){
+      if(!result||!(result.damage>0)||result.immune||result.reflected)return;
+      if(element==='fire'&&style!=='ignite'){
+        // At the cap, a fresh hit replaces only the oldest individual layer.
+        if(this.burns.length>=5)this.burns.shift();this.burns.push(10);
+      }
+      if(element==='lightning'&&style!=='discharge'){
+        if(this.staticCharges.length>=3)this.staticCharges.shift();this.staticCharges.push(10);
+      }
+    }
+    ignite(){
+      if(!this.burns.length||this.invulnerableTime>0)return null;
+      const stacks=this.burns.length;this.burns=[];this.ignitionLevel=stacks;this.ignitionTime=1.1;
+      return {stacks,damage:[10,20,30,45,60][stacks-1]};
+    }
+    discharge(){
+      if(!this.staticStacks||this.invulnerableTime>0)return null;
+      const stacks=this.staticStacks,stun=[.5,1,2][stacks-1],magnetic=[3,5,7][stacks-1];this.staticCharges=[];
+      this.lightningControlTime=Math.max(this.lightningControlTime,stun);this.magneticDelay=stun;this.magneticTime=magnetic;
+      return {stacks,stun,magnetic};
+    }
+    waterWeapon(base){const buff=spells.find(s=>s.style==='waterweapon');return this.waterWeaponTime>0?{...base,damage:buff.weaponDamage,speed:base.speed*buff.weaponSpeedMultiplier,waterInfused:true}:base;}
+    elementalState(){return {burnStacks:this.burns.length,burnTimes:[...this.burns],staticStacks:this.staticStacks,staticTimes:[...this.staticCharges],waterWeaponTime:this.waterWeaponTime,lightningControlTime:this.lightningControlTime,boatControlTime:this.boatControlTime,magneticTime:this.magneticTime,magneticDelay:this.magneticDelay,magneticActive:this.magneticActive,ignitionTime:this.ignitionTime,ignitionLevel:this.ignitionLevel};}
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
     receive(damage, reflected = false, ignoreShield=false) {
       if(this.invulnerableTime>0)return {damage:0,absorbed:0,reflected:false,restored:false,immune:true};

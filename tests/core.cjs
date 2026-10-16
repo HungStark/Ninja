@@ -11,7 +11,7 @@ for(const id of ['fire-volley','water-lance'])assert.equal(spells.find(s=>s.id==
 for(const id of ['fire-lance','fire-meteor','water-volley','water-tsunami'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-volley').speed,id+' matches Phong loc');
 const balance=new GameRules(['fire-volley','fire-barrier']);balance.chakra=0;balance.tick(2);assert.equal(balance.chakra,10);balance.chakra=100;
 spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.equal(balance.remaining('fire-volley'),6);balance.tick(1.01);
-spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.ok(balance.remaining('fire-volley')>0&&balance.remaining('fire-barrier')>0);balance.clear();spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));const savedChakra=balance.chakra;assert.equal(balance.cast().reason,'spellCooldown');assert.equal(balance.chakra,savedChakra);assert.equal(balance.sequence.join(''),'qwdf');balance.tick(16);assert.equal(Object.keys(balance.cooldowns).length,0);
+spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast({burnStacks:1}).ok,true);assert.ok(balance.remaining('fire-volley')>0&&balance.remaining('fire-barrier')>0);balance.clear();spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));const savedChakra=balance.chakra;assert.equal(balance.cast().reason,'spellCooldown');assert.equal(balance.chakra,savedChakra);assert.equal(balance.sequence.join(''),'qwdf');balance.tick(16);assert.equal(Object.keys(balance.cooldowns).length,0);
 const weapons=new GameRules(['fire-volley']);weapons.chakra=0;weapons.seal('q');assert.equal(weapons.throwShuriken().weapon.damage,6);assert.equal(weapons.chakra,0);assert.equal(weapons.casts,0);assert.equal(weapons.shurikenThrows,1);assert.equal(weapons.sequence.length,0);assert.equal(weapons.throwShuriken().ok,false);weapons.tick(.45);assert.equal(weapons.throwShuriken().ok,true);spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>weapons.seal(k));assert.equal(weapons.throwShuriken().reason,'spellReady');assert.equal(weapons.sequence.join(''),'qwdf');
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
@@ -21,7 +21,7 @@ for (const spell of spells) {
   const r = new GameRules(loadoutForSpell(spell)); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
   assert.equal(r.ready(),undefined); assert.equal(r.cast().reason,'sequence');
   r.seal(spell.sequence.at(-1));
-  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({woodGarden:true,snowFull:true,snowAmount:90,earthCrater:true,windAirborne:true,darkDomain:true,shadowClones:2}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
+  assert.equal(r.ready().id,spell.id); assert.equal(r.cast({burnStacks:1,staticStacks:1,woodGarden:true,snowFull:true,snowAmount:90,earthCrater:true,windAirborne:true,darkDomain:true,shadowClones:2}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
 }
 assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort((a,b)=>a-b),[2,3,4,5,6,8,10]);
 assert.equal(spells.find(s=>s.id==='wind-reflect').duration,5);
@@ -75,7 +75,7 @@ assert.equal(r.setLoadout(defenseOnly).ok,false); assert.equal(r.loadout.join(',
 const orb=spells.find(s=>s.id==='fire-volley');orb.sequence.forEach(k=>r.seal(k));r.chakra=orb.cost-1;
 assert.equal(r.cast().reason,'chakra');assert.equal(r.sequence.length,orb.sequence.length);r.tick(.2);assert.equal(r.cast().ok,true);
 orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().reason,'spellCooldown');r.tick(orb.cooldown+.01);assert.equal(r.cast().reason,'chakra');r.tick(2.1);r.clear();orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().ok,true);
-const shield=spells.find(s=>s.id==='fire-barrier'), mirror={style:'reflect',shield:25,duration:2.8,color:'#a6edff',element:'ice',heal:0};
+const shield={shield:75,duration:4.5,heal:0,element:'fire',color:'#ff844b'}, mirror={style:'reflect',shield:25,duration:2.8,color:'#a6edff',element:'ice',heal:0};
 const fighter=new Fighter();fighter.defend(shield);assert.equal(fighter.shield,75);fighter.receive(43);assert.equal(fighter.hp,1000);assert.equal(fighter.shield,32);
 fighter.receive(50);assert.equal(fighter.hp,982);fighter.tick(4.6);assert.equal(fighter.shield,0);
 fighter.defend(mirror);assert.equal(fighter.receive(43).reflected,true);assert.equal(fighter.reflect,0);assert.equal(fighter.hp,982);

@@ -19,6 +19,7 @@
     "test:controls": "node tests/controls.cjs",
     "test:ranks": "node tests/ranks.cjs",
     "test:incantation": "node tests/incantation.cjs",
+    "test:elemental": "node tests/elemental-status.mjs && node tests/elemental-status.cjs",
     "test:fire": "node tests/fire.cjs",
     "test:flight": "node tests/projectile-motion.mjs && node tests/flight-burst.mjs && node tests/element-flight.cjs",
     "test:water": "node tests/water.cjs",

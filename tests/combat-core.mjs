@@ -14,7 +14,7 @@ for(const element of ['fire','water','wind','earth','wood','ice']){
 }
 let walls=[wall(40,-10),wall(30,-5),wall(70,-15)],shot={owner:'player',old:[0,1.72,0],p:[0,1.72,-20],damage:100};assert.equal(crossWalls(shot,walls,intersectFireWall),true);assert.deepEqual(walls.map(w=>w.hp),[0,0,40]);
 let hp=30;const segment=z=>Object.defineProperty(wall(0,z,'earth'),'hp',{get:()=>hp,set:v=>{hp=v;}});shot.damage=100;assert.equal(crossWalls(shot,[segment(-5),segment(-5.1)],intersectFireWall),false);close(shot.damage,70);
-const f=new Fighter();f.defend(spell('fire-barrier'));close(f.receive(100,true).damage,25);close(f.hp,975);close(f.shield,0);close(f.shieldTime,0);
+const f=new Fighter();f.defend({shield:75,duration:4.5,heal:0,element:'fire',color:'#ff844b'});close(f.receive(100,true).damage,25);close(f.hp,975);close(f.shield,0);close(f.shieldTime,0);
 const arts=new LightArts(new T.Scene(),intersectFireWall),actors=[{owner:'player',pos:[0,1.72,0],dir:[0,0,-1],fighter:new Fighter()},{owner:'enemy',pos:[0,1.72,-15],dir:[0,0,1],fighter:new Fighter()}];
 const damage=(s)=>actors.find(a=>a.owner!==s.owner).fighter.receive(s.damage,true);
 walls=[wall(10,-9),wall(15,-5)];arts.fire('player',spell('light-orb'),actors[0].pos,actors[0].dir);arts.advance(.1,actors,walls,damage);close(actors[1].fighter.hp,985);assert.ok(walls.every(w=>w.hp===0));

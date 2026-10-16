@@ -5,6 +5,7 @@ import { WaterArts } from './water-arts.js';
 import { LightningArts } from './lightning-arts.js';
 import { ShurikenVisuals } from './shuriken.js';
 import { FlightBurstEffects } from './flight-burst-vfx.js';
+import { ElementalStatusEffects } from './elemental-status-vfx.js';
 export class FireEffects {
   constructor(scene) {
     this.scene = scene;
@@ -14,6 +15,7 @@ export class FireEffects {
     this.objects = [];
     this.glow = glowTexture();
     this.arts = new FireArts(scene, this.glow);
+    this.elemental=new ElementalStatusEffects(scene,this.arts.flameTexture);
     this.waterArts = new WaterArts(scene);
     this.lightningArts = new LightningArts(scene);
     this.shurikens=new ShurikenVisuals(scene);
@@ -145,6 +147,7 @@ export class FireEffects {
     this.lightningArts.update(dt,time,shots,fields,fighters,quality);
     this.shurikens.update(shots);
     this.flightBursts.update(dt,shots,quality,reducedMotion);
+    this.elemental.update(time,fighters,quality,reducedMotion,camera);
   }
   reset() {
     this.arts.reset();
@@ -152,6 +155,7 @@ export class FireEffects {
     this.lightningArts.reset();
     this.shurikens.reset();
     this.flightBursts.reset();
+    this.elemental.reset();
     this.objects.forEach((o) => o.visible = false);
     this.smoke.length = 0;
     this.rings.forEach((r) => {

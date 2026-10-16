@@ -45,7 +45,7 @@ Nhấn **SPACE** khi chưa kết đủ chuỗi ấn hợp lệ sẽ ném một p
 
 Giáp bao thân và các mặt chắn đều có độ bền. Đòn mạnh hơn độ bền còn lại sẽ phá lớp chắn và tiếp tục với sát thương dư; ví dụ 100 sát thương gặp mặt chắn còn 30 độ bền thì còn 70 sát thương để đi tiếp. Từng lớp chắn trừ sát thương riêng, theo thứ tự trên đường bay, áp dụng cả thuyền và laser bảy màu. Quang kính có 120 độ bền: phản đòn khi còn chịu được, vỡ khi quá tải.
 
-**Sóng thần** cuốn các chiêu, mặt chắn, giáp đối thủ, gương và tinh linh nằm trong thể tích sóng, tiếp tục gây 30 sát thương một lần và không bị phản lại. Phân thân Ám không bị phá hủy: sóng cuốn cả đàn nằm trong thể tích sóng về phía sau đối thủ của người thi triển, cách 4 m theo hướng sóng, giữ độ lệch ngang của từng con. Khi bị cuốn, phân thân tạm ngừng tấn công/nhận lệnh; khi dạt tới đích sẽ đứng chờ và có thể nhận lệnh mới. Vị trí mới cũng là nơi trồi lên lại trong lãnh địa. Tuyết tích lũy, quả cầu Tuyết Táng và các cây sống của vườn Mộc được giữ nguyên; tường băng và quả óc chó đang chắn đòn vẫn bị cuốn.
+**Sóng thần** cuốn các chiêu, mặt chắn, giáp đối thủ, gương và tinh linh nằm trong thể tích sóng, tiếp tục gây 36 sát thương một lần và không bị phản lại. Phân thân Ám không bị phá hủy: sóng cuốn cả đàn nằm trong thể tích sóng về phía sau đối thủ của người thi triển, cách 4 m theo hướng sóng, giữ độ lệch ngang của từng con. Khi bị cuốn, phân thân tạm ngừng tấn công/nhận lệnh; khi dạt tới đích sẽ đứng chờ và có thể nhận lệnh mới. Vị trí mới cũng là nơi trồi lên lại trong lãnh địa. Tuyết tích lũy, quả cầu Tuyết Táng và các cây sống của vườn Mộc được giữ nguyên; tường băng và quả óc chó đang chắn đòn vẫn bị cuốn.
 
 Mỗi lần kết ấn, bóng tương ứng xuất hiện phía sau hai tay với độ đậm **55%** và ẩn sau **0,2 giây**.
 Ấn **F — Đối quyền**: co cả bốn ngón, ôm ngón cái ngoài nắm tay rồi đưa hai nắm đấm chạm khớp ngón ở giữa.
@@ -54,7 +54,9 @@ nằm trong [assets/seal-shadows.md](assets/seal-shadows.md). Khi nút **SPACE**
 cho chiêu Hỏa, tay được bao quanh bởi vầng lửa và tàn lửa chuyển động; vầng lửa tắt
 khi tung chiêu, xóa chuỗi, tạm dừng hoặc chưa đủ chakra/hồi chiêu.
 Chiêu Thủy sẵn sàng tạo vòng nước xanh quanh hai tay, có dòng nước và giọt nước xoay theo vòng; vòng nước dùng cùng điều kiện sẵn sàng và được tắt khi thi triển, xóa chuỗi, tạm dừng hoặc thiếu chakra/hồi chiêu.
-Phong, Ám và Quang cũng có vòng thuộc tính riêng quanh hai tay khi chiêu sẵn sàng: Phong là một vòng xanh ngọc mảnh, sáng nhẹ theo dòng gió; Ám là vòng tím đen với viền tím mảnh; Quang là vòng trắng vàng với tia và hạt sáng hình thoi. Vòng Phong và Ám thu gọn thành quầng thấp phía sau lòng bàn tay, giới hạn độ rộng, giảm hạt sáng và bỏ các dải xoay lớn bên ngoài. Vòng theo vị trí tay và chỉ sáng khi Space dùng được, gồm cả điều kiện lãnh địa, phân thân, hất tung. Các vòng tắt khi tung chiêu, xóa/sai/hết hạn chuỗi, thiếu chakra, hồi chiêu hoặc tạm dừng; hỗ trợ đồ họa thấp và giảm chuyển động.
+Phong, Ám và Quang cũng có vòng thuộc tính riêng quanh hai tay khi chiêu sẵn sàng: Phong là một vòng xanh ngọc mảnh, sáng nhẹ theo dòng gió; Ám là vòng tím đen với viền tím mảnh; Quang là vòng trắng vàng với tia và hạt sáng hình thoi. Thủy phi tiêu lấy thông số tại lúc ném: hết buff không xóa thuộc tính của phi tiêu đã bay. Thi triển lại làm mới thời gian lên 30 giây. AI cũng dùng phi tiêu được cường hóa. Các trạng thái dừng khi tạm dừng và xóa khi đấu lại; đòn bị chắn hết, phản lại hoặc gặp miễn nhiễm không tích tầng.
+
+Vòng Phong và Ám thu gọn thành quầng thấp phía sau lòng bàn tay, giới hạn độ rộng, giảm hạt sáng và bỏ các dải xoay lớn bên ngoài. Vòng theo vị trí tay và chỉ sáng khi Space dùng được, gồm cả điều kiện lãnh địa, phân thân, hất tung. Các vòng tắt khi tung chiêu, xóa/sai/hết hạn chuỗi, thiếu chakra, hồi chiêu hoặc tạm dừng; hỗ trợ đồ họa thấp và giảm chuyển động.
 
 Tay được dựng trong Blender dựa trên mesh 3D `anime_style_hand.glb` do người dùng cung cấp. Giữ cấu trúc lòng bàn tay cong, kẽ ngón và khối cơ gốc ngón cái của mẫu; dựng lại đầu ngón bằng các tiết diện tròn thuôn, đóng cổ tay và dùng subdivision để nối mượt. Các phần móng dài của mẫu được thay bằng móng riêng nhỏ, mỏng và ôm theo bề mặt. Model được gắn 16 xương theo tỷ lệ mới, với trọng số chuyển tiếp mượt và giữ 12 thế kết ấn. Vị trí FPS, giáp xanh đen, vòng vàng và ánh sáng/vật liệu hiện tại được giữ nguyên.
 
@@ -68,27 +70,31 @@ Hệ Hỏa có hiệu ứng và cơ chế riêng:
 
 | Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
 | --- | --- | --- | --- | --- |
-| Hỏa liên đạn | 4 | Q W D F | 40 | Ba hỏa cầu nhỏ xếp ngang phía trên tay, giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây tới điểm ngắm đã chọn; mỗi viên 9,6 sát thương (40% ban đầu; tổng 28,8), không để lại lửa trên đối thủ |
+| Hỏa liên đạn | 4 | Q W D F | 40 | Ba hỏa cầu nhỏ xếp ngang phía trên tay, giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây tới điểm ngắm đã chọn; mỗi viên 9,6 sát thương (tổng 28,8), mỗi viên gây sát thương tích một tầng bỏng |
 | Rồng lửa | 6 | Q W C V Z X | 56 | Rồng cuộn thành vòng lửa trước mặt trong 1,1 giây rồi lao tới; camera chuyển lên trên bên trái và trở lại sau cú đánh, 104 sát thương |
 | Thiên thạch | 8 | Q W C V Z X E R | 82 | Bay một đường thẳng từ trời tới đất trong 3,4 giây; camera ngước lên, zoom in trong 0,24 giây rồi zoom out dần trong cảnh trời 1,4 giây, trở về trong 0,4 giây; 150 sát thương trong bán kính 5,5 m |
-| Khiên lửa | 3 | Q W A | 26 | Vòm lửa bao quanh người, hấp thụ 75 sát thương trong 4,5 giây |
+| Phóng hỏa | 3 | Q W A | 26 | Tiêu thụ 1–5 tầng bỏng trên đối thủ, gây ngay 10 / 20 / 30 / 45 / 60 sát thương; lửa bùng lớn theo số tầng |
 | Tường lửa | 5 | Q W Z X C | 36 | Tường rộng 7 m, cao 4,2 m, dựng cách 3 m phía trước; 120 độ bền, tồn tại 5 giây |
 
 Tường đứng yên khi người chơi né, chặn đạn đối phương đi xuyên qua mặt tường và có thể tồn tại cùng khiên. Dựng tường mới thay tường cũ của người thi triển. Thiên thạch xuyên một tầng mây bị đẩy tách ra, có dấu báo vùng rơi và đuôi lửa. Khi chạm đất, đá lớn nhỏ bật tung theo quỹ đạo, bụi đất lan ra, tia lửa bắn lên và vết nứt nóng sáng xuất hiện quanh tâm nổ; có thể né khỏi vùng nổ, nhưng không phản được thiên thạch. Nhắm ngang sẽ thả ở khoảng cách 31 m; nhắm xuống sẽ chọn điểm trên mặt đất (6–55 m). Camera giữ hướng ngắm gốc khi trở về; đối thủ thi triển không đổi camera của người chơi. Các ID chiêu Hỏa cũ được giữ để bộ chiêu đã lưu vẫn dùng được.
 
 Camera giật nhẹ và zoom out khi phóng liên đạn; zoom in lúc tích lực rồng rồi giật khi phóng và trúng mục tiêu. Thiên thạch chạm đất gây rung và zoom out theo khoảng cách tới vụ nổ. Khiên, tường, phản đòn và trúng đạn có nhịp rung riêng; hướng ngắm được giữ nguyên. Hiệu ứng dừng khi tạm dừng, được xóa khi bắt đầu lại và tắt rung/zoom nếu trình duyệt yêu cầu giảm chuyển động.
 
+Các đòn Hỏa gây sát thương lên máu tích **bỏng tối đa 5 tầng**, số đỏ và lửa quanh người. Mỗi tầng có thời hạn riêng 10 giây; ở mức tối đa, đòn mới thay tầng cũ nhất. Bỏng chưa kích hoạt không tự gây thêm sát thương. Phóng hỏa tiêu thụ tầng và gây sát thương một lần theo bảng trên, không tự tích lại bỏng.
+
 Hệ Thủy có năm chiêu riêng:
 
 | Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
 | --- | --- | --- | --- | --- |
-| Thủy ngục | 5 | W E Z X C | 38 | 12 sát thương; khi xuyên khiên, giam đối thủ trong cầu nước 3 giây, ngắt chuỗi ấn và khóa di chuyển/thi triển |
-| Ném thuyền | 6 | W E C V Z X | 56 | Thuyền hải tặc trồi từ dưới đất lên trong 1,2 giây, rồi bay thẳng tới điểm ngắm đã chọn; camera chuyển lên trên như Rồng lửa và trở lại sau cú đánh; 90 sát thương trong bán kính 3,5 m |
-| Sóng thần | 8 | W E C V Z X E R | 72 | Camera nhìn xuống chân, nước tụ và dựng thành sóng trong 1,8 giây rồi trả hướng ngắm; sóng rộng 12 m, cao 5 m, dày khoảng 7 m, có ngọn cuộn, bọt và nước bắn; cuốn đạn/mặt chắn, gây 30 sát thương một lần |
-| Khiên nước | 3 | W E A | 26 | Bao quanh bản thân, hấp thụ 65 sát thương trong 4,5 giây |
+| Thủy ngục | 5 | W E Z X C | 38 | 14,4 sát thương; khi xuyên khiên, giam đối thủ trong cầu nước 3 giây, ngắt chuỗi ấn và khóa di chuyển/thi triển |
+| Ném thuyền | 6 | W E C V Z X | 56 | Thuyền hải tặc trồi từ dưới đất lên trong 1,2 giây, rồi bay thẳng tới điểm ngắm đã chọn; camera chuyển lên trên như Rồng lửa và trở lại sau cú đánh; 108 sát thương trong bán kính 3,5 m và choáng 1 giây nếu gây sát thương |
+| Sóng thần | 8 | W E C V Z X E R | 72 | Camera nhìn xuống chân, nước tụ và dựng thành sóng trong 1,8 giây rồi trả hướng ngắm; sóng rộng 12 m, cao 5 m, dày khoảng 7 m, có ngọn cuộn, bọt và nước bắn; cuốn đạn/mặt chắn, gây 36 sát thương một lần |
+| Thủy phi tiêu | 3 | W E A | 26 | Phủ nước cho phi tiêu trong 30 giây; 15 sát thương thay vì 6, tốc độ 72 thay vì 36 m/giây, có nước và giọt nước bao quanh |
 | Thủy thuẫn | 4 | W E D F | 32 | Mặt chắn nước hình tròn bán kính 2,2 m, dựng cách 3 m phía trước; 95 độ bền, tồn tại 5 giây |
 
-Thủy thuẫn đứng tại vị trí thi triển, chặn chiêu bay qua mặt chắn, không phản đòn và có thể tồn tại cùng khiên bao thân. Sóng thần cuốn chiêu khi chúng thực sự đi qua thể tích sóng; chiêu bay cao hơn hoặc ngoài bề rộng sóng vẫn đi tiếp. Thuyền và sóng thần không bị phản đòn. Giữ các ID Thủy cũ để bộ chiêu đã lưu vẫn dùng được. Thủy ngục và sóng cùng khiên đều dừng thời gian khi tạm dừng, được xóa khi đấu lại.
+Thủy thuẫn đứng tại vị trí thi triển, chặn chiêu bay qua mặt chắn, không phản đòn và có thể tồn tại cùng buff Thủy phi tiêu. Sóng thần cuốn chiêu khi chúng thực sự đi qua thể tích sóng; chiêu bay cao hơn hoặc ngoài bề rộng sóng vẫn đi tiếp. Thuyền và sóng thần không bị phản đòn. Giữ các ID Thủy cũ để bộ chiêu đã lưu vẫn dùng được. Thủy ngục, sóng và buff phi tiêu đều dừng thời gian khi tạm dừng, được xóa khi đấu lại.
+
+Đòn Lôi gây sát thương lên máu tích **tĩnh điện tối đa 3 điểm**, số xanh tím trên đầu và tia điện quanh người. Mỗi điểm tĩnh điện tồn tại riêng 10 giây; đủ 3 điểm thì đòn mới thay điểm cũ nhất. Điện giật chỉ tiêu thụ các điểm còn hiệu lực. Hết choáng do Điện giật, từ tính bắt đầu đếm thời gian: Lôi thương và Lôi điểu liên tục hướng tới vị trí thật hiện tại của đối thủ, kể cả khi né; Thiên lôi cũng theo vị trí mục tiêu trước khi đánh. Hết từ tính, chiêu đang bay tiếp tục hướng cuối. Phản đòn đổi người sở hữu nên chọn lại mục tiêu từ tính theo bên mới.
 
 Hệ Lôi có năm chiêu với hiệu ứng điện riêng:
 
@@ -97,10 +103,10 @@ Hệ Lôi có năm chiêu với hiệu ứng điện riêng:
 | Lôi thương | 4 | E R D F | 40 | Thương sét dài và nhanh, 62 sát thương |
 | Lôi điểu | 6 | E R C V Z X | 56 | Cầu sét tụ trước mặt, chim hiện ra và dang cánh trong 1,1 giây rồi lao tới; camera chuyển lên cao như Rồng lửa, 102 sát thương |
 | Thiên lôi | 8 | E R C V Z X E R | 82 | Ngước nhìn mây chớp điện 1,4 giây, trả góc nhìn trong 0,4 giây rồi sét đánh xuống điểm ngắm, 150 sát thương trong bán kính 4,5 m |
-| Lôi thuẫn | 3 | E R A | 26 | Khiên điện bao thân, hấp thụ 80 sát thương trong 5 giây |
-| Lôi trận | 5 | E R Z X C | 36 | Vùng điện bán kính 9 m, cao 8 m, tồn tại 10 giây; đạn đối phương còn 30% tốc độ trong vùng |
+| Điện giật | 3 | E R A | 26 | Tiêu thụ 1–3 tĩnh điện; choáng 0,5 / 1 / 2 giây, hết choáng bắt đầu từ tính 3 / 5 / 7 giây |
+| Lôi trận | 5 | E R Z X C | 36 | Vùng điện bán kính 9 m, cao 8 m, tồn tại 10 giây; đạn đối phương còn 15% tốc độ trong vùng |
 
-Thiên lôi ngước camera lên đám mây chớp điện, trả về góc ngắm ban đầu trước khi tia sét đánh xuống; chiêu của máy không điều khiển camera người chơi. Vòng báo trên đất cho phép né trước khi sét đánh; sét không bị phản đòn. Lôi trận đứng tại vị trí thi triển, giữ nguyên sát thương và vận tốc gốc của đạn: đạn rời vùng sẽ nhanh trở lại, đạn cùng bên không bị làm chậm, vùng chồng nhau không nhân độ chậm. Thi triển lại thay vùng cũ của cùng người chơi. Khiên và trận có thể tồn tại cùng nhau; hiệu ứng, thời gian và camera dừng khi tạm dừng, được xóa khi đấu lại. Giữ các ID Lôi cũ để bộ chiêu đã lưu vẫn dùng được.
+Thiên lôi ngước camera lên đám mây chớp điện, trả về góc ngắm ban đầu trước khi tia sét đánh xuống; chiêu của máy không điều khiển camera người chơi. Vòng báo trên đất cho phép né trước khi sét đánh; sét không bị phản đòn. Lôi trận đứng tại vị trí thi triển, giữ nguyên sát thương và vận tốc gốc của đạn: đạn rời vùng sẽ nhanh trở lại, đạn cùng bên không bị làm chậm, vùng chồng nhau không nhân độ chậm. Thi triển lại thay vùng cũ của cùng người chơi. Tĩnh điện, từ tính và trận có thể tồn tại cùng nhau; hiệu ứng, thời gian và camera dừng khi tạm dừng, được xóa khi đấu lại. Giữ các ID Lôi cũ để bộ chiêu đã lưu vẫn dùng được.
 
 Kết đủ ấn và sẵn sàng thi triển bất kỳ chiêu Lôi nào sẽ hiện vòng sét tím trắng cùng tia điện chạy quanh tay. Vòng tắt khi tung chiêu, xóa/sai/hết hạn chuỗi ấn, tạm dừng, đang hồi chiêu hoặc thiếu chakra; khi đủ điều kiện, vòng hiện lại như Hỏa và Thủy. Chế độ giảm chuyển động làm điện và tia sáng chuyển động chậm hơn.
 
@@ -260,7 +266,8 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:light:** luật và trình duyệt cho laser trắng–vàng, cầu thủy tinh 8 giây/7 sắc, mái vòm 10 giây/laser nảy/sát thương mỗi giây, gương 2,5 giây/phản đòn, Jacob và góc máy; kiểm tra hai bên, AI, ngắm trượt/tường/khiên/miễn nhiễm, tạm dừng/reset, đồ họa thấp và giảm chuyển động; ảnh tại `test-results/light/`.
 - **npm run test:fire:** kiểm tra năm chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra năm chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
-- **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, cú trúng không để lại lửa, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
+- **npm run test:elemental:** sát thương Thủy, buff phi tiêu, choáng thuyền, Lôi trận 15%, từng tầng bỏng/tĩnh điện hết hạn riêng sau 10 giây, các mức kích hoạt, từ tính sau choáng, đổi hướng khi mục tiêu né, hiệu ứng/số tầng, AI, tạm dừng và reset.
+- **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
 - **npm run test:incantation:** kiểm tra đọc tên đồng thời tung chiêu công/thủ, trừ chakra ngay, hồi chiêu, nhập chuỗi tiếp khi đang đọc, tạm dừng/hủy giọng đọc, lỗi giọng nói, hiện đủ 5 chiêu ở 8 kích thước màn hình và ẩn banner hình ấn.
 - **npm run test:controls:** kiểm tra khóa con trỏ, hướng bắn trùng tâm ngắm, click trái/phải độc lập vị trí chuột, giữ nút không đi tiếp và giới hạn sân đấu.
 - **npm run test:layout:** kiểm tra nút vào trận trên cửa sổ nhỏ và điện thoại, tâm ngắm ở giữa màn hình, khóa/thả con trỏ, nút HUD không gây né và đổi kích thước cửa sổ.
