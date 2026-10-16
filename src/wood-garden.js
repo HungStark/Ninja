@@ -14,6 +14,8 @@ export class WoodGarden {
     this.scene=scene;this.floor=floor;this.intersect=intersect;this.gardens=[];this.attacks=[];this.clouds=[];this.walnuts=[];this.bindings=[];this.serial=0;this.gateHeight=gateHeight;this.maxPlantHeight=gateHeight*.75;
     this.geo={sphere:new T.IcosahedronGeometry(1,1),stem:new T.CylinderGeometry(1,1,1,7),cone:new T.ConeGeometry(1,1,7),leaf:new T.OctahedronGeometry(1),nut:new T.SphereGeometry(1,18,12)};
     this.mat={bark:vfxToon('#795235'),nut:vfxToon('#b58b50'),ridge:vfxToon('#6d482d'),stem:vfxToon('#438a47'),leaf:vfxToon('#75b94d'),bamboo:vfxToon('#92bd52'),node:vfxToon('#d0ce75'),petal:vfxToon('#b76bb6'),mouth:vfxToon('#3f153f'),poison:vfxToon('#b1e84b')};
+    this.mat.canopyDark=vfxToon('#4d863c');this.mat.canopyLight=vfxToon('#8ab954');
+    this.mat.bloom=vfxToon('#d9ff95',{emissive:'#baff63',emissiveIntensity:2.2});
     this.mist=new T.MeshBasicMaterial({color:'#ac53d6',transparent:true,opacity:.2,depthWrite:false});
     this.cloudGeometry=new T.PlaneGeometry(1,1);this.cloudMaterial=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{opacity:{value:.12}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;vec4 p=vec4(position,1.);\n#ifdef USE_INSTANCING\np=instanceMatrix*p;\n#endif\ngl_Position=projectionMatrix*modelViewMatrix*p;}',fragmentShader:'varying vec2 vUv;uniform float opacity;void main(){float r=length(vUv-.5)*2.;float a=pow(1.-smoothstep(.05,1.,r),1.35)*opacity;gl_FragColor=vec4(.65,.26,.83,a);}'});
     this.dummy=new T.Object3D();
@@ -23,7 +25,7 @@ export class WoodGarden {
   segment(mesh,a,b,r){const d=sub(b,a);mesh.position.fromArray(mul(add(a,b),.5));mesh.scale.set(r,Math.hypot(...d),r);mesh.quaternion.setFromUnitVectors(up,new T.Vector3(...unit(d)));}
   garden(owner){return this.gardens.find(g=>g.owner===owner);}
   ready(owner){const g=this.garden(owner);return !!g&&g.age+1e-6>=g.readyAt;}
-  growth(owner){const g=this.garden(owner);return g?clamp((g.age-g.readyAt)/g.spell.growthTime):0;}
+  growth(owner){const g=this.garden(owner);return g?clamp((g.age-g.readyAt)/Math.max(.001,g.spell.growthTime-g.readyAt)):0;}
   multiplier(owner){return 1+2*this.growth(owner);}
   scale(owner){return .28+.72*Math.sqrt(this.growth(owner));}
   canCast(owner,spell){return spell.style==='woodseed'?!this.garden(owner):!spell.requiresGarden||this.ready(owner);}
@@ -32,7 +34,7 @@ export class WoodGarden {
     const growth=this.growth(owner),power=1+2*growth;
     return {...spell,damage:spell.damage*power,shield:Math.round(spell.shield*power),duration:spell.duration?spell.duration+2*growth:undefined,controlDuration:spell.controlDuration?spell.controlDuration+4*growth:undefined,treePower:power,plantScale:this.scale(owner),growth,poisonRadius:2+3*growth};
   }
-  plantModel(kind){
+  plantModel(kind,heightLimit=Infinity,sizeVariation=1){
     const root=new T.Group(),parts={};
     if(kind==='flower'){
       this.mesh(root,'stem','stem',[0,.9,0],[.1,1.8,.1]);
@@ -51,32 +53,55 @@ export class WoodGarden {
         for(let j=1;j<6;j++)this.mesh(root,'stem','node',[x,j*h/6,z],[.11,.065,.11]);
         for(let j=0;j<4;j++){const a=j*2.4+i;const m=this.mesh(root,'leaf','leaf',[x+Math.cos(a)*.4,h*.6+j*.14,z+Math.sin(a)*.3],[.48,.055,.12]);m.rotation.z=Math.cos(a)*.4;}
       }
+      parts.sprigs=[];parts.volleyOrigins=[];
+      for(let i=0;i<3;i++){
+        const a=i*2.4+.4,origin=[Math.cos(a)*.8,2.3+i*.24,Math.sin(a)*.65],sprig=this.group(root);
+        const branch=this.mesh(sprig,'stem','bloom');this.segment(branch,[0,origin[1]-.25,0],origin,.035);
+        for(let j=0;j<2;j++){const leaf=this.mesh(sprig,'leaf','bloom',add(origin,[(j?1:-1)*.16,.08+j*.12,0]),[.4,.07,.13]);leaf.rotation.z=(j?1:-1)*.45;}
+        parts.sprigs.push(sprig);parts.volleyOrigins.push(origin);sprig.visible=false;
+      }
     }else{
       this.mesh(root,'stem','bark',[0,1.3,0],[.23,2.6,.23]);
-      for(let i=0;i<5;i++){const a=i*2.4,x=Math.cos(a),z=Math.sin(a),branch=this.mesh(root,'stem','bark');this.segment(branch,[0,2,0],[x*.85,2.8+i*.07,z*.85],.09);this.mesh(root,'sphere','leaf',[x*.7,3.15+i*.05,z*.7],[.95,.72,.85]);}
+      parts.canopy=[];
+      for(let layer=0;layer<3;layer++)for(let i=0;i<[7,9,6][layer];i++){
+        const id=layer*11+i,a=i*2.399+layer*.8,r=(layer===1?1.05:.75)*(.8+hash(id+64)*.3),y=2.7+layer*.4+(hash(id+93)-.5)*.24;
+        const tip=[Math.cos(a)*r,y,Math.sin(a)*r],branch=this.mesh(root,'stem','bark');this.segment(branch,[0,1.9+layer*.2,0],tip,.055);
+        const size=.45+hash(id+19)*.19,leaf=this.mesh(root,'sphere',['canopyDark','leaf','canopyLight'][id%3],tip,[size,.38+hash(id+33)*.17,size*.9]);leaf.rotation.y=a;parts.canopy.push(leaf);
+      }
+      parts.canopy.push(this.mesh(root,'sphere','canopyLight',[.08,3.85,-.08],[.5,.42,.48]));
       for(let i=0;i<5;i++){const a=i*2.4;this.mesh(root,'nut','nut',[Math.cos(a)*.85,2.6,Math.sin(a)*.85],[.14,.18,.14]);}
     }
     root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(root),height=bounds.max.y-bounds.min.y;
-    const normalize=this.maxPlantHeight*(kind==='vine'?.82:kind==='flower'?.94:kind==='walnut'?.95:1)/height;root.scale.setScalar(normalize);parts.normalization=normalize;
+    const swayReach=Math.hypot(Math.max(Math.abs(bounds.min.x),Math.abs(bounds.max.x)),Math.max(Math.abs(bounds.min.z),Math.abs(bounds.max.z)))*.1;
+    const normalize=Math.min(this.maxPlantHeight*(kind==='vine'?.82:kind==='flower'?.94:kind==='walnut'?.95:1)*sizeVariation/height,heightLimit/(height+swayReach));root.scale.setScalar(normalize);parts.normalization=normalize;
     return {root,parts,height:height*normalize};
   }
   sow(owner,spell,pos,actors){
     const victim=actors.find(a=>a.owner!==owner),axis=unit([victim.pos[0]-pos[0],0,victim.pos[2]-pos[2]]),side=[-axis[2],0,axis[0]],root=this.group();
-    const layout=[],depth=distance(pos,victim.pos)*.45;
-    for(let row=0;row<6;row++)for(let col=0;col<6;col++){
-      const i=row*6+col,kind=['bamboo','flower','vine'][(col+row*2)%3];
-      layout.push([kind,-8.1+col*3.24+(hash(i+8)-.5)*1.1,-depth+row*(depth+6)/5+(hash(i+93)-.5)*1.3]);
+    const plants=[],walnutPosition=add(add(pos,mul(axis,5.5)),mul(side,3.1));
+    // Scatter around the opponent. Keep the foreground plants below waist
+    // height so the forest does not obscure the opponent from the caster.
+    for(let i=0;i<36;i++){
+      let p,spacing=-1;
+      for(let attempt=0;attempt<96;attempt++){
+        const angle=(i%4+hash(i*193+attempt*2+8))*Math.PI/2;
+        const radius=i===0?.165:Math.sqrt(.32*.32+hash(i*193+attempt*2+9)*(1-.32*.32));
+        const candidate=add(add(victim.pos,mul(side,Math.cos(angle)*radius*10)),mul(axis,Math.sin(angle)*radius*11));
+        if(Math.abs(candidate[0])>13||candidate[2]<-37||candidate[2]>21)continue;
+        const gap=plants.reduce((nearest,plant)=>Math.min(nearest,distance(candidate,plant.p)),distance(candidate,walnutPosition));
+        if(gap>spacing){p=candidate;spacing=gap;}
+        if(gap>=2.05)break;
+      }
+      p??=add(victim.pos,mul(side,i%4<2?5:-5));
+      const foreground=(p[0]-victim.pos[0])*axis[0]+(p[2]-victim.pos[2])*axis[2]<0;
+      plants.push({kind:['flower','vine','bamboo'][i%3],p,foreground,sizeVariation:foreground?1:i===0?.95:.58+.42*hash(i+277),heightLimit:foreground?(victim.height??3)*.5:Infinity,landAt:1.05+(i%4)*.09});
     }
-    // One flower near the target gives the young forest a useful poison patch;
-    // the rest occupy the opponent's entire half rather than a small ring.
-    const nearFlower=layout.find(p=>p[0]==='flower');nearFlower[1]=1.45;nearFlower[2]=.8;
-    const plants=layout.map(([kind,x,z],i)=>({kind,p:add(add(victim.pos,mul(side,x)),mul(axis,z)),landAt:1.05+(i%4)*.09}));
-    plants.push({kind:'walnut',p:add(add(pos,mul(axis,5.5)),mul(side,3.1)),landAt:.7});
+    plants.push({kind:'walnut',p:walnutPosition,landAt:.7});
     let readyAt=0;
     plants.forEach((plant,i)=>{
-      plant.p[0]=Math.max(-9,Math.min(9,plant.p[0]));plant.p[2]=Math.max(-31,Math.min(11,plant.p[2]));plant.p[1]=this.floor(plant.p[0],plant.p[2]);plant.seed=this.mesh(root,'sphere','nut',pos,[.11,.15,.11]);
+      plant.p[0]=Math.max(-13,Math.min(13,plant.p[0]));plant.p[2]=Math.max(-37,Math.min(21,plant.p[2]));plant.p[1]=this.floor(plant.p[0],plant.p[2]);plant.seed=this.mesh(root,'sphere','nut',pos,[.11,.15,.11]);
       plant.seedOrigin=add(pos,mul(side,(i%3-1)*.2));plant.launchAt=i===plants.length-1?0:(i%9)*.025;
-      const model=this.plantModel(plant.kind);plant.model=model.root;plant.parts=model.parts;plant.height=model.height;plant.pulse=0;plant.exhaleTime=0;plant.model.visible=false;
+      const model=this.plantModel(plant.kind,plant.heightLimit,plant.sizeVariation);plant.model=model.root;plant.parts=model.parts;plant.height=model.height;plant.pulse=0;plant.exhaleTime=0;plant.model.visible=false;
       const anchor=this.group(root);anchor.position.fromArray(plant.p);anchor.add(plant.model);plant.anchor=anchor;
       readyAt=Math.max(readyAt,plant.landAt+.3);
     });
@@ -108,10 +133,11 @@ export class WoodGarden {
     if(spell.style==='bamboostab'){
       const plants=g.plants.filter(p=>p.kind==='bamboo'),rounds=1+Math.floor(growth*2+1e-6),count=plants.length*rounds;
       const destination=aimPoint||add(pos,mul(unit(dir),Math.hypot(...sub(target,pos))));
+      plants.forEach((plant,i)=>{plant.volleyAge=0;plant.volleyRounds=rounds;plant.volleyDelay=i*.012;plant.pulse=1;});
       for(let i=0;i<count;i++){
-        const plant=plants[i%plants.length],origin=this.plantPoint(plant,[(i%3-1)*.25,2.1+(i%3)*.18,0]);plant.pulse=1;
+        const plant=plants[i%plants.length],round=Math.floor(i/plants.length),origin=this.plantPoint(plant,plant.parts.volleyOrigins[round]);
         const d=unit(sub(destination,origin)),p=add(origin,mul(d,.25));
-        shots.push({owner,element:'wood',style:'bambooleaf',phase:'blooming',releaseAt:Math.floor(i/plants.length)*.09+(i%plants.length)*.012,releaseAge:0,p,old:[...p],origin:[...origin],target:[...destination],v:mul(d,25+growth*10),size:.16+.13*growth,color:'#9dcb52',damage:spell.damage/count,plantScale:scale,life:4,age:0,flightAge:0,trail:0,reflected:false});
+        shots.push({owner,element:'wood',style:'bambooleaf',phase:'blooming',releaseAt:.55+round*.12+plant.volleyDelay,releaseAge:0,p,old:[...p],origin:[...origin],target:[...destination],v:mul(d,25+growth*10),size:.16+.13*growth,color:'#9dcb52',damage:spell.damage/count,plantScale:scale,life:4,age:0,flightAge:0,trail:0,reflected:false});
       }
       return true;
     }
@@ -141,7 +167,7 @@ export class WoodGarden {
   }
   advance(dt,actors,walls=[],impact){
     if(dt<=0)return;
-    for(const g of this.gardens){g.age+=dt;for(const p of g.plants){p.pulse=Math.max(0,p.pulse-dt);p.exhaleTime=Math.max(0,p.exhaleTime-dt);}}
+    for(const g of this.gardens){g.age+=dt;for(const p of g.plants){p.pulse=Math.max(0,p.pulse-dt);p.exhaleTime=Math.max(0,p.exhaleTime-dt);if(p.volleyAge!==undefined)p.volleyAge+=dt;}}
     for(const w of [...this.walnuts]){
       w.age+=dt;if(!w.added&&w.age>=.75)w.phase='growing';if(!w.added&&w.age+1e-6>=w.formation){w.added=true;w.phase='guarding';walls.push(w.wall);}
       if(w.added&&(!walls.includes(w.wall)||w.wall.life<=0||w.wall.hp<=0))this.removeWalnut(w,walls);
@@ -177,6 +203,11 @@ export class WoodGarden {
       p.seed.visible=flight<1;p.seed.position.fromArray(add(p.seedOrigin,mul(sub(p.p,p.seedOrigin),flight)));p.seed.position.y+=Math.sin(flight*Math.PI)*(p.kind==='walnut'?1.2:5);
       p.model.visible=g.age>=p.landAt;p.model.scale.setScalar(s*p.parts.normalization);p.anchor.position.y=this.floor(p.p[0],p.p[2]);
       p.model.rotation.z=reducedMotion?0:Math.sin(g.age*1.3+p.p[0])*.025*(1+p.pulse*3);
+      if(p.parts.sprigs){
+        const age=p.volleyAge??Infinity,active=age<.55+(p.volleyRounds||0)*.12+.2;
+        if(active&&!reducedMotion)p.model.rotation.z=Math.sin(g.age*1.3+p.p[0])*.025+Math.sin(age*50+p.p[0])*.06;
+        for(let i=0;i<3;i++){const sprig=p.parts.sprigs[i];sprig.visible=age>=0&&i<p.volleyRounds&&age<.55+i*.12+p.volleyDelay;sprig.scale.setScalar(ease(age/.45));}
+      }
       if(p.parts.head){const victim=actors.find(a=>a.owner!==g.owner);p.parts.head.rotation.y=Math.atan2(victim.pos[0]-p.p[0],victim.pos[2]-p.p[2]);for(const petal of p.parts.petals)petal.scale.z=.13*(1+p.pulse*1.4);p.parts.exhale.visible=p.exhaleTime>0;p.parts.exhale.scale.set(.35+.3*p.pulse,.35+.3*p.pulse,.7+p.pulse*.6);}
     }
     for(const e of this.attacks){
@@ -199,6 +230,6 @@ export class WoodGarden {
   }
   removeWalnut(w,walls){const i=walls.indexOf(w.wall);if(i>=0)walls.splice(i,1);this.dispose(w.root);this.walnuts.splice(this.walnuts.indexOf(w),1);}
   dispose(root){root.traverse(o=>{if(o.userData.ownedGeometry)o.geometry.dispose();if(o.userData.ownedMaterial)o.material.dispose();});root.removeFromParent();}
-  state(){return {gardens:this.gardens.map(g=>({owner:g.owner,age:g.age,ready:this.ready(g.owner),readyAt:g.readyAt,growth:this.growth(g.owner),multiplier:this.multiplier(g.owner),position:[...g.p],plants:g.plants.map(p=>({kind:p.kind,position:[...p.p],height:p.height*this.scale(g.owner),matureHeight:p.height,visible:p.model.visible,seedVisible:p.seed.visible}))})),attacks:this.attacks.map(e=>({owner:e.owner,kind:e.kind,age:e.age,scale:e.scale,count:e.parts.length,target:[...e.target],damage:e.spell.damage,controlDuration:e.spell.controlDuration})),clouds:this.clouds.map(c=>({owner:c.owner,age:c.age,life:c.life,center:[...c.center],mouth:[...c.origin],radius:this.cloudRadius(c),maxRadius:c.radius,height:c.height,damageRate:c.damageRate,inside:[...c.inside]})),walnuts:this.walnuts.map(w=>({owner:w.owner,age:w.age,phase:w.phase,position:w.root.position.toArray(),size:w.size,hp:w.wall.hp,life:w.wall.life,active:w.added})),gateHeight:this.gateHeight,maxPlantHeight:this.maxPlantHeight};}
+  state(){return {gardens:this.gardens.map(g=>({owner:g.owner,age:g.age,ready:this.ready(g.owner),readyAt:g.readyAt,growth:this.growth(g.owner),multiplier:this.multiplier(g.owner),position:[...g.p],plants:g.plants.map(p=>({kind:p.kind,position:[...p.p],height:p.height*this.scale(g.owner),matureHeight:p.height,chargeAge:p.volleyAge??null,glowingSprigs:p.parts.sprigs?.filter(s=>s.visible).length||0,canopyClusters:p.parts.canopy?.length||0,visible:p.model.visible,seedVisible:p.seed.visible}))})),attacks:this.attacks.map(e=>({owner:e.owner,kind:e.kind,age:e.age,scale:e.scale,count:e.parts.length,target:[...e.target],damage:e.spell.damage,controlDuration:e.spell.controlDuration})),clouds:this.clouds.map(c=>({owner:c.owner,age:c.age,life:c.life,center:[...c.center],mouth:[...c.origin],radius:this.cloudRadius(c),maxRadius:c.radius,height:c.height,damageRate:c.damageRate,inside:[...c.inside]})),walnuts:this.walnuts.map(w=>({owner:w.owner,age:w.age,phase:w.phase,position:w.root.position.toArray(),size:w.size,hp:w.wall.hp,life:w.wall.life,active:w.added})),gateHeight:this.gateHeight,maxPlantHeight:this.maxPlantHeight};}
   reset(walls=[]){for(const g of this.gardens)this.dispose(g.root);for(const a of this.attacks)this.dispose(a.root);for(const c of this.clouds)this.dispose(c.root);for(const w of [...this.walnuts])this.removeWalnut(w,walls);for(const b of this.bindings)b.fighter.woodControlTime=0;this.gardens.length=this.attacks.length=this.clouds.length=this.bindings.length=0;this.serial=0;}
 }

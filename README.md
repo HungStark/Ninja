@@ -107,7 +107,7 @@ Tinh linh nhỏ xinh dạng tiên bướm, hai đôi cánh 3D tròn mềm, râu 
 
 Chỉ Ảnh tượng và Ảnh độn cần lãnh địa đã mở. Ảnh tượng rơi xuống điểm ngắm cố định: đối thủ có thể né trong lúc voi đang rơi. Khi đáp trúng, voi gây 90 sát thương trực tiếp một lần, nhấn đối thủ xuống nền bóng và khóa ngắm, né, kết ấn, thi triển trong 2 giây; sau đó đối thủ nổi lại. Voi có thân, bốn chân, tai, vòi và ngà 3D theo phong cách toon của các thú bóng. Ảnh độn chặn cả đạn, vụ nổ, Thủy ngục, Thiên lôi và Ảnh tượng, không tiêu hao khiên hoặc phản đòn. Ảnh độn hạ mắt nhìn xuống dưới mặt đất, lớp mực phía trên chuyển thành màn đen bán trong suốt để thấy đối thủ và chiêu thức ngoài sân. Sau 3 giây nổi lại trong 0,35 giây. Hướng ngắm, kết ấn và thi triển vẫn hoạt động; khi đang lặn, chiêu có camera điện ảnh vẫn thi triển nhưng giữ góc nhìn dưới đất. Ảnh tượng giữ góc nhìn FPS khi khóa thao tác.
 
-Lãnh địa dùng được cho cả hai bên. Mở mắt vẫn thấy sân đấu và một mái vòm đen 3D trước mặt. Mái vòm bán cầu nở rộng, mực phủ dần đường, cây, cổng, núi và bầu trời. Khi mở xong, lãnh địa bắt đầu tính 30 giây. Thi triển lại làm mới thời gian; hết hạn trả cảnh cũ, kết thúc kéo/lặn và khả năng hồi phân thân, nhưng các phân thân còn sống vẫn đứng chờ ngoài lãnh địa. Tạm dừng đóng băng tất cả hiệu ứng và đồng hồ; đấu lại hoặc về chọn chiêu xóa phân thân, kéo, lặn và khôi phục cảnh. Máy hệ Ám mở lãnh địa, tạo phân thân rồi phát lệnh tấn công.
+Lãnh địa dùng được cho cả hai bên. Mở mắt vẫn thấy sân đấu và một mái vòm đen 3D trước mặt. Mái vòm bán cầu nở rộng, mực phủ dần đường, núi và bầu trời. Khi mở xong, lãnh địa bắt đầu tính 30 giây. Thi triển lại làm mới thời gian; hết hạn trả cảnh cũ, kết thúc kéo/lặn và khả năng hồi phân thân, nhưng các phân thân còn sống vẫn đứng chờ ngoài lãnh địa. Tạm dừng đóng băng tất cả hiệu ứng và đồng hồ; đấu lại hoặc về chọn chiêu xóa phân thân, kéo, lặn và khôi phục cảnh. Máy hệ Ám mở lãnh địa, tạo phân thân rồi phát lệnh tấn công.
 
 ### Thổ thuật
 
@@ -157,13 +157,15 @@ Sát thương vẫn tôn trọng khiên và miễn nhiễm. Cả người chơi 
 
 | Chiêu | Số ấn | Phím | Tác dụng |
 | --- | --- | --- | --- |
-| Độc Hoa | 2 | F Z | Miệng hoa nhả khói tím thành vùng độc 6 giây; bán kính mỗi vùng tăng từ 2 lên 5 m theo cây; địch chỉ mất 5–15 máu/giây khi ở trong vùng |
+| Độc Hoa | 3 | F Z C | Miệng hoa nhả khói tím thành vùng độc 6 giây; bán kính mỗi vùng tăng từ 2 lên 5 m theo cây; địch chỉ mất 5–15 máu/giây khi ở trong vùng |
 | Dây Leo Trói Buộc | 4 | F Z D F | Dây leo bò từ vườn tới quấn đối thủ; 18–54 sát thương, trói 2–6 giây |
-| Trúc Diệp Phi Vũ | 6 | F Z C V Z X | Mỗi bụi tre phóng lá sắc theo 1–3 đợt tới điểm ngắm; tổng 75–225 sát thương; lá phải bay tới mới gây sát thương và có thể bị né/chắn/phản |
+| Trúc Diệp Phi Vũ | 6 | F Z C V Z X | Mỗi bụi tre rung, mọc cành lá phát sáng trong 0,55 giây rồi phóng theo 1–3 đợt tới điểm ngắm; tổng 75–225 sát thương; lá phải bay tới mới gây sát thương và có thể bị né/chắn/phản |
 | Óc Chó Hộ Vệ | 5 | F Z Z X C | Cây phía trước bên phải thả quả óc chó; quả rơi, hóa lớn và chắn phía trước trong 5–7 giây, độ bền 90–270 |
-| Vườn Sinh Mệnh | 10 | F Z C V Z X E R Q W | Tự gieo 37 hạt: 12 hoa độc, 12 dây leo và 12 bụi tre rải khắp nửa sân đối thủ, 1 cây óc chó phía trước bên phải; không gây sát thương, một lần mỗi trận |
+| Vườn Sinh Mệnh | 10 | F Z C V Z X E R Q W | Tự gieo 37 hạt: 12 hoa độc, 12 dây leo và 12 bụi tre bao quanh đối thủ, cả trước, sau và hai bên, 1 cây óc chó phía trước bên phải; không gây sát thương, một lần mỗi trận |
 
-Hạt bay theo quỹ đạo từ người thi triển rồi đáp đất và nảy mầm. Bốn chiêu điều khiển cây chỉ mở sau khi rừng đã mọc. Cây lớn dần trong 90 giây và tồn tại đến hết trận, trải từ gần giữa sân đến sau vị trí đối thủ, rộng khoảng 18 m. Cây trưởng thành cao tới 3/4 cổng; giới hạn lấy từ chiều cao thật của model cổng. Cây càng lớn thì vùng khói độc càng rộng, sát thương tăng, dây leo dày hơn và trói lâu hơn, tre phóng nhiều đợt lá lớn hơn, quả óc chó to và bền hơn. Sức mạnh được lấy tại lúc ra lệnh. Rừng không tự gây sát thương khi chưa ra lệnh tấn công. Khói tím phun từ miệng hoa, loang ra và ở lại quanh cây; sát thương dừng ngay khi đối thủ rời vùng, không đeo độc theo người. Các vùng khói của cùng một rừng không nhân sát thương khi chồng lên nhau; gọi lại Độc Hoa thay đợt khói cũ. Lá tre bay từ tán tre tới điểm ngắm lúc thi triển, không tự đuổi mục tiêu. Quả óc chó mất 1,05 giây để rơi và hóa lớn trước khi chặn đòn, đứng cố định phía trước tại vị trí thi triển, không cấp giáp bao thân và không đỡ đòn tới từ phía sau.
+Hạt bay theo quỹ đạo từ người thi triển rồi đáp đất và nảy mầm. Bốn chiêu điều khiển cây chỉ mở sau khi rừng đã mọc. Cây trưởng thành hoàn toàn sau 60 giây kể từ khi thi triển và tồn tại đến hết trận, mọc quanh vị trí đối thủ lúc gieo hạt trong vùng rộng khoảng 20 m, có cây ở cả trước, sau và hai bên. Cây phía trước đối thủ, nằm giữa hai người, chỉ cao tối đa nửa chiều cao đối thủ, kể cả khi trưởng thành và lay động; cây ở nửa vùng phía sau giữ quy mô rừng lớn với nhiều chiều cao xen kẽ, kể cả giữa các cây cùng loại. Cây óc chó có 23 cụm tán lá nhỏ xếp thành nhiều tầng thay cho vài tán lớn. Các cây mọc rải rác với khoảng trống giữa các thân, không xếp thành hàng hoặc cột. Cây trưởng thành cao tới khoảng 5,9 m, giữ kích thước bằng 3/4 cổng cũ sau khi dọn map. Cây càng lớn thì vùng khói độc càng rộng, sát thương tăng, dây leo dày hơn và trói lâu hơn, tre phóng nhiều đợt lá lớn hơn, quả óc chó to và bền hơn. Sức mạnh được lấy tại lúc ra lệnh. Rừng không tự gây sát thương khi chưa ra lệnh tấn công. Khói tím phun từ miệng hoa, loang ra và ở lại quanh cây; sát thương dừng ngay khi đối thủ rời vùng, không đeo độc theo người. Các vùng khói của cùng một rừng không nhân sát thương khi chồng lên nhau; gọi lại Độc Hoa thay đợt khói cũ. Lá tre bay từ tán tre tới điểm ngắm lúc thi triển, không tự đuổi mục tiêu. Quả óc chó mất 1,05 giây để rơi và hóa lớn trước khi chặn đòn, đứng cố định phía trước tại vị trí thi triển, không cấp giáp bao thân và không đỡ đòn tới từ phía sau.
+
+Kết đủ ấn và đủ điều kiện thi triển chiêu Mộc sẽ hiện vòng xanh với lá bay quanh tay. Vòng Băng có màu trắng xanh, kèm bông tuyết sáu cánh bay vòng. Hiệu ứng đi theo tay, tắt khi tung chiêu, xóa/sai/hết hạn chuỗi ấn, tạm dừng hoặc chưa đủ điều kiện; chế độ giảm chuyển động làm lá và tuyết bay chậm hơn.
 
 **Băng** có ba chiêu câu giờ, một chiêu tạo tuyết và một chiêu kết thúc trận:
 
@@ -185,7 +187,7 @@ Hai bên có **1000 sinh lực** và **100 chakra**. Chakra hồi 11 mỗi giây
 
 Quyển trục mang theo trong trận hiện đủ tên và phím kết ấn của cả 5 chiêu, không cần cuộn; trên màn hình nhỏ, bảng chiêu nằm phía dưới. Nhấn Space sẽ tung đạn hoặc tạo khiên ngay, đồng thời đọc tên chiêu và trừ chakra. Có thể kết chuỗi tiếp theo khi giọng đọc vẫn đang chạy; khoảng cách giữa hai lần thi triển vẫn là 1 giây. Giọng đọc dùng tính năng tổng hợp tiếng nói của trình duyệt, ưu tiên giọng tiếng Việt trên máy. Tắt âm thanh, thiếu giọng đọc hoặc lỗi dịch vụ giọng nói không làm chậm chiêu. Tạm dừng cũng dừng giọng đọc; đấu lại hoặc về chọn chiêu sẽ hủy giọng đang đọc. Banner 12 hình kết ấn được ẩn.
 
-Đối thủ đứng ngay dưới cổng, cách vị trí xuất phát của người chơi 31 m, sử dụng model tay có khớp và bộ 12 thế tay như người chơi. Máy kết từng ấn theo đúng độ dài của từng chiêu trước khi tung chiêu, ngắm vị trí của người chơi lúc phóng đạn, có chakra và có thể chọn phòng ngự khi bị tấn công. Thanh trên cùng cho biết máu, hệ, chakra và chiêu đang kết ấn. Qua mỗi trận, máy dùng tổ hợp hệ khác.
+Đối thủ đứng ở đầu sân bên kia, cách vị trí xuất phát của người chơi 31 m, sử dụng model tay có khớp và bộ 12 thế tay như người chơi. Máy kết từng ấn theo đúng độ dài của từng chiêu trước khi tung chiêu, ngắm vị trí của người chơi lúc phóng đạn, có chakra và có thể chọn phòng ngự khi bị tấn công. Thanh trên cùng cho biết máu, hệ, chakra và chiêu đang kết ấn. Qua mỗi trận, máy dùng tổ hợp hệ khác.
 
 Tuyết Táng kết thúc trận khi chôn vùi và cuốn đối thủ đi. Với các chiêu gây sát thương thông thường, trúng chiêu vẫn mất máu sau khi trừ khiên. Khi sinh lực chạm 0, bên đó hồi ngay đầy 1000 máu và trận đấu tiếp tục. Tạm dừng giữ nguyên máu, chakra, khiên, đạn, chuỗi ấn và tiến trình máy.
 
@@ -222,7 +224,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm test:** luật 45 chiêu, giới hạn bộ chiêu, chuỗi ấn, chakra, khóa kéo/lặn ngoài lãnh địa và lệnh khi thiếu phân thân, miễn nhiễm, khiên/phản đòn/hồi máu, va chạm tường, vùng làm chậm và vị trí thiên thạch, GLB, animation và máy chủ.
 - **npm run test:hand-volume:** đo độ dày lòng bàn tay, khối cơ ngón cái, độ cong mặt lưng, tiết diện ngón, độ sát của móng và vị trí/góc FPS. Kiểm tra trực tiếp geometry của GLB, độc lập với shader.
 - **npm run test:browser:** Edge headless, WebGL 2/SwiftShader; kiểm tra chọn chiêu, 12 thế tay, di chuyển chuột, máy kết ấn, sát thương, khiên, phản đòn, hồi đầy máu, tạm dừng, chọn lại và giao diện nhỏ.
-- **npm run test:ranks:** kiểm tra đối thủ ở dưới cổng, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
+- **npm run test:ranks:** kiểm tra vị trí xuất phát của đối thủ, độ dài 2–8 ấn, tiến trình chiêu dài, sức mạnh theo cấp, thời gian đạn bay và máy kết đúng số ấn.
 - **npm run test:lightning:** năm chiêu Lôi, khiên, trận 10 giây, tốc độ đạn, Thiên lôi, né, camera, tạm dừng/đấu lại và đồ họa thấp.
 - **npm run test:dark:** năm Ám thuật, mái vòm và lãnh địa, chó bóng đứng chờ/nhận lệnh, mỗi lần một con, tối đa ba con mỗi bên, đạn xuyên qua, biến mất/hồi lại trong và ngoài lãnh địa, voi bóng rơi gây 90 sát thương và khóa 2 giây, né hoặc lặn trước khi voi đáp, lặn miễn nhiễm với thao tác bình thường, hai bên và máy, hết hạn, tạm dừng/reset, đồ họa thấp và giảm chuyển động.
 - **npm run test:wind:** năm Phong thuật, combo hất tung 2 + 2 giây, sát thương 70 + 70, tường gió, camera tinh linh, phản liên tục phía trước và theo hướng ngắm, thuyền/sóng đổi hướng, hai bên, tạm dừng/reset/hết hạn, đồ họa thấp, giảm chuyển động và máy nối combo.
@@ -238,7 +240,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:graphics:** kiểm tra pixel môi trường ở ba mức đồ họa và chụp thế tay/giao diện.
 - **npm run test:anime:** chụp dáng nghỉ và đủ 12 thế tay, viền theo khung xương, vòng Hỏa–Thủy–Lôi, camera Lôi điểu, ba mức đồ họa, cửa sổ nhỏ/điện thoại và giảm chuyển động; kiểm tra lỗi shader.
 - **npm run test:hand-vfx:** kiểm tra 12 bóng, thời gian 0,2 giây, kết ấn liên tiếp, vầng lửa khi Space sẵn sàng, hồi chiêu/chakra, tạm dừng/reset và chế độ đồ họa thấp.
-- **npm run test:hand-element-rings:** kiểm tra vòng Phong–Ám–Quang cho cả 15 chiêu, điều kiện thi triển, màu/hoạt ảnh, đi theo tay, chuyển hệ, hồi chiêu/chakra, tạm dừng/reset, đồ họa thấp và giảm chuyển động; xuất ảnh vào `test-results/hand-element-rings/`.
+- **npm run test:hand-element-rings:** kiểm tra vòng Phong–Ám–Quang–Thổ–Mộc–Băng cho cả 30 chiêu, điều kiện thi triển, màu/hoạt ảnh, đi theo tay, chuyển hệ, hồi chiêu/chakra, tạm dừng/reset, đồ họa thấp và giảm chuyển động; xuất ảnh vào `test-results/hand-element-rings/`.
 - **npm run test:meteor-zoom:** kiểm tra zoom in/out trên trời, tạm dừng, đổi kích thước/chất lượng, khôi phục hướng ngắm, reset và chế độ giảm chuyển động.
 
 Đặt **BROWSER_PATH** để dùng Chrome/Chromium khác đường dẫn Edge mặc định trên Windows. Ảnh và báo cáo kiểm thử nằm trong test-results. Chỉ URL có **test=1** cung cấp bước thời gian xác định; gameplay bình thường dùng requestAnimationFrame.
@@ -250,7 +252,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **game-core.js:** 9 hệ, 45 chiêu, kiểm tra bộ chiêu, luật kết ấn/chakra và điều kiện dùng Ám thuật, sinh lực/khiên/phản đòn/miễn nhiễm/khống chế, va chạm tường, vùng làm chậm và chọn vùng thiên thạch.
 - **src/main.js:** quyển trục, HUD, điều khiển chuột, AI, va chạm và vòng trận đấu.
 - **src/opponent.js:** nhân vật ninja, tay kết ấn có khớp, tay áo đi theo cổ tay, khiên máy.
-- **src/scene.js:** môi trường anime, toon shading, ánh sáng, bóng, gió, cây hoa và cánh hoa.
+- **src/scene.js:** môi trường anime, toon shading, ánh sáng, bóng và gió; map giữ cỏ lay động, đã dọn cây thân gỗ mặc định, cổng và bốn cột đèn. Cây triệu hồi hệ Mộc vẫn xuất hiện qua kỹ năng.
 - **src/effects.js:** đạn theo màu hệ, ánh sáng, vệt, khói và vòng va chạm.
 - **src/fire-arts.js:** shader lửa, rồng có thân uốn lượn, thiên thạch, dấu báo vùng rơi, vòm khiên, tường lửa và vụ nổ.
 - **src/lightning-arts.js:** cầu điện, thương sét, chim điện, mây và tia Thiên lôi, khiên và Lôi trận.

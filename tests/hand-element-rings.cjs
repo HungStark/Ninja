@@ -36,10 +36,27 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
       await seal(expensive);await expect(null);assert.equal(await page.locator('#castButton').isDisabled(),true);await advance(5.5);await expect(element);await clear();
       await reset();while((await state()).quality!=='Thấp')await click('qualityButton');await seal(basic);await advance(.32);await expect(element);await capture(element+'-low');await clear();
     }
+    for(const element of ['wood','ice']){
+      const ids=await page.evaluate(e=>SealGameCore.spells.filter(s=>s.element===e).map(s=>s.id),element);await equip(ids);await expect(null);
+      for(const id of ids){
+        await reset();const spell=await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id),id);
+        if(spell.requiresGarden){await seal(id);await expect(null);await cast('wood-reflect');await advance(2);}
+        if(spell.requiresSnowFull){await seal(id);await expect(null);await cast('ice-reflect');await advance(90);}
+        await clear();await page.keyboard.press(spell.sequence[0]);await expect(null);
+        for(const k of spell.sequence.slice(1))await page.keyboard.press(k);
+        await advance(.32);await expect(element);await capture(id+'-ready');await clear();await expect(null);
+      }
+      await reset();const basic=element+'-reflect';await seal(basic);await advance(.32);await expect(element);await capture(element+'-ready');
+      const before=(await state()).handElementRings[element];await advance(.35);assert.ok((await state()).handElementRings[element].time>before.time);
+      await page.keyboard.press('Escape');await expect(null);const frozen=(await state()).handElementRings;await advance(2);assert.deepEqual((await state()).handElementRings,frozen);await page.keyboard.press('Enter');await expect(element);
+      await page.keyboard.press('Space');await expect(null);await advance(1.1);await seal(basic);await expect(null);
+      await reset();while((await state()).quality!=='Thấp')await click('qualityButton');await seal(basic);await advance(.32);await expect(element);await capture(element+'-low');await clear();
+    }
     // Selecting a spell from a different element must replace, rather than stack, rings.
     await equip(['wind-orb','dark-orb','light-orb','earth-orb']);for(const e of ['wind','dark','light','earth']){await seal(e+'-orb');await expect(e);}await clear();await expect(null);
     await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await page.waitForFunction(()=>document.body.dataset.ready==='true',null,{timeout:60000});await click('soundButton');await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));await click('startButton');
     for(const e of ['wind','dark','light','earth']){await seal(e+'-orb');await advance(.32);await expect(e);assert.equal((await state()).handElementRings[e].reducedMotion,1);await capture(e+'-reduced-motion');await clear();}
-    assert.deepEqual(errors,[]);await fs.writeFile(output+'/verification.json',JSON.stringify({passed:true,elements:['wind','dark','light','earth'],checks:['all twenty spells','incomplete seals','domain/clone/airborne/crater gates','ready ring follows hands','animated rings','pause/resume','casting/cooldown','chakra recovery','wrong/expired seals','reset','switching elements','low quality','reduced motion'],errors},null,2));console.log('PASS: wind, dark, light and earth readiness rings, all 20 spells, prerequisite gates, animation, cast/cooldown/chakra, pause/reset, element switching, graphics and reduced motion.');
+    await equip(['wood-reflect','ice-reflect']);for(const e of ['wood','ice']){await seal(e+'-reflect');await advance(.32);await expect(e);assert.equal((await state()).handElementRings[e].reducedMotion,1);await capture(e+'-reduced-motion');await clear();}
+    assert.deepEqual(errors,[]);await fs.writeFile(output+'/verification.json',JSON.stringify({passed:true,elements:['wind','dark','light','earth','wood','ice'],checks:['all thirty spells','incomplete seals','domain/clone/airborne/crater/garden/snow gates','ready ring follows hands','animated rings','pause/resume','casting/cooldown/once-per-match','chakra recovery','wrong/expired seals','reset','switching elements','low quality','reduced motion'],errors},null,2));console.log('PASS: six readiness rings, all 30 spells, prerequisite gates, animation, cast/cooldown/chakra, once-per-match, pause/reset, element switching, graphics and reduced motion.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

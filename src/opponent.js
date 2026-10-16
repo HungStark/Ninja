@@ -6,6 +6,7 @@ import { inkMaterial, addInkOutline } from './ink-outline.js';
 // The opponent uses the same articulated hands and twelve poses as the player.
 export async function createOpponent(scene, spawnPosition, playerModel = false) {
   const group = new T.Group();
+  group.userData.height = 3.01;
   group.position.copy(spawnPosition);
   scene.add(group);
   const cloth = toon(playerModel ? '#29324a' : '#33495f'), dark = toon(playerModel ? '#191f32' : '#182b3d'), skin = toon('#e7bb97'), metal = toon(playerModel ? '#d1ae6b' : '#b6c9ca'), belt = toon(playerModel ? '#c6a76b' : '#b67863');

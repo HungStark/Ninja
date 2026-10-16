@@ -57,7 +57,8 @@ export async function createHands() {
   scene.add(aura);
   const shadow = await createSealShadow(scene), handFire = createHandFire(scene), handWater = createHandWater(scene), handLightning = createHandLightning(scene);
   const handWind=createHandElement(scene,'wind'),handDark=createHandElement(scene,'dark'),handLight=createHandElement(scene,'light'),handEarth=createHandElement(scene,'earth');
-  const elementalRings={wind:handWind,dark:handDark,light:handLight,earth:handEarth};
+  const handWood=createHandElement(scene,'wood'),handIce=createHandElement(scene,'ice');
+  const elementalRings={wind:handWind,dark:handDark,light:handLight,earth:handEarth,wood:handWood,ice:handIce};
   const lightFinger=new T.Mesh(new T.OctahedronGeometry(.012),new T.MeshBasicMaterial({color:'#fff4cc',toneMapped:false}));
   lightFinger.position.set(0,.02,0);lightFinger.visible=false;hands[1].joints.index_2.add(lightFinger);
   const lightOrigin=()=>hands[1].joints.index_2.localToWorld(new T.Vector3(0,.02,0));
@@ -70,7 +71,7 @@ export async function createHands() {
     handWater.setReady(readyElement === 'water');
     handLightning.setReady(readyElement === 'lightning');
     for(const [element,ring] of Object.entries(elementalRings))ring.setReady(readyElement===element);
-    if (['fire', 'water', 'lightning','wind','dark','light','earth'].includes(readyElement)) auraMat.opacity = 0;
+    if (['fire', 'water', 'lightning','wind','dark','light','earth','wood','ice'].includes(readyElement)) auraMat.opacity = 0;
   }
   function clearEffects() {
     shadow.clear(); setReady(null); sealPulse = 0; auraMat.opacity = 0;lightFinger.visible=false;
@@ -160,5 +161,5 @@ export async function createHands() {
     fireLight.intensity = T.MathUtils.damp(fireLight.intensity, fireIntensity * 2.6, 13, dt);
   }
   const setInkViewport=(width,height)=>inkMaterials.forEach(m=>m.uniforms.viewport.value.set(width,height));
-  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning, handWind,handDark,handLight,handEarth,lightFinger,lightOrigin,outlines, setInkViewport };
+  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning, handWind,handDark,handLight,handEarth,handWood,handIce,lightFinger,lightOrigin,outlines, setInkViewport };
 }

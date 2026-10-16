@@ -234,9 +234,9 @@ export function createHandLightning(scene) {
 // cel palette and motion for each element. Ink and earth use normal alpha
 // blending to preserve their dark colors without bloom.
 export function createHandElement(scene,element) {
-  const kind={wind:0,dark:1,light:2,earth:3}[element];
+  const kind={wind:0,dark:1,light:2,earth:3,wood:4,ice:5}[element];
   if(kind===undefined)throw new Error('Unsupported hand ring: '+element);
-  const colors={wind:'#a7f0cd',dark:'#aa71d5',light:'#ffe7a1',earth:'#b78b57'},opaque=element==='dark'||element==='earth';
+  const colors={wind:'#a7f0cd',dark:'#aa71d5',light:'#ffe7a1',earth:'#b78b57',wood:'#82bd4b',ice:'#c5f2ff'},opaque=['dark','earth','wood'].includes(element);
   const material=new T.ShaderMaterial({
     transparent:true,depthWrite:false,blending:opaque?T.NormalBlending:T.AdditiveBlending,
     uniforms:{uTime:{value:0},uReducedMotion:{value:0},uKind:{value:kind}},
@@ -285,7 +285,7 @@ export function createHandElement(scene,element) {
           float rays=band(r,1.075,.048)*glint;
           alpha=max(ring*.9,max(outer,rays*.8));
           color=mix(vec3(.78,.51,.14),vec3(1.22,1.12,.78),max(ring,glint));
-        }else{
+        }else if(uKind<3.5){
           vec2 orbit=vec2(cos(a),sin(a));
           float grain=noise(orbit*18.+vec2(t*.08,-t*.11));
           float edge=1.+(grain-.5)*.025;
@@ -294,6 +294,19 @@ export function createHandElement(scene,element) {
           float cloud=(1.-smoothstep(.055,.20,abs(r-1.04)))*smoothstep(.34,.72,dust);
           alpha=max(max(ring*.85,inner),cloud*.34);
           color=mix(vec3(.10,.045,.018),vec3(.34,.16,.055),max(ring*.55,dust*.65));
+        }else if(uKind<4.5){
+          float vine=1.+.018*sin(a*9.-t*1.7);
+          float ring=band(r,vine,.013),braid=band(r,1.06+.025*sin(a*9.-t*1.7+3.14159),.006);
+          float glow=(1.-smoothstep(.02,.085,abs(r-vine)))*.16;
+          alpha=max(ring*.85,max(braid*.5,glow));
+          color=mix(vec3(.10,.32,.055),vec3(.38,.68,.14),max(ring,braid));
+        }else{
+          float facets=.012*cos(a*12.);
+          float ring=band(r,1.+facets,.009),frost=band(r,1.07+facets*.5,.005);
+          float glint=pow(max(0.,cos(a*6.-t*1.8)),18.);
+          float halo=(1.-smoothstep(.015,.09,abs(r-1.)))*.18;
+          alpha=max(ring*.82,max(frost*(.25+.45*glint),halo));
+          color=mix(vec3(.20,.56,.76),vec3(.85,1.12,1.25),max(ring,glint));
         }
         if(alpha<.015)discard;gl_FragColor=vec4(color,alpha);
         #include <tonemapping_fragment>
@@ -302,7 +315,7 @@ export function createHandElement(scene,element) {
   });
   const mesh=new T.Mesh(new T.PlaneGeometry(1,1),material);
   mesh.name='ReadyHand'+element[0].toUpperCase()+element.slice(1);mesh.renderOrder=10;mesh.visible=false;scene.add(mesh);
-  const count=element==='dark'?32:element==='earth'?28:12,geometry=new T.BufferGeometry();
+  const count=element==='dark'?32:['earth','ice'].includes(element)?28:element==='wood'?20:12,geometry=new T.BufferGeometry();
   geometry.setAttribute('position',new T.BufferAttribute(new Float32Array(count*3),3));
   geometry.setAttribute('aLife',new T.BufferAttribute(new Float32Array(count),1));
   const motes=new T.Points(geometry,new T.ShaderMaterial({
@@ -310,10 +323,29 @@ export function createHandElement(scene,element) {
     uniforms:{uColor:{value:new T.Color(colors[element])},uKind:{value:kind},uTime:{value:0}},
     vertexShader:`uniform float uKind;attribute float aLife;varying float vLife;
       void main(){vLife=aLife;vec4 p=modelViewMatrix*vec4(position,1.);
-        float size=uKind>2.5?8.+aLife*10.:uKind>.5&&uKind<1.5?28.+aLife*36.:2.4;
+        float size=uKind>4.5?8.+aLife*5.:uKind>3.5?10.+aLife*7.:uKind>2.5?8.+aLife*10.:uKind>.5&&uKind<1.5?28.+aLife*36.:2.4;
         gl_PointSize=clamp(size/max(.3,-p.z),1.,uKind>2.5?35.:uKind>.5&&uKind<1.5?80.:7.);gl_Position=projectionMatrix*p;}`,
     fragmentShader:`uniform vec3 uColor;uniform float uKind;uniform float uTime;varying float vLife;
       void main(){vec2 p=gl_PointCoord-.5;
+      if(uKind>3.5){
+        float turn=uTime*(uKind>4.5?.45:.9)+vLife*6.2831853;
+        p=mat2(cos(turn),-sin(turn),sin(turn),cos(turn))*p;
+        if(uKind<4.5){
+          float width=.20*(1.-pow(clamp(abs(p.x)/.43,0.,1.),.65));
+          float leaf=(1.-smoothstep(width-.012,width+.012,abs(p.y)))*(1.-smoothstep(.40,.44,abs(p.x)));
+          float vein=1.-smoothstep(.006,.018,abs(p.y));
+          if(leaf<.02)discard;
+          gl_FragColor=vec4(mix(uColor*.75,vec3(.73,.90,.29),vein*.7),leaf*.92);return;
+        }
+        float r=length(p),a=atan(p.y,p.x),fold=mod(a+.5235988,1.0471976)-.5235988;
+        vec2 arm=vec2(cos(fold),sin(fold))*r;
+        float stem=1.-smoothstep(.009,.024,abs(arm.y));
+        float forks=min(abs(abs(arm.y)-(arm.x-.14)*.72),abs(abs(arm.y)-(arm.x-.26)*.72));
+        float branches=(1.-smoothstep(.008,.021,forks))*smoothstep(.14,.18,arm.x);
+        float alpha=max(stem,branches)*(1.-smoothstep(.37,.44,r));
+        if(alpha<.02)discard;
+        gl_FragColor=vec4(mix(uColor,vec3(1.2,1.3,1.4),stem*.55),alpha*.85);return;
+      }
       if(uKind>2.5){float cloud=1.-smoothstep(.08,.48,length(p));gl_FragColor=vec4(uColor,cloud*sin(vLife*3.14159265)*.28);return;}
       if(uKind>.5&&uKind<1.5){
         float a=atan(p.y,p.x),r=length(p);
@@ -344,11 +376,11 @@ export function createHandElement(scene,element) {
     mesh.scale.set(rx*3,ry*3,1);
     material.uniforms.uTime.value=time;material.uniforms.uReducedMotion.value=Number(reducedMotion);
     if(!mesh.visible)return;
-    const t=time*(reducedMotion ? .12 : 1),speed=element==='wind'?2.1:element==='dark'?-.45:element==='earth'?.22:.35;
+    const t=time*(reducedMotion ? .12 : 1),speed=element==='wind'?2.1:element==='dark'?-.45:element==='earth'?.22:element==='wood'?.65:element==='ice'?.8:.35;
     motes.material.uniforms.uTime.value=t;
     for(let i=0;i<count;i++){
       const life=(t*.38+i*.618)%1;
-      const a=i*Math.PI*2/count+t*speed,radius=element==='light'?1.13:element==='dark'?.98+life*.22:element==='earth'?.97+life*.3:1.035+Math.sin(i+t*1.2)*.055;
+      const a=i*Math.PI*2/count+t*speed*(kind>3.5?.8+i%4*.13:1),radius=element==='light'?1.13:element==='dark'?.98+life*.22:element==='earth'?.97+life*.3:kind>3.5?1.08+Math.sin(i*1.7+t)*.12:1.035+Math.sin(i+t*1.2)*.055;
       geometry.attributes.position.setXYZ(i,mesh.position.x+Math.cos(a)*rx*radius,mesh.position.y+Math.sin(a)*ry*radius+(element==='earth'?life*.065:element==='dark'?life*.022:0),mesh.position.z+(compact ? .015 : .02));
       geometry.attributes.aLife.setX(i,life);
     }

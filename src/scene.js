@@ -10,8 +10,8 @@ const rand = () => {
 export function createWorld() {
   const scene = new T.Scene();
   scene.fog = new T.FogExp2("#43536a", 9e-3);
-  const animated = [], lanternLights = [], terrainMeshes=[], terrainProps=[];
-  const mats = { stone: toon("#bdc7af"), darkStone: toon("#657c77"), wood: toon("#85664b"), red: toon("#c55c47"), roof: toon("#364f61"), gold: toon("#e5be79"), grass: toon("#8aaf71"), leaf: toon("#4c936b", { wind: true, side: T.DoubleSide }), pink: toon("#f2b5c8", { wind: true }), ground: toon("#89a67d") };
+  const animated = [], terrainMeshes=[], terrainProps=[];
+  const mats = { stone: toon("#bdc7af"), darkStone: toon("#657c77"), wood: toon("#85664b"), gold: toon("#e5be79"), ground: toon("#89a67d") };
   const geos = { box: new T.BoxGeometry(1, 1, 1), sphere: new T.SphereGeometry(1, 16, 10), ico: new T.IcosahedronGeometry(1, 1), cylinder: new T.CylinderGeometry(1, 1, 1, 12), cone: new T.ConeGeometry(1, 1, 10) };
   function mesh(geo, mat, p, s = [1, 1, 1], parent = scene) {
     const m = new T.Mesh(typeof geo === "string" ? geos[geo] : geo, mat);
@@ -173,64 +173,27 @@ export function createWorld() {
     }
   });
   mats.wood.map = barkTex;
-  const leafTex=canvasTexture(128,(c,n)=>{
-    c.fillStyle='#f0f0eb';c.fillRect(0,0,n,n);
-    for(let i=0;i<28;i++){
-      const x=(Math.sin(i*71.3)*.5+.5)*n,y=(Math.cos(i*33.9)*.5+.5)*n;
-      c.fillStyle=i%3?'#e1e3db':'#c8cec2';
-      c.beginPath();c.moveTo(x-10,y);c.lineTo(x-3,y-6);c.lineTo(x+11,y-3);c.lineTo(x+6,y+5);c.lineTo(x-5,y+7);c.closePath();c.fill();
-    }
-  });
-  mats.leaf.map=leafTex;mats.pink.map=leafTex;
-  function branch(a, b, r, parent) {
-    const pa = new T.Vector3(...a), pb = new T.Vector3(...b), delta = pb.clone().sub(pa);
-    const m = mesh(new T.CylinderGeometry(r * 0.6, r, delta.length(), 8), mats.wood, pa.clone().add(pb).multiplyScalar(0.5).toArray(), [1, 1, 1], parent);
-    m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), delta.normalize());
-    return m;
-  }
-  function tree(x, z, h, pink = false) {
-    const g = group([x, 0, z]);
-    branch([0, 0, 0], [0.1, h * 0.78, 0], h * 0.046, g);
-    for (let j = 0; j < 5; j++) {
-      const a = j / 5 * Math.PI * 2, b = [Math.cos(a) * h * 0.22, h * (0.54 + j * 0.06), Math.sin(a) * h * 0.2];
-      branch([0, h * 0.44, 0], b, h * 0.02, g);
-      const leaf = mesh("ico", pink ? mats.pink : mats.leaf, [b[0], b[1] + h * 0.13, b[2]], [h * 0.3, h * 0.21, h * 0.27], g);
-      leaf.rotation.set(rand(), rand() * 6, rand());
-      leaf.customDepthMaterial = windyDepth();
-    }
-    const crown = mesh("ico", pink ? mats.pink : mats.leaf, [0.1, h * 0.84, 0], [h * 0.33, h * 0.26, h * 0.29], g);
-    crown.customDepthMaterial = windyDepth();
-    animated.push({ type: "tree", object: g, phase: rand() * 6 });
-  }
-  for (const side of [-1, 1]) for (let i = 0; i < 14; i++) tree(side * range(17, 25), range(-48, 14), range(5, 8), i % 7 === 0);
-  tree(-11, 3, 7.5, true);
-  tree(12, 1, 8, true);
-  tree(-13, -15, 7);
-  tree(13, -14, 7);
-  const grassGeo = new T.BufferGeometry(), gv = [], gc = [];
-  const baseColor = new T.Color("#527c57"), tipColor = new T.Color("#bdd08a");
+  const grassGeo = new T.BufferGeometry(), blades = [], colors = [];
+  const baseColor = new T.Color('#527c57'), tipColor = new T.Color('#bdd08a');
   for (let blade = 0; blade < 5; blade++) {
-    const a = blade / 5 * Math.PI * 2, h = 0.45 + blade * 0.07, dx = Math.cos(a) * 0.18, dz = Math.sin(a) * 0.18;
-    for (const p of [[-0.035, 0, 0], [0.035, 0, 0], [dx, h, dz]]) {
-      gv.push(...p);
-      gc.push(...(p[1] === 0 ? baseColor : tipColor).toArray());
+    const angle = blade / 5 * Math.PI * 2, height = .45 + blade * .07;
+    const dx = Math.cos(angle) * .18, dz = Math.sin(angle) * .18;
+    for (const p of [[-.035, 0, 0], [.035, 0, 0], [dx, height, dz]]) {
+      blades.push(...p);
+      colors.push(...(p[1] === 0 ? baseColor : tipColor).toArray());
     }
   }
-  grassGeo.setAttribute("position", new T.Float32BufferAttribute(gv, 3));
-  grassGeo.setAttribute("color", new T.Float32BufferAttribute(gc, 3));
+  grassGeo.setAttribute('position', new T.Float32BufferAttribute(blades, 3));
+  grassGeo.setAttribute('color', new T.Float32BufferAttribute(colors, 3));
   grassGeo.computeVertexNormals();
-  const grassMat = toon("#ffffff", { vertexColors: true, side: T.DoubleSide, wind: true, rim: 0.02 });
-  const count = 1700, grass = new T.InstancedMesh(grassGeo, grassMat, count), dummy = new T.Object3D();
-  for (let i = 0; i < count; i++) {
+  const grassMat = toon('#ffffff', { vertexColors: true, side: T.DoubleSide, wind: true, rim: .02 });
+  const grass = new T.InstancedMesh(grassGeo, grassMat, 1700), dummy = new T.Object3D();
+  for (let i = 0; i < grass.count; i++) {
     let x, z;
-    do {
-      x = range(-22, 22);
-      z = range(-40, 15);
-    } while (Math.abs(x) < 3.15);
-    dummy.position.set(x, 0.015, z);
-    dummy.rotation.y = rand() * 6;
-    const s = range(0.6, 1.4);
-    dummy.scale.set(s, s, s);
+    do { x = range(-22, 22); z = range(-40, 15); } while (Math.abs(x) < 3.15);
+    dummy.position.set(x, .015, z);
+    dummy.rotation.y = rand() * Math.PI * 2;
+    dummy.scale.setScalar(range(.6, 1.4));
     dummy.updateMatrix();
     grass.setMatrixAt(i, dummy.matrix);
   }
@@ -238,58 +201,8 @@ export function createWorld() {
   grass.customDepthMaterial = windyDepth();
   grass.frustumCulled = false;
   scene.add(grass);
-  const flowers = new T.InstancedMesh(new T.SphereGeometry(0.045, 6, 4), toon("#f7dfa0"), 120);
-  for (let i = 0; i < 120; i++) {
-    dummy.position.set((i % 2 ? 1 : -1) * range(3.5, 12), range(0.15, 0.35), range(-25, 9));
-    dummy.scale.set(1, 1, 1);
-    dummy.updateMatrix();
-    flowers.setMatrixAt(i, dummy.matrix);
-  }
-  scene.add(flowers);
-  const gate = group([0, 0, -24]);
-  for (const x of [-8, 8]) {
-    mesh(new T.CylinderGeometry(0.39, 0.49, 7.5, 16), mats.red, [x, 3.75, 0], [1, 1, 1], gate);
-    mesh("cylinder", mats.darkStone, [x, 0.27, 0], [0.67, 0.54, 0.67], gate);
-    for (const y of [1, 5, 6.5]) mesh("cylinder", mats.gold, [x, y, 0], [0.402, 0.065, 0.402], gate);
-  }
-  mesh("box", mats.red, [0, 5.6, 0], [17.4, 0.35, 0.52], gate);
-  mesh("box", mats.red, [0, 6.9, 0], [19, 0.4, 0.68], gate);
-  const curve = new T.CatmullRomCurve3([new T.Vector3(-10.8, 7.7, 0), new T.Vector3(-7, 7.35, 0), new T.Vector3(0, 7.32, 0), new T.Vector3(7, 7.35, 0), new T.Vector3(10.8, 7.7, 0)]);
-  const roofShape = new T.Shape();
-  roofShape.moveTo(-0.18, -0.72);
-  roofShape.lineTo(0.18, -0.72);
-  roofShape.lineTo(0.18, 0.72);
-  roofShape.lineTo(-0.18, 0.72);
-  roofShape.closePath();
-  const roofGeo = new T.ExtrudeGeometry(roofShape, { steps: 45, bevelEnabled: false, extrudePath: curve });
-  mesh(roofGeo, mats.roof, [0, 0, 0], [1, 1, 1], gate);
-  for (let x = -9; x <= 9; x += 0.65) mesh("box", mats.gold, [x, 7.09, 0], [0.05, 0.13, 1.45], gate);
-  mesh("box", mats.gold, [0, 6.33, 0.42], [1.2, 1.56, 0.12], gate);
-  const plaqueTex = canvasTexture(256, (c, n) => {
-    c.fillStyle = "#304d5c";
-    c.fillRect(0, 0, n, n);
-    c.strokeStyle = "#ddb873";
-    c.lineWidth = 8;
-    c.strokeRect(15, 15, n - 30, n - 30);
-    c.fillStyle = "#ebcc96";
-    c.font = "150px serif";
-    c.textAlign = "center";
-    c.textBaseline = "middle";
-    c.fillText("\u706B", n / 2, n / 2);
-  });
-  mesh("box", toon("#ffffff", { map: plaqueTex }), [0, 6.33, 0.49], [0.96, 1.31, 0.04], gate);
-  const ropeCurve = new T.CatmullRomCurve3([new T.Vector3(-8, 5, 0.3), new T.Vector3(-4, 4.5, 0.3), new T.Vector3(0, 4.35, 0.3), new T.Vector3(4, 4.5, 0.3), new T.Vector3(8, 5, 0.3)]);
-  mesh(new T.TubeGeometry(ropeCurve, 40, 0.055, 6, false), mats.gold, [0, 0, 0], [1, 1, 1], gate);
-  const paper = toon("#faf2d5", { side: T.DoubleSide });
-  for (let i = 0; i < 7; i++) {
-    let x = (i - 3) * 1.8, y = 4.4 + 8e-3 * x * x;
-    const streamer = group([x, y, 0.32], gate);
-    for (let j = 0; j < 3; j++) {
-      const sheet = mesh("box", paper, [j % 2 * 0.08, -j * 0.15, 0], [0.21, 0.18, 0.012], streamer);
-      sheet.rotation.z = j % 2 ? 0.3 : -0.3;
-    }
-    animated.push({ type: "banner", object: streamer, phase: i });
-  }
+  const opponentSpawn = new T.Vector3(0, 0, -24);
+  const plantReferenceHeight = 7.88; // Preserve the established size of summoned Wood plants.
   const bannerTex = canvasTexture(256, (c, n) => {
     c.fillStyle = "#bc5949";
     c.fillRect(0, 0, n, n);
@@ -319,46 +232,11 @@ export function createWorld() {
     }
     for (const y of [0.55, 1.25]) mesh("box", mats.wood, [side * 16, y, -7], [0.15, 0.12, 38]);
   }
-  function lantern(x, z) {
-    const g = group([x, 0, z]);
-    mesh("box", mats.stone, [0, 0.13, 0], [1.1, 0.26, 1.1], g);
-    mesh("cylinder", mats.stone, [0, 0.73, 0], [0.22, 1.2, 0.22], g);
-    mesh("box", mats.stone, [0, 1.3, 0], [0.97, 0.16, 0.97], g);
-    const glowMat = new T.MeshBasicMaterial({ color: new T.Color("#ffd994").multiplyScalar(1.8) });
-    mesh("box", glowMat, [0, 1.68, 0], [0.59, 0.64, 0.59], g);
-    for (let i = 0; i < 4; i++) {
-      let a = i / 4 * Math.PI * 2 + Math.PI / 4;
-      mesh("box", mats.darkStone, [Math.cos(a) * 0.4, 1.7, Math.sin(a) * 0.4], [0.1, 0.78, 0.1], g);
-    }
-    const roof = mesh("cone", mats.roof, [0, 2.2, 0], [0.92, 0.55, 0.92], g);
-    roof.rotation.y = Math.PI / 4;
-    mesh("sphere", mats.gold, [0, 2.57, 0], [0.1, 0.14, 0.1], g);
-    const l = new T.PointLight("#ffb75a", 3, 5, 2);
-    l.position.set(x, 1.7, z);
-    scene.add(l);
-    lanternLights.push(l);
-  }
-  for (const x of [-5, 5]) for (const z of [4, -19]) lantern(x, z);
-  const petals = new T.InstancedMesh(new T.SphereGeometry(1, 5, 3), toon("#f3bfca", { side: T.DoubleSide }), 70), petalData = [];
-  for (let i = 0; i < 70; i++) petalData.push({ x: range(-18, 18), y: range(1, 8), z: range(-28, 12), phase: rand() * 6, speed: range(0.1, 0.35) });
-  scene.add(petals);
-  petals.castShadow = false;
   function update(time, dt) {
     windTime.value = time;
     for (const a of animated) {
       if (a.type === "cloud") a.object.position.x = a.origin.x + Math.sin(time * 0.025 + a.phase) * 3;
-      if (a.type === "tree") a.object.rotation.z = Math.sin(time * 0.65 + a.phase) * 8e-3;
-      if (a.type === "banner") a.object.rotation.z = Math.sin(time * 1.2 + a.phase) * 0.08;
     }
-    for (let i = 0; i < petalData.length; i++) {
-      const p = petalData[i], y = (p.y - time * p.speed + 500) % 9;
-      dummy.position.set(p.x + Math.sin(time * 0.3 + p.phase) * 1.2, y, p.z + Math.cos(time * 0.2 + p.phase) * 0.5);
-      dummy.rotation.set(time * 0.6 + p.phase, time * 0.3 + p.phase, Math.sin(time + p.phase));
-      dummy.scale.set(0.055, 9e-3, 0.027);
-      dummy.updateMatrix();
-      petals.setMatrixAt(i, dummy.matrix);
-    }
-    petals.instanceMatrix.needsUpdate = true;
   }
   const environment = [...scene.children];
   const ink=inkMaterial(.8,'#343d39'),leafInk=inkMaterial(.65,'#3d4543',true),outlines=[];
@@ -371,6 +249,6 @@ export function createWorld() {
   });
   for(const subject of subjects)outlines.push(addInkOutline(subject,subject.material.userData.wind?leafInk:ink));
   const setInkViewport=(width,height)=>[ink,leafInk].forEach(m=>m.uniforms.viewport.value.set(width,height));
-  const terrain=new TerrainSurface(terrainMeshes,[grass,flowers],terrainProps);
-  return { scene, sky, sun, fill, grass, gate, update, lanternLights, environment, outlines, setInkViewport, terrain };
+  const terrain=new TerrainSurface(terrainMeshes,[grass],terrainProps);
+  return { scene, sky, sun, fill, grass, opponentSpawn, plantReferenceHeight, update, environment, outlines, setInkViewport, terrain };
 }
