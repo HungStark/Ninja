@@ -2,7 +2,7 @@
   "name": "an-hoa-hand-seal-game",
   "version": "0.3.0",
   "private": true,
-  "description": "First-person nine-element ninja duel with hand seals and pre-battle loadouts",
+  "description": "Third-person chibi ninja exploration across ten villages, with hand-seal duels and checkpoint respawns",
   "scripts": {
     "start": "node server.cjs",
     "build": "node tools/build.mjs",
@@ -22,7 +22,7 @@
     "test:fire": "node tests/fire.cjs",
     "test:water": "node tests/water.cjs",
     "test:lightning": "node tests/lightning.cjs",
-    "test:dark": "node tests/dark.cjs",
+    "test:dark": "node tests/dark-clones.cjs && node tests/dark.cjs",
     "test:wind": "node tests/wind.cjs",
     "test:hand-vfx": "node tests/hand-vfx.cjs",
     "test:meteor-zoom": "node tests/meteor-zoom.cjs",
@@ -34,7 +34,8 @@
     "test:nature": "node tests/nature-core.mjs && node tests/nature.cjs",
     "test:hand-element-rings": "node tests/hand-element-rings.cjs",
     "test:cooldowns": "node tests/cooldowns-shuriken.cjs",
-    "test:combat": "node tests/combat-core.mjs && node tests/combat.cjs"
+    "test:combat": "node tests/combat-core.mjs && node tests/combat.cjs",
+    "test:adventure": "node tests/adventure-core.mjs && node tests/adventure.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

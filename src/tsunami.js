@@ -1,4 +1,4 @@
-// Snow and living gardens are deliberately absent: waves never remove them.
+// Snow and living gardens survive; shadow clones are swept behind the opponent.
 export function sweepTsunami(wave,start,end,{actors,walls,fields,dark,wind,light,earth,nature,intersectsWave}){
   const touches=(p,r=0,q=p)=>intersectsWave(p,q,start,end,wave.normal,wave.width,wave.height,r,wave.depth);
   const carry=(element,style,owner,color)=>{wave.carried.push({element,style,owner,color});if(wave.carried.length>24)wave.carried.shift();};
@@ -10,8 +10,12 @@ export function sweepTsunami(wave,start,end,{actors,walls,fields,dark,wind,light
     const p=wall.p.map((v,i)=>v-across[i]*r),q=wall.p.map((v,i)=>v+across[i]*r);
     if(touches(p,0,q)){wall.hp=0;carry(wall.element,'wall',wall.owner,'#b2d8df');}
   }
-  for(const c of [...dark.clones])if(c.mode!=='respawning'&&touches([c.p[0],c.hitHeight,c.p[2]],c.hitRadius)){
-    carry('dark',c.form,c.owner,'#645375');dark.splash(c.p);dark.removeClone(c);
+  const opponent=actors.find(a=>a.owner!==wave.owner);
+  if(opponent){
+    wave.sweptClones??=new Set();
+    for(const c of dark.clones)if(c.mode!=='respawning'&&!wave.sweptClones.has(c.id)&&touches([c.p[0],c.hitHeight,c.p[2]],c.hitRadius)){
+      wave.sweptClones.add(c.id);dark.carryClone(c,wave,opponent);
+    }
   }
   for(const b of [...dark.bindings]){const p=b.elephant.getWorldPosition(b.elephant.position.clone()).toArray();if(touches(p,1)){carry('dark','elephant',b.owner,'#645375');dark.releaseBinding(b);}}
   for(const s of [...wind.spirits])if(touches(s.root.position.toArray(),.8)){carry('wind','spirit',s.owner,'#9fe9ce');s.root.removeFromParent();wind.spirits.splice(wind.spirits.indexOf(s),1);}

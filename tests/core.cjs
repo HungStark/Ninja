@@ -6,7 +6,7 @@ const loadoutForSpell = spell => spell.kind === 'attack' ? [spell.id] : [spell.i
 assert.equal(new Set(keys).size, 12);
 assert.equal(elements.length, 9); assert.equal(spells.length, 45);
 assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 45);
-for(const spell of spells)assert.ok(spell.cooldown>=3&&spell.cooldown<=15);
+for(const spell of spells)assert.equal(spell.cooldown,spell.id==='dark-orb'?2:context.SealGameCore.cooldownByRank[spell.rank]);
 const balance=new GameRules(['fire-volley','fire-barrier']);balance.chakra=0;balance.tick(2);assert.equal(balance.chakra,10);balance.chakra=100;
 spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.equal(balance.remaining('fire-volley'),6);balance.tick(1.01);
 spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.ok(balance.remaining('fire-volley')>0&&balance.remaining('fire-barrier')>0);balance.clear();spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));const savedChakra=balance.chakra;assert.equal(balance.cast().reason,'spellCooldown');assert.equal(balance.chakra,savedChakra);assert.equal(balance.sequence.join(''),'qwdf');balance.tick(16);assert.equal(Object.keys(balance.cooldowns).length,0);
@@ -34,6 +34,7 @@ const command=new GameRules(['dark-lance']);dark.find(s=>s.style==='shadowcomman
 assert.equal(command.cast().reason,'clones');assert.equal(command.chakra,100);assert.equal(command.casts,0);assert.equal(command.sequence.length,2);
 assert.equal(command.cast({shadowClones:2}).ok,true);
 const summons=new GameRules(['dark-orb']);dark.find(s=>s.style==='shadowclone').sequence.forEach(k=>summons.seal(k));assert.equal(summons.cast({shadowCloneCount:3}).reason,'cloneLimit');assert.equal(summons.chakra,100);assert.equal(summons.casts,0);assert.equal(summons.sequence.length,3);assert.equal(summons.cast({shadowCloneCount:3,shadowUpgrades:1}).ok,true);assert.equal(summons.chakra,74);assert.equal(dark.find(s=>s.style==='shadowclone').damage*dark.find(s=>s.style==='shadowclone').upgradeMultiplier,57);
+assert.equal(summons.remaining('dark-orb'),2);summons.tick(1.99);dark.find(s=>s.style==='shadowclone').sequence.forEach(k=>summons.seal(k));assert.equal(summons.cast().reason,'spellCooldown');summons.tick(.01);assert.equal(summons.cast().ok,true);assert.equal(summons.remaining('dark-orb'),2);
 for(const spell of dark.filter(s=>s.requiresDomain)){
  const rules=new GameRules(loadoutForSpell(spell));spell.sequence.forEach(k=>rules.seal(k));
  assert.equal(rules.cast().reason,'domain');assert.equal(rules.casts,0);assert.equal(rules.chakra,100);assert.equal(rules.sequence.length,spell.sequence.length);

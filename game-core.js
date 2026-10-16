@@ -36,7 +36,7 @@
   const waterSpells = [
     { id: 'water-lance', name: 'Thủy ngục', kind: 'attack', style: 'prison', rank: 'A', sequence: [...'wezxc'], cost: 38, damage: 12, size: .55, count: 1, speed: 21, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
     { id: 'water-volley', name: 'Ném thuyền', kind: 'attack', style: 'boat', rank: 'S', sequence: [...'wecvzx'], cost: 56, damage: 90, size: 1.7, count: 1, speed: 24, blastRadius: 3.5, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm' },
-    { id: 'water-tsunami', name: 'Sóng thần', kind: 'attack', style: 'tsunami', rank: 'SS', sequence: [...'wecvzxer'], cost: 72, damage: 30, size: 1, count: 1, speed: 12, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức trên đường đi • sát thương vừa phải' },
+    { id: 'water-tsunami', name: 'Sóng thần', kind: 'attack', style: 'tsunami', rank: 'SS', sequence: [...'wecvzxer'], cost: 72, damage: 30, size: 1, count: 1, speed: 12, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức • đẩy phân thân ra sau đối thủ, không phá hủy • sát thương vừa phải' },
     { id: 'water-barrier', name: 'Khiên nước', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, shield: 65, duration: 4.5, count: 0, subtitle: 'Khiên nước bao quanh bản thân • hấp thụ 65 sát thương' },
     { id: 'water-reflect', name: 'Thủy thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence: [...'wedf'], cost: 32, damage: 0, shield: 95, duration: 5, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
   ].map(s => ({ ...s, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
@@ -71,7 +71,7 @@
     {id:'light-volley',name:'Nấc thang của Jacob',kind:'attack',style:'jacob',rank:'SS',sequence:[...'sdzxcv'],cost:82,damage:160,count:1,size:1,chargeTime:1.25,blastRadius:3.5,speed:0,subtitle:'Ngước nhìn trời rồi lia xuống theo cột sáng trắng–vàng giáng xuống · 160 sát thương trong bán kính 3,5 m'}
   ].map(s=>({...s,element:'light',glyph:'光',color:'#fff2bd',heal:0,shield:s.shield||0}));
   const darkSpells = [
-    { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', sequence:[...'dfa'], cost:26, damage:38, count:1, cloneCount:1, maxClones:3, upgradeMultiplier:1.5, subtitle:'Thêm một chó bóng · đủ 3 con thì mỗi lần thi triển nâng một chó thành bò bóng, sát thương 57 · không cản đạn' },
+    { id:'dark-orb', name:'Ảnh phân thân', kind:'attack', style:'shadowclone', rank:'C', cooldown:2, sequence:[...'dfa'], cost:26, damage:38, count:1, cloneCount:1, maxClones:3, upgradeMultiplier:1.5, subtitle:'Thêm một chó bóng · đủ 3 con thì mỗi lần thi triển nâng một chó thành bò bóng, sát thương 57 · không bị chiêu đối thủ phá hủy, không cản đạn' },
     { id:'dark-lance', name:'Ảnh tập kích', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'], cost:34, damage:38, count:1, requiresClones:true, subtitle:'Ra lệnh lao tới điểm ngắm, đánh 38 sát thương rồi biến mất · trong lãnh địa tự trồi lên lại' },
     { id:'dark-volley', name:'Ảnh tượng', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfcvzx'], cost:56, damage:90, fallTime:.7, duration:2, count:1, requiresDomain:true, subtitle:'Voi bóng rơi xuống đầu đối thủ, gây 90 sát thương và nhấn chìm, khóa thao tác 2 giây · có thể né trước khi voi đáp' },
     { id:'dark-domain', name:'Hắc lãnh địa', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfcvzxer'], cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · mở khóa voi bóng và lặn, phân thân bị đánh sẽ trồi lên lại' },
@@ -100,7 +100,7 @@
   })));
   const defaultLoadout = ['fire-volley', 'water-lance', 'lightning-volley', 'earth-barrier', 'ice-reflect'];
   const chakraRegen=5,cooldownByRank={D:3,C:4,B:6,A:8,S:11,SS:15};
-  for(const spell of spells)spell.cooldown=cooldownByRank[spell.rank]||6;
+  for(const spell of spells)spell.cooldown=spell.cooldown??cooldownByRank[spell.rank]??6;
   const shuriken={name:'Phi tiêu',damage:6,speed:36,size:.075,interval:.45};
   function validateLoadout(ids, { allowDefenseOnly = false } = {}) {
     if (!Array.isArray(ids) || ids.length < 1 || ids.length > 5) return { ok: false, reason: 'Chọn từ 1 đến 5 chiêu.' };
@@ -173,9 +173,9 @@
       const absorbed = ignoreShield?0:Math.min(this.shield, damage); this.shield -= absorbed;
       if(absorbed>0&&this.shield<=1e-7){this.shield=0;this.shieldTime=0;this.reflect=0;}
       const actual = Math.min(this.hp, Math.max(0, damage - absorbed)); this.hp -= actual;
-      const restored = this.hp <= 0;
+      const defeated = this.hp <= 0, restored = defeated && this.autoRestore !== false;
       if (restored) this.hp = this.maxHp;
-      return { damage: actual, absorbed, reflected: false, restored };
+      return { damage: actual, absorbed, reflected: false, restored, defeated };
     }
   }
   // A downward aiming ray selects the ground, clamped to a circular six-metre reach.

@@ -8,6 +8,7 @@ const output = path.join(root, "dist");
 const files = [
   "index.html",
   "style.css",
+  "adventure.css",
   "game-core.js",
   "game.js",
   "ket_an.jpg",

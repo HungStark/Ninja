@@ -130,7 +130,7 @@ export class DarkDomain {
     root.position.fromArray(clone.p);body.position.y=-1.5;
     this.clones.push(clone);this.splash(p);return clone;
   }
-  commandable(owner){return this.clones.filter(c=>c.owner===owner&&c.mode!=='respawning');}
+  commandable(owner){return this.clones.filter(c=>c.owner===owner&&!['respawning','carried'].includes(c.mode));}
   cloneCount(owner){return this.clones.filter(c=>c.owner===owner).length;}
   upgradable(owner){return this.clones.filter(c=>c.owner===owner&&c.form==='dog');}
   canSummon(owner,max=3){return this.cloneCount(owner)<max||this.upgradable(owner).length>0;}
@@ -228,11 +228,25 @@ export class DarkDomain {
     }
     return true;
   }
+  carryClone(c,wave,opponent){
+    const ahead=Math.max(0,(opponent.pos[0]-c.p[0])*wave.normal[0]+(opponent.pos[2]-c.p[2])*wave.normal[2]+4);
+    if(ahead<=.001)return;
+    c.waveCarry={wave,target:[c.p[0]+wave.normal[0]*ahead,0,c.p[2]+wave.normal[2]*ahead]};
+    c.mode='carried';c.age=0;c.body.visible=true;c.body.position.y=0;this.splash(c.p);
+  }
   updateClones(dt,time,fighters,strike,crush) {
     for(const c of [...this.clones]) {
       if(!this.clones.includes(c))continue;
       c.age+=dt;const opponent=fighters.find(f=>f.owner!==c.owner);
       if(!opponent)continue;
+      if(c.mode==='carried'){
+        const {wave,target}=c.waveCarry,dx=target[0]-c.p[0],dz=target[2]-c.p[2],dist=Math.hypot(dx,dz);
+        const step=Math.min(dist,Math.hypot(...wave.v)*(wave.slowFactor??1)*dt);
+        if(dist>.001){c.p[0]+=dx/dist*step;c.p[2]+=dz/dist*step;}
+        c.root.position.fromArray(c.p);c.root.rotation.y=Math.atan2(wave.normal[0],wave.normal[2]);c.body.position.y=.25+Math.sin(c.age*9)*.15;
+        if(dist<=step+.001){c.p=[...target];c.home=[...target];c.root.position.fromArray(c.p);c.body.position.y=0;c.mode='idle';c.age=0;c.waveCarry=null;this.splash(c.p);}
+        continue;
+      }
       if(c.mode==='respawning'){
         if(!this.active){this.removeClone(c);continue;}
         if(c.age>=.7){c.mode='rising';c.age=0;c.p=[...c.home];c.body.visible=true;this.splash(c.home);}
@@ -244,7 +258,6 @@ export class DarkDomain {
       if(moving){
         const travel=Math.min(dist,dt*17);if(dist>.001){c.p[0]+=delta[0]/dist*travel;c.p[2]+=delta[1]/dist*travel;}
         if(distance(c.p,destination)<.15){
-          this.blastClones(c.owner,c.p,.7);
           if(distance(c.p,opponent.pos)<1.35&&opponent.fighter.invulnerableTime<=0)strike(c,[opponent.pos[0],1.5,opponent.pos[2]]);
           this.destroyClone(c);continue;
         }
@@ -258,22 +271,12 @@ export class DarkDomain {
     }
     this.updateDomainArts(dt,fighters,crush);
   }
+  // Only a summon's own attack consumes it; incoming damage never does.
   destroyClone(c){
     this.splash(c.p);
     if(this.active){c.mode='respawning';c.age=0;c.p=[...c.home];c.root.position.fromArray(c.p);c.body.visible=false;}
     else this.removeClone(c);
   }
-  vulnerableClones(owner){return this.clones.filter(c=>c.owner!==owner&&c.mode!=='respawning'&&(c.mode!=='rising'||c.age>.2));}
-  intercept(shot) {
-    const a=shot.old,b=shot.p,d=b.map((v,i)=>v-a[i]),len=d.reduce((s,v)=>s+v*v,0),hits=[];
-    for(const c of this.vulnerableClones(shot.owner)){
-      const center=[c.p[0],c.hitHeight,c.p[2]],t=clamp(d.reduce((s,v,i)=>s+(center[i]-a[i])*v,0)/(len||1));
-      if(Math.hypot(...center.map((v,i)=>v-(a[i]+d[i]*t)))<c.hitRadius+shot.size)hits.push({c,t});
-    }
-    hits.sort((a,b)=>a.t-b.t);if(!hits.length)return false;
-    for(const {c} of hits)this.destroyClone(c);return true;
-  }
-  blastClones(owner,p,radius){for(const c of this.vulnerableClones(owner))if(distance(c.p,p)<=radius)this.destroyClone(c);}
   updateDomainArts(dt,fighters,crush){
     for(const b of [...this.bindings]){
       b.age+=dt;b.life=Math.max(0,b.fallTime+b.duration-b.age);
@@ -284,7 +287,7 @@ export class DarkDomain {
           b.victim=live;live.fighter.darkControlTime=b.duration;
           const result=live.fighter.receive(b.damage,true,true);crush?.(b,live,result);
         }
-        b.phase=b.victim?'pressing':'missed';this.blastClones(b.owner,b.p,1.5);this.splash(b.p);
+        b.phase=b.victim?'pressing':'missed';this.splash(b.p);
       }
       if(!b.impactDone){b.elephant.position.y=13-11.3*fall*fall;b.elephant.scale.setScalar(1.6*(.7+.3*ease(b.age/.2)));}
       else{
