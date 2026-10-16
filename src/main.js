@@ -69,6 +69,8 @@ async function main() {
   let activePose = -1, poseAge = 99, animationTime = 0, started = false, paused = false, won = false, round = 1, selected = 0, score = 0;
   let camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }, lastTime = 0, recoil = 0, hitTimer = 0, flashTimer = 0, messageTime = 0, muted = false, audio = null;
   let moveDirection = 0, moveTargetX = 0, touchPoint = null;
+  const sidestepDistance = 1.8 / 5, sidestepDuration = .2;
+  const sidestepSpeed = sidestepDistance / sidestepDuration;
   let spellVoice = null;
   const dragonFormation = 1.1, dragonUncoil = .32;
   let dragonView = null;
@@ -836,7 +838,7 @@ async function main() {
       if(natureWinner){(natureWinner==='player'?enemy:player).hp=0;finish(natureWinner==='player');return;}
       const remaining = moveTargetX - camera.p[0];
       moveDirection = player.controlTime <= 0 && Math.abs(remaining) > .001 ? Math.sign(remaining) : 0;
-      const goal=[camera.p[0]+moveDirection*Math.min(Math.abs(remaining),10*dt*earthArts.slowAt(camera.p[0],camera.p[2])),playerPos()[1],camera.p[2]];
+      const goal=[camera.p[0]+moveDirection*Math.min(Math.abs(remaining),sidestepSpeed*dt*earthArts.slowAt(camera.p[0],camera.p[2])),playerPos()[1],camera.p[2]];
       if(!natureArts.buried('player'))camera.p[0]=lightArts.constrainMovement('player',playerPos(),earthArts.move(playerPos(),goal))[0];
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
       lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;},shot=>darkDomain.intercept(shot),(owner,p,r)=>darkDomain.blastClones(owner,p,r));
@@ -1133,7 +1135,7 @@ async function main() {
   }
   function sidestep(direction) {
     if (player.controlTime > 0) return;
-    moveTargetX = clamp(moveTargetX + direction * 1.8, -6, 6);
+    moveTargetX = clamp(moveTargetX + direction * sidestepDistance, -6, 6);
   }
   function look(dx, dy) {
     if (dragonView || meteorView || waveView || earthView || darkDomain.transition || player.controlTime>0) return;
