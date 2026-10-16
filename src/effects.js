@@ -92,7 +92,7 @@ export class FireEffects {
     }
     for (let i = 0; i < this.lights.length; i++) {
       const shot = shots[i], l = this.lights[i];
-      l.intensity = !shot || ['tsunami','thunder'].includes(shot.style) ? 0 : shot.style === 'boat' ? 5 : (['lightning','dark','wind'].includes(shot.element)?2.5:18) * shot.size;
+      l.intensity = !shot || ['tsunami','thunder'].includes(shot.style) ? 0 : shot.style==='icebind'?(shot.phase==='blooming'?.18:.5):shot.style === 'boat' ? 5 : (['lightning','dark','wind'].includes(shot.element)?2.5:18) * shot.size;
       if (shot) l.position.fromArray(shot.p);
       if (shot) l.color.set(shot.color || '#ff844b');
     }

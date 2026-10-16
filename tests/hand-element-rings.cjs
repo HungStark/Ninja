@@ -41,6 +41,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
       for(const id of ids){
         await reset();const spell=await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id),id);
         if(spell.requiresGarden){await seal(id);await expect(null);await cast('wood-reflect');await advance(2);}
+        if(spell.snowCost){await seal(id);await expect(null);await cast('ice-reflect');await advance(3);}
         if(spell.requiresSnowFull){await seal(id);await expect(null);await cast('ice-reflect');await advance(90);}
         await clear();await page.keyboard.press(spell.sequence[0]);await expect(null);
         for(const k of spell.sequence.slice(1))await page.keyboard.press(k);

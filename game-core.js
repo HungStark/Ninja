@@ -86,11 +86,11 @@
   ].map(s=>({...s,element:'wood',glyph:'木',color:'#9ed26c',heal:0,shield:s.shield||0}));
   const iceSpells=[
     {id:'ice-orb',name:'Tuyết Táng',kind:'attack',style:'snowball',rank:'SS',sequence:[...'zx'],cost:20,damage:0,count:0,requiresSnowFull:true,speed:3.1,radius:4.8,subtitle:'Chỉ mở sau 90 giây gọi tuyết · gom tuyết thành cầu khổng lồ tự đuổi địch, không thể cản · chôn vùi rồi lăn đi để kết thúc trận'},
-    {id:'ice-lance',name:'Băng Phược',kind:'attack',style:'icebind',rank:'B',sequence:[...'zxdf'],cost:28,damage:0,count:1,size:.38,speed:27,controlDuration:3,subtitle:'Bắn tinh thể đóng băng · khóa di chuyển và kết ấn 3 giây, không gây sát thương'},
-    {id:'ice-volley',name:'Huyễn Sương',kind:'defense',style:'icefog',rank:'S',sequence:[...'zxcvzx'],cost:34,damage:0,count:0,duration:6,subtitle:'Sương mù 6 giây · giấu bản thân khỏi đối thủ, để lại ảo ảnh lệch vị trí đánh lạc hướng'},
-    {id:'ice-barrier',name:'Băng Bích',kind:'defense',style:'barrier',rank:'A',sequence:[...'zxzxc'],cost:28,damage:0,count:0,shield:120,duration:5,subtitle:'Giáp tinh thể · hấp thụ 120 sát thương trong 5 giây để câu giờ'},
-    {id:'ice-reflect',name:'Băng Thiên Tuyết Địa',kind:'attack',style:'snowstorm',rank:'SS',sequence:[...'zxcvzxerqw'],cost:50,damage:0,count:0,oncePerMatch:true,snowTime:90,subtitle:'10 ấn · gọi tuyết một lần mỗi trận, không gây sát thương · tuyết dày dần, đủ 90 giây mở khóa Tuyết Táng'}
-  ].map(s=>({...s,element:'ice',glyph:'氷',color:'#a6edff',heal:0,shield:s.shield||0}));
+    {id:'ice-lance',name:'Băng Phược',kind:'attack',style:'icebind',snowCost:3,rank:'B',sequence:[...'zxdf'],cost:28,damage:0,count:1,size:.38,speed:27,controlDuration:3,subtitle:'Gom tuyết trong không khí trong 0,75 giây rồi bắn tinh thể · khóa di chuyển và kết ấn 3 giây, không gây sát thương'},
+    {id:'ice-volley',name:'Huyễn Sương',kind:'defense',style:'icefog',snowCost:3,rank:'S',sequence:[...'zxcvzx'],cost:34,damage:0,count:0,duration:6,subtitle:'Sương phủ kín người trong 6 giây · bản thân nhìn xuyên sương, đối thủ chỉ thấy ảo ảnh ở vị trí lệch'},
+    {id:'ice-barrier',name:'Băng Bích',kind:'defense',style:'icewall',snowCost:3,rank:'A',sequence:[...'zxzxc'],cost:28,damage:0,count:0,shield:120,duration:5,subtitle:'Tường tinh thể mọc từ mặt đất trong 0,82 giây · chắn đòn từ phía trước, 120 độ bền, tồn tại 5 giây'},
+    {id:'ice-reflect',name:'Băng Thiên Tuyết Địa',kind:'attack',style:'snowstorm',rank:'SS',sequence:[...'zxcvzxerqw'],cost:50,damage:0,count:0,oncePerMatch:true,snowTime:90,subtitle:'10 ấn · gọi tuyết một lần mỗi trận, không gây sát thương · tích tối đa 90 tuyết, mỗi giây thêm 1 · chiêu cơ bản tốn 3 tuyết, kéo dài thời gian mở Tuyết Táng'}
+  ].map(s=>({...s,element:'ice',glyph:'氷',color:'#a6edff',heal:0,shield:s.shield||0,subtitle:s.subtitle+(s.snowCost?' · tốn '+s.snowCost+' tuyết từ mưa tuyết':'')}));
   const spells = elements.flatMap(el => el.id === 'wood' ? woodSpells : el.id === 'ice' ? iceSpells : el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'wind' ? windSpells : el.id === 'earth' ? earthSpells : el.id === 'light' ? lightSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
     glyph: el.glyph, color: el.color, speed: el.speed * (v.style === 'lance' ? 1.3 : 1),
@@ -135,6 +135,7 @@
       if (!spell) return { ok: false, reason: 'sequence' };
       if(spell.oncePerMatch&&this.usedOnce.has(spell.id))return {ok:false,reason:'once'};
       if(spell.requiresSnowFull&&!context.snowFull)return {ok:false,reason:'snow'};
+      if(spell.snowCost&&(context.snowAmount||0)+1e-6<spell.snowCost)return {ok:false,reason:'snowCost'};
       if(spell.requiresGarden&&!context.woodGarden)return {ok:false,reason:'garden'};
       if (spell.requiresDomain && !context.darkDomain) return { ok: false, reason: 'domain' };
       if (spell.requiresClones && !context.shadowClones) return { ok:false, reason:'clones' };
