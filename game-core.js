@@ -39,7 +39,7 @@
     { id: 'water-lance', name: 'Thủy ngục', kind: 'attack', style: 'prison', rank: 'A', sequence: [...'wezxc'], cost: 38, damage: 12, size: .55, count: 1, speed: flightSpeeds.quick, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
     { id: 'water-volley', name: 'Ném thuyền', kind: 'attack', style: 'boat', rank: 'S', sequence: [...'wecvzx'], cost: 56, damage: 90, size: 1.7, count: 1, speed: flightSpeeds.heavy, blastRadius: 3.5, controlDuration:1, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm • 108 sát thương và choáng 1 giây khi trúng' },
     { id: 'water-tsunami', name: 'Sóng thần', kind: 'attack', style: 'tsunami', rank: 'SS', sequence: [...'wecvzxer'], cost: 72, damage: 30, size: 1, count: 1, speed: flightSpeeds.heavy, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức • đẩy phân thân ra sau đối thủ, không phá hủy • sát thương vừa phải' },
-    { id: 'water-barrier', name: 'Thủy phi tiêu', kind: 'defense', style: 'waterweapon', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, duration:30, weaponDamage:15, weaponSpeedMultiplier:2, count:0, subtitle:'Phủ nước lên phi tiêu trong 30 giây • mỗi phi tiêu 15 sát thương, tốc độ gấp đôi' },
+    { id: 'water-barrier', name: 'Thủy phi tiêu', kind: 'defense', style: 'waterweapon', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, duration:10, cooldown:12, weaponDamage:10, weaponSpeedMultiplier:2, count:0, subtitle:'Phủ nước lên phi tiêu trong 10 giây • mỗi phi tiêu 10 sát thương, tốc độ gấp đôi • hồi chiêu 12 giây' },
     { id: 'water-reflect', name: 'Thủy thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence: [...'wedf'], cost: 32, damage: 0, shield: 95, duration: 5, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
   ].map(s => ({ ...s, damage:Math.round(s.damage*1.2*100)/100, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
   // Keep saved lightning IDs while giving each art its own behavior.
@@ -104,7 +104,7 @@
   const chakraRegen=5,cooldownByRank={D:3,C:4,B:6,A:8,S:11,SS:15};
   for(const spell of spells)spell.cooldown=spell.cooldown??cooldownByRank[spell.rank]??6;
   for(const spell of spells){if(spell.element==='fire'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tầng bỏng/viên, tối đa 5, mỗi tầng 10 giây';if(spell.element==='lightning'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tĩnh điện, tối đa 3, mỗi điểm 10 giây';}
-  const shuriken={name:'Phi tiêu',damage:6,speed:36,size:.075,interval:.45};
+  const shuriken={name:'Phi tiêu',damage:4,speed:36,size:.075,interval:.45};
   function validateLoadout(ids) {
     if (!Array.isArray(ids) || ids.length < 1 || ids.length > 5) return { ok: false, reason: 'Chọn từ 1 đến 5 chiêu.' };
     if (new Set(ids).size !== ids.length || ids.some(id => !spells.some(s => s.id === id))) return { ok: false, reason: 'Bộ chiêu không hợp lệ hoặc bị trùng.' };
@@ -112,8 +112,9 @@
     return { ok: true, attack, defense };
   }
   class GameRules {
-    constructor(ids = defaultLoadout) {
-      this.sequence = []; this.chakra = 100; this.time = 0; this.lastSeal = -Infinity; this.cooldown = 0; this.casts = 0;this.usedOnce=new Set();
+    constructor(ids = defaultLoadout,options={}) {
+      this.maxChakra=Number.isFinite(options.maxChakra)&&options.maxChakra>=100?options.maxChakra:100;
+      this.sequence = []; this.chakra = this.maxChakra; this.time = 0; this.lastSeal = -Infinity; this.cooldown = 0; this.casts = 0;this.usedOnce=new Set();
       this.cooldowns={};this.shurikenCooldown=0;this.shurikenThrows=0;
       const result = this.setLoadout(ids);
       if (!result.ok) throw new RangeError(result.reason);
@@ -124,7 +125,7 @@
       this.loadout = [...ids]; this.spells = ids.map(id => spells.find(s => s.id === id)); this.clear(); return result;
     }
     tick(dt) {
-      this.time += dt; this.chakra = Math.min(100, this.chakra + dt * chakraRegen); this.cooldown = Math.max(0, this.cooldown - dt);this.shurikenCooldown=Math.max(0,this.shurikenCooldown-dt);
+      this.time += dt; this.chakra = Math.min(this.maxChakra, this.chakra + dt * chakraRegen); this.cooldown = Math.max(0, this.cooldown - dt);this.shurikenCooldown=Math.max(0,this.shurikenCooldown-dt);
       if(this.shurikenCooldown<1e-7)this.shurikenCooldown=0;
       for(const id of Object.keys(this.cooldowns)){this.cooldowns[id]=Math.max(0,this.cooldowns[id]-dt);if(this.cooldowns[id]<1e-7)delete this.cooldowns[id];}
       if (this.sequence.length && this.time - this.lastSeal > 7) { this.clear(); return 'expired'; }
@@ -165,7 +166,7 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 1000) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.waterWeaponTime=0;this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
+    constructor(maxHp = 200) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.waterWeaponTime=0;this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
     get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime||0,this.woodControlTime||0,this.lightningControlTime,this.boatControlTime);}
     set controlTime(value){this.waterControlTime=value;}
     get staticStacks(){return this.staticCharges.length;}

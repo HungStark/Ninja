@@ -38,7 +38,9 @@
     "test:cooldowns": "node tests/cooldowns-shuriken.cjs",
     "test:combat": "node tests/combat-core.mjs && node tests/combat.cjs",
     "test:adventure": "node tests/adventure-core.mjs && node tests/campaign-core.mjs && node tests/adventure.cjs",
-    "test:world-journey": "node tests/world-journey.cjs"
+    "test:world-journey": "node tests/world-journey.cjs",
+    "test:training": "node tests/progression-core.mjs && node tests/training-browser.cjs",
+    "test:exploration": "node tests/exploration-camera.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

@@ -6,6 +6,7 @@ import {
 } from '../src/adventure-data.js';
 import {REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS} from '../src/adventure-world.js';
 import '../game-core.js';
+import {gainExperience,regionElement,canLearn,learnFromBook} from '../src/progression.js';
 
 const read=save=>readJourney({getItem:()=>JSON.stringify(save)});
 const validIds=new Set(SealGameCore.spells.map(spell=>spell.id));
@@ -43,7 +44,7 @@ function learn(save,id){
   assert.equal(mentorReady(save,id),true);
   const reward=completeLesson(save,id);
   assert.equal(save.mentors[id],true);
-  assert.ok(REGIONS[id].mentor.spellIds.every(spell=>save.learnedSpells.includes(spell)));
+  assert.ok(save.learnedSpells.some(spell=>spell.startsWith(regionElement(id)+'-')));
   assert.deepEqual([save.gold,save.xp,save.wins],money,'Learning must stay independent of fighting/rewards');
   assert.equal(JSON.stringify(save.quests),quests);
   const count=save.learnedSpells.length;assert.equal(completeLesson(save,id).learned,false);assert.equal(save.learnedSpells.length,count);
@@ -55,8 +56,11 @@ function defeat(save,id){
   const encounter={kind:'boss',village:id},before=[save.gold,save.xp,save.wins];
   resolveBattle(save,encounter,true);
   assert.deepEqual([save.gold,save.xp,save.wins],[before[0]+REGIONS[id].boss.rewardGold,before[1]+REGIONS[id].boss.rewardXp,before[2]+1]);
-  assert.ok(REGIONS[id].boss.rewardSpells.every(spell=>save.learnedSpells.includes(spell)));
+  assert.ok(REGIONS[id].boss.rewardSpells.every(spell=>save.learnedSpells.includes(spell)||save.progression.books.includes(spell)));
   const result=JSON.stringify(save);resolveBattle(save,encounter,true);assert.equal(JSON.stringify(save),result,'Repeated boss victory must not duplicate rewards');
+  // Combat practice raises the system; owning a book alone never teaches it.
+  gainExperience(save.progression,regionElement(id),420);
+  for(const spell of [...save.progression.books])if(canLearn(save.progression,spell))learnFromBook(save,spell);
 }
 
 const start=newJourney();
@@ -83,7 +87,7 @@ assert.equal(mentorReady(start,'water'),false);
 discoverZone(start,'water',waterZones[1]);
 assert.equal(mentorReady(start,'water'),true);
 const waterReward=completeLesson(start,'water');
-assert.deepEqual(new Set(waterReward.spellIds),new Set(['water-lance','water-reflect','water-volley']));
+assert.deepEqual(waterReward.spellIds,['water-lance']);
 assert.equal(campaignObjective(start).targetKind,'boss');
 assert.equal(start.gold,0);assert.equal(start.xp,0);assert.equal(start.wins,0);assert.deepEqual(start.quests,{});
 assert.equal(canTravel(start,'fire').allowed,false,'Learning alone must not unlock Hỏa/Lôi');
@@ -132,7 +136,7 @@ for(const order of [['fire','lightning'],['lightning','fire']]){
 }
 
 // Previous saves keep all 45 arts, while the mentor encounter can still progress.
-const old=newJourney();delete old.learnedSpells;delete old.campaign;delete old.lessons;delete old.mentors;delete old.discoveries;delete old.bosses;
+const old=newJourney();delete old.learnedSpells;delete old.progression;delete old.campaign;delete old.lessons;delete old.mentors;delete old.discoveries;delete old.bosses;
 const legacy=read(old);assert.equal(legacy.learnedSpells.length,45);travel(legacy,'water');
 assert.equal(campaignObjective(legacy).targetKind,'mentor');
 const oldReward=learn(legacy,'water');assert.equal(oldReward.learned,false);assert.deepEqual(oldReward.spellIds,[]);

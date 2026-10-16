@@ -4,21 +4,36 @@
 
 Mở `index.html` hoặc chạy `npm start`. Màn hình đầu cho phép tạo nhân vật chibi (tên, màu áo, màu tóc), tiếp tục bản lưu, hoặc vào đấu trường luyện tập cũ. Khi chạy máy chủ, giữ thêm `adventure.css` cùng các file game.
 
-- Khám phá 3D góc nhìn thứ ba: click mặt đất hoặc bản đồ nhỏ để tìm đường, click nhãn nhân vật/cổng để tự đi tới và tương tác. **E** tương tác gần, **M** mở địa đồ, **J** mở nhật ký, **Esc** tạm dừng/đóng cửa sổ. Nút **Tiếp bước hành trình** dẫn tới cổng, cao nhân, địa danh hoặc đối thủ của mục tiêu hiện tại.
+- Camera khám phá nằm sát sau đầu nhân vật. **Nhấn giữ chuột trái hoặc phải rồi kéo** để xoay camera và hướng nhân vật; **thả chuột** để dừng xoay. Di chuột bình thường không đổi góc nhìn, con trỏ luôn tự do để dùng giao diện. **WASD/phím mũi tên** di chuyển theo hướng nhìn, lăn chuột chỉnh khoảng cách 2,8–6,5 m. Click mặt đất hoặc bản đồ nhỏ không di chuyển nhân vật. Các nút nhiệm vụ/NPC đánh dấu hướng và khoảng cách tới mục tiêu; tự đi tới rồi nhấn **E** tương tác. **M** địa đồ, **J** nhật ký, **C** tu luyện/thuộc tính, **Esc** tạm dừng/đóng cửa sổ.
+- Bấm tiêu đề **Tuyến truyện chính** để thu gọn/mở rộng; lựa chọn được lưu qua lần tải lại. Thông tin khu vực, nhiệm vụ và nhân vật xếp dọc, nội dung nhiệm vụ cuộn khi màn hình thấp. Ninja lưu vong xuất hiện sau quãng đường ngẫu nhiên 90–160 m, có 45 giây yên bình đầu hành trình và 90 giây nghỉ sau trận hoặc rút lui.
 - Mỗi vùng rộng **140 × 140 m**, gồm bốn khu có tên, địa hình cao thấp thật và kiến trúc riêng. Có 40 địa danh và 30 cư dân có tên, bên cạnh trưởng làng, sứ giả và đại diện hội nghị. Vô Danh có ruộng bậc thang/cầu cổ; Thủy có thủy trấn/thác; Hỏa có miệng núi lửa/bazan; Lôi có cao nguyên/tháp sét; Thổ có hẻm núi/thành đá; Phong có đồng diều/guồng gió; Quang có cầu kính/thánh điện; Băng có hang pha lê/sông băng; Mộc có rừng trúc/cổ thụ; Ám có hồ trăng/đền nguyệt thực.
-- **Chương I:** nhân vật mới ở Vô Danh chỉ biết **Thủy phi tiêu** (`water-barrier`, chuỗi `W E A`), buff phi tiêu 30 giây. Sang Thủy gặp Lưu Thủy, nhận lời chỉ giáo, tự khám phá hai địa danh rồi trở lại học Thủy ngục, Thủy thuẫn và Ném thuyền. Đánh bại **Thủy Ảnh Hải Châu** để mở đường sang Hỏa và Lôi.
+- **Chương I:** nhân vật mới có **200 máu**, phi tiêu thường **4 sát thương**, chỉ biết **Thủy phi tiêu** (`W E A`): phi tiêu **10 sát thương**, hiệu lực **10 giây**, hồi **12 giây**. Sang Thủy gặp Lưu Thủy, nhận lời chỉ giáo, khám phá hai địa danh rồi học thuật phù hợp cấp hiện tại; quay lại để học thuật cao hơn khi đủ cấp. Đánh bại **Thủy Ảnh Hải Châu** để mở Hỏa và Lôi. Kẻ địch mở đầu có 60–90 máu và một chiêu; Hải Châu có 280 máu và ba chiêu, với nhịp đánh chậm hơn các thủ lĩnh sau.
 - **Chương II–III:** học thuật và đánh bại **Hỏa Ảnh Xích Nham**, **Lôi Ảnh Chấn Thiên** theo thứ tự tùy chọn. Ba đại diện cùng nhân vật trở về Vô Danh; tương tác bàn hội nghị để ký hiệp ước hòa bình. Cổng các vùng tiếp theo mở sau lễ ký.
 - **Chương IV–V:** mang hiệp ước tới sứ giả thường trú ở **Thổ, Phong, Quang, Băng, Mộc**. Tại từng làng, trao hiệp ước, học nghệ từ cao nhân và đánh bại thế lực phá hoại. Khi đủ năm làng hưởng ứng và năm thủ lĩnh bị đánh bại, cổng Ám mở. Đối đầu **Ám Ảnh Vô Nguyệt**, thủ lĩnh Ám và kẻ chủ mưu, để kết thúc câu chuyện; có thể tiếp tục khám phá sau đoạn kết.
-- Cao nhân giao nhiệm vụ khám phá yên bình, không đòi hạ quái. Nhận bài học, tới hai địa danh được chỉ định, trở lại để lĩnh hội chiêu có thể trang bị thật. Thắng thủ lĩnh nhận bí thuật còn lại của hệ; đủ **45 chiêu** đều có đường học trong chiến dịch. Các nhiệm vụ việc làng và ninja lưu vong bổ sung giao chiến, xu và kinh nghiệm.
-- Thủ lĩnh có mô hình trấn giữ riêng, sinh lực 1.500–2.450, cả năm thuật của hệ, nhịp ra đòn nhanh và trạng thái cuồng nộ khi còn nửa máu. Mỗi thủ lĩnh chỉ trao thưởng một lần. Trong hành trình, hết máu kết thúc trận; thua/rút lui hồi sinh tại ấn đã kích hoạt. Đấu trường luyện tập giữ cơ chế và bộ sưu tập riêng.
+- Cao nhân giao nhiệm vụ khám phá yên bình. Sau bài học đầu, có thể trở lại để xin dạy thêm mọi thuật đã đủ cấp. Thắng thủ lĩnh nhận **sách kỹ năng**, giữ trong Tu luyện; sách chỉ học được khi đủ cấp và phải bấm **Học từ sách**. Lên cấp, sở hữu sách hoặc thắng thủ lĩnh không tự học chiêu. Đủ **45 chiêu** đều có đường học.
+- Thủ lĩnh có mô hình trấn giữ riêng, 240–950 máu và bộ chiêu tăng theo chương; ba thủ lĩnh đầu dùng ba thuật, các thủ lĩnh sau dùng năm thuật. Họ quyết liệt hơn khi còn nửa máu. Mỗi thủ lĩnh chỉ trao thưởng một lần. Trong hành trình, hết máu kết thúc trận; thua/rút lui hồi sinh tại ấn đã kích hoạt. Luyện tập giữ bộ sưu tập riêng.
 - Ấn hồi sinh tại **Làng Vô Danh** được kích hoạt từ đầu. Tới ấn ở làng khác rồi click hoặc nhấn **E** để đặt điểm hồi sinh mới. Ghé qua một làng chưa tự đổi điểm hồi sinh.
-- Nhân vật, vị trí, làng đã thăm, điểm hồi sinh, nhiệm vụ, địa danh, bài học, thuật đã học, thủ lĩnh đã thắng và hiệp ước được lưu bằng localStorage. Bản lưu cũ giữ quyền dùng những chiêu đã có; chọn hành trình mới bắt đầu lại với một thuật Thủy. Bậc nhân vật phản ánh kinh nghiệm, chưa tăng chỉ số hay có cửa hàng tiêu xu.
+- Nhân vật, vị trí, làng đã thăm, điểm hồi sinh, nhiệm vụ, địa danh, bài học, thuật đã học, cấp từng hệ, thuộc tính chung, thủ lĩnh đã thắng và hiệp ước được lưu bằng localStorage. Bản lưu cũ giữ quyền dùng những chiêu đã có; chọn hành trình mới bắt đầu lại với một thuật Thủy. Lên cấp từng hệ nhận điểm để nâng máu, sức mạnh hoặc mana dùng chung.
 
 `npm run test:adventure` kiểm tra địa hình, tất cả lối tương tác/cổng, luật chiến dịch, lưu cũ/mới, nhiệm vụ, chiến thắng/thất bại, hồi sinh, chạm trán và điện thoại. `npm run test:world-journey` chạy toàn bộ tuyến truyện qua UI từ một thuật Thủy tới lễ ký, năm chuyến truyền hòa ước và trận cuối. Ảnh ở `test-results/adventure/` và `test-results/world-journey/`. Thêm `?mode=duel` để mở luyện tập; `?test=1&adventure=1` bật kiểm thử khám phá.
 
 Nguồn: `src/adventure.js` quản lý hành trình/UI; `src/adventure-scene.js` dựng cảnh, nhân vật và địa hình; `src/adventure-landmarks.js` dựng kiến trúc, địa danh và thủ hộ; `src/adventure-world.js` chứa các vùng, cư dân, bài học và bề mặt địa hình; `src/adventure-data.js` chứa luật chiến dịch, bản lưu và A*. Mô hình low-poly dựng bằng mã, cảnh tĩnh gộp theo vật liệu và thực vật dùng instancing.
 
 Game ninja 3D góc nhìn thứ nhất, kết ấn bằng hai tay và quyết đấu với đối thủ máy. Bản 0.3 thay sân tập bia bằng trận đấu có sinh lực, chakra, phòng ngự và phản đòn.
+
+## Tu luyện theo hệ và thuộc tính chung
+
+Mỗi hệ có kinh nghiệm riêng, khai mở ở cấp 1 và tối đa cấp 10. Thủy được khai mở ngay từ đầu; cao nhân mở các hệ tiếp theo qua bài học. Khám phá địa danh của hệ đã khai mở, luyện chiêu, gây sát thương và thắng trận đều tăng kinh nghiệm hệ. Phi tiêu nước tăng Thủy; phi tiêu thường rèn hệ đang theo học tại vùng hiện tại. Một lần tăng cấp không tự trao kỹ năng.
+
+Điểm nhận tại các cấp **1 → 10** lần lượt là **1, 1, 1, 1, 2, 2, 2, 3, 3, 4**, tổng 20 điểm mỗi hệ. Điểm từ mọi hệ gom vào **một quỹ chung**. Nhân vật chỉ có một bộ thuộc tính áp dụng cho tất cả chiêu và mọi hệ:
+
+| Thuộc tính chung | Mỗi lần nâng | Công thức |
+| --- | --- | --- |
+| Sinh lực | +20 máu | 200 + 20 × số lần nâng |
+| Sức mạnh | +1% sát thương gốc | Sát thương gốc × (1 + sức mạnh/100) |
+| Mana | +1% chakra gốc | 100 + mana |
+
+Các phần trăm cộng theo **chỉ số gốc**, không nhân lũy tiến. Ví dụ 10 sức mạnh cho phi tiêu 4,4 và phi tiêu nước 11; 10 mana cho tối đa 110 chakra. Giao diện **C / Tu luyện** hiển thị cấp, kinh nghiệm, điều kiện từng chiêu, sách và ba nút nâng thuộc tính. Chiêu yêu cầu từ cấp 1–5; đạt cấp 5 của một hệ là đủ điều kiện học toàn bộ thuật của hệ đó, nhưng vẫn phải được cao nhân dạy hoặc dùng sách. Cấp 6–10 tiếp tục cho điểm thuộc tính.
 
 ## Chơi ngay
 
@@ -58,7 +73,7 @@ nằm trong [assets/seal-shadows.md](assets/seal-shadows.md). Khi nút **SPACE**
 cho chiêu Hỏa, tay được bao quanh bởi vầng lửa và tàn lửa chuyển động; vầng lửa tắt
 khi tung chiêu, xóa chuỗi, tạm dừng hoặc chưa đủ chakra/hồi chiêu.
 Chiêu Thủy sẵn sàng tạo vòng nước xanh quanh hai tay, có dòng nước và giọt nước xoay theo vòng; vòng nước dùng cùng điều kiện sẵn sàng và được tắt khi thi triển, xóa chuỗi, tạm dừng hoặc thiếu chakra/hồi chiêu.
-Phong, Ám và Quang cũng có vòng thuộc tính riêng quanh hai tay khi chiêu sẵn sàng: Phong là một vòng xanh ngọc mảnh, sáng nhẹ theo dòng gió; Ám là vòng tím đen với viền tím mảnh; Quang là vòng trắng vàng với tia và hạt sáng hình thoi. Thủy phi tiêu lấy thông số tại lúc ném: hết buff không xóa thuộc tính của phi tiêu đã bay. Thi triển lại làm mới thời gian lên 30 giây. AI cũng dùng phi tiêu được cường hóa. Các trạng thái dừng khi tạm dừng và xóa khi đấu lại; đòn bị chắn hết, phản lại hoặc gặp miễn nhiễm không tích tầng.
+Phong, Ám và Quang cũng có vòng thuộc tính riêng quanh hai tay khi chiêu sẵn sàng: Phong là một vòng xanh ngọc mảnh, sáng nhẹ theo dòng gió; Ám là vòng tím đen với viền tím mảnh; Quang là vòng trắng vàng với tia và hạt sáng hình thoi. Thủy phi tiêu lấy thông số tại lúc ném: hết buff không xóa thuộc tính của phi tiêu đã bay. Hiệu lực là 10 giây, hồi chiêu 12 giây. AI cũng dùng phi tiêu được cường hóa. Các trạng thái dừng khi tạm dừng và xóa khi đấu lại; đòn bị chắn hết, phản lại hoặc gặp miễn nhiễm không tích tầng.
 
 Vòng Phong và Ám thu gọn thành quầng thấp phía sau lòng bàn tay, giới hạn độ rộng, giảm hạt sáng và bỏ các dải xoay lớn bên ngoài. Vòng theo vị trí tay và chỉ sáng khi Space dùng được, gồm cả điều kiện lãnh địa, phân thân, hất tung. Các vòng tắt khi tung chiêu, xóa/sai/hết hạn chuỗi, thiếu chakra, hồi chiêu hoặc tạm dừng; hỗ trợ đồ họa thấp và giảm chuyển động.
 
@@ -93,7 +108,7 @@ Hệ Thủy có năm chiêu riêng:
 | Thủy ngục | 5 | W E Z X C | 38 | 14,4 sát thương; khi xuyên khiên, giam đối thủ trong cầu nước 3 giây, ngắt chuỗi ấn và khóa di chuyển/thi triển |
 | Ném thuyền | 6 | W E C V Z X | 56 | Thuyền hải tặc trồi từ dưới đất lên trong 1,2 giây, rồi bay thẳng tới điểm ngắm đã chọn; camera chuyển lên trên như Rồng lửa và trở lại sau cú đánh; 108 sát thương trong bán kính 3,5 m và choáng 1 giây nếu gây sát thương |
 | Sóng thần | 8 | W E C V Z X E R | 72 | Camera nhìn xuống chân, nước tụ và dựng thành sóng trong 1,8 giây rồi trả hướng ngắm; sóng rộng 12 m, cao 5 m, dày khoảng 7 m, có ngọn cuộn, bọt và nước bắn; cuốn đạn/mặt chắn, gây 36 sát thương một lần |
-| Thủy phi tiêu | 3 | W E A | 26 | Phủ nước cho phi tiêu trong 30 giây; 15 sát thương thay vì 6, tốc độ 72 thay vì 36 m/giây, có nước và giọt nước bao quanh |
+| Thủy phi tiêu | 3 | W E A | 26 | Phủ nước cho phi tiêu trong 10 giây, hồi 12 giây; 10 sát thương gốc thay vì 4, tốc độ 72 thay vì 36 m/giây, có nước và giọt nước bao quanh |
 | Thủy thuẫn | 4 | W E D F | 32 | Mặt chắn nước hình tròn bán kính 2,2 m, dựng cách 3 m phía trước; 95 độ bền, tồn tại 5 giây |
 
 Thủy thuẫn đứng tại vị trí thi triển, chặn chiêu bay qua mặt chắn, không phản đòn và có thể tồn tại cùng buff Thủy phi tiêu. Sóng thần cuốn chiêu khi chúng thực sự đi qua thể tích sóng; chiêu bay cao hơn hoặc ngoài bề rộng sóng vẫn đi tiếp. Thuyền và sóng thần không bị phản đòn. Giữ các ID Thủy cũ để bộ chiêu đã lưu vẫn dùng được. Thủy ngục, sóng và buff phi tiêu đều dừng thời gian khi tạm dừng, được xóa khi đấu lại.
@@ -226,7 +241,7 @@ Quyển trục mang theo trong trận hiện đủ tên và phím kết ấn c�
 
 Đối thủ đứng ở đầu sân bên kia, cách vị trí xuất phát của người chơi 31 m, sử dụng model tay có khớp và bộ 12 thế tay như người chơi. Máy kết từng ấn theo đúng độ dài của từng chiêu trước khi tung chiêu, ngắm vị trí của người chơi lúc phóng đạn, có chakra và có thể chọn phòng ngự khi bị tấn công. Thanh trên cùng cho biết máu, hệ, chakra và chiêu đang kết ấn. Qua mỗi trận, máy dùng tổ hợp hệ khác.
 
-Tuyết Táng kết thúc trận khi chôn vùi và cuốn đối thủ đi. Với các chiêu gây sát thương thông thường, trúng chiêu vẫn mất máu sau khi trừ khiên. Khi sinh lực chạm 0, bên đó hồi ngay đầy 1000 máu và trận đấu tiếp tục. Tạm dừng giữ nguyên máu, chakra, khiên, đạn, chuỗi ấn và tiến trình máy.
+Tuyết Táng kết thúc trận khi chôn vùi và cuốn đối thủ đi. Với chiêu gây sát thương thông thường, trúng chiêu mất máu sau khi trừ khiên. Máu cơ bản là 200. Trong luyện tập, khi sinh lực chạm 0 thì hồi đầy để tiếp tục; trong hành trình, hết máu kết thúc trận và người chơi trở về điểm hồi sinh. Tạm dừng giữ nguyên máu, chakra, khiên, đạn, chuỗi ấn và tiến trình máy.
 
 ## Điều khiển
 

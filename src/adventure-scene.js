@@ -41,6 +41,7 @@ export function createAdventureScene(){
   const hero=createChibi();scene.add(hero.root);
   const obstacles=[],interactives=[],animated=[],citizens=[],party=[],materials=new Map();
   let npc,guard,boss,terrain,foliage,gates=[],randomEnemy=null,current='nameless',time=0,corridors=[];
+  let orbitYaw=0,orbitPitch=.2,orbitDistance=4.2;
   const heightAt=(x,z)=>terrainHeight(current,x,z);
   const destination=mesh(new T.RingGeometry(.3,.5,40),new T.MeshBasicMaterial({color:'#f7dca3',side:T.DoubleSide,transparent:true,opacity:.9}),scene);destination.rotation.x=-Math.PI/2;destination.visible=false;
   const M=(color,emission=0)=>{const key=color+':'+emission;if(!materials.has(key))materials.set(key,mat(color,emission?{emissive:color,emissiveIntensity:emission}:{}));return materials.get(key);};
@@ -122,21 +123,34 @@ export function createAdventureScene(){
     if(['water','fire','lightning','dark'].includes(id)&&!save.bosses?.[id]){const leader=createChibi(v.color,id==='dark'?'#d7c9e1':'#30333c',true);leader.root.position.set(region.boss.x+5,heightAt(region.boss.x+5,region.boss.z+3),region.boss.z+3);leader.root.scale.setScalar(1.65);leader.root.rotation.y=Math.PI;land.add(leader.root);citizens.push(leader);}
     if(['wind','earth','ice','wood','light'].includes(id)){const envoy=createChibi(v.color,'#b7b4a0');envoy.root.position.set(-3,heightAt(-3,8),8);envoy.root.rotation.y=.4;land.add(envoy.root);citizens.push(envoy);}
     if(id==='nameless'&&treatyReady){const table=group(3,7);box(table,M('#6e5944'),0,1.1,0,3,.2,2);for(const s of [-1,1])for(const zz of [-1,1])box(table,M('#514638'),s*1.2,.5,zz*.75,.18,1,.18);box(table,M('#ded2ae'),0,1.23,0,1.3,.03,1);['water','fire','lightning'].forEach((key,index)=>{const rep=createChibi(village(key).color,index===1?'#7e6f67':'#323944');const x=1+index*2,z=9.5;rep.root.position.set(x,heightAt(x,z),z);rep.root.rotation.y=Math.PI;land.add(rep.root);citizens.push(rep);});}
-    hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);const pos=blocked(...save.position)?[0,7]:save.position;hero.root.position.set(pos[0],heightAt(...pos),pos[1]);hero.root.rotation.y=Math.PI;destination.visible=false;
+    hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);const pos=blocked(...save.position)?[0,7]:save.position;hero.root.position.set(pos[0],heightAt(...pos),pos[1]);hero.root.rotation.y=orbitYaw+Math.PI;destination.visible=false;
     if(id!=='nameless'&&treatyReady&&!save.campaign?.treatySigned)['water','fire','lightning'].forEach((key,index)=>{const char=createChibi(village(key).color,index===1?'#7e6f67':'#323944'),offset=[[-2,1],[-3,-1],[-1,-3]][index];char.root.position.set(pos[0]+offset[0],heightAt(pos[0]+offset[0],pos[1]+offset[1]),pos[1]+offset[1]);land.add(char.root);party.push({char,offset});});
     batchScenery();
-    camera.position.copy(hero.root.position).add(new T.Vector3(17,23,26));camera.lookAt(hero.root.position.clone().add(new T.Vector3(0,2,0)));
+    scene.updateMatrixWorld(true);camera.fov=68;camera.updateProjectionMatrix();followCamera(1,true,false);
   }
   function spawnEnemy(x,z){clearEnemy();randomEnemy=createChibi('#754f4a','#2c2932',true);randomEnemy.root.position.set(x,heightAt(x,z),z);land.add(randomEnemy.root);return randomEnemy;}
   function clearEnemy(){if(randomEnemy){land.remove(randomEnemy.root);disposeObject(randomEnemy.root);randomEnemy=null;}}
+  function followCamera(dt,snap=false,menu=false){
+    const p=hero.root.position,head=p.clone().add(new T.Vector3(0,2.35,0));
+    if(menu){const target=head.clone().add(new T.Vector3(-4,0,0));camera.position.lerp(target.clone().add(new T.Vector3(12,12,17)),snap?1:1-Math.exp(-dt*5));camera.lookAt(target);return;}
+    const forward=new T.Vector3(-Math.sin(orbitYaw),0,-Math.cos(orbitYaw)),right=new T.Vector3(Math.cos(orbitYaw),0,-Math.sin(orbitYaw));
+    const desired=head.clone().addScaledVector(forward,-orbitDistance).addScaledVector(right,.55);desired.y+=.55+Math.sin(orbitPitch)*orbitDistance;
+    const delta=desired.clone().sub(head),length=delta.length(),direction=delta.clone().normalize();
+    // Probe collision footprints instead of raycasting every triangle of merged villages.
+    for(let d=.6;d<length;d+=.3){const probe=head.clone().addScaledVector(direction,d);if(blocked(probe.x,probe.z)&&probe.y<heightAt(probe.x,probe.z)+8){desired.copy(head).addScaledVector(direction,Math.max(.8,d-.3));break;}}
+    desired.y=Math.max(desired.y,heightAt(desired.x,desired.z)+.6);
+    camera.position.lerp(desired,snap?1:1-Math.exp(-dt*14));
+    camera.lookAt(head.clone().addScaledVector(forward,5).addScaledVector(right,.25).add(new T.Vector3(0,-Math.sin(orbitPitch)*4,0)));
+  }
   function update(dt,moving,menu=false){
     time+=dt;if(menu)hero.root.rotation.y=.6;hero.root.position.y=heightAt(hero.root.position.x,hero.root.position.z);hero.update(time,moving);citizens.forEach(c=>c.update(time,false));if(randomEnemy){randomEnemy.root.position.y=heightAt(randomEnemy.root.position.x,randomEnemy.root.position.z);randomEnemy.update(time,true);}
     for(const {char,offset} of party){const target=new T.Vector3(hero.root.position.x+offset[0],0,hero.root.position.z+offset[1]),p=char.root.position,walking=Math.hypot(p.x-target.x,p.z-target.z)>.2;p.x+=(target.x-p.x)*(1-Math.exp(-dt*3));p.z+=(target.z-p.z)*(1-Math.exp(-dt*3));p.y=heightAt(p.x,p.z);if(walking)char.root.rotation.y=Math.atan2(target.x-p.x,target.z-p.z);char.update(time,walking);}
     for(const a of animated){if(a.kind==='float'){a.mesh.rotation.y=time*.55;a.mesh.position.y=a.base+Math.sin(time*1.6)*.2;}if(a.kind==='windmill')a.mesh.rotation.z=time*.45;if(a.kind==='halo')a.mesh.rotation.y+=dt*.24;if(a.kind==='boss'){a.mesh.position.y=a.base+Math.sin(time*1.1)*.18;a.mesh.rotation.y=Math.sin(time*.35)*.08;}if(a.kind==='pulse')a.mesh.scale.setScalar(1+Math.sin(time*2)*.08);if(a.kind==='flag')a.mesh.rotation.y=Math.sin(time*2.4)*.15;if(a.kind==='ripple')a.mesh.material.opacity=.76+Math.sin(time)*.04;}
-    const target=hero.root.position.clone().add(new T.Vector3(menu?-4:0,2,0)),offset=new T.Vector3(menu?12:17,menu?12:20,menu?17:28);camera.position.lerp(target.clone().add(offset),1-Math.exp(-dt*5));camera.lookAt(target);destination.rotation.z=time;
+    followCamera(dt,false,menu);destination.rotation.z=time;
+    const target=hero.root.position.clone().add(new T.Vector3(0,2,0));
     if(foliage){const sight=new T.Line3(camera.position,target),nearest=new T.Vector3(),hiddenMatrix=new T.Matrix4().makeScale(0,0,0);let changed=false;foliage.items.forEach((item,index)=>{sight.closestPointToPoint(item.center,true,nearest);const hidden=nearest.distanceTo(item.center)<item.radius+1;if(hidden!==item.hidden){foliage.mesh.setMatrixAt(index,hidden?hiddenMatrix:item.matrix);item.hidden=hidden;changed=true;}});if(changed)foliage.mesh.instanceMatrix.needsUpdate=true;}
   }
   function project(x,z,y=3){camera.updateMatrixWorld();const p=new T.Vector3(x,heightAt(x,z)+y,z).project(camera);return {left:(p.x+1)*innerWidth/2,top:(1-p.y)*innerHeight/2,visible:p.z<1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1};}
   function pick(clientX,clientY,canvas){if(!terrain)return null;camera.updateMatrixWorld();terrain.updateMatrixWorld();const r=canvas.getBoundingClientRect(),ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((clientX-r.left)/r.width*2-1,-(clientY-r.top)/r.height*2+1),camera);const hit=ray.intersectObject(terrain,false)[0];return hit?[hit.point.x,hit.point.z]:null;}
-  return {scene,camera,hero,obstacles,interactives,blocked,heightAt,load,update,project,pick,spawnEnemy,clearEnemy,get guard(){return guard;},get boss(){return boss;},get gates(){return gates;},get randomEnemy(){return randomEnemy;},destination,resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}};
+  return {scene,camera,hero,obstacles,interactives,blocked,heightAt,load,update,project,pick,spawnEnemy,clearEnemy,orbit(dx,dy){orbitYaw=Math.atan2(Math.sin(orbitYaw-dx*.005),Math.cos(orbitYaw-dx*.005));orbitPitch=Math.max(-.65,Math.min(1,orbitPitch+dy*.003));hero.root.rotation.y=orbitYaw+Math.PI;},faceView(){hero.root.rotation.y=orbitYaw+Math.PI;},followHeading(yaw,dt){const target=yaw-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*8));},zoom(delta){orbitDistance=Math.max(2.8,Math.min(6.5,orbitDistance+delta*.004));},movementAxes(){return {forward:[-Math.sin(orbitYaw),-Math.cos(orbitYaw)],right:[Math.cos(orbitYaw),-Math.sin(orbitYaw)]};},cameraState:()=>({yaw:orbitYaw,heroYaw:hero.root.rotation.y,pitch:orbitPitch,distance:orbitDistance,position:camera.position.toArray(),height:camera.position.y-hero.root.position.y}),get guard(){return guard;},get boss(){return boss;},get gates(){return gates;},get randomEnemy(){return randomEnemy;},destination,resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}};
 }

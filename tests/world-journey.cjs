@@ -40,8 +40,8 @@ const {pathToFileURL}=require('node:url');
       await dialog('Xin nhận lời chỉ giáo');assert.equal((await state()).save.lessons[id],1);
       for(const zone of r.mentor.zoneIds){await walk('landmark',zone);assert.equal((await state()).phase,'dialog');assert.ok((await state()).save.discoveries.includes(`${id}:${zone}`));await dialog('Tiếp tục khám phá');}
       await walk('mentor',r.mentor.npcId);await dialog('Lĩnh hội');
-      const after=(await state()).save;assert.equal(after.mentors[id],true);assert.ok(after.learnedSpells.includes(r.mentor.spellId));
-      assert.equal(after.wins,before.wins,'mentor lesson must not require a fight');assert.ok((await combat()).learnedSpells.includes(r.mentor.spellId));
+      const after=(await state()).save;assert.equal(after.mentors[id],true);assert.ok(after.learnedSpells.some(spell=>spell.startsWith(id+'-')));
+      assert.equal(after.wins,before.wins,'mentor lesson must not require a fight');assert.deepEqual((await combat()).learnedSpells,after.learnedSpells);
       const count=after.learnedSpells.length,gold=after.gold;await walk('mentor',r.mentor.npcId);await dialog('Cảm tạ chỉ giáo');
       assert.equal((await state()).save.learnedSpells.length,count);assert.equal((await state()).save.gold,gold);
     };
@@ -52,12 +52,12 @@ const {pathToFileURL}=require('node:url');
       mark('major boss in '+id);const r=REGIONS[id],before=(await state()).save;
       await prepareBoss(id);await click('startButton');let fight=await combat();
       assert.equal((await state()).phase,'combat');assert.equal(fight.enemyHealth,r.boss.hp);assert.equal(fight.enemyMaxHealth,r.boss.hp);
-      assert.equal(fight.enemyLoadout.length,5);assert.equal(fight.boss.name,r.boss.name);assert.equal(fight.boss.damageMultiplier,1.35);
+      assert.equal(fight.enemyLoadout.length,['water','fire','lightning'].includes(id)?3:5);assert.equal(fight.boss.name,r.boss.name);assert.ok(fight.boss.damageMultiplier<=.8);
       assert.equal(await page.locator('#enemyHealth').textContent(),`${r.boss.hp} / ${r.boss.hp}`);
       if(checkAI){await snapshot('water-boss-combat');await page.evaluate(()=>{__AN_HOA__.setAIEnabled(true);__AN_HOA__.setHealth('enemy',__AN_HOA__.state().enemyMaxHealth/2);});await advance(6);
         fight=await combat();assert.equal(fight.boss.phase,'enraged');assert.ok(fight.aiCasts>0,'major enemy must actually cast');}
       await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));if(checkAI)await advance(4);
-      await page.evaluate(()=>__AN_HOA__.setHealth('enemy',6));await page.keyboard.press('Space');await advance(2);
+      await page.evaluate(()=>__AN_HOA__.setHealth('enemy',1));await page.keyboard.press('Space');await advance(2);
       assert.equal((await combat()).won,true);assert.equal((await combat()).enemyHealth,0);await click('nextButton');
       if((await state()).phase==='dialog'){
         const title=await page.locator('#dialogTitle').textContent();assert.match(title,/Hòa bình|Cùng trở/);
@@ -67,6 +67,10 @@ const {pathToFileURL}=require('node:url');
       const after=(await state()).save;assert.equal(after.bosses[id],true);assert.equal(after.gold,before.gold+r.boss.rewardGold);
       await page.evaluate(()=>__AN_HOA__.explore.offerBattle('boss'));assert.equal((await state()).phase,'explore');assert.equal((await state()).encounter,null);
       assert.equal((await state()).save.gold,after.gold,'major enemy rewards cannot be farmed');
+      // Forced one-hit finishes skip practice XP; supply that practice separately
+      // and explicitly study the books instead of bypassing the learning rules.
+      await page.evaluate(id=>__AN_HOA__.explore.gainExperience(id,420),id);await click('openProgression');
+      for(const book of (await state()).save.progression.books)await page.locator(`[data-book="${book}"]`).click();await click('closeProgression');
     };
     await page.goto(url);await ready();await page.locator('#heroName').fill('Người Tìm Gió');await page.locator('#heroForm button[type=submit]').click();await advance(.2);
     let s=await state();assert.equal(s.phase,'explore');assert.equal(s.save.learnedSpells.length,1);assert.deepEqual(s.save.learnedSpells,STARTER_SPELLS);
@@ -78,7 +82,7 @@ const {pathToFileURL}=require('node:url');
     const buffSequence=await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id).sequence,STARTER_SPELLS[0]);
     for(const key of buffSequence)await page.keyboard.press(key);await page.keyboard.press('Space');await advance(1.1);
     assert.ok((await combat()).elemental.player.waterWeaponTime>0);await page.keyboard.press('Space');await advance(2);
-    assert.equal((await combat()).enemyHealth,985,'the initial water buff makes a useful 15-damage shuriken');
+    assert.equal((await combat()).enemyHealth,50,'the initial water buff makes a useful 10-damage shuriken');
     await page.keyboard.press('Escape');await click('changeLoadout');assert.equal((await state()).phase,'explore');
     await page.evaluate(()=>__AN_HOA__.explore.travel('fire'));await advance(35);
     assert.equal((await state()).save.village,'nameless','the opening story requires Water before Fire');
@@ -98,10 +102,10 @@ const {pathToFileURL}=require('node:url');
 
     mark('learned equipment, locked equipment, and defeat recovery');
     await prepareBoss('water');await page.locator('[data-kind="all"]').click();
-    assert.equal(await page.locator('[data-equip="fire-lance"]').isDisabled(),true);assert.equal(await page.locator(`[data-equip="${REGIONS.water.mentor.spellId}"]`).isDisabled(),false);
+    assert.equal(await page.locator('[data-equip="fire-lance"]').isDisabled(),true);assert.equal(await page.locator(`[data-equip="water-lance"]`).isDisabled(),false);
     await page.locator('[data-element="fire"]').click();await click('selectElementLoadout');assert.deepEqual((await combat()).loadout,[],'bulk selection cannot unlock Fire techniques');
-    await page.locator('[data-element="all"]').click();await page.locator(`[data-equip="${REGIONS.water.mentor.spellId}"]`).click();await click('startButton');
-    assert.deepEqual((await combat()).equipped,[REGIONS.water.mentor.spellId],'mentor reward can actually be equipped');
+    await page.locator('[data-element="all"]').click();await page.locator(`[data-equip="water-lance"]`).click();await click('startButton');
+    assert.deepEqual((await combat()).equipped,['water-lance'],'mentor reward can actually be equipped');
     await page.evaluate(()=>{__AN_HOA__.setAIEnabled(false);__AN_HOA__.setHealth('player',1);__AN_HOA__.launchEnemy('fire-volley',[0,1.72,6],[0,0,1]);});
     await advance(2);assert.equal((await combat()).won,true);assert.equal((await combat()).health,0);await click('nextButton');s=await state();
     assert.equal(s.save.village,'nameless');assert.deepEqual(s.position,[0,7]);assert.ok(!s.save.bosses.water);assert.deepEqual(s.save.learnedSpells,waterLearned);

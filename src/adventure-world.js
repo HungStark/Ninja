@@ -196,7 +196,8 @@ const basicArts={nameless:'wind-orb',fire:'fire-volley',water:'water-lance',ligh
 for(const [id,region] of Object.entries(REGIONS)){
   region.mentor.spellIds=id==='water'?['water-lance','water-reflect','water-volley']:[...new Set([basicArts[id],region.mentor.spellId])];
   region.boss.rewardSpells=[...ELEMENT_SPELLS[id==='nameless'?'wind':id]];
-  region.boss.story+=' Cuộn bí thuật cổ được cất giữ tại đây sẽ mở các chiêu còn lại của hệ sau khi bạn chiến thắng.';
+  region.boss.hp={nameless:240,water:280,fire:380,lightning:440,earth:560,wind:500,light:620,ice:660,wood:700,dark:950}[id];
+  region.boss.story+=' Chiến thắng để nhận sách bí thuật; hãy đạt đủ cấp hệ rồi mở sách để học.';
 }
 // The great beasts are the leaders' summoned guardians, rather than anonymous encounters.
 const leaders={

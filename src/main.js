@@ -89,11 +89,12 @@ async function main() {
   let loadout = [...defaultLoadout], filterElement = 'all', filterLearning = 'all', loadoutMessage = '';
   const learnedSpells=readLearnedSpells(spells);
   let journeyLearning=false,duelLoadout=null,bossEnraged=false;
+  let battlePlayerStats={maxHp:200,maxChakra:100,damageMultiplier:1},aiWeaponTimer=4;
   let enemyPose = -1, enemyHit = 0, aiTimer = 2.2, aiSpell = null, aiStep = 0, aiCycle = 0, aiCasts = 0, aiCastAge = 99, battleTime = 0;
   try { const saved = JSON.parse(localStorage.getItem('anhoa-loadout-v3'));const replacements={'dark-barrier':'dark-orb','fire-orb':'fire-volley','water-orb':'water-lance','lightning-orb':'lightning-lance'};const migrated=Array.isArray(saved)?[...new Set(saved.map(id=>replacements[id]||id))]:saved;if (validateLoadout(migrated).ok) loadout = migrated; } catch {}
   duelLoadout=[...loadout];
   const activeBoss=()=>adventure?.inBattle&&adventure.encounter?.kind==='boss'?adventure.encounter:null;
-  const bossDamageMultiplier=()=>activeBoss()?clamp(Number(activeBoss().damageMultiplier)||1.25,1,2.5):1;
+  const bossDamageMultiplier=()=>adventure?.inBattle?clamp(Number(adventure.encounter.damageMultiplier)||1,.1,2.5):1;
   function availableLoadout(ids){return journeyLearning?ids.filter(id=>learnedSpells.has(id)):ids;}
   function loadJourneySpells(ids){
     if(!Array.isArray(ids))return;
@@ -167,7 +168,7 @@ async function main() {
   setQuality(quality);
   $("sealKeys").innerHTML = keys.map((key, i) => '<button class="seal" data-key="' + key + '" title="' + key.toUpperCase() + " \u2014 \u1EA4n " + String(i + 1).padStart(2, "0") + ": " + names[i] + '" aria-label="\u1EA4n ' + (i + 1) + ", ph\xEDm " + key + '"><span class="thumb" style="background-position:' + i % 3 * 50 + "% " + Math.floor(i / 3) * 25 + '%"></span><span class="seal-key">' + key.toUpperCase() + "</span><small>" + String(i + 1).padStart(2, "0") + "</small></button>").join("");
   function spellMarkup(spell, i, preparation = false) {
-    const activationStats={waterweapon:'30 giây · phi tiêu 15 sát thương, bay ×2',ignite:'Bỏng 1–5 tầng → 10 / 20 / 30 / 45 / 60 sát thương',discharge:'Tĩnh điện 1–3 → choáng 0,5 / 1 / 2s → từ tính 3 / 5 / 7s'};
+    const activationStats={waterweapon:'10 giây · phi tiêu 10 sát thương gốc, bay ×2 · hồi chiêu 12 giây',ignite:'Bỏng 1–5 tầng → 10 / 20 / 30 / 45 / 60 sát thương',discharge:'Tĩnh điện 1–3 → choáng 0,5 / 1 / 2s → từ tính 3 / 5 / 7s'};
     if (!preparation) return '<button class="spell ' + (i === selected ? 'selected' : '') + (spell.sequence.length>8?' long-chain':'') + '" style="--element:' + spell.color + '" data-spell="' + i + '"><div class="spell-title">' + spell.name + '<span class="spell-cooldown" data-cooldown></span></div><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></button>';
     const taken = loadout.includes(spell.id), kind = activationStats[spell.style] ? (spell.style==='waterweapon'?'CƯỜNG HÓA':'KÍCH HOẠT') : spell.oncePerMatch?'KHỞI TẠO':spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
     const stats = activationStats[spell.style] || (spell.oncePerMatch?'Không gây sát thương · 1 lần mỗi trận':spell.element==='wood'?({flowerpoison:'Khói tím 6 giây · vùng 2–5 m · 5–15 sát thương/giây trong vùng',vinebind:'18–54 sát thương · trói 2–6 giây',bamboostab:'Lá tre bay tới điểm ngắm · 1–3 đợt, tổng 75–225 sát thương',walnutwall:'Quả rơi và hóa lớn · chắn phía trước, 5–7 giây'})[spell.style]:spell.style==='snowball'?'Đủ 90 tuyết · tự tìm địch · kết liễu':spell.style==='icewall'?'Tường băng trồi lên · 120 độ bền · 5 giây':spell.style==='icefog'?'Sương phủ người · nhìn xuyên từ bên trong · ảo ảnh lệch vị trí':spell.style==='icebind'?'Gom tuyết rồi bắn · đóng băng 3 giây':spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 40 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 30 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'180 độ bền · tường cong 6 giây · chặn đường',earthgravity:'80 khi giam + 100 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 40 / 70 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'Gương rơi ghép vòm · 3 ô né · 10 giây · laser cộng dồn',lightmirror:'2,5 giây · 120 độ bền · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 160 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa voi bóng và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 38, nâng thành bò 57':spell.style==='shadowcommand'?'Chó 38 / bò 57 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : ''));
@@ -313,10 +314,6 @@ async function main() {
   function launch(spell, owner, pos, dir) {
     if(!natureArts.canCast(owner,spell))return false;
     spell=natureArts.empower(owner,spell);
-    if(owner==='enemy'&&activeBoss()){
-      spell={...spell};
-      for(const stat of ['damage','captureDamage','fallDamage','weaponDamage'])if(spell[stat]>0)spell[stat]*=bossDamageMultiplier();
-    }
     if(spell.style==='waterweapon'){
       (owner==='player'?player:enemy).waterWeaponTime=spell.duration;
       burst(pos,10,.6,spell.color);return true;
@@ -325,7 +322,7 @@ async function main() {
       const victim=owner==='player'?enemy:player,target=owner==='player'?enemyPos():playerPos();
       if(spell.style==='ignite'){
         const ignition=victim.ignite();if(!ignition)return false;
-        impact({owner,element:'fire',style:'ignite',damage:ignition.damage*(owner==='enemy'?bossDamageMultiplier():1),v:vnorm(vsub(target,pos)),color:spell.color,unreflectable:true},target);
+        impact({owner,element:'fire',style:'ignite',damage:ignition.damage,v:vnorm(vsub(target,pos)),color:spell.color,unreflectable:true},target);
       }else{
         const discharge=victim.discharge();if(!discharge)return false;
         interruptActor(owner==='player'?'enemy':'player');
@@ -362,6 +359,8 @@ async function main() {
       return darkDomain.begin(owner,spell.duration,camera.p,aim());
     }
     if(spell.element==='dark'){
+      // The falling elephant applies its hit inside DarkDomain, outside impact().
+      if(spell.style==='shadowbind')spell={...spell,damage:spell.damage*(owner==='player'?battlePlayerStats.damageMultiplier:bossDamageMultiplier())};
       const victim={owner:owner==='player'?'enemy':'player',pos:owner==='player'?enemyPos():camera.p,fighter:owner==='player'?enemy:player};
       const result=darkDomain.cast(spell,owner,pos,dir,volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
       if(result&&spell.style==='shadowdive'&&owner==='player'){
@@ -484,7 +483,7 @@ async function main() {
   }
   function launchShuriken(owner,weapon,pos,dir){
     const fighter=owner==='player'?player:enemy,infused=fighter.waterWeapon(weapon),target=volleyTarget(owner,pos,dir),side=vnorm([-dir[2],0,dir[0]]),p=vadd(vadd(pos,vmul(dir,.7)),vmul(side,.15));p[1]-=.12;
-    shots.push({owner,element:'weapon',waterInfused:!!infused.waterInfused,style:'shuriken',phase:'flying',p,old:[...p],v:vmul(vnorm(vsub(target,p)),infused.speed),size:infused.size,damage:infused.damage*(owner==='enemy'?bossDamageMultiplier():1),color:infused.waterInfused?'#50baff':'#c6d0dc',life:4,age:0,flightAge:0,trail:0,reflected:false});
+    shots.push({owner,element:'weapon',waterInfused:!!infused.waterInfused,style:'shuriken',phase:'flying',p,old:[...p],v:vmul(vnorm(vsub(target,p)),infused.speed),size:infused.size,damage:infused.damage,color:infused.waterInfused?'#50baff':'#c6d0dc',life:4,age:0,flightAge:0,trail:0,reflected:false});
     return infused;
   }
   function volleyTarget(owner, pos, dir) {
@@ -517,6 +516,7 @@ async function main() {
     const result = rules.cast({burnStacks:enemy.burns.length,staticStacks:enemy.staticStacks,woodGarden:natureArts.wood.ready('player'),snowFull:natureArts.snowReady('player'),snowAmount:natureArts.snowAmount('player'),earthCrater:!!earthArts.crater('player'),windAirborne:windArts.canCombo('player'),darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('player').length,shadowCloneCount:darkDomain.cloneCount('player'),shadowUpgrades:darkDomain.upgradable('player').length});
     if (!result.ok) { announce({ burn:'Cần gây bỏng lên đối thủ trước.',static:'Cần tích tĩnh điện lên đối thủ trước.', spellCooldown:'Chiêu này đang hồi · còn '+(result.remaining||0).toFixed(1)+' giây.',snowCost:'Cần gọi mưa tuyết bằng chiêu 10 ấn và tích ít nhất 3 tuyết để thi triển.',garden:'Cần gieo hạt bằng chiêu 10 ấn và chờ cây trồi lên trước.',once:'Chiêu 10 ấn này chỉ dùng một lần mỗi trận.',snow:'Cần gọi tuyết và tích đủ 90 tuyết trước khi dùng Tuyết Táng.', crater: 'Cần hố Địa Bộc Thiên Tinh của bạn đã hình thành trước khi tạo chông.', sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.',airborne:'Cần địch đang bị lốc của bạn hất tung và chưa nối liên trảm.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Bên bạn đã đủ 3 bò bóng, không còn chó để nâng cấp.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
     const spell = result.spell;
+    if(adventure?.inBattle)adventure.awardExperience(spell.element,2);
     activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); playerAvatar.rig.cast(); fireSound();
     const upgrading=spell.style==='shadowclone'&&darkDomain.cloneCount('player')>=spell.maxClones;
     launch(spell, 'player', playerPos(), aim()); announce(upgrading?'Nâng thành bò bóng · 57 sát thương!':spell.name + '!');
@@ -579,13 +579,15 @@ async function main() {
     return [f.burns.length?'Bỏng '+f.burns.length+'/5':'',f.staticStacks?'Tĩnh điện '+f.staticStacks+'/3':'',f.waterWeaponTime>0?'Thủy phi tiêu '+f.waterWeaponTime.toFixed(1)+'s':'',f.magneticTime>0?'Từ tính '+(f.magneticDelay>0?'sau choáng · ':'')+f.magneticTime.toFixed(1)+'s':''].filter(Boolean).join(' · ');
   }
   function impact(shot, pos) {
-    const fighter = shot.owner === 'enemy' ? player : enemy, result = fighter.receive(shot.damage, shot.reflected || shot.unreflectable,!!shot.ignoreShield);
+    const multiplier=shot.owner==='player'?battlePlayerStats.damageMultiplier:bossDamageMultiplier();
+    const fighter = shot.owner === 'enemy' ? player : enemy, result = fighter.receive(shot.damage*multiplier, shot.reflected || shot.unreflectable,!!shot.ignoreShield);
+    if(adventure?.inBattle&&shot.owner==='player'&&result.damage>0)adventure.awardExperience(shot.element==='weapon'?(shot.waterInfused?'water':adventure.trainingElement):shot.element,result.damage*.5);
     shot.hitResult=result;
     if(result.immune)return true;
     fighter.applyElementHit(shot.element,result,shot.style);
     if(shot.style==='boat'&&result.damage>0){fighter.boatControlTime=Math.max(fighter.boatControlTime,shot.controlDuration||1);interruptActor(shot.owner==='player'?'enemy':'player');}
     if(shot.style==='poisontick'){
-      if(result.restored)announce(shot.owner==='player'?'Đối thủ đã hồi đầy 1000 máu!':'Bạn đã hồi đầy 1000 máu!');
+      if(result.restored)announce(shot.owner==='player'?'Đối thủ đã hồi đầy sinh lực!':'Bạn đã hồi đầy sinh lực!');
       return true;
     }
     if (dragonView?.shot === shot && dragonView.phase === 'overhead') { dragonView.phase = 'impact'; dragonView.hold = 0; }
@@ -654,10 +656,11 @@ async function main() {
     }
     if (shot.owner === 'player') { enemyHit = .3; hitTimer = .14; tone(110, .07, 'triangle', .04); }
     else { flashTimer = .8; recoil = .3; $('flash').style.background = '#e54955'; announce(result.damage ? 'Trúng đòn! Bấm chuột trái/phải để né hoặc kết ấn phòng ngự.' : 'Khiên đã chặn đòn!', !!result.damage); }
-    if (result.restored) announce(shot.owner === 'player' ? 'Đối thủ đã hồi đầy 1000 máu!' : 'Bạn đã hồi đầy 1000 máu!');
+    if (result.restored) announce(shot.owner === 'player' ? 'Đối thủ đã hồi đầy sinh lực!' : 'Bạn đã hồi đầy sinh lực!');
     return true;
   }
   function shadowCrushImpact(binding,victim,result) {
+    if(adventure?.inBattle&&binding.owner==='player'&&result.damage>0)adventure.awardExperience('dark',result.damage*.5);
     if(victim.owner==='enemy'){
       aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;enemyHit=.3;hitTimer=.14;
       $('enemyAction').textContent='Ảnh tượng · bị nhấn chìm 2 giây';tone(80,.15,'triangle',.06);
@@ -666,7 +669,7 @@ async function main() {
       flashTimer=.8;recoil=.3;$('flash').style.background='#e54955';
       cameraImpacts.trigger('hit',1.5,[0,-.4,.7]);announce('Voi bóng nhấn chìm bạn · khóa thao tác 2 giây!',true);
     }
-    if(result.restored)announce(victim.owner==='enemy'?'Đối thủ đã hồi đầy 1000 máu!':'Bạn đã hồi đầy 1000 máu!');
+    if(result.restored)announce(victim.owner==='enemy'?'Đối thủ đã hồi đầy sinh lực!':'Bạn đã hồi đầy sinh lực!');
   }
   function meteorImpact(shot) {
     const pos = [shot.p[0], .1, shot.p[2]];
@@ -861,10 +864,10 @@ async function main() {
   function enemyCastDirection(spell){return vnorm(vsub(natureArts.perceivedPosition('enemy',windActors()),enemyPos()));}
   function updateAI(dt) {
     if(testAIDisabled)return;
-    aiRules.tick(dt); aiCastAge += dt;
+    aiRules.tick(dt); aiCastAge += dt;aiWeaponTimer=Math.max(0,aiWeaponTimer-dt);
     const boss=activeBoss();
     if(boss){
-      aiRules.chakra=Math.min(100,aiRules.chakra+dt*(bossEnraged?4:2));
+      aiRules.chakra=Math.min(aiRules.maxChakra,aiRules.chakra+dt*(bossEnraged?4:2));
       if(!bossEnraged&&enemy.hp<=enemy.maxHp*.5){
         bossEnraged=true;aiTimer=Math.min(aiTimer,.2);
         $('enemyElement').textContent='THỦ LĨNH · '+boss.name+' · CUỒNG NỘ';
@@ -873,14 +876,14 @@ async function main() {
       }
     }
     if (enemy.controlTime > 0) { $('enemyAction').textContent = enemy.controlSource+' · ' + enemy.controlTime.toFixed(1) + 's'; return; }
-    if(enemy.waterWeaponTime>0&&!aiSpell){const thrown=aiRules.throwShuriken();if(thrown.ok){launchShuriken('enemy',thrown.weapon,enemyPos(),enemyCastDirection());opponent.rig.cast();}}
+    if((enemy.waterWeaponTime>0||adventure?.inBattle)&&!aiSpell&&aiWeaponTimer<=0){const thrown=aiRules.throwShuriken();if(thrown.ok){launchShuriken('enemy',thrown.weapon,enemyPos(),enemyCastDirection());opponent.rig.cast();aiWeaponTimer=adventure?.inBattle?adventure.encounter.weaponInterval:SealGameCore.shuriken.interval;}}
     aiTimer -= dt;
     if (aiTimer > 0) return;
     if (!aiSpell) {
       const incoming = shots.some(s => s.owner === 'player' && vlen(vsub(s.p, enemyPos())) < 11);
       const available=s=>aiRules.remaining(s.id)<=1e-7&&s.cost<=aiRules.chakra&&(!boss||!s.oncePerMatch||!aiRules.usedOnce.has(s.id))&&natureArts.canCast('enemy',s)&&(!s.requiresBurn||player.burns.length)&&(!s.requiresStatic||player.staticStacks)&&(!s.requiresCrater||!!earthArts.crater('enemy'))&&(!s.requiresAirborne||windArts.canCombo('enemy'))&&(!s.requiresDomain||darkDomain.usable)&&(!s.requiresClones||darkDomain.commandable('enemy').length)&&(s.style!=='shadowclone'||darkDomain.canSummon('enemy',s.maxClones));
       const defenses = aiRules.spells.filter(s => s.kind === 'defense' && available(s)), attacks = aiRules.spells.filter(s => s.kind === 'attack' && available(s));
-      const choices = incoming && enemy.shieldTime <= 0 && defenses.length && aiCycle % 3 === 2 ? defenses : attacks;
+      const choices = incoming && enemy.shieldTime <= 0 && defenses.length && aiCycle % 3 === 2 ? defenses : attacks.length?attacks:defenses;
       const activation=aiRules.spells.find(s=>available(s)&&((s.style==='ignite'&&player.burns.length>=3)||(s.style==='discharge'&&player.staticStacks>=2)));
       if(activation){aiSpell=activation;
       }else if(aiRules.spells.some(s=>s.element==='ice'&&s.style==='snowstorm')){
@@ -908,11 +911,11 @@ async function main() {
     }
     if (aiStep < aiSpell.sequence.length) {
       const key = aiSpell.sequence[aiStep++]; aiRules.seal(key); enemyPose = keys.indexOf(key); opponent.rig.seal();
-      aiTimer = boss?(bossEnraged ? .24 : .31):.42; $('enemyAction').textContent = 'Kết ấn ' + aiStep + '/' + aiSpell.sequence.length + ' · ' + aiSpell.name;
+      aiTimer = adventure?.inBattle?adventure.encounter.sealDelay*(bossEnraged ? .85 : 1):.42; $('enemyAction').textContent = 'Kết ấn ' + aiStep + '/' + aiSpell.sequence.length + ' · ' + aiSpell.name;
     } else {
       const result = darkDomain.transition ? {ok:false} : aiRules.cast({burnStacks:player.burns.length,staticStacks:player.staticStacks,woodGarden:natureArts.wood.ready('enemy'),snowFull:natureArts.snowReady('enemy'),snowAmount:natureArts.snowAmount('enemy'),earthCrater:!!earthArts.crater('enemy'),windAirborne:windArts.canCombo('enemy'),darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('enemy').length,shadowCloneCount:darkDomain.cloneCount('enemy'),shadowUpgrades:darkDomain.upgradable('enemy').length});
       if (result.ok) { launch(aiSpell, 'enemy', enemyPos(), enemyCastDirection(aiSpell)); opponent.rig.cast(); aiCasts++; aiCastAge = 0; $('enemyAction').textContent = 'Thi triển · ' + aiSpell.name; }
-      enemyPose = -1; aiSpell = null; aiTimer = boss?(bossEnraged ? .8 : 1.1):1.65;
+      enemyPose = -1; aiSpell = null; aiTimer = adventure?.inBattle?adventure.encounter.restTime*(bossEnraged ? .85 : 1):1.65;
     }
   }
   function updateParticles(dt) {
@@ -965,7 +968,7 @@ async function main() {
     }
     const shadowDepth=Math.max(0,-darkDomain.depth('player')/3);
     $('shadowSubmerge').style.setProperty('--sink',shadowDepth);
-    $('chakraNumber').textContent = Math.floor(rules.chakra) + ' / 100'; $('chakraFill').style.width = rules.chakra + '%'; $('castCount').textContent = rules.casts + ' thuật';
+    $('chakraNumber').textContent = Math.floor(rules.chakra) + ' / '+Math.round(rules.maxChakra); $('chakraFill').style.width = rules.chakra/rules.maxChakra*100 + '%'; $('castCount').textContent = rules.casts + ' thuật';
     $('healthNumber').textContent = Math.ceil(player.hp) + ' / ' + player.maxHp; $('healthFill').style.width = player.hp / player.maxHp * 100 + '%';
     const playerWall = walls.find(w => w.owner === 'player' && w.hp > 0 && !['earth','wood'].includes(w.element)), shieldLabel = player.shieldTime > 0 && (player.shield || player.reflect) ? 'Khiên ' + player.shield + (player.reflect ? ' · phản đòn' : '') : '';
     const playerSpirit=windArts.spirits.find(s=>s.owner==='player'),enemySpirit=windArts.spirits.find(s=>s.owner==='enemy');
@@ -1254,13 +1257,14 @@ async function main() {
     clearEarthView();earthArts.reset(walls);clearWindView();windArts.reset();lightArts.reset();natureArts.reset(walls);
     clearDragonView();
     clearMeteorView();
-    rules = new GameRules(loadout); player = new Fighter(); enemy = new Fighter(adventure?.encounter?.kind==='boss'?Math.max(1000,Number(adventure.encounter.hp)||2200):1000);bossEnraged=false;
+    battlePlayerStats=adventure?.encounter?{...adventure.combatStats}:{maxHp:200,maxChakra:100,damageMultiplier:1};
+    rules = new GameRules(loadout,{maxChakra:battlePlayerStats.maxChakra}); player = new Fighter(battlePlayerStats.maxHp); enemy = new Fighter(adventure?.encounter?.hp||200);bossEnraged=false;aiWeaponTimer=4;
     if(adventure?.encounter){adventure.beginCombat();player.autoRestore=false;enemy.autoRestore=false;}
     darkDomain.reset();
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
     const el = adventure?.inBattle?elements.find(e=>e.id===adventure.encounter.element):elements[(round - 1) % elements.length], support = elements[(round + 1) % elements.length];
     aiRules = new GameRules(['wood','ice'].includes(el.id)?spells.filter(s=>s.element===el.id).map(s=>s.id):el.id==='earth'?['earth-orb','earth-lance','earth-volley','earth-barrier','earth-reflect']:el.id==='dark'?['dark-domain','dark-orb','dark-lance','dark-volley','dark-reflect']:el.id==='light'?['light-orb','light-barrier','light-reflect','light-lance','light-volley']:el.id==='wind'?['wind-orb','wind-lance','wind-volley','wind-barrier','wind-reflect']:[el.id+(el.id==='fire'?'-volley':el.id==='water'?'-tsunami':'-thunder'),el.id+'-lance',el.id+(el.id==='fire'?'-meteor':'-volley'),['fire','water','lightning'].includes(el.id)?el.id+'-barrier':support.id==='dark'?'dark-reflect':support.id+'-barrier',support.id+'-reflect'].filter((id,i,list)=>list.indexOf(id)===i));
-    if(activeBoss())aiRules=new GameRules(spells.filter(s=>s.element===el.id).map(s=>s.id));
+    if(adventure?.inBattle)aiRules=new GameRules(adventure.encounter.spellIds);
     $('enemyElement').textContent = el.glyph + ' ' + el.name + ' / ' + support.name; $('enemyAction').textContent = 'Đang quan sát…';
     if(adventure?.inBattle)$('enemyElement').textContent=adventure.encounter.name+' · '+el.name;
     if(activeBoss())$('enemyElement').textContent='THỦ LĨNH · '+adventure.encounter.name+' · '+el.name;
@@ -1269,7 +1273,7 @@ async function main() {
     shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; fields.length = 0; effects.reset(); hands.clearEffects(); recoil = flashTimer = hitTimer = 0; activePose = -1; poseAge = 99; moveTargetX = 0; moveDirection = 0; touchPoint = null;
     camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }; opponent.group.position.copy(world.opponentSpawn); opponent.group.rotation.set(0, 0, 0);
     opponent.group.scale.setScalar(activeBoss()?1.22:1);
-    if(activeBoss())aiTimer=1.4;
+    if(adventure?.inBattle)aiTimer=4;
     $('score').textContent = '00'; $('roundText').textContent = 'Trận đấu ' + String(round).padStart(2, '0'); $('currentSeal').textContent = 'Sẵn sàng kết ấn';
     document.body.classList.add('playing'); document.body.classList.remove('paused');
     ['startScreen', 'pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden'));
@@ -1332,7 +1336,7 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ journeyLearning,boss:activeBoss()?{name:activeBoss().name,phase:bossEnraged?'enraged':'guarding',damageMultiplier:bossDamageMultiplier()}:null,enemyMaxHealth:enemy.maxHp,enemyLoadout:[...aiRules.loadout], learnedSpells:[...learnedSpells], elemental:{player:player.elementalState(),enemy:enemy.elementalState(),visuals:effects.elemental.state()}, flightBurst:effects.flightBursts.state(), natureArt:natureArts.state(),usedOnce:[...rules.usedOnce],enemyVisible:opponent.group.visible,enemyPerceivedPosition:natureArts.perceivedPosition('player',windActors()),aiPerceivedTarget:natureArts.perceivedPosition('enemy',windActors()),earthArt:{...earthArts.state(),terrainVertices:world.terrain.changedVertices,playerHeight:earthFloor('player',camera.p[0],camera.p[2]),enemyHeight:earthFloor('enemy',opponent.group.position.x,opponent.group.position.z)},playerPosition:playerPos(),lightArt:lightArts.state(),playerAvatar:{visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,cooldowns:{...rules.cooldowns},enemyCooldowns:{...aiRules.cooldowns},chakraRegen:SealGameCore.chakraRegen,shurikenCooldown:rules.shurikenCooldown,shurikenThrows:rules.shurikenThrows,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: natureArts.buried('player')?'snow-burial':earthView?'earth-'+earthView.phase:windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':meteorView.shot.style==='jacob'?'jacob-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light','Earth','Wood','Ice'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,stones:r.stones.visible,stoneCount:r.stones.children.length,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.opponentSpawn.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, waterInfused:!!s.waterInfused, style: s.style, introStage: s.introStage || null, visual: s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], motionTime:s.motionTime||0, motionDistance:s.motionDistance||0, speedRatio:s.flightSpeedRatio??(s.element==='weapon'?1:FLIGHT_PROFILE.launchSpeedRatio), actualSpeed:s.motionSpeed||0, size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
+  const state = () => ({ playerMaxHealth:player.maxHp,maxChakra:rules.maxChakra,playerDamageMultiplier:battlePlayerStats.damageMultiplier,journeyLearning,boss:activeBoss()?{name:activeBoss().name,phase:bossEnraged?'enraged':'guarding',damageMultiplier:bossDamageMultiplier()}:null,enemyMaxHealth:enemy.maxHp,enemyLoadout:[...aiRules.loadout], learnedSpells:[...learnedSpells], elemental:{player:player.elementalState(),enemy:enemy.elementalState(),visuals:effects.elemental.state()}, flightBurst:effects.flightBursts.state(), natureArt:natureArts.state(),usedOnce:[...rules.usedOnce],enemyVisible:opponent.group.visible,enemyPerceivedPosition:natureArts.perceivedPosition('player',windActors()),aiPerceivedTarget:natureArts.perceivedPosition('enemy',windActors()),earthArt:{...earthArts.state(),terrainVertices:world.terrain.changedVertices,playerHeight:earthFloor('player',camera.p[0],camera.p[2]),enemyHeight:earthFloor('enemy',opponent.group.position.x,opponent.group.position.z)},playerPosition:playerPos(),lightArt:lightArts.state(),playerAvatar:{visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,cooldowns:{...rules.cooldowns},enemyCooldowns:{...aiRules.cooldowns},chakraRegen:SealGameCore.chakraRegen,shurikenCooldown:rules.shurikenCooldown,shurikenThrows:rules.shurikenThrows,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: natureArts.buried('player')?'snow-burial':earthView?'earth-'+earthView.phase:windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':meteorView.shot.style==='jacob'?'jacob-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light','Earth','Wood','Ice'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,stones:r.stones.visible,stoneCount:r.stones.children.length,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.opponentSpawn.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, waterInfused:!!s.waterInfused, style: s.style, introStage: s.introStage || null, visual: s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], motionTime:s.motionTime||0, motionDistance:s.motionDistance||0, speedRatio:s.flightSpeedRatio??(s.element==='weapon'?1:FLIGHT_PROFILE.launchSpeedRatio), actualSpeed:s.motionSpeed||0, size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
   window.__AN_HOA__ = { state, flightProfile:{...FLIGHT_PROFILE} };
   adventure=createAdventure({canvas,onLoadJourney:loadJourneySpells,onLearn:id=>{if(spells.some(s=>s.id===id)){learnedSpells.add(id);renderLoadout();}},onBattle:()=>{prepare();adventure.showLoadout();$('startButton').innerHTML='GIAO CHIẾN <span>→</span>';$('changeLoadout').textContent='Rút lui · hồi sinh tại điểm lưu';},onDuel:()=>{restoreDuelSpells();prepare();$('startButton').innerHTML='VÀO TRẬN <span>→</span>';$('changeLoadout').textContent='Về quyển trục chọn chiêu';},onReturn:()=>prepare()});
   window.__AN_HOA__.adventure=()=>adventure.state();

@@ -1,4 +1,5 @@
 import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS} from './adventure-world.js';
+import {newProgression,readProgression,regionElement,gainExperience,systemLevel,teachAvailable,canLearn,addBooks} from './progression.js';
 export {STARTER_SPELLS,MENTOR_SPELLS} from './adventure-world.js';
 
 // The atlas is also the source of truth for walking between village maps.
@@ -30,7 +31,7 @@ export const QUESTS={
 export const CAMPAIGN_REGIONS=Object.freeze(['earth','wind','light','ice','wood']);
 const firstLeaders=['water','fire','lightning'];
 const treatyDelivered=(save,id)=>save.campaign?.deliveries?.includes(id)===true;
-const regionArtsLearned=(save,id)=>save.mentors?.[id]===true&&REGIONS[id].mentor.spellIds.every(spellId=>save.learnedSpells?.includes(spellId));
+const regionArtsLearned=(save,id)=>save.mentors?.[id]===true;
 export function campaignStage(save) {
   if(!save.bosses?.water)return 'water';
   if(!save.bosses?.fire||!save.bosses?.lightning)return 'fire-lightning';
@@ -84,7 +85,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#345c63',hair='#252b32') {
-  return {version:1,hero:{name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+  return {version:1,hero:{name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],progression:newProgression(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -109,11 +110,13 @@ export function readJourney(storage) {
     // Saves made before the exploration update already owned every art. Keep that progress.
     const known=Array.isArray(s.learnedSpells)?s.learnedSpells.filter(id=>ALL_ADVENTURE_SPELLS.includes(id)):ALL_ADVENTURE_SPELLS;
     clean.learnedSpells=[...new Set([...STARTER_SPELLS,...known])];
-    for(const v of VILLAGES){
+    if(!s.progression)for(const v of VILLAGES){
       if(clean.mentors[v.id])clean.learnedSpells.push(...REGIONS[v.id].mentor.spellIds);
       if(clean.bosses[v.id])clean.learnedSpells.push(...bossRewardSpells(v.id));
     }
     clean.learnedSpells=[...new Set(clean.learnedSpells)];
+    clean.progression=readProgression(s.progression,clean.learnedSpells);
+    clean.learnedSpells=clean.learnedSpells.filter(id=>canLearn(clean.progression,id));
     for(const key of ['gold','xp','wins'])clean[key]=Number.isSafeInteger(s[key])&&s[key]>=0?s[key]:0;
     return clean;
   }catch{return null;}
@@ -123,7 +126,10 @@ export function discoverZone(save,id,zoneId) {
   const key=`${id}:${zoneId}`;
   save.discoveries??=[];
   if(save.discoveries.includes(key))return false;
-  save.discoveries.push(key);return true;
+  save.discoveries.push(key);
+  const element=id==='nameless'&&!save.bosses.water?'water':regionElement(id);
+  if(systemLevel(save.progression,element)>0)gainExperience(save.progression,element,30);
+  return true;
 }
 export function mentorReady(save,id) {
   const mentor=REGIONS[id]?.mentor;
@@ -131,11 +137,15 @@ export function mentorReady(save,id) {
 }
 export function completeLesson(save,id) {
   const mentor=REGIONS[id]?.mentor;
-  if(!mentorReady(save,id))return {learned:false,spellId:mentor?.spellId||null,spellIds:[]};
-  save.mentors??={};save.mentors[id]=true;
+  if(!save.mentors?.[id]&&!mentorReady(save,id))return {learned:false,spellId:mentor?.spellId||null,spellIds:[]};
+  const element=regionElement(id);
+  if(!save.mentors?.[id]){
+    const practice=systemLevel(save.progression,element)?60:120;
+    gainExperience(save.progression,element,practice);
+    save.mentors??={};save.mentors[id]=true;
+  }
   save.learnedSpells??=[...STARTER_SPELLS];
-  const spellIds=mentor.spellIds.filter(spellId=>!save.learnedSpells.includes(spellId));
-  save.learnedSpells.push(...spellIds);
+  const spellIds=teachAvailable(save,element);
   return {learned:spellIds.length>0,spellId:mentor.spellId,spellIds};
 }
 export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
@@ -145,10 +155,11 @@ export function resolveBattle(save,encounter,victory) {
     save.bosses??={};
     if(boss&&!save.bosses[encounter.village]){
       save.bosses[encounter.village]=true;save.gold+=boss.rewardGold;save.xp+=boss.rewardXp;save.wins++;
-      save.learnedSpells=[...new Set([...(save.learnedSpells||STARTER_SPELLS),...bossRewardSpells(encounter.village)])];
+      gainExperience(save.progression,regionElement(encounter.village),180);
+      addBooks(save,bossRewardSpells(encounter.village));
     }
   }
-  else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
+  else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;gainExperience(save.progression,encounter.element||(encounter.village==='nameless'?'water':regionElement(encounter.village)),encounter.kind==='quest'?65:45);if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
   else{save.village=save.checkpoint;save.position=[0,7];}
   return save;
 }
