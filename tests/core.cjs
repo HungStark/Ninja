@@ -7,6 +7,8 @@ assert.equal(new Set(keys).size, 12);
 assert.equal(elements.length, 9); assert.equal(spells.length, 45);
 assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 45);
 for(const spell of spells)assert.equal(spell.cooldown,spell.id==='dark-orb'?2:context.SealGameCore.cooldownByRank[spell.rank]);
+for(const id of ['fire-volley','water-lance'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-orb').speed,id+' matches Phong nhan');
+for(const id of ['fire-lance','fire-meteor','water-volley','water-tsunami'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-volley').speed,id+' matches Phong loc');
 const balance=new GameRules(['fire-volley','fire-barrier']);balance.chakra=0;balance.tick(2);assert.equal(balance.chakra,10);balance.chakra=100;
 spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.equal(balance.remaining('fire-volley'),6);balance.tick(1.01);
 spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.ok(balance.remaining('fire-volley')>0&&balance.remaining('fire-barrier')>0);balance.clear();spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));const savedChakra=balance.chakra;assert.equal(balance.cast().reason,'spellCooldown');assert.equal(balance.chakra,savedChakra);assert.equal(balance.sequence.join(''),'qwdf');balance.tick(16);assert.equal(Object.keys(balance.cooldowns).length,0);

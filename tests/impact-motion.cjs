@@ -83,9 +83,9 @@ const path = require('node:path');
       await advance(time - elapsed); elapsed = time;
       const s = (await state()).projectiles.find(s => s.style === 'meteor'); samples.push(s.position);
       assert.deepEqual(s.velocity, meteorStart.velocity, 'One velocity across every camera phase');
-      for (let i = 0; i < 3; i++) near(s.position[i], meteorStart.position[i] + meteorStart.velocity[i] * s.age, 'Meteor stays on one straight line');
+      for (let i = 0; i < 3; i++) near(s.position[i], meteorStart.position[i] + meteorStart.velocity[i] / Math.hypot(...meteorStart.velocity) * s.motionDistance, 'Meteor accelerates along one straight line');
     }
-    await advance(.75); const meteorHit = await state();
+    await advance(1.3); const meteorHit = await state();
     assert.equal(meteorHit.enemyHealth, 850); assert.ok(meteorHit.cameraReaction.strength > 0 && meteorHit.viewFov > 68, 'Meteor impact creates shake and zoom out');
     await page.screenshot({ path: 'test-results/impact-motion/meteor-impact.png' });
     await page.keyboard.press('Escape'); const pausedImpact = await state(); await advance(1);

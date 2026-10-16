@@ -20,6 +20,7 @@
     "test:ranks": "node tests/ranks.cjs",
     "test:incantation": "node tests/incantation.cjs",
     "test:fire": "node tests/fire.cjs",
+    "test:flight": "node tests/projectile-motion.mjs && node tests/flight-burst.mjs && node tests/element-flight.cjs",
     "test:water": "node tests/water.cjs",
     "test:lightning": "node tests/lightning.cjs",
     "test:dark": "node tests/dark-clones.cjs && node tests/dark.cjs",

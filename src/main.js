@@ -17,6 +17,7 @@ import { NatureArts } from './nature-arts.js';
 import { crossWalls } from './combat.js';
 import { sweepTsunami } from './tsunami.js';
 import { createAdventure } from './adventure.js';
+import { projectileMotionStep, flightTimeAt, FLIGHT_PROFILE } from './projectile-motion.js';
 async function main() {
   const $ = id => document.getElementById(id), { keys, spells, elements, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = globalThis.SealGameCore;
   let rules = new GameRules(), player = new Fighter(), enemy = new Fighter(), aiRules = new GameRules();
@@ -71,7 +72,7 @@ async function main() {
   let activePose = -1, poseAge = 99, animationTime = 0, started = false, paused = false, won = false, round = 1, selected = 0, score = 0;
   let camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }, lastTime = 0, recoil = 0, hitTimer = 0, flashTimer = 0, messageTime = 0, muted = false, audio = null;
   let moveDirection = 0, moveTargetX = 0, touchPoint = null;
-  const sidestepDistance = 1.8 / 10, sidestepDuration = .2;
+  const sidestepDistance = 0.2, sidestepDuration = .2;
   const sidestepSpeed = sidestepDistance / sidestepDuration;
   let spellVoice = null;
   const dragonFormation = 1.1, dragonUncoil = .32;
@@ -345,7 +346,7 @@ async function main() {
       shots.push({ p, old: [...p], origin, target, v: vmul(vsub(target, origin), 1 / travelTime), travelTime,
         phase: 'emerging', riseTime: boatRiseTime, flightAge: 0,
         size: spell.size, damage: spell.damage, blastRadius: spell.blastRadius, style: spell.style, element: spell.element,
-        color: spell.color, owner, unreflectable: true, reflected: false, life: travelTime + .1, trail: 0, age: 0 });
+        color: spell.color, owner, unreflectable: true, reflected: false, life: flightTimeAt(travelTime*spell.speed,spell.speed) + .1, trail: 0, age: 0 });
       if (owner === 'player') cameraImpacts.trigger('orb', 1.3);
       return;
     }
@@ -372,14 +373,15 @@ async function main() {
     }
     if (spell.style === 'meteor') {
       const target = meteorTarget(pos, dir), skyStart = [target[0] + 38, 65, target[2] + 7];
-      const totalTime = meteorSkyTime + meteorReturnTime + spell.fallTime;
+      const totalTime = vlen(vsub(target, skyStart)) / spell.speed;
       const velocity = vmul(vsub(target, skyStart), 1 / totalTime);
-      const cloudBreakTime = (65 - 42) / -velocity[1];
-      const cloudPoint = vadd(skyStart, vmul(velocity, cloudBreakTime));
+      const cloudParamTime = (65 - 42) / -velocity[1];
+      const cloudBreakTime = flightTimeAt(cloudParamTime*spell.speed,spell.speed);
+      const cloudPoint = vadd(skyStart, vmul(velocity, cloudParamTime));
       const shot = { p: [...skyStart], old: [...skyStart], v: velocity, target,
         skyStart, totalTime, cloudPoint, cloudBreakTime, phase: 'sky', preludeAge: 0,
         skyTime: meteorSkyTime, returnTime: meteorReturnTime, fallAge: 0, blastRadius: spell.blastRadius, unreflectable: true,
-        size: spell.size, damage: spell.damage, style: spell.style, element: spell.element, color: spell.color, owner, reflected: false, life: totalTime + .5, fallTime: spell.fallTime, trail: 0, age: 0 };
+        size: spell.size, damage: spell.damage, style: spell.style, element: spell.element, color: spell.color, owner, reflected: false, life: flightTimeAt(totalTime*spell.speed,spell.speed) + .5, fallTime: Math.max(0,flightTimeAt(totalTime*spell.speed,spell.speed)-meteorSkyTime-meteorReturnTime), trail: 0, age: 0 };
       shots.push(shot);
       if (owner === 'player') beginMeteorView(shot);
       tone(72, .6, 'sawtooth', .055); return;
@@ -614,8 +616,22 @@ async function main() {
     const target=shot.owner==='enemy'?playerPos():enemyPos();
     if(Math.hypot(target[0]-pos[0],target[2]-pos[2])<=shot.blastRadius)impact(shot,pos);
   }
-  function travelStep(shot,dt) {
-    const step=projectileTimeStep(shot.p,shot.v,dt,shot.owner,fields);shot.slowFactor=step.slowFactor;return step.travelTime;
+  function commitMotion(shot,step,dt,motionStart=shot.p,motionVelocity=shot.v){
+    const before=shot.motionDistance||0;
+    shot.motionTime=step.motionTime;shot.motionDistance=(shot.motionDistance||0)+step.distance;
+    shot.slowFactor=step.slowFactor;shot.flightSpeedRatio=step.speedRatio;shot.motionSpeed=dt>0?step.distance/dt:0;
+    if(shot.element!=='weapon'&&!shot.flightBurstStarted&&before<=FLIGHT_PROFILE.launchDistance&&shot.motionDistance>FLIGHT_PROFILE.launchDistance){
+      shot.flightBurstStarted=true;
+      const direction=vnorm(motionVelocity),origin=vadd(motionStart,vmul(direction,Math.max(0,FLIGHT_PROFILE.launchDistance-before)));
+      effects.flightBursts.trigger(shot,origin);
+      // Coalesce nearby bursts into one camera pulse; every shot keeps its wind tear.
+      if(shot.owner==='player'&&!cameraImpacts.pulses.some(p=>p.type==='flightBurst'))cameraImpacts.trigger('flightBurst');
+    }
+  }
+  function travelStep(shot,dt,commit=false) {
+    const step=projectileMotionStep(shot,dt,fields,projectileTimeStep);
+    if(commit)commitMotion(shot,step,dt);
+    return step.travelTime;
   }
   function wallImpact(wall,point,result,shot){
     burst(point,shot.style==='shuriken'?4:15,shot.style==='shuriken'?.45:1.6,shot.style==='shuriken'?'#bdc9d7':wall.element==='ice'?'#b8efff':wall.element==='water'?'#50baff':'#ffc45e');
@@ -629,11 +645,11 @@ async function main() {
     const reflectedByGuard=new Set();
     if(dt>0)for(const shot of shots){
       if(shot.phase==='blooming')continue;
-      const start=[...shot.p];shot.old=[...start];shot.p=vadd(start,vmul(shot.v,travelStep(shot,dt)));
+      const start=[...shot.p],velocity=[...shot.v],step=projectileMotionStep(shot,dt,fields,projectileTimeStep);shot.old=[...start];shot.p=vadd(start,vmul(shot.v,step.travelTime));
       if(lightArts.redirect(shot,windActors(),walls)){
-        reflectedByGuard.add(shot);
+        commitMotion(shot,step,dt,start,velocity);reflectedByGuard.add(shot);
         if(dragonView?.shot===shot)clearDragonView();if(meteorView?.shot===shot)clearMeteorView();if(waveView?.shot===shot)clearWaveView();
-      }else if(reflectWind(shot))reflectedByGuard.add(shot);
+      }else if(reflectWind(shot)){commitMotion(shot,step,dt,start,velocity);reflectedByGuard.add(shot);}
       else shot.p=start;
     }
     const swept = new Set();
@@ -680,7 +696,8 @@ async function main() {
           flightDt = Math.max(0, shot.age - shot.growthTime);
           shot.age = shot.growthTime; shot.phase = 'flying'; shot.introStage = 'flying'; shot.growth = 1;
         }
-        const travelDt=travelStep(shot,flightDt);
+        const travelDt=travelStep(shot,flightDt,true);
+        shot.motionSpeed=dt>0?vlen(shot.v)*travelDt/dt:0;
         shot.p = vadd(shot.p, vmul(shot.v, travelDt)); shot.age += flightDt; shot.life -= flightDt; shot.flightAge += travelDt;
         sweepTsunami(shot,shot.old,shot.p,{actors:windActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,intersectsWave});
         const target = shot.owner === 'enemy' ? playerPos() : enemyPos();
@@ -701,7 +718,7 @@ async function main() {
           shot.age = shot.riseTime; shot.p = [...shot.origin]; shot.old = [...shot.p]; shot.phase = 'flying';
           if (shot.owner === 'player') { beginDragonView(shot); cameraImpacts.trigger('orb', 1.3); }
         }
-        shot.flightAge = Math.min(shot.travelTime, shot.flightAge + travelStep(shot,flightDt)); shot.age += flightDt;
+        shot.flightAge = Math.min(shot.travelTime, shot.flightAge + travelStep(shot,flightDt,true)); shot.age += flightDt;
         shot.p = vadd(shot.origin, vmul(shot.v, shot.flightAge));
         if(crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot))){shots.splice(i,1);continue;}
         if (shot.flightAge + 1e-6 >= shot.travelTime) {
@@ -714,8 +731,8 @@ async function main() {
         continue;
       }
       if (shot.style === 'meteor') {
-        // One fixed velocity from first appearance to impact: no bend or pause at a camera transition.
-        shot.age += dt;shot.travelAge=Math.min(shot.totalTime,(shot.travelAge||0)+travelStep(shot,dt));
+        // Keep the straight trajectory; the launch and burst profile changes travel speed only.
+        shot.age += dt;shot.travelAge=Math.min(shot.totalTime,(shot.travelAge||0)+travelStep(shot,dt,true));
         const prelude = shot.skyTime + shot.returnTime;
         shot.preludeAge = Math.min(prelude, shot.age); shot.fallAge = Math.max(0, shot.age - prelude);
         shot.phase = shot.age < shot.skyTime ? 'sky' : shot.age + 1e-6 < prelude ? 'returning' : 'falling';
@@ -741,7 +758,7 @@ async function main() {
         if (shot.owner === 'player') { beginDragonView(shot); cameraImpacts.trigger('dragon'); }
         burst(shot.p, 18, 1.8, shot.color); tone(85, .25, 'sawtooth', .045);
       }
-      const travelDt=travelStep(shot,flightDt);
+      const travelDt=travelStep(shot,flightDt,true);
       shot.p = vadd(shot.p, vmul(shot.v, travelDt));
       if (shot.gravity) { shot.p = vadd(shot.p, vmul(shot.gravity, .5 * travelDt * travelDt)); shot.v = vadd(shot.v, vmul(shot.gravity, travelDt)); }
       shot.life -= flightDt; shot.age += flightDt;
@@ -762,7 +779,7 @@ async function main() {
     if(shot.style==='shuriken')return;
     shot.trail += dt;
     while (shot.trail > .025) {
-      shot.trail -= .025; particle(shot.p, vmul(shot.v, -.06), shot.size * .4, shot.style === 'meteor' ? .8 : .4, shot.color, shot);
+      shot.trail -= .025; particle(shot.p, vmul(shot.v, -.06*(shot.flightSpeedRatio??1)), shot.size * .4, shot.style === 'meteor' ? .8 : .4, shot.color, shot);
       if (shot.element === 'fire') {
         const jitter = [range(-shot.size, shot.size), range(-shot.size, shot.size), range(-shot.size, shot.size)];
         particle(vadd(shot.p, jitter), [range(-.8, .8), range(.2, 1.2), range(-.8, .8)], .04, .6, '#ffc56f', shot);
@@ -912,7 +929,7 @@ async function main() {
     reactionEuler.set(...cameraReaction.rotation); reactionRotation.setFromEuler(reactionEuler);
     if(!windView)camera3d.quaternion.multiply(reactionRotation);
     effects.update(paused ? 0 : dt, animationTime, shots, particles, camera3d, quality, walls,
-      [{ owner: 'player', fighter: player, pos: playerPos() }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }],fields);
+      [{ owner: 'player', fighter: player, pos: playerPos() }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }],fields,reducedMotion);
     darkDomain.visuals(running?dt:0,animationTime,shots);
     windArts.visuals(running?dt:0,animationTime,shots,walls);
     lightArts.visuals(animationTime,shots,windActors(),walls);
@@ -1224,8 +1241,8 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ natureArt:natureArts.state(),usedOnce:[...rules.usedOnce],enemyVisible:opponent.group.visible,enemyPerceivedPosition:natureArts.perceivedPosition('player',windActors()),aiPerceivedTarget:natureArts.perceivedPosition('enemy',windActors()),earthArt:{...earthArts.state(),terrainVertices:world.terrain.changedVertices,playerHeight:earthFloor('player',camera.p[0],camera.p[2]),enemyHeight:earthFloor('enemy',opponent.group.position.x,opponent.group.position.z)},playerPosition:playerPos(),lightArt:lightArts.state(),playerAvatar:{visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,cooldowns:{...rules.cooldowns},enemyCooldowns:{...aiRules.cooldowns},chakraRegen:SealGameCore.chakraRegen,shurikenCooldown:rules.shurikenCooldown,shurikenThrows:rules.shurikenThrows,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: natureArts.buried('player')?'snow-burial':earthView?'earth-'+earthView.phase:windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':meteorView.shot.style==='jacob'?'jacob-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light','Earth','Wood','Ice'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,stones:r.stones.visible,stoneCount:r.stones.children.length,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.opponentSpawn.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, introStage: s.introStage || null, visual: s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
-  window.__AN_HOA__ = { state };
+  const state = () => ({ flightBurst:effects.flightBursts.state(), natureArt:natureArts.state(),usedOnce:[...rules.usedOnce],enemyVisible:opponent.group.visible,enemyPerceivedPosition:natureArts.perceivedPosition('player',windActors()),aiPerceivedTarget:natureArts.perceivedPosition('enemy',windActors()),earthArt:{...earthArts.state(),terrainVertices:world.terrain.changedVertices,playerHeight:earthFloor('player',camera.p[0],camera.p[2]),enemyHeight:earthFloor('enemy',opponent.group.position.x,opponent.group.position.z)},playerPosition:playerPos(),lightArt:lightArts.state(),playerAvatar:{visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,cooldowns:{...rules.cooldowns},enemyCooldowns:{...aiRules.cooldowns},chakraRegen:SealGameCore.chakraRegen,shurikenCooldown:rules.shurikenCooldown,shurikenThrows:rules.shurikenThrows,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: natureArts.buried('player')?'snow-burial':earthView?'earth-'+earthView.phase:windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':meteorView.shot.style==='jacob'?'jacob-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light','Earth','Wood','Ice'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,stones:r.stones.visible,stoneCount:r.stones.children.length,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.opponentSpawn.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, style: s.style, introStage: s.introStage || null, visual: s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], motionTime:s.motionTime||0, motionDistance:s.motionDistance||0, speedRatio:s.flightSpeedRatio??(s.element==='weapon'?1:FLIGHT_PROFILE.launchSpeedRatio), actualSpeed:s.motionSpeed||0, size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
+  window.__AN_HOA__ = { state, flightProfile:{...FLIGHT_PROFILE} };
   adventure=createAdventure({canvas,onBattle:()=>{prepare();adventure.showLoadout();$('startButton').innerHTML='GIAO CHIẾN <span>→</span>';$('changeLoadout').textContent='Rút lui · hồi sinh tại điểm lưu';},onDuel:()=>{prepare();$('startButton').innerHTML='VÀO TRẬN <span>→</span>';$('changeLoadout').textContent='Về quyển trục chọn chiêu';},onReturn:()=>prepare()});
   window.__AN_HOA__.adventure=()=>adventure.state();
   if(testMode){window.__AN_HOA__.explore=adventure.test;window.__AN_HOA__.setHealth=(owner,hp)=>{(owner==='player'?player:enemy).hp=hp;};}

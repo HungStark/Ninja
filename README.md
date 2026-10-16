@@ -35,6 +35,10 @@ Có **9 hệ, 45 chiêu**: Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc 
 
 ## Chiêu thức và trận đấu
 
+Tốc độ bay của Hỏa và Thủy dùng chung hai mốc với Phong: **Hỏa liên đạn, Thủy ngục và Phong nhận: 29 m/giây**; **Rồng lửa, Thiên thạch, Ném thuyền, Sóng thần và Phong lốc: 22 m/giây**. Các mốc nằm ở `flightSpeeds` trong `game-core.js`. Thiên thạch tính thời gian tới đích từ quãng đường và tốc độ; các nhịp giữ đạn, triệu hồi, dựng sóng và camera vẫn giữ nguyên.
+
+Các mốc trên là tốc độ gốc. Mọi chiêu có vật thể bay dùng nhịp **2 m đầu ở 20% tốc độ gốc, sau đó bứt tốc lên 180% trong 0,12 giây**: nhóm 29 m/giây đạt 52,2 m/giây, nhóm 22 m/giây đạt 39,6 m/giây. Khi vượt 2 m, vòng áp lực bung tại điểm tăng tốc, các tia xé gió tỏa ra và vệt khí trắng pha màu nguyên tố kéo theo chiêu; camera giật nhẹ một nhịp khi người chơi tăng tốc chiêu. Hiệu ứng dùng lại bộ mesh giới hạn, hỗ trợ đồ họa thấp và giảm chuyển động. Mỗi viên đạn/lá bay có đồng hồ riêng; thời gian tụ chiêu không tính vào đoạn này. Nhịp được giữ khi phản đòn, dừng khi tạm dừng và vẫn chịu vùng làm chậm. Tham số nằm trong `FLIGHT_PROFILE` ở `src/projectile-motion.js`. Laser, sét đánh tức thời, hiệu ứng tại chỗ và phi tiêu giữ cơ chế riêng. Chạy `npm run test:flight` để kiểm tra khoảng bay, tăng tốc, hiệu ứng, va chạm, phản đòn và các hệ có vật thể bay.
+
 Mỗi chiêu có hồi chiêu riêng theo cấp: **D 3 giây, C 4 giây, B 6 giây, A 8 giây, S 11 giây, SS 15 giây**; riêng **Ảnh phân thân hồi 2 giây**, áp dụng cả triệu hồi và nâng cấp. Thời gian còn lại hiện trên quyển trục trong trận; vẫn có nhịp nghỉ chung 1 giây giữa hai lần thi triển thuật. Chakra hồi **5 điểm/giây**. Các chiêu giới hạn một lần mỗi trận vẫn giữ giới hạn đó.
 
 Nhấn **SPACE** khi chưa kết đủ chuỗi ấn hợp lệ sẽ ném một phi tiêu nhỏ bốn cánh xoay theo hướng ngắm: **6 sát thương, không tốn chakra**, cách mỗi lần ném ít nhất **0,45 giây**. Ném phi tiêu xóa chuỗi ấn đang dở. Chuỗi đã hoàn chỉnh nhưng thiếu chakra, chưa đủ điều kiện hoặc còn hồi chiêu sẽ được giữ lại.

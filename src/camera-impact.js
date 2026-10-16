@@ -1,6 +1,7 @@
 // Short camera reactions are layered over the normal and cinematic views.
 // They never change the player's stored aiming direction.
 const profiles = {
+  flightBurst: { duration: .2, shake: .013, zoom: 3, kick: .025 },
   orb: { duration: .28, shake: .012, zoom: 5, kick: .045 },
   volley: { duration: .22, shake: .009, zoom: 3, kick: .025 },
   dragon: { duration: .4, shake: .025, zoom: 5, kick: .045 },
@@ -16,7 +17,7 @@ export class CameraImpacts {
   constructor() { this.pulses = []; }
   trigger(type, power = 1, direction = [0, 0, 1]) {
     const profile = profiles[type];
-    if (profile) this.pulses.push({ ...profile, age: 0, power, direction: [...direction] });
+    if (profile) this.pulses.push({ ...profile, type, age: 0, power, direction: [...direction] });
   }
   update(dt) {
     for (const p of this.pulses) p.age += dt;

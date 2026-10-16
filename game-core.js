@@ -24,19 +24,21 @@
     { kind: 'defense', style: 'barrier', rank: 'C', suffix: 'a', cost: 26, damage: 0, shield: 65, duration: 4.5, subtitle: 'Khiên hấp thụ • 4,5 giây' },
     { kind: 'defense', style: 'reflect', rank: 'A', suffix: 'zxc', cost: 32, damage: 0, shield: 25, duration: 2.8, subtitle: 'Phản lại một đạn • 2,8 giây' }
   ];
+  // Shared Phong benchmarks: quick projectiles and large travelling techniques.
+  const flightSpeeds = { quick: 29, heavy: 22 };
   // Keep the saved fire IDs while replacing their formulas and behavior.
   const fireSpells = [
-    { id: 'fire-volley', name: 'Hỏa liên đạn', kind: 'attack', style: 'volley', rank: 'B', sequence: [...'qwdf'], cost: 40, damage: 9.6, size: .075, count: 3, speed: 27, holdTime: .5, salvoInterval: .1, subtitle: 'Ba hỏa cầu nhỏ xếp ngang • mỗi viên 9,6 sát thương • giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây' },
-    { id: 'fire-lance', name: 'Rồng lửa', kind: 'attack', style: 'dragon', rank: 'S', sequence: [...'qwcvzx'], cost: 56, damage: 104, size: .72, count: 1, speed: 23, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
-    { id: 'fire-meteor', name: 'Thiên thạch', kind: 'attack', style: 'meteor', rank: 'SS', sequence: [...'qwcvzxer'], cost: 82, damage: 150, size: 1.5, count: 1, speed: 0, blastRadius: 5.5, fallTime: 1.6, subtitle: 'Thiên thạch từ trời • nổ lan bán kính 5,5 m' },
+    { id: 'fire-volley', name: 'Hỏa liên đạn', kind: 'attack', style: 'volley', rank: 'B', sequence: [...'qwdf'], cost: 40, damage: 9.6, size: .075, count: 3, speed: flightSpeeds.quick, holdTime: .5, salvoInterval: .1, subtitle: 'Ba hỏa cầu nhỏ xếp ngang • mỗi viên 9,6 sát thương • giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây' },
+    { id: 'fire-lance', name: 'Rồng lửa', kind: 'attack', style: 'dragon', rank: 'S', sequence: [...'qwcvzx'], cost: 56, damage: 104, size: .72, count: 1, speed: flightSpeeds.heavy, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
+    { id: 'fire-meteor', name: 'Thiên thạch', kind: 'attack', style: 'meteor', rank: 'SS', sequence: [...'qwcvzxer'], cost: 82, damage: 150, size: 1.5, count: 1, speed: flightSpeeds.heavy, blastRadius: 5.5, subtitle: 'Thiên thạch từ trời • nổ lan bán kính 5,5 m' },
     { id: 'fire-barrier', name: 'Khiên lửa', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'qwa'], cost: 26, damage: 0, shield: 75, duration: 4.5, count: 0, subtitle: 'Vòm lửa bao quanh người • hấp thụ 75 sát thương' },
     { id: 'fire-reflect', name: 'Tường lửa', kind: 'defense', style: 'firewall', rank: 'A', sequence: [...'qwzxc'], cost: 36, damage: 0, shield: 120, duration: 5, count: 0, wallWidth: 7, wallHeight: 4.2, subtitle: 'Tường lửa phía trước • chặn đạn, tồn tại 5 giây' }
   ].map(s => ({ ...s, element: 'fire', glyph: '火', color: '#ff844b', heal: 0, shield: s.shield || 0 }));
   // Preserve saved water IDs; the former lance/volley/reflect now have water-specific behavior.
   const waterSpells = [
-    { id: 'water-lance', name: 'Thủy ngục', kind: 'attack', style: 'prison', rank: 'A', sequence: [...'wezxc'], cost: 38, damage: 12, size: .55, count: 1, speed: 21, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
-    { id: 'water-volley', name: 'Ném thuyền', kind: 'attack', style: 'boat', rank: 'S', sequence: [...'wecvzx'], cost: 56, damage: 90, size: 1.7, count: 1, speed: 24, blastRadius: 3.5, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm' },
-    { id: 'water-tsunami', name: 'Sóng thần', kind: 'attack', style: 'tsunami', rank: 'SS', sequence: [...'wecvzxer'], cost: 72, damage: 30, size: 1, count: 1, speed: 12, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức • đẩy phân thân ra sau đối thủ, không phá hủy • sát thương vừa phải' },
+    { id: 'water-lance', name: 'Thủy ngục', kind: 'attack', style: 'prison', rank: 'A', sequence: [...'wezxc'], cost: 38, damage: 12, size: .55, count: 1, speed: flightSpeeds.quick, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
+    { id: 'water-volley', name: 'Ném thuyền', kind: 'attack', style: 'boat', rank: 'S', sequence: [...'wecvzx'], cost: 56, damage: 90, size: 1.7, count: 1, speed: flightSpeeds.heavy, blastRadius: 3.5, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm' },
+    { id: 'water-tsunami', name: 'Sóng thần', kind: 'attack', style: 'tsunami', rank: 'SS', sequence: [...'wecvzxer'], cost: 72, damage: 30, size: 1, count: 1, speed: flightSpeeds.heavy, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức • đẩy phân thân ra sau đối thủ, không phá hủy • sát thương vừa phải' },
     { id: 'water-barrier', name: 'Khiên nước', kind: 'defense', style: 'barrier', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, shield: 65, duration: 4.5, count: 0, subtitle: 'Khiên nước bao quanh bản thân • hấp thụ 65 sát thương' },
     { id: 'water-reflect', name: 'Thủy thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence: [...'wedf'], cost: 32, damage: 0, shield: 95, duration: 5, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
   ].map(s => ({ ...s, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
@@ -49,8 +51,8 @@
     { id: 'lightning-reflect', name: 'Lôi trận', kind: 'defense', style: 'stormfield', rank: 'A', sequence: [...'erzxc'], cost: 36, damage: 0, shield: 0, duration: 10, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .3, subtitle: 'Vùng điện rộng 10 giây • đạn đối phương còn 30% tốc độ trong vùng' }
   ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
   const windSpells = [
-    {id:'wind-orb',name:'Phong nhận',kind:'attack',style:'windslash',rank:'D',sequence:[...'ra'],cost:24,damage:36,size:.55,speed:29,count:1,subtitle:'Phóng một nhát chém gió hình lưỡi liềm về phía ngắm'},
-    {id:'wind-volley',name:'Phong lốc',kind:'attack',style:'tornado',rank:'S',sequence:[...'racvzx'],cost:46,damage:70,size:1.15,speed:22,count:1,controlDuration:2,subtitle:'Lốc xoáy 3D lao tới · 70 sát thương, hất tung và khóa đối thủ 2 giây'},
+    {id:'wind-orb',name:'Phong nhận',kind:'attack',style:'windslash',rank:'D',sequence:[...'ra'],cost:24,damage:36,size:.55,speed:flightSpeeds.quick,count:1,subtitle:'Phóng một nhát chém gió hình lưỡi liềm về phía ngắm'},
+    {id:'wind-volley',name:'Phong lốc',kind:'attack',style:'tornado',rank:'S',sequence:[...'racvzx'],cost:46,damage:70,size:1.15,speed:flightSpeeds.heavy,count:1,controlDuration:2,subtitle:'Lốc xoáy 3D lao tới · 70 sát thương, hất tung và khóa đối thủ 2 giây'},
     {id:'wind-lance',name:'Phong liên trảm',kind:'attack',style:'aircombo',rank:'B',sequence:[...'rad'],cost:22,damage:70,count:8,duration:2,requiresAirborne:true,subtitle:'Nối lốc khi địch còn trên không · chém liên tục tổng 70 sát thương, giữ thêm 2 giây · một lần mỗi lốc'},
     {id:'wind-barrier',name:'Phong bích',kind:'defense',style:'windwall',rank:'A',sequence:[...'razx'],cost:32,damage:0,shield:110,duration:5,count:0,wallWidth:7,wallHeight:5,subtitle:'Tường gió phía trước · chặn chiêu, 110 độ bền trong 5 giây'},
     {id:'wind-reflect',name:'Tiên linh gió',kind:'defense',style:'windspirit',rank:'SS',sequence:[...'racvzxer'],cost:70,damage:0,count:0,duration:5,formation:1.8,guardWidth:8,guardRange:10,guardHeight:10,subtitle:'Tinh linh toon xuất hiện phía trước mặt · giữ góc nhìn FPS · thổi gió liên tục 5 giây, phản chiêu bay tới từ phía trước'}

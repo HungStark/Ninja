@@ -4,6 +4,7 @@ import { FireArts } from './fire-arts.js';
 import { WaterArts } from './water-arts.js';
 import { LightningArts } from './lightning-arts.js';
 import { ShurikenVisuals } from './shuriken.js';
+import { FlightBurstEffects } from './flight-burst-vfx.js';
 export class FireEffects {
   constructor(scene) {
     this.scene = scene;
@@ -16,6 +17,7 @@ export class FireEffects {
     this.waterArts = new WaterArts(scene);
     this.lightningArts = new LightningArts(scene);
     this.shurikens=new ShurikenVisuals(scene);
+    this.flightBursts=new FlightBurstEffects(scene);
     this.smokeMap = smokeTexture();
     this.lights = [];
     for (let i = 0; i < 3; i++) {
@@ -72,7 +74,7 @@ export class FireEffects {
     this.scene.add(ring);
     this.rings.push({ mesh: ring, age: 0 });
   }
-  update(dt, time, shots, particles, camera, quality, walls = [], fighters = [], fields = []) {
+  update(dt, time, shots, particles, camera, quality, walls = [], fighters = [], fields = [], reducedMotion = false) {
     this.time = time;
     this.fireMaterial.uniforms.uTime.value = time;
     while (this.objects.length < shots.length) this.makeShot();
@@ -142,12 +144,14 @@ export class FireEffects {
     this.waterArts.update(dt, time, shots, walls, fighters);
     this.lightningArts.update(dt,time,shots,fields,fighters,quality);
     this.shurikens.update(shots);
+    this.flightBursts.update(dt,shots,quality,reducedMotion);
   }
   reset() {
     this.arts.reset();
     this.waterArts.reset();
     this.lightningArts.reset();
     this.shurikens.reset();
+    this.flightBursts.reset();
     this.objects.forEach((o) => o.visible = false);
     this.smoke.length = 0;
     this.rings.forEach((r) => {

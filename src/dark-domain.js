@@ -241,7 +241,7 @@ export class DarkDomain {
       if(!opponent)continue;
       if(c.mode==='carried'){
         const {wave,target}=c.waveCarry,dx=target[0]-c.p[0],dz=target[2]-c.p[2],dist=Math.hypot(dx,dz);
-        const step=Math.min(dist,Math.hypot(...wave.v)*(wave.slowFactor??1)*dt);
+        const step=Math.min(dist,(wave.motionSpeed??Math.hypot(...wave.v)*(wave.slowFactor??1))*dt);
         if(dist>.001){c.p[0]+=dx/dist*step;c.p[2]+=dz/dist*step;}
         c.root.position.fromArray(c.p);c.root.rotation.y=Math.atan2(wave.normal[0],wave.normal[2]);c.body.position.y=.25+Math.sin(c.age*9)*.15;
         if(dist<=step+.001){c.p=[...target];c.home=[...target];c.root.position.fromArray(c.p);c.body.position.y=0;c.mode='idle';c.age=0;c.waveCarry=null;this.splash(c.p);}

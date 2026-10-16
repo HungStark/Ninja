@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import * as T from 'three';
+import { FlightBurstEffects } from '../src/flight-burst-vfx.js';
+const scene=new T.Scene(),effects=new FlightBurstEffects(scene);
+const shot={p:[2,3,4],v:[12,0,-16],size:.4,color:'#ff853a',flightSpeedRatio:1.8};
+effects.trigger(shot,[1,3,5]);effects.update(.06,[shot],0);
+const entry=effects.pool[0];assert.deepEqual(entry.root.position.toArray(),[1,3,5]);assert.deepEqual(entry.wake.position.toArray(),shot.p);
+assert.ok(new T.Vector3(0,0,1).applyQuaternion(entry.wake.quaternion).distanceTo(new T.Vector3(...shot.v).normalize())<1e-8,'Slipstream points along flight');
+const age=entry.age,scale=entry.rings[0].scale.toArray();effects.update(0,[shot],0);assert.equal(entry.age,age);assert.deepEqual(entry.rings[0].scale.toArray(),scale);
+shot.p=[4,3,2];shot.v=[-12,0,16];effects.update(.01,[shot],0);assert.deepEqual(entry.wake.position.toArray(),shot.p);assert.deepEqual(entry.root.position.toArray(),[1,3,5],'Pressure ring stays at burst origin after reflection');
+assert.ok(new T.Vector3(0,0,1).applyQuaternion(entry.wake.quaternion).distanceTo(new T.Vector3(...shot.v).normalize())<1e-8);
+effects.update(0,[shot],2);assert.equal(entry.fan.visible,false);assert.equal(entry.rings[1].visible,false);assert.equal(entry.wake.visible,true);
+effects.update(0,[shot],0,true);assert.equal(entry.fan.visible,false);assert.equal(entry.rings[0].scale.x,1.05);
+effects.update(.01,[],0);assert.equal(entry.wake.visible,false,'No ghost wake after impact');effects.update(.5,[],0);assert.equal(effects.state().active,0);
+for(let i=0;i<80;i++)effects.trigger(shot,[0,0,0]);assert.equal(effects.pool.length,24,'Bounded pool during many simultaneous leaves');assert.equal(scene.children.length,48);
+effects.reset();assert.deepEqual(effects.state(),{triggered:0,active:0,wakes:0,pooled:24});
+console.log('PASS: wind-tear direction/reflection, stationary pressure rings, pause, low quality, reduced motion, impact cleanup, bounded pool and reset.');
