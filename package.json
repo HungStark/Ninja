@@ -40,7 +40,8 @@
     "test:adventure": "node tests/adventure-core.mjs && node tests/campaign-core.mjs && node tests/adventure.cjs",
     "test:world-journey": "node tests/world-journey.cjs",
     "test:training": "node tests/progression-core.mjs && node tests/training-browser.cjs",
-    "test:exploration": "node tests/exploration-camera.cjs"
+    "test:exploration": "node tests/exploration-camera.cjs",
+    "test:locomotion": "node tests/locomotion.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

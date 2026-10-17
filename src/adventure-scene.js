@@ -22,15 +22,34 @@ export function createChibi(coat='#345c63',hair='#252b32',enemy=false){
   box(body,cloth,0,1.99,.356,.8,.15,.06);box(body,metal,0,2,.397,.3,.12,.024);
   box(body,ink,0,1.65,.338,.67,.27,.07);
   for(const x of [-.16,.16]){box(body,ink,x,1.847,.397,.17,.057,.025).rotation.z=x>0?-.13:.13;box(body,mat(enemy?'#e5aa83':'#c4d6bd'),x,1.84,.414,.065,.035,.012);}
-  const arms=[],legs=[];
+  const arms=[],legs=[],knees=[],feet=[];
   for(const side of [-1,1]){
     const arm=new T.Group();arm.position.set(side*.43,1.28,0);body.add(arm);box(arm,cloth,side*.055,-.19,0,.25,.43,.28);box(arm,ink,side*.055,-.43,.03,.22,.21,.24);arms.push(arm);
-    const leg=new T.Group();leg.position.set(side*.21,.73,0);body.add(leg);box(leg,ink,0,-.24,0,.27,.48,.3);box(leg,cloth,0,-.46,.025,.29,.16,.32);box(leg,ink,0,-.64,.075,.31,.19,.48);legs.push(leg);
+    const leg=new T.Group();leg.position.set(side*.21,.73,0);body.add(leg);box(leg,ink,0,-.155,0,.27,.31,.3);
+    const knee=new T.Group();knee.position.y=-.31;leg.add(knee);box(knee,ink,0,-.145,0,.25,.29,.28);box(knee,cloth,0,-.15,.025,.29,.16,.32);
+    const foot=new T.Group();foot.position.y=-.31;knee.add(foot);box(foot,ink,0,-.02,.075,.31,.19,.48);legs.push(leg);knees.push(knee);feet.push(foot);
   }
   box(body,strap,.39,.88,-.12,.23,.3,.25);const sword=box(body,ink,-.26,1.16,-.36,.13,1.5,.12);sword.rotation.z=-.45;
   const scarf=box(body,cloth,-.24,1.4,-.35,.22,.78,.07);scarf.rotation.z=-.3;
   root.scale.setScalar(1.25);
-  return {root,cloth,hair:hairMat,update(time,moving){legs.forEach((l,i)=>l.rotation.x=moving?Math.sin(time*11+i*Math.PI)*.62:0);arms.forEach((a,i)=>a.rotation.x=moving?Math.sin(time*11-i*Math.PI)*-.45:.06);body.position.y=moving?Math.abs(Math.sin(time*11))*.07:Math.sin(time*2)*.025;scarf.rotation.x=moving?-.45+Math.sin(time*9)*.15:Math.sin(time*2)*.07;}};
+  let stride=0,localX=0,localZ=0;
+  return {root,cloth,hair:hairMat,locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,legs:legs.map((l,i)=>({hip:[l.rotation.x,l.rotation.z],knee:knees[i].rotation.x,ankle:feet[i].rotation.x})),lean:[body.rotation.x,body.rotation.z]}),update(time,moving,velocity=null,dt=1/60){
+    // Animate actual travel in the character's local frame, including strafes and backsteps.
+    const yaw=root.rotation.y,vx=moving?(velocity?.x??Math.sin(yaw)*4.6):0,vz=moving?(velocity?.z??Math.cos(yaw)*4.6):0,blend=1-Math.exp(-dt*14);
+    localX+=(Math.cos(yaw)*vx-Math.sin(yaw)*vz-localX)*blend;localZ+=(Math.sin(yaw)*vx+Math.cos(yaw)*vz-localZ)*blend;
+    const speed=Math.hypot(localX,localZ),weight=Math.min(1,speed/3),side=speed>.001?localX/speed:0,forward=speed>.001?localZ/speed:0,lateral=Math.abs(side),back=forward<0?1:0;
+    // Cadence follows distance rather than wall-clock time, so changing direction never resets a step.
+    stride+=speed*dt*(2.4+lateral*.3);
+    legs.forEach((leg,i)=>{const phase=stride+i*Math.PI,swing=Math.sin(phase)*weight,lift=Math.max(0,Math.cos(phase))*weight,knee=lift*(.5+back*.12);
+      leg.position.x=(i===0?-1:1)*(.21+lateral*weight*.045);leg.position.y=.73+lift*.025;
+      leg.rotation.x=-swing*forward*(back?.4:.58)-knee*.48;leg.rotation.z=swing*side*.34;
+      knees[i].rotation.x=knee;feet[i].rotation.x=-leg.rotation.x-knee;feet[i].rotation.z=-leg.rotation.z;
+      arms[i].rotation.x=.06+swing*forward*.3;arms[i].rotation.z=(i===0?.04:-.04)-swing*side*.2;
+    });
+    body.position.y=Math.sin(time*2)*.012*(1-weight)+Math.abs(Math.sin(stride))*.028*weight;
+    body.rotation.x=forward*weight*.045;body.rotation.z=-side*weight*.055+Math.sin(stride)*.018*weight;
+    scarf.rotation.x=-weight*.35+Math.sin(time*(weight>0?9:2))*(.07+weight*.04);
+  }};
 }
 
 export function createAdventureScene(){
@@ -38,7 +57,7 @@ export function createAdventureScene(){
   scene.add(new T.HemisphereLight('#dfede6','#46433f',2.35));
   const sun=new T.DirectionalLight('#ffe5b9',3.1);sun.position.set(-35,65,28);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:180});sun.shadow.bias=-.0005;sun.shadow.normalBias=.03;scene.add(sun);
   const fill=new T.DirectionalLight('#a9cfdf',1.1);fill.position.set(20,25,-35);scene.add(fill);
-  const hero=createChibi();scene.add(hero.root);
+  const hero=createChibi(),previousHeroPosition=new T.Vector3();scene.add(hero.root);
   const obstacles=[],interactives=[],animated=[],citizens=[],party=[],materials=new Map();
   let npc,guard,boss,terrain,foliage,gates=[],randomEnemy=null,current='nameless',time=0,corridors=[];
   let orbitYaw=0,orbitPitch=.2,orbitDistance=4.2;
@@ -123,7 +142,7 @@ export function createAdventureScene(){
     if(['water','fire','lightning','dark'].includes(id)&&!save.bosses?.[id]){const leader=createChibi(v.color,id==='dark'?'#d7c9e1':'#30333c',true);leader.root.position.set(region.boss.x+5,heightAt(region.boss.x+5,region.boss.z+3),region.boss.z+3);leader.root.scale.setScalar(1.65);leader.root.rotation.y=Math.PI;land.add(leader.root);citizens.push(leader);}
     if(['wind','earth','ice','wood','light'].includes(id)){const envoy=createChibi(v.color,'#b7b4a0');envoy.root.position.set(-3,heightAt(-3,8),8);envoy.root.rotation.y=.4;land.add(envoy.root);citizens.push(envoy);}
     if(id==='nameless'&&treatyReady){const table=group(3,7);box(table,M('#6e5944'),0,1.1,0,3,.2,2);for(const s of [-1,1])for(const zz of [-1,1])box(table,M('#514638'),s*1.2,.5,zz*.75,.18,1,.18);box(table,M('#ded2ae'),0,1.23,0,1.3,.03,1);['water','fire','lightning'].forEach((key,index)=>{const rep=createChibi(village(key).color,index===1?'#7e6f67':'#323944');const x=1+index*2,z=9.5;rep.root.position.set(x,heightAt(x,z),z);rep.root.rotation.y=Math.PI;land.add(rep.root);citizens.push(rep);});}
-    hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);const pos=blocked(...save.position)?[0,7]:save.position;hero.root.position.set(pos[0],heightAt(...pos),pos[1]);hero.root.rotation.y=orbitYaw+Math.PI;destination.visible=false;
+    hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);const pos=blocked(...save.position)?[0,7]:save.position;hero.root.position.set(pos[0],heightAt(...pos),pos[1]);previousHeroPosition.copy(hero.root.position);hero.root.rotation.y=orbitYaw+Math.PI;destination.visible=false;
     if(id!=='nameless'&&treatyReady&&!save.campaign?.treatySigned)['water','fire','lightning'].forEach((key,index)=>{const char=createChibi(village(key).color,index===1?'#7e6f67':'#323944'),offset=[[-2,1],[-3,-1],[-1,-3]][index];char.root.position.set(pos[0]+offset[0],heightAt(pos[0]+offset[0],pos[1]+offset[1]),pos[1]+offset[1]);land.add(char.root);party.push({char,offset});});
     batchScenery();
     scene.updateMatrixWorld(true);camera.fov=68;camera.updateProjectionMatrix();followCamera(1,true,false);
@@ -143,8 +162,10 @@ export function createAdventureScene(){
     camera.lookAt(head.clone().addScaledVector(forward,5).addScaledVector(right,.25).add(new T.Vector3(0,-Math.sin(orbitPitch)*4,0)));
   }
   function update(dt,moving,menu=false){
-    time+=dt;if(menu)hero.root.rotation.y=.6;hero.root.position.y=heightAt(hero.root.position.x,hero.root.position.z);hero.update(time,moving);citizens.forEach(c=>c.update(time,false));if(randomEnemy){randomEnemy.root.position.y=heightAt(randomEnemy.root.position.x,randomEnemy.root.position.z);randomEnemy.update(time,true);}
-    for(const {char,offset} of party){const target=new T.Vector3(hero.root.position.x+offset[0],0,hero.root.position.z+offset[1]),p=char.root.position,walking=Math.hypot(p.x-target.x,p.z-target.z)>.2;p.x+=(target.x-p.x)*(1-Math.exp(-dt*3));p.z+=(target.z-p.z)*(1-Math.exp(-dt*3));p.y=heightAt(p.x,p.z);if(walking)char.root.rotation.y=Math.atan2(target.x-p.x,target.z-p.z);char.update(time,walking);}
+    time+=dt;if(menu)hero.root.rotation.y=.6;hero.root.position.y=heightAt(hero.root.position.x,hero.root.position.z);
+    const velocity={x:dt>0?(hero.root.position.x-previousHeroPosition.x)/dt:0,z:dt>0?(hero.root.position.z-previousHeroPosition.z)/dt:0};previousHeroPosition.copy(hero.root.position);
+    hero.update(time,moving,velocity,dt);citizens.forEach(c=>c.update(time,false,null,dt));if(randomEnemy){randomEnemy.root.position.y=heightAt(randomEnemy.root.position.x,randomEnemy.root.position.z);randomEnemy.update(time,true,null,dt);}
+    for(const {char,offset} of party){const target=new T.Vector3(hero.root.position.x+offset[0],0,hero.root.position.z+offset[1]),p=char.root.position,walking=Math.hypot(p.x-target.x,p.z-target.z)>.2;p.x+=(target.x-p.x)*(1-Math.exp(-dt*3));p.z+=(target.z-p.z)*(1-Math.exp(-dt*3));p.y=heightAt(p.x,p.z);if(walking)char.root.rotation.y=Math.atan2(target.x-p.x,target.z-p.z);char.update(time,walking,null,dt);}
     for(const a of animated){if(a.kind==='float'){a.mesh.rotation.y=time*.55;a.mesh.position.y=a.base+Math.sin(time*1.6)*.2;}if(a.kind==='windmill')a.mesh.rotation.z=time*.45;if(a.kind==='halo')a.mesh.rotation.y+=dt*.24;if(a.kind==='boss'){a.mesh.position.y=a.base+Math.sin(time*1.1)*.18;a.mesh.rotation.y=Math.sin(time*.35)*.08;}if(a.kind==='pulse')a.mesh.scale.setScalar(1+Math.sin(time*2)*.08);if(a.kind==='flag')a.mesh.rotation.y=Math.sin(time*2.4)*.15;if(a.kind==='ripple')a.mesh.material.opacity=.76+Math.sin(time)*.04;}
     followCamera(dt,false,menu);destination.rotation.z=time;
     const target=hero.root.position.clone().add(new T.Vector3(0,2,0));
