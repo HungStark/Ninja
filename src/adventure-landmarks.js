@@ -2,9 +2,22 @@ import * as T from 'three';
 
 // These are buildings and silhouettes, rather than a single village template
 // recoloured ten times. All coordinates here are local to a grounded group.
+export function buildGabledRoof(c,g,w,d,eaveY,pitch=.44,material=c.M(c.v.roof),gable=null){
+  const half=w/2+.55,rise=half*Math.tan(pitch),top=eaveY+rise;
+  for(const side of [-1,1]){const panel=c.box(g,material,side*half/2,eaveY+rise/2,0,half/Math.cos(pitch)+.08,.22,d+1.2);panel.rotation.z=-side*pitch;panel.name='roof-slope';}
+  c.box(g,material,0,top+.06,0,.24,.23,d+1.4).name='roof-ridge';
+  if(gable){const edge=.55*Math.tan(pitch),shape=new T.Shape();shape.moveTo(-w/2,-.08);shape.lineTo(w/2,-.08);shape.lineTo(w/2,edge);shape.lineTo(0,rise);shape.lineTo(-w/2,edge);shape.closePath();const geometry=new T.ExtrudeGeometry(shape,{depth:d,bevelEnabled:false});c.mesh(geometry,gable,g,0,eaveY,-d/2).name='roof-gable';}
+  return top;
+}
+
 export function buildHouse(c,x,z,w,d,index){
   const {id,v,group,box,cyl,mesh,M,obstacle}=c,g=group(x,z),wall=M(id==='earth'?'#bf9060':id==='light'?'#ebe1bd':id==='water'?'#9ab8b7':id==='dark'?'#766b83':'#cabda0'),timber=M('#49463f'),roof=M(v.roof),glow=M('#ecc184',.4);
+  g.name='village-house';g.userData.footprint={x,z,w,d};
   const stilt=id==='water'?2.2:id==='wood'?1.5:0,levels=id==='light'||id==='lightning'?2:index%4===0?2:1,h=2.7*levels;
+  if(c.heightAt){const corners=[[-1,-1],[-1,1],[1,-1],[1,1]].map(([sx,sz])=>c.heightAt(x+sx*(w/2+.2),z+sz*(d/2+.2))),low=Math.min(...corners),high=Math.max(...corners,c.heightAt(x,z));g.position.y=high+.04;
+    if(!stilt){const depth=high-low+.32;box(g,M(id==='earth'?'#957454':'#828477'),0,-depth/2,0,w+.3,depth,d+.3).name='house-foundation';}
+    else for(const sx of [-1,1])for(const sz of [-1,1]){const px=sx*w*.42,pz=sz*d*.42,depth=g.position.y-c.heightAt(x+px,z+pz)+.2;box(g,timber,px,-depth/2,pz,.24,depth,.24);}
+  }
   if(id==='earth'){
     for(let k=0;k<levels;k++)box(g,wall,0,1.4+k*2.5,0,w-k*.7,2.8,d-k*.5);
     box(g,roof,0,h+.35,0,w+.5,.35,d+.5);
@@ -12,9 +25,9 @@ export function buildHouse(c,x,z,w,d,index){
     cyl(g,wall,w*.43,h*.7,-d*.25,w*.19,h*1.4,7);
   }else if(id==='ice'){
     box(g,wall,0,1.25,0,w,2.5,d);
-    const peak=mesh(new T.ConeGeometry(1,1,4),roof,g,0,3.4,0);peak.scale.set(w*.82,4.7,d*.82);peak.rotation.y=Math.PI/4;
-    const snow=mesh(new T.ConeGeometry(1,1,4),M('#e7eff0'),g,0,4.3,0);snow.scale.set(w*.67,3.2,d*.67);snow.rotation.y=Math.PI/4;
-    box(g,timber,-w*.31,3.8,-d*.22,.6,4,.6);
+    const peak=mesh(new T.ConeGeometry(1,1,4),roof,g,0,4.4,0);peak.scale.set(w*.82,3.8,d*.82);peak.rotation.y=Math.PI/4;
+    const snow=mesh(new T.ConeGeometry(1,1,4),M('#e7eff0'),g,0,4.85,0);snow.scale.set(w*.65,2.9,d*.65);snow.rotation.y=Math.PI/4;
+    box(g,timber,-w*.31,3.5,-d*.22,.45,2.6,.45);
   }else if(id==='light'){
     box(g,wall,0,h/2,0,w,h,d);box(g,roof,0,h+.2,0,w+1,.35,d+1);
     for(const s of [-1,1])cyl(g,wall,s*(w*.5+.35),h*.45,d*.5,.3,h,8);
@@ -38,17 +51,20 @@ export function buildHouse(c,x,z,w,d,index){
       const dome=mesh(new T.SphereGeometry(w*.65,10,6,0,Math.PI*2,0,Math.PI/2),roof,g,0,h,0);dome.scale.set(1,.8,d/w);
       const flag=box(g,M('#e3d6a8'),w*.3,h+2.7,0,2,1,.04);cyl(g,timber,w*.05,h+1.9,0,.07,4,5);c.animated.push({kind:'flag',mesh:flag});
     }else{
-      for(const s of [-1,1]){const r=box(g,roof,s*w*.26,stilt+h+.65,0,w*.72,.3,d+1.3);r.rotation.z=s*(id==='dark'?.7:.4);}
-      box(g,roof,0,stilt+h+1,0,.25,.25,d+1.7);
-      if(id==='fire')for(const s of [-1,1]){const tip=box(g,roof,s*w*.65,stilt+h+.5,0,w*.3,.22,d+1.1);tip.rotation.z=-s*.35;}
-      if(id==='dark')cyl(g,roof,0,h+2,0,.09,1.6,6);
+      const top=buildGabledRoof(c,g,w,d,stilt+h+.06,id==='dark'?.58:.44,roof,wall);
+      if(id==='fire')for(const s of [-1,1]){const tip=box(g,roof,s*(w/2+.55),stilt+h+.13,0,.7,.2,d+1.2);tip.rotation.z=s*.22;}
+      if(id==='dark')cyl(g,roof,0,top+.7,0,.09,1.4,6);
     }
+    for(let floor=1;floor<=levels;floor++)box(g,timber,0,stilt+floor*2.7-.08,d/2+.045,w+.12,.13,.13);
   }
   box(g,timber,0,stilt+1, d/2+.04,.85,1.95,.12);
-  for(const s of [-1,1])box(g,glow,s*w*.31,stilt+1.65,d/2+.09,.55,.7,.06);
+  for(const side of [-1,1])box(g,timber,side*.49,stilt+1,d/2+.09,.12,2.1,.16);box(g,timber,0,stilt+2.04,d/2+.09,1.1,.13,.16);
+  const windowFloors=['ice','wood'].includes(id)?1:levels;
+  for(let floor=0;floor<windowFloors;floor++)for(const side of [-1,1]){const ww=id==='earth'?w-floor*.7:w,dd=id==='earth'?d-floor*.5:d,y=stilt+1.65+floor*2.5;box(g,timber,side*ww*.31,y,dd/2+.075,.72,.86,.09);box(g,glow,side*ww*.31,y,dd/2+.13,.55,.68,.05);box(g,timber,side*ww*.31,y,dd/2+.17,.045,.7,.035);}
   if(stilt)for(let k=0;k<6;k++)box(g,timber,0,stilt-k*.35,d*.5+.25+k*.3,1.5,.2,.6);
   if(index%3===0){box(g,roof,0,stilt+2.3,d*.5+.7,w,.16,1.6);for(const s of [-1,1])cyl(g,timber,s*w*.4,stilt+1.2,d*.5+1.3,.08,2.4,5);}
   obstacle(x,z,w+.6,d+.6);
+  return g;
 }
 
 export function buildDistrict(c,zone,index){
@@ -93,7 +109,7 @@ export function buildDistrict(c,zone,index){
   index=({fire:[1,1,2,0],water:[0,2,1,3],wind:[0,2,1,3],light:[3,0,1,2],ice:[2,2,1,0],dark:[1,1,3,0]})[id]?.[index]??index;
   if(id==='nameless'){
     if(index===0){giantTree(0,0,24,3.3);for(let k=0;k<6;k++){const a=k*Math.PI/3;box(g,M('#d8c59d'),Math.sin(a)*4,2.6,Math.cos(a)*4,.45,2,.1).rotation.y=a;}}
-    if(index===1){for(let k=0;k<3;k++){const level=box(g,white,0,1.4+k*4,0,8-k*1.2,2.8,7-k);for(const s of [-1,1]){const r=box(g,roof,s*(2-k*.3),3.2+k*4,0,5-k*.6,.35,9-k);r.rotation.z=s*.22;}}}
+    if(index===1){for(let k=0;k<3;k++){box(g,white,0,1.4+k*4,0,8-k*1.2,2.8,7-k);buildGabledRoof(c,g,8-k*1.2,7-k,2.85+k*4,.24,roof,white);}}
     if(index===2){for(let k=0;k<5;k++){const r=mesh(new T.DodecahedronGeometry(3.8-k*.25,0),stone,g,-4+k*2.3,2+k*2,0);r.scale.set(.6,1.5,.75);}portal(7);}
     if(index===3){portal(10);for(let k=0;k<7;k++)box(g,wood,-7+k*2.2,1.2,-4,1.4,2.4,1.4);}
   }

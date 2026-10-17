@@ -212,9 +212,22 @@ for(const [id,leader] of Object.entries(leaders)){
 const hill=(x,z,cx,cz,width,height)=>height*Math.exp(-((x-cx)**2+(z-cz)**2)/(width*width));
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
 
-// Gentle, continuous walking surfaces beneath the dramatic cliffs/set pieces.
-// The plaza is level, and all slopes remain below one metre per walking metre.
-export function terrainHeight(id,x,z) {
+// Rivers share their exact banks and water level with rendering and bridge placement.
+export const LANDSCAPES={
+  nameless:{river:[-18,8,.047,.3,2.6,-.65,.006],hills:[[-40,-30,23,7],[32,-27,21,5],[42,32,20,4]],plain:[19,18,16]},
+  water:{river:[-19,10,.042,0,4.8,-.8,.008],hills:[[-42,-35,22,8],[39,-36,24,5]],plain:[26,21,18]},
+  fire:{river:[30,7,.05,1,2.5,-.45,.009],hills:[[-40,-35,24,8],[45,36,21,5]],plain:[-24,22,15]},
+  lightning:{river:[-28,6,.04,.6,2.2,-.9,.009],hills:[[36,-39,23,8],[-39,35,20,5]],plain:[25,22,14]},
+  earth:{river:[-35,5,.035,1.3,1.8,-1,.006],hills:[[41,-28,22,7],[-46,-38,20,8]],plain:[26,23,17]},
+  wind:{river:[27,9,.038,.7,2.8,-.8,.006],hills:[[-34,-31,24,7],[43,38,22,6]],plain:[-26,24,19]},
+  light:{river:[-24,7,.043,.4,2.8,-.75,.006],hills:[[34,-39,26,8],[-42,34,21,4]],plain:[26,21,17]},
+  ice:{river:[-24,8,.045,.5,3,-.8,.006],hills:[[35,-42,24,9],[-41,-34,22,7]],plain:[27,22,18]},
+  wood:{river:[19,9,.048,-.6,2.8,-.7,.006],hills:[[-38,-33,23,7],[40,38,22,5]],plain:[-26,23,17]},
+  dark:{river:[-26,7,.04,.2,3.3,-.85,.006],hills:[[34,-39,24,9],[-42,35,23,6]],plain:[27,23,17]}
+};
+export function riverAt(id,z){const r=LANDSCAPES[id]?.river;if(!r)return null;return {x:r[0]+Math.sin(z*r[2]+r[3])*r[1],width:r[4]*(1+.1*Math.sin(z*.11+r[3])),y:r[5]+z*r[6],bank:4.5};}
+
+function uplandHeight(id,x,z){
   if(!Number.isFinite(x)||!Number.isFinite(z))return 0;
   let h=0;
   switch(id){
@@ -230,7 +243,21 @@ export function terrainHeight(id,x,z) {
     case 'dark':h=2*Math.cos(x/28)*Math.sin(z/30)+hill(x,z,29,-37,25,7)-3*Math.exp(-(((x+z-10)/22)**2));break;
     default:return 0;
   }
-  return h*.72*smooth((Math.hypot(x,z)-9)/27);
+  const landscape=LANDSCAPES[id],distance=Math.hypot(x,z);
+  for(const [cx,cz,width,height] of landscape.hills)h+=hill(x,z,cx,cz,width,height);
+  h+=.4*Math.sin(x*.19)*Math.sin(z*.16);
+  const [px,pz,radius]=landscape.plain,plain=1-smooth((Math.hypot(x-px,z-pz)-radius*.45)/(radius*.55));
+  h*=1-plain*.6;
+  return h*.9*smooth((distance-8)/17);
+}
+
+// A level village square opens onto meadows, rolling hills and a carved, shallow riverbed.
+export function terrainHeight(id,x,z){
+  if(!Number.isFinite(x)||!Number.isFinite(z)||!LANDSCAPES[id])return 0;
+  const river=riverAt(id,z),distance=Math.abs(x-river.x),upland=Math.max(river.y+.3,uplandHeight(id,x,z)),valley=smooth((distance-river.width-river.bank-1)/8),ground=upland+(river.y+.55+(upland-river.y-.55)*valley-upland)*smooth((Math.hypot(x,z)-8)/7);
+  if(distance<river.width)return river.y-.75*(1-smooth(distance/river.width));
+  if(distance<river.width+river.bank)return river.y+(ground-river.y)*smooth((distance-river.width)/river.bank);
+  return ground;
 }
 
 export function districtAt(id,x,z) {
