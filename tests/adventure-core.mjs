@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {VILLAGES,village,newJourney,readJourney,resolveBattle,findPath,discoverZone,mentorReady,completeLesson} from '../src/adventure-data.js';
 import {REGIONS,WORLD_LIMIT,GATE_RADIUS,ARRIVAL_RADIUS,terrainHeight} from '../src/adventure-world.js';
 import {createAdventureScene} from '../src/adventure-scene.js';
+import {planExpedition} from '../src/adventure-biomes.js';
 import '../game-core.js';
 globalThis.innerWidth=1440;globalThis.innerHeight=960;
 assert.equal(VILLAGES.length,10);
@@ -11,14 +12,14 @@ const world=createAdventureScene();
 const terrainSignatures=new Set(),layoutSignatures=new Set();
 for(const v of VILLAGES){
   const save=newJourney();save.village=v.id;world.load(v.id,save);
-  const region=REGIONS[v.id];assert.equal(region.zones.length,4);assert.equal(region.npcs.length,3);assert.ok(region.boss.hp>200);
-  assert.ok(world.interactives.find(i=>i.kind==='boss'));assert.ok(world.interactives.find(i=>i.kind==='mentor'));assert.equal(world.interactives.filter(i=>i.kind==='landmark').length,4);
+  const region=REGIONS[v.id];assert.ok(region.zones.length>=4);assert.equal(region.npcs.length,3);assert.ok(region.boss.hp>200);
+  assert.ok(world.interactives.find(i=>i.kind==='boss'));assert.ok(world.interactives.find(i=>i.kind==='mentor'));assert.equal(world.interactives.filter(i=>i.kind==='landmark').length,region.zones.length);
   const heights=[];for(let x=-60;x<=60;x+=12)for(let z=-60;z<=60;z+=12)heights.push(terrainHeight(v.id,x,z));
   assert.ok(Math.max(...heights)-Math.min(...heights)>3,`${v.id}: landscape needs elevation changes`);
   terrainSignatures.add(heights.map(n=>n.toFixed(1)).join(','));layoutSignatures.add(JSON.stringify(region.houses));
-  for(const i of world.interactives){const route=findPath([0,7],[i.x,i.z],world.blocked);assert.ok(route.length,`${v.id}: cannot reach ${i.kind}/${i.id}`);for(const p of route)assert.equal(world.blocked(...p),false);}
+  for(const i of world.interactives){const plan=planExpedition([0,7],[i.x,i.z],{id:v.id,routes:world.routes,targetSurface:i.platform,walk:(a,b,key)=>findPath(a,b,world.navigationBlocked(key))});assert.ok(plan,`${v.id}: cannot reach ${i.kind}/${i.id}`);}
   // Arrival at each reciprocal gate must permit walking into the village core.
-  for(const gate of world.gates){const p=[gate.x*ARRIVAL_RADIUS/GATE_RADIUS,gate.z*ARRIVAL_RADIUS/GATE_RADIUS];assert.equal(world.blocked(...p),false,`${v.id} arrival from ${gate.id}`);assert.ok(findPath(p,[0,7],world.blocked).length);}
+  for(const gate of world.gates){const p=[gate.x*world.metrics.arrivalRadius/world.metrics.gateRadius,gate.z*world.metrics.arrivalRadius/world.metrics.gateRadius];assert.equal(world.blocked(...p),false,`${v.id} arrival from ${gate.id}`);assert.ok(planExpedition(p,[0,7],{id:v.id,routes:world.routes,walk:(a,b,key)=>findPath(a,b,world.navigationBlocked(key))}));}
   assert.equal(world.blocked(WORLD_LIMIT+1,0),true);
   const lesson=newJourney();lesson.village=v.id;if(v.id==='nameless')lesson.campaign.treatySigned=true;assert.equal(mentorReady(lesson,v.id),false);assert.equal(completeLesson(lesson,v.id).learned,false);lesson.lessons[v.id]=1;
   for(const id of region.mentor.zoneIds){assert.equal(discoverZone(lesson,v.id,id),true);assert.equal(discoverZone(lesson,v.id,id),false);}

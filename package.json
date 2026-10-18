@@ -42,7 +42,8 @@
     "test:training": "node tests/progression-core.mjs && node tests/training-browser.cjs",
     "test:exploration": "node tests/exploration-camera.cjs",
     "test:locomotion": "node tests/locomotion.cjs",
-    "test:landscape": "node tests/landscape-core.mjs && node tests/landscape-browser.cjs"
+    "test:landscape": "node tests/landscape-core.mjs && node tests/landscape-browser.cjs",
+    "test:biomes": "node tests/biomes-core.mjs && node tests/biomes-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

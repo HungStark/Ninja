@@ -18,6 +18,7 @@ export function buildHouse(c,x,z,w,d,index){
     if(!stilt){const depth=high-low+.32;box(g,M(id==='earth'?'#957454':'#828477'),0,-depth/2,0,w+.3,depth,d+.3).name='house-foundation';}
     else for(const sx of [-1,1])for(const sz of [-1,1]){const px=sx*w*.42,pz=sz*d*.42,depth=g.position.y-c.heightAt(x+px,z+pz)+.2;box(g,timber,px,-depth/2,pz,.24,depth,.24);}
   }
+  if(id==='nameless'&&index%3===0){g.userData.ruined=true;const burnt=M('#49483f'),rubble=M('#8e8874');box(g,rubble,0,.15,0,w+.3,.3,d+.3);for(const side of [-1,1]){box(g,wall,side*w/2,.7,0,.22,1.4,d);box(g,burnt,side*w/2,1.7,-d/2,.19,3.4,.19);}box(g,wall,-w*.2,1.2,-d/2,w*.6,2.4,.25);for(let k=0;k<5;k++){const r=box(g,burnt,-w*.5+k*w/4,2.2,0,.1,.12,d+.4);r.rotation.z=(k-2)*.1;}const remnant=box(g,roof,-w*.3,2.35,0,w*.48,.15,d+.5);remnant.rotation.z=.3;for(let k=0;k<9;k++){const piece=mesh(new T.DodecahedronGeometry(.3,0),rubble,g,Math.sin(k*2.4)*w*.4,.25,Math.cos(k*2.4)*d*.4);piece.scale.y=.5;}obstacle(x,z,w+.6,d+.6);return g;}
   if(id==='earth'){
     for(let k=0;k<levels;k++)box(g,wall,0,1.4+k*2.5,0,w-k*.7,2.8,d-k*.5);
     box(g,roof,0,h+.35,0,w+.5,.35,d+.5);
@@ -63,6 +64,7 @@ export function buildHouse(c,x,z,w,d,index){
   for(let floor=0;floor<windowFloors;floor++)for(const side of [-1,1]){const ww=id==='earth'?w-floor*.7:w,dd=id==='earth'?d-floor*.5:d,y=stilt+1.65+floor*2.5;box(g,timber,side*ww*.31,y,dd/2+.075,.72,.86,.09);box(g,glow,side*ww*.31,y,dd/2+.13,.55,.68,.05);box(g,timber,side*ww*.31,y,dd/2+.17,.045,.7,.035);}
   if(stilt)for(let k=0;k<6;k++)box(g,timber,0,stilt-k*.35,d*.5+.25+k*.3,1.5,.2,.6);
   if(index%3===0){box(g,roof,0,stilt+2.3,d*.5+.7,w,.16,1.6);for(const s of [-1,1])cyl(g,timber,s*w*.4,stilt+1.2,d*.5+1.3,.08,2.4,5);}
+  if(id==='nameless'){for(let k=0;k<4;k++){const crack=box(g,M('#59584a'),w*.35-k*.16,1.1+k*.32,d/2+.19,.035,.5,.018);crack.rotation.z=k%2?.4:-.3;}box(g,M('#65604c'),-w*.38,.7,d/2+.16,.7,1.3,.02);}
   obstacle(x,z,w+.6,d+.6);
   return g;
 }

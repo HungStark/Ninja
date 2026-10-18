@@ -1,4 +1,4 @@
-import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS} from './adventure-world.js';
+import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS,regionMetrics} from './adventure-world.js';
 import {newProgression,readProgression,regionElement,gainExperience,systemLevel,teachAvailable,canLearn,addBooks} from './progression.js';
 export {STARTER_SPELLS,MENTOR_SPELLS} from './adventure-world.js';
 
@@ -28,6 +28,7 @@ export const QUESTS={
   wood:{title:'Lời khẩn của vườn thuốc',enemy:'Kẻ Săn Mộc Ấn',x:31,z:23,location:'Vườn Dược Linh Chi',story:'Kẻ săn Mộc Ấn đang hút sinh lực của Vườn Dược Linh Chi phía đông. Ngăn hắn để những cây thuốc có thể cứu dân làng.'},
   dark:{title:'Ngọn đèn cho người trở về',enemy:'Ảnh nhẫn Không Tên',x:-32,z:23,location:'Phố Đèn Lồng Tím',story:'Ảnh nhẫn Không Tên lần lượt dập đèn ở Phố Đèn Lồng Tím phía tây. Hãy giữ những ngọn đèn còn lại để khách đi muộn tìm được đường về.'}
 };
+for(const id of ['water','fire','lightning','wind','earth','ice','wood']){QUESTS[id].x*=2;QUESTS[id].z*=2;}QUESTS.water.x=82;QUESTS.water.z=38;
 export const CAMPAIGN_REGIONS=Object.freeze(['earth','wind','light','ice','wood']);
 const firstLeaders=['water','fire','lightning'];
 const treatyDelivered=(save,id)=>save.campaign?.deliveries?.includes(id)===true;
@@ -85,7 +86,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#345c63',hair='#252b32') {
-  return {version:1,hero:{name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],progression:newProgression(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+  return {version:1,worldRevision:2,surface:null,expeditions:{},hero:{name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],progression:newProgression(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -94,7 +95,11 @@ export function readJourney(storage) {
     const hex=c=>/^#[\da-f]{6}$/i.test(c);
     const clean=newJourney(s.hero.name,hex(s.hero.coat)?s.hero.coat:'#345c63',hex(s.hero.hair)?s.hero.hair:'#252b32');
     clean.village=s.village;clean.checkpoint=s.checkpoint;
-    clean.position=Array.isArray(s.position)&&s.position.length===2&&s.position.every(n=>Number.isFinite(n)&&Math.abs(n)<=WORLD_LIMIT)?s.position:[0,7];
+    const limit=s.worldRevision===2?regionMetrics(s.village).limit:70;
+    clean.position=Array.isArray(s.position)&&s.position.length===2&&s.position.every(n=>Number.isFinite(n)&&Math.abs(n)<=limit)?[...s.position]:[0,7];
+    if(s.worldRevision!==2&&regionMetrics(s.village).scale===2)clean.position=clean.position.map(n=>n*2);
+    clean.expeditions={};if([1,2,3].includes(s.expeditions?.fire))clean.expeditions.fire=s.expeditions.fire;
+    clean.surface=(s.village==='wind'&&['sky-west','sky-east','sky-north'].includes(s.surface)||s.village==='earth'&&s.surface==='earth-cave'||s.village==='wood'&&s.surface==='heart-tree')?s.surface:null;
     for(const key of ['visited','activated'])clean[key]=[...new Set(['nameless',...(Array.isArray(s[key])?s[key].filter(id=>village(id)):[])])];
     clean.activated=[...new Set([...clean.activated,s.checkpoint])];
     for(const v of VILLAGES){
@@ -167,7 +172,7 @@ export function resolveBattle(save,encounter,victory) {
 // A* over a one-unit grid. Diagonal moves cannot cut across solid corners.
 export function findPath(from,to,blocked) {
   if(!Array.isArray(from)||!Array.isArray(to)||from.length!==2||to.length!==2||![...from,...to].every(Number.isFinite))return [];
-  const grid=WORLD_LIMIT,key=(x,z)=>`${x},${z}`,snap=p=>p.map(Math.round);
+  const grid=blocked.limit||WORLD_LIMIT,key=(x,z)=>`${x},${z}`,snap=p=>p.map(Math.round);
   const start=snap(from),end=snap(to),valid=(x,z)=>Math.abs(x)<=grid&&Math.abs(z)<=grid&&!blocked(x,z);
   if(!valid(...end)||Math.abs(to[0])>grid||Math.abs(to[1])>grid||blocked(...to))return [];
   if(start.some(n=>Math.abs(n)>grid))return [];

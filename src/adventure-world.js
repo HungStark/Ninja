@@ -1,7 +1,8 @@
-// Authored places, people and terrain. Coordinates are local to each 140 m region.
-export const WORLD_LIMIT = 70;
+// Authored places, people and terrain. Base coordinates expand per region below.
+export const WORLD_LIMIT = 140;
 export const GATE_RADIUS = 62;
 export const ARRIVAL_RADIUS = 57;
+export function regionMetrics(id){const scale=['water','fire','lightning','wind','earth','ice','wood'].includes(id)?2:1;return {scale,limit:70*scale,size:140*scale,area:(140*scale)**2,gateRadius:70*scale-8,arrivalRadius:70*scale-13};}
 
 // The journey begins with one gift: water coating for ordinary shuriken.
 export const STARTER_SPELLS = Object.freeze(['water-barrier']);
@@ -212,6 +213,28 @@ for(const [id,leader] of Object.entries(leaders)){
 const hill=(x,z,cx,cz,width,height)=>height*Math.exp(-((x-cx)**2+(z-cz)**2)/(width*width));
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
 
+// Existing place IDs remain stable while the seven great villages expand to 280 x 280 m.
+for(const id of ['water','fire','lightning','wind','earth','ice','wood']){const r=REGIONS[id];for(const zone of r.zones){zone.x*=2;zone.z*=2;zone.radius*=1.4;}for(const n of r.npcs)if(n.kind!=='lore'){n.x*=2;n.z*=2;}r.boss.x*=2;r.boss.z*=2;r.houses=r.houses.map(([x,z,w,d])=>[x*2,z*2,w,d]);}
+REGIONS.nameless.subtitle='Làng biên địa đổ nát · chiến tuyến giữa Thủy, Hỏa và Lôi';
+REGIONS.nameless.npcs[0].dialogue='Thủy, Hỏa và Lôi nhiều lần kéo quân qua đây. Những mái nhà cháy dở và hố đạn là ký ức của người còn sống. Hãy giúp ba làng ngừng chiến.';
+REGIONS.nameless.zones[1].description='Quán trà mất nửa mái sau một trận tập kích. Vết chém và đầu tên còn ghim trên cột gỗ.';
+REGIONS.water.subtitle='Làng chài đại thủy · những bến bè nối các xóm qua sông sâu';
+Object.assign(REGIONS.water.zones[0],{x:78,z:38});Object.assign(REGIONS.water.zones[1],{x:-76,z:46});Object.assign(REGIONS.water.zones[2],{x:-78,z:-62});
+Object.assign(REGIONS.water.npcs[1],{x:74,z:34});Object.assign(REGIONS.water.npcs[2],{x:-78,z:-54});
+Object.assign(REGIONS.fire.boss,{x:62,z:-108});
+const extraZones={
+  water:[['net-islet','Cồn Lưới Bạc',-96,98,'Những giàn lưới phơi quanh cồn nhỏ. Chỉ bè của dân chài mới vượt được nhánh sông phía nam.'],['fishing-harbor','Cảng Cá Bình Minh',104,92,'Thuyền câu, thúng cá và nhà sàn quây quanh bến lớn.'],['pearl-shore','Bãi Ngọc Trai',103,-99,'Người mò trai nghỉ bên thuyền thúng và bãi vỏ sò.'],['reed-estuary','Cửa Sông Lau Trắng',-105,-102,'Những luồng nước rộng chạy qua đồng lau, chia làng chài thành nhiều xóm.']],
+  fire:[['red-cliff','Vách Tro Hồng',88,-72,'Những mấu đá gồ ghề tạo đường leo lên đỉnh núi. Nhấn E ở chân vách, giữ W để leo.'],['summit-lotus','Đỉnh Hồng Liên',88,-96,'Hồng liên quý mọc trên vách núi biệt lập; phải leo mới lên được.'],['lava-quarry','Mỏ Đá Nham',-102,-96,'Thợ rèn lấy đá chịu lửa từ các tầng bazan.'],['ash-outpost','Trạm Gác Tro',104,88,'Một trạm canh xa bên đường vượt núi.']],
+  lightning:[['rain-valley','Thung Lũng Mưa',-106,92,'Mưa rào đi qua cao nguyên theo từng đợt.'],['copper-ridge','Sống Núi Dây Đồng',101,-99,'Dây dẫn sét chạy dọc những cột đá trên đỉnh giông.'],['storm-shelter','Trạm Trú Giông',-103,-98,'Mái che đá cho khách chờ cơn giông qua.'],['thunder-meadow','Đồng Sấm Xa',105,91,'Từ đồng cỏ rộng có thể nhìn sét đánh trên những đỉnh núi.']],
+  wind:[['sky-house-west','Nhà Mây Tây',-92,65,'Ngôi nhà treo dưới chùm bóng bay; leo thang dây để lên sàn.', 'sky-west'],['sky-house-east','Nhà Mây Đông',93,57,'Bóng bay giữ một mái nhà và vườn nhỏ lơ lửng trên không.', 'sky-east'],['sky-house-north','Trạm Gió Trên Mây',38,-99,'Người giữ gió thả thang dây xuống cho khách.', 'sky-north'],['wind-farm','Cánh Đồng Cối Xay',-101,-95,'Những cánh quạt lớn quay giữa biển cỏ.']]
+};
+for(const [id,zones] of Object.entries(extraZones))for(const [key,name,x,z,description,platform] of zones)REGIONS[id].zones.push({id:key,name,x,z,radius:platform?5:13,description,...(platform?{platform}:{} )});
+REGIONS.earth.subtitle='Thành đá đại ngàn · đại hang giữa lòng làng';REGIONS.ice.subtitle='Miền cực địa · biển băng, tuyết trắng và sông băng';REGIONS.wood.subtitle='Rừng cổ thụ · nhà trên cây giữa làng';
+REGIONS.earth.zones.push({id:'great-cave',name:'Đại Hang Địa Tâm',x:0,z:-32,radius:16,platform:'earth-cave',description:'Một hang động rộng, có nhũ đá, hồ ngầm và tinh khoáng. Đi xuống từ cửa hang giữa làng.'},{id:'stone-wastes',name:'Bãi Đá Cổ',x:103,z:98,radius:16,description:'Những khối sa thạch lớn lộ ra giữa nền đất sỏi.'});
+REGIONS.ice.zones.push({id:'polar-sea',name:'Biển Băng Cực Bắc',x:-98,z:111,radius:18,description:'Băng trôi và những tảng băng xanh phủ một vùng biển đóng băng.'},{id:'snow-ridge',name:'Sống Núi Tuyết',x:106,z:-104,radius:15,description:'Tuyết bị gió nén thành các triền dốc. Hãy thận trọng vì nền băng hơi trơn.'});
+REGIONS.wood.zones.push({id:'heart-tree-house',name:'Nhà Trên Cây Trung Tâm',x:5,z:0,radius:5,platform:'heart-tree',description:'Thang dây dẫn lên ngôi nhà giữa những cành cổ thụ.'},{id:'deep-canopy',name:'Rừng Tán Kín',x:104,z:-103,radius:18,description:'Những tầng cây rậm che bầu trời; đường đất len giữa các rễ lớn.'});
+REGIONS.earth.zones.push({id:'cave-crystals',name:'Mạch Tinh Khoáng',x:11,z:-40,radius:4,platform:'earth-cave',description:'Tinh khoáng phát sáng trong nhánh sâu của Đại Hang.'});
+
 // Rivers share their exact banks and water level with rendering and bridge placement.
 export const LANDSCAPES={
   nameless:{river:[-18,8,.047,.3,2.6,-.65,.006],hills:[[-40,-30,23,7],[32,-27,21,5],[42,32,20,4]],plain:[19,18,16]},
@@ -225,7 +248,11 @@ export const LANDSCAPES={
   wood:{river:[19,9,.048,-.6,2.8,-.7,.006],hills:[[-38,-33,23,7],[40,38,22,5]],plain:[-26,23,17]},
   dark:{river:[-26,7,.04,.2,3.3,-.85,.006],hills:[[34,-39,24,9],[-42,35,23,6]],plain:[27,23,17]}
 };
-export function riverAt(id,z){const r=LANDSCAPES[id]?.river;if(!r)return null;return {x:r[0]+Math.sin(z*r[2]+r[3])*r[1],width:r[4]*(1+.1*Math.sin(z*.11+r[3])),y:r[5]+z*r[6],bank:4.5};}
+function baseRiverAt(id,z){const r=LANDSCAPES[id]?.river;if(!r)return null;return {x:r[0]+Math.sin(z*r[2]+r[3])*r[1],width:r[4]*(1+.1*Math.sin(z*.11+r[3])),y:r[5]+z*r[6],bank:4.5};}
+export function riverAt(id,z){const scale=regionMetrics(id).scale,r=baseRiverAt(id,z/scale);return r?{...r,x:r.x*scale,width:r.width*scale,bank:r.bank*scale,...(id==='water'?{y:-.7}:{} )}:null;}
+export function waterwayAt(x,z){const main=riverAt('water',z),east=46+Math.sin(z*.025)*9,north=69+Math.sin(x*.028)*7;return [{distance:Math.abs(x-main.x),width:main.width,y:main.y,axis:'z',center:main.x},{distance:Math.abs(x-east),width:7,y:-.7,axis:'z',center:east},{distance:Math.abs(z-north),width:6,y:-.7,axis:'x',center:north}].sort((a,b)=>(a.distance-a.width)-(b.distance-b.width))[0];}
+export function waterSector(x,z){const main=riverAt('water',z),east=46+Math.sin(z*.025)*9,north=69+Math.sin(x*.028)*7;return `${x<main.x?'west':x>east?'east':'center'}-${z>north?'north':'south'}`;}
+export function isDeepWater(x,z){const w=waterwayAt(x,z);return w.distance<w.width*.9;}
 
 function uplandHeight(id,x,z){
   if(!Number.isFinite(x)||!Number.isFinite(z))return 0;
@@ -252,13 +279,14 @@ function uplandHeight(id,x,z){
 }
 
 // A level village square opens onto meadows, rolling hills and a carved, shallow riverbed.
-export function terrainHeight(id,x,z){
+function baseTerrainHeight(id,x,z){
   if(!Number.isFinite(x)||!Number.isFinite(z)||!LANDSCAPES[id])return 0;
-  const river=riverAt(id,z),distance=Math.abs(x-river.x),upland=Math.max(river.y+.3,uplandHeight(id,x,z)),valley=smooth((distance-river.width-river.bank-1)/8),ground=upland+(river.y+.55+(upland-river.y-.55)*valley-upland)*smooth((Math.hypot(x,z)-8)/7);
+  const river=baseRiverAt(id,z),distance=Math.abs(x-river.x),upland=Math.max(river.y+.3,uplandHeight(id,x,z)),valley=smooth((distance-river.width-river.bank-1)/8),ground=upland+(river.y+.55+(upland-river.y-.55)*valley-upland)*smooth((Math.hypot(x,z)-8)/7);
   if(distance<river.width)return river.y-.75*(1-smooth(distance/river.width));
   if(distance<river.width+river.bank)return river.y+(ground-river.y)*smooth((distance-river.width)/river.bank);
   return ground;
 }
+export function terrainHeight(id,x,z){const scale=regionMetrics(id).scale;let h=baseTerrainHeight(id,x/scale,z/scale);if(id==='water'){const w=waterwayAt(x,z);h=Math.max(h,-.15);if(w.distance<w.width)h=w.y-.9*(1-smooth(w.distance/w.width));else if(w.distance<w.width+6)h=w.y+(h-w.y)*smooth((w.distance-w.width)/6);}if(id==='fire'){const d=Math.hypot(x-88,z+96);if(d<12)h=36;else if(d<24)h=Math.max(h,36*(1-smooth((d-12)/12)));}if(id==='ice')h+=(-.6-h)*smooth((z-86)/8);return h;}
 
 export function districtAt(id,x,z) {
   const zones=REGIONS[id]?.zones;

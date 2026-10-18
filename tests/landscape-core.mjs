@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as T from 'three';
 import {buildHouse,buildGabledRoof} from '../src/adventure-landmarks.js';
 import {createAdventureScene} from '../src/adventure-scene.js';
-import {LANDSCAPES,terrainHeight,riverAt} from '../src/adventure-world.js';
+import {LANDSCAPES,terrainHeight,riverAt,waterwayAt} from '../src/adventure-world.js';
 import {newJourney,village} from '../src/adventure-data.js';
 
 globalThis.innerWidth=1440;globalThis.innerHeight=960;
@@ -20,9 +20,9 @@ const world=createAdventureScene();let crossings=0;
 for(const id of Object.keys(LANDSCAPES)){
   const save=newJourney();save.village=id;world.load(id,save);
   assert.ok(world.scene.getObjectsByProperty('name','village-house').length>=15,`${id}: houses remain present`);
-  for(let z=-65;z<=65;z+=5){const r=riverAt(id,z);assert.ok(terrainHeight(id,r.x,z)<r.y-.7,'the river has a real channel beneath the water');assert.ok(Math.abs(terrainHeight(id,r.x+r.width,z)-r.y)<1e-6,'water edge meets its bank');assert.ok(terrainHeight(id,r.x+r.width+r.bank,z)>r.y+.2);}
+  for(let z=-65;z<=65;z+=5){const r=riverAt(id,z);assert.ok(terrainHeight(id,r.x,z)<r.y-.7,'the river has a real channel beneath the water');const edge=id==='water'?waterwayAt(r.x+r.width,z):null,bank=id==='water'?waterwayAt(r.x+r.width+r.bank,z):null;if(!edge||edge.axis==='z'&&Math.abs(edge.center-r.x)<.001)assert.ok(Math.abs(terrainHeight(id,r.x+r.width,z)-r.y)<1e-6,'water edge meets its bank outside canal junctions');if(!bank||bank.distance>bank.width+5)assert.ok(terrainHeight(id,r.x+r.width+r.bank,z)>r.y+.2);}
   assert.ok(Math.abs(terrainHeight(id,0,0))<1e-9);assert.ok(Math.abs(terrainHeight(id,0,7))<1e-9,'the initial village square stays level');
-  let low=Infinity,high=-Infinity;for(let x=-60;x<=60;x+=6)for(let z=-60;z<=60;z+=6){const h=terrainHeight(id,x,z);low=Math.min(low,h);high=Math.max(high,h);}assert.ok(high-low>8,`${id}: visible elevation relief`);
+  let low=Infinity,high=-Infinity;const bound=60*world.metrics.scale;for(let x=-bound;x<=bound;x+=6)for(let z=-bound;z<=bound;z+=6){const h=terrainHeight(id,x,z);low=Math.min(low,h);high=Math.max(high,h);}assert.ok(high-low>8,`${id}: visible elevation relief`);
   const river=world.scene.getObjectByName('river-surface');assert.ok(river);const pos=river.geometry.attributes.position;for(let i=0;i<pos.count;i++){const r=riverAt(id,pos.getZ(i));assert.ok(Math.abs(pos.getY(i)-r.y-.025)<1e-5,'water follows its level instead of draping over hills');}
   if(id==='ice')for(let z=-60;z<=60;z+=6){const r=riverAt(id,z);assert.ok(world.heightAt(r.x,z)>=r.y,'characters stand on the frozen surface');}
   assert.ok(world.scene.getObjectByName('river-gravel').count>200);assert.ok(world.scene.getObjectByName('landscape-boulders').count>0);
