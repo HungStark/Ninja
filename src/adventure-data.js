@@ -7,7 +7,7 @@ export const VILLAGES = [
   {id:'fire',name:'Làng Hỏa',glyph:'火',element:'fire',color:'#e47646',ground:'#635344',path:'#b19474',roof:'#813b32',sky:'#797f89',tree:'#ac593b',title:'Tro tàn dưới cổng đỏ',desc:'Mái ngói đỏ, đá núi lửa và những rặng phong giữa thung lũng khói.',x:25,y:22,polygon:'9,15 25,6 34,9 43,25 38,34 40,38 30,38 15,32 7,28',links:['water','nameless','wind','earth']},
   {id:'water',name:'Làng Thủy',glyph:'水',element:'water',color:'#62c5de',ground:'#506f73',path:'#a9b5a3',roof:'#365c76',sky:'#91bdce',tree:'#6b9c9b',title:'Bến sương và thủy lộ',desc:'Nhà sàn xanh lam, hồ nước lặng và những bến đá chìm trong sương.',x:51,y:15,polygon:'34,9 47,3 61,6 69,12 65,24 58,28 44,25',links:['fire','lightning','nameless']},
   {id:'lightning',name:'Làng Lôi',glyph:'雷',element:'lightning',color:'#bc9beb',ground:'#615c75',path:'#9995a3',roof:'#594070',sky:'#77768e',tree:'#79709c',title:'Lôi đài trên cao nguyên',desc:'Tháp dẫn sét, tinh thạch tím và vách đá trên cao nguyên giông.',x:79,y:24,polygon:'69,12 76,6 84,14 91,17 95,32 85,38 75,34 65,37 60,28 65,24',links:['water','nameless','light']},
-  {id:'nameless',name:'Làng Vô Danh',glyph:'◉',element:'wind',color:'#dfc58c',ground:'#657a61',path:'#b9a68b',roof:'#394b4b',sky:'#a5c2c3',tree:'#647c54',title:'Nơi bước chân bắt đầu',desc:'Một ngôi làng lặng dưới chân núi. Những mái ngói cũ gìn giữ bí mật của chín hệ.',x:50,y:32,polygon:'44,25 58,28 60,28 65,37 56,39 49,37 40,38 38,34 43,25',links:['fire','water','lightning','wind']},
+  {id:'nameless',name:'Làng Vô Danh',glyph:'◉',element:'wind',color:'#dfc58c',ground:'#78765a',path:'#8e8064',roof:'#655b43',sky:'#a5ada5',tree:'#797a53',title:'Nơi bước chân bắt đầu',desc:'Những mái tranh rách, đường đất mòn và bia mộ vô danh còn lưu dấu chiến tranh giữa Thủy, Hỏa và Lôi.',x:50,y:32,polygon:'44,25 58,28 60,28 65,37 56,39 49,37 40,38 38,34 43,25',links:['fire','water','lightning','wind']},
   {id:'earth',name:'Làng Thổ',glyph:'土',element:'earth',color:'#d7ae72',ground:'#8b7051',path:'#c9aa7a',roof:'#6c4c38',sky:'#c2ad8e',tree:'#8b8153',title:'Thành đá giữa hẻm núi',desc:'Bậc đá sa thạch, nhà đất và những khối núi dựng đứng bảo vệ làng.',x:21,y:47,polygon:'7,28 15,32 30,38 34,48 33,56 27,59 9,59 3,43',links:['fire','wind','ice']},
   {id:'wind',name:'Làng Phong',glyph:'風',element:'wind',color:'#91d0b0',ground:'#69876a',path:'#bec4a0',roof:'#426d62',sky:'#a7ccc6',tree:'#72996c',title:'Đồng cỏ kể chuyện gió',desc:'Guồng gió, đồng cỏ rộng và những dải cờ bạc màu trên đồi.',x:51,y:49,polygon:'40,38 49,37 56,39 65,37 68,46 64,57 59,61 43,63 38,66 33,56 34,48 30,38',links:['nameless','fire','earth','ice','wood','light','dark']},
   {id:'light',name:'Làng Quang',glyph:'☀',element:'light',color:'#f4d57e',ground:'#a69a6a',path:'#ddd1a4',roof:'#9f8044',sky:'#d5ceb0',tree:'#b7ae70',title:'Thánh điện của bình minh',desc:'Đá trắng, tháp mặt trời và những cột pha lê hứng ánh sáng vàng.',x:82,y:49,polygon:'65,37 75,34 85,38 95,32 98,49 94,61 86,63 74,58 64,57 68,46',links:['lightning','wind','dark']},
@@ -86,7 +86,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#345c63',hair='#252b32') {
-  return {version:1,worldRevision:2,surface:null,expeditions:{},hero:{name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],progression:newProgression(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+  return {version:1,worldRevision:2,surface:null,elevation:null,expeditions:{},hero:{name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],progression:newProgression(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -98,6 +98,7 @@ export function readJourney(storage) {
     const limit=s.worldRevision===2?regionMetrics(s.village).limit:70;
     clean.position=Array.isArray(s.position)&&s.position.length===2&&s.position.every(n=>Number.isFinite(n)&&Math.abs(n)<=limit)?[...s.position]:[0,7];
     if(s.worldRevision!==2&&regionMetrics(s.village).scale===2)clean.position=clean.position.map(n=>n*2);
+    clean.elevation=s.worldRevision===2&&Number.isFinite(s.elevation)&&s.elevation>=-100&&s.elevation<=200?s.elevation:null;
     clean.expeditions={};if([1,2,3].includes(s.expeditions?.fire))clean.expeditions.fire=s.expeditions.fire;
     clean.surface=(s.village==='wind'&&['sky-west','sky-east','sky-north'].includes(s.surface)||s.village==='earth'&&s.surface==='earth-cave'||s.village==='wood'&&s.surface==='heart-tree')?s.surface:null;
     for(const key of ['visited','activated'])clean[key]=[...new Set(['nameless',...(Array.isArray(s[key])?s[key].filter(id=>village(id)):[])])];

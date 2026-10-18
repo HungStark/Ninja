@@ -14,7 +14,8 @@ export const REGIONS = {
       {id:'terraces',name:'Ruộng Bậc Thang',x:-27,z:23,radius:12,description:'Những thửa ruộng men theo sườn đồi, mỗi tầng giữ một mảnh trời.'},
       {id:'tea-road',name:'Đường Trà Cổ',x:29,z:18,radius:11,description:'Quán trà bên đường buôn cũ còn giữ câu chuyện của những người không tên.'},
       {id:'old-bridge',name:'Cầu Đá Vọng Âm',x:-30,z:-25,radius:12,description:'Cây cầu đá bắc qua khe cạn. Tiếng bước chân dội lại từ vách núi xa.'},
-      {id:'bell-shrine',name:'Đồi Chuông Gió',x:25,z:-37,radius:13,description:'Một mái đình đơn độc giữa vòng chuông gió, nơi người xưa gửi lời chúc bình an.'}
+      {id:'bell-shrine',name:'Đồi Chuông Gió',x:25,z:-37,radius:13,description:'Một mái đình đơn độc giữa vòng chuông gió, nơi người xưa gửi lời chúc bình an.'},
+      {id:'war-cemetery',name:'Nghĩa Trang Vô Danh',x:-43,z:45,radius:11,description:'Mười sáu nấm mộ dưới những bia đá nghiêng, bên hàng rào gỗ mục. Người làng chôn cả dân thường lẫn người lính của Thủy, Hỏa và Lôi ở đây; nhiều tấm bia vẫn chưa có tên. Những chén hương cũ nhắc rằng hòa bình phải đến trước khi nghĩa trang rộng thêm.'}
     ],
     npcs:[
       {id:'nameless-lan',name:'Bà Lan',role:'Người giữ ký ức',kind:'lore',x:-6,z:5,dialogue:'Làng này từng đón người của cả chín hệ. Muốn biết một miền đất, hãy rời quảng trường và nghe những người sống ở đó.'},

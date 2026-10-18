@@ -43,7 +43,9 @@
     "test:exploration": "node tests/exploration-camera.cjs",
     "test:locomotion": "node tests/locomotion.cjs",
     "test:landscape": "node tests/landscape-core.mjs && node tests/landscape-browser.cjs",
-    "test:biomes": "node tests/biomes-core.mjs && node tests/biomes-browser.cjs"
+    "test:biomes": "node tests/biomes-core.mjs && node tests/biomes-browser.cjs",
+    "test:ruins": "node tests/nameless-ruins.cjs",
+    "test:movement": "node tests/movement-core.mjs && node tests/movement-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {buildThatchedRuin,buildWarCemetery} from './adventure-ruins.js';
 
 // These are buildings and silhouettes, rather than a single village template
 // recoloured ten times. All coordinates here are local to a grounded group.
@@ -18,7 +19,7 @@ export function buildHouse(c,x,z,w,d,index){
     if(!stilt){const depth=high-low+.32;box(g,M(id==='earth'?'#957454':'#828477'),0,-depth/2,0,w+.3,depth,d+.3).name='house-foundation';}
     else for(const sx of [-1,1])for(const sz of [-1,1]){const px=sx*w*.42,pz=sz*d*.42,depth=g.position.y-c.heightAt(x+px,z+pz)+.2;box(g,timber,px,-depth/2,pz,.24,depth,.24);}
   }
-  if(id==='nameless'&&index%3===0){g.userData.ruined=true;const burnt=M('#49483f'),rubble=M('#8e8874');box(g,rubble,0,.15,0,w+.3,.3,d+.3);for(const side of [-1,1]){box(g,wall,side*w/2,.7,0,.22,1.4,d);box(g,burnt,side*w/2,1.7,-d/2,.19,3.4,.19);}box(g,wall,-w*.2,1.2,-d/2,w*.6,2.4,.25);for(let k=0;k<5;k++){const r=box(g,burnt,-w*.5+k*w/4,2.2,0,.1,.12,d+.4);r.rotation.z=(k-2)*.1;}const remnant=box(g,roof,-w*.3,2.35,0,w*.48,.15,d+.5);remnant.rotation.z=.3;for(let k=0;k<9;k++){const piece=mesh(new T.DodecahedronGeometry(.3,0),rubble,g,Math.sin(k*2.4)*w*.4,.25,Math.cos(k*2.4)*d*.4);piece.scale.y=.5;}obstacle(x,z,w+.6,d+.6);return g;}
+  if(id==='nameless'){buildThatchedRuin(c,g,w,d,index);obstacle(x,z,w+.8,d+.8);return g;}
   if(id==='earth'){
     for(let k=0;k<levels;k++)box(g,wall,0,1.4+k*2.5,0,w-k*.7,2.8,d-k*.5);
     box(g,roof,0,h+.35,0,w+.5,.35,d+.5);
@@ -64,12 +65,12 @@ export function buildHouse(c,x,z,w,d,index){
   for(let floor=0;floor<windowFloors;floor++)for(const side of [-1,1]){const ww=id==='earth'?w-floor*.7:w,dd=id==='earth'?d-floor*.5:d,y=stilt+1.65+floor*2.5;box(g,timber,side*ww*.31,y,dd/2+.075,.72,.86,.09);box(g,glow,side*ww*.31,y,dd/2+.13,.55,.68,.05);box(g,timber,side*ww*.31,y,dd/2+.17,.045,.7,.035);}
   if(stilt)for(let k=0;k<6;k++)box(g,timber,0,stilt-k*.35,d*.5+.25+k*.3,1.5,.2,.6);
   if(index%3===0){box(g,roof,0,stilt+2.3,d*.5+.7,w,.16,1.6);for(const s of [-1,1])cyl(g,timber,s*w*.4,stilt+1.2,d*.5+1.3,.08,2.4,5);}
-  if(id==='nameless'){for(let k=0;k<4;k++){const crack=box(g,M('#59584a'),w*.35-k*.16,1.1+k*.32,d/2+.19,.035,.5,.018);crack.rotation.z=k%2?.4:-.3;}box(g,M('#65604c'),-w*.38,.7,d/2+.16,.7,1.3,.02);}
   obstacle(x,z,w+.6,d+.6);
   return g;
 }
 
 export function buildDistrict(c,zone,index){
+  if(zone.id==='war-cemetery')return buildWarCemetery(c,zone);
   const {id,v,group,box,cyl,mesh,M,animated}=c;
   // Place the large silhouette beside its arrival square. The square itself
   // stays open, with an unobstructed line of travel back to the village core.
@@ -80,10 +81,10 @@ export function buildDistrict(c,zone,index){
   const mill=(px,pz,h=10)=>{mesh(new T.ConeGeometry(2.2,h,8),white,g,px,h/2,pz);const rotor=new T.Group();rotor.position.set(px,h-1,pz+1.2);g.add(rotor);for(let k=0;k<4;k++){const arm=new T.Group();arm.rotation.z=k*Math.PI/2;rotor.add(arm);box(arm,wood,0,2.7,0,.18,6,.14);box(arm,white,.5,2.9,0,1.1,3.3,.08);}animated.push({kind:'windmill',mesh:rotor});};
   const portal=(h=12)=>{for(const s of [-1,1]){pillar(s*4,0,h,1,white);box(g,roof,s*1.8,h+.2,0,5.4,.5,1.5).rotation.z=s*.1;}box(g,roof,0,h+1,0,11,.5,2);};
   if(zone.id==='terraces'){
-    for(let k=0;k<5;k++){box(g,M('#91866a'),0,k*.8,-k*2.7,16-k*1.5,.8,3.8);box(g,M('#a2b66e'),0,.43+k*.8,-k*2.7,15.6-k*1.5,.12,3.5);for(let j=0;j<7;j++)box(g,M('#738d55'),-6+j*1.8,.7+k*.8,-k*2.7,.1,.45,2.8);}return;
+    g.name='walkable-terraces';for(let k=0;k<5;k++){const w=16-k*1.5,zz=-k*2.7,top=.43+k*.8,bottom=Math.min(-.5,...[-1,1].flatMap(sx=>[-1,1].map(sz=>c.heightAt(x+sx*w/2,z+zz+sz*1.9)-g.position.y)))-.1,body=box(g,M('#80765d'),0,(top+bottom)/2,zz,w,top-bottom,3.8),soil=box(g,M('#898366'),0,top,zz,w-.4,.12,3.5);c.solidMesh?.(body,{name:'terrace-wall'});c.solidMesh?.(soil,{name:'terrace-soil'});for(let j=0;j<7;j++){if((j+k)%4===0)continue;const row=box(g,M('#756e4c'),-6+j*1.8,.61+k*.8,zz,.08,.24,1.8+(j%3)*.3);row.rotation.y=.07*Math.sin(j+k);}}return;
   }
   if(zone.id==='old-bridge'){
-    for(let k=0;k<11;k++){const t=k/10,h=2+Math.sin(t*Math.PI)*3;box(g,stone,0,h,-10+k*2,5,.6,2.1);for(const s of [-1,1])box(g,stone,s*2.4,h+1,-10+k*2,.3,1.5,1.8);}for(const s of [-1,1])cyl(g,stone,0,2,s*7,1,4,7);return;
+    g.name='ruined-stone-bridge';for(let k=0;k<11;k++){const t=k/10,h=2+Math.sin(t*Math.PI)*3,deck=box(g,k%3?stone:M('#70735f'),Math.sin(k)*.08,h,-10+k*2,4.8,.6,2.1);c.solidMesh?.(deck,{name:'stone-bridge-deck'});for(const s of [-1,1]){if((k+(s===1?1:0))%4===1)continue;const rail=box(g,stone,s*2.4,h+.4,-10+k*2,.35,k%3===0?.45:1.1,1.7);rail.rotation.z=s*(k%3)*.07;c.solidMesh?.(rail,{name:'stone-bridge-rail',stepable:false});}if(k%2===0)box(g,M('#62694b'),1.65,.32+h,-10+k*2,.7,.035,1.4);}for(const s of [-1,1]){const pier=cyl(g,stone,0,2,s*7,1,4,7);c.solidMesh?.(pier,{name:'stone-bridge-pier'});}return;
   }
   if(zone.id==='maple'){
     for(let k=0;k<5;k++){const px=Math.sin(k*2.4)*7,pz=Math.cos(k*2.4)*5,h=6+k%2*2;cyl(g,wood,px,h/2,pz,.4,h,7);for(let j=0;j<3;j++){const crown=mesh(new T.IcosahedronGeometry(3.5,0),M(j%2?'#bf593b':'#db8850'),g,px+(j-1)*1.8,h+1,pz);crown.scale.y=.6;}}return;
@@ -111,9 +112,9 @@ export function buildDistrict(c,zone,index){
   index=({fire:[1,1,2,0],water:[0,2,1,3],wind:[0,2,1,3],light:[3,0,1,2],ice:[2,2,1,0],dark:[1,1,3,0]})[id]?.[index]??index;
   if(id==='nameless'){
     if(index===0){giantTree(0,0,24,3.3);for(let k=0;k<6;k++){const a=k*Math.PI/3;box(g,M('#d8c59d'),Math.sin(a)*4,2.6,Math.cos(a)*4,.45,2,.1).rotation.y=a;}}
-    if(index===1){for(let k=0;k<3;k++){box(g,white,0,1.4+k*4,0,8-k*1.2,2.8,7-k);buildGabledRoof(c,g,8-k*1.2,7-k,2.85+k*4,.24,roof,white);}}
+    if(index===1)return buildHouse(c,x,z,7,5,31);
     if(index===2){for(let k=0;k<5;k++){const r=mesh(new T.DodecahedronGeometry(3.8-k*.25,0),stone,g,-4+k*2.3,2+k*2,0);r.scale.set(.6,1.5,.75);}portal(7);}
-    if(index===3){portal(10);for(let k=0;k<7;k++)box(g,wood,-7+k*2.2,1.2,-4,1.4,2.4,1.4);}
+    if(index===3){for(const s of [-1,1]){const post=box(g,wood,s*3.4,3.1,0,.45,6.2,.45);post.rotation.z=s*.06;}const lintel=box(g,roof,-.3,6.1,0,8,.45,1);lintel.rotation.z=-.08;box(g,roof,2.6,.24,1.3,3.1,.3,.6).rotation.y=.4;for(let k=0;k<7;k++){const fallen=box(g,wood,-7+k*2.2,.42,-4,1.2,.8,1.2);fallen.rotation.z=Math.sin(k)*.16;}for(let k=0;k<3;k++)mesh(new T.DodecahedronGeometry(.6,0),stone,g,k-1,.3,2);}
   }
   if(id==='fire'){
     if(index===0){const cone=mesh(new T.ConeGeometry(13,23,10,1,true),M('#55443f'),g,0,9,0);const crater=ring(g,4.2,20,M('#ed7d3c',.9));crater.rotation.x=Math.PI/2;for(let k=0;k<5;k++){const lava=box(g,M('#db6b31',1),Math.sin(k*2)*4,5+k*2,Math.cos(k*2)*4,.7,9,.15);lava.rotation.z=.15+k*.12;}}
