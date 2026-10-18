@@ -91,6 +91,7 @@ export function buildDistrict(c,zone,index){
   }
   if(zone.id==='lotus'||zone.id==='frozen-lake'||zone.id==='mirror-pool'){
     const water=M(zone.id==='mirror-pool'?'#514868':zone.id==='frozen-lake'?'#91c7d7':'#6caaaa',.1),pool=mesh(new T.CylinderGeometry(10,10,.12,48),water,g,0,.08,0);pool.scale.z=.75;
+    pool.userData.noCollision=zone.id!=='frozen-lake';
     if(zone.id==='lotus')for(let k=0;k<18;k++){const a=k*2.4,r=2+k%6;const leaf=mesh(new T.CylinderGeometry(.9,.9,.04,8),M('#7d9b77'),g,Math.sin(a)*r,.2,Math.cos(a)*r*.7);mesh(new T.OctahedronGeometry(.32),M('#ebd9d0'),g,leaf.position.x,.5,leaf.position.z);}
     if(zone.id==='mirror-pool'){const moon=mesh(new T.TorusGeometry(3,.35,6,30),M('#b9acd0',.5),g,0,.24,0);moon.rotation.x=-Math.PI/2;}
     if(zone.id==='frozen-lake')for(let k=0;k<5;k++){const line=box(g,M('#d3e6e9'),Math.sin(k*2)*4,.17,Math.cos(k*2)*3,.06,.03,5);line.rotation.y=k;}
