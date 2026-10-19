@@ -225,7 +225,7 @@ Object.assign(REGIONS.water.npcs[1],{x:74,z:34});Object.assign(REGIONS.water.npc
 Object.assign(REGIONS.fire.boss,{x:62,z:-108});
 const extraZones={
   water:[['net-islet','Cồn Lưới Bạc',-96,98,'Những giàn lưới phơi quanh cồn nhỏ. Chỉ bè của dân chài mới vượt được nhánh sông phía nam.'],['fishing-harbor','Cảng Cá Bình Minh',104,92,'Thuyền câu, thúng cá và nhà sàn quây quanh bến lớn.'],['pearl-shore','Bãi Ngọc Trai',103,-99,'Người mò trai nghỉ bên thuyền thúng và bãi vỏ sò.'],['reed-estuary','Cửa Sông Lau Trắng',-105,-102,'Những luồng nước rộng chạy qua đồng lau, chia làng chài thành nhiều xóm.']],
-  fire:[['red-cliff','Vách Tro Hồng',88,-72,'Những mấu đá gồ ghề tạo đường leo lên đỉnh núi. Nhấn E ở chân vách, giữ W để leo.'],['summit-lotus','Đỉnh Hồng Liên',88,-96,'Hồng liên quý mọc trên vách núi biệt lập; phải leo mới lên được.'],['lava-quarry','Mỏ Đá Nham',-102,-96,'Thợ rèn lấy đá chịu lửa từ các tầng bazan.'],['ash-outpost','Trạm Gác Tro',104,88,'Một trạm canh xa bên đường vượt núi.']],
+  fire:[['red-cliff','Vách Tro Hồng',88,-67,'Các bậc đá được đục vào sườn núi, nối nhau bằng những khúc ngoặt. Có thể tự đi bằng WASD hoặc nhấn E ở chân vách rồi giữ W; Space để nhảy và rời dẫn đường.'],['summit-lotus','Đỉnh Hồng Liên',88,-96,'Hồng liên quý mọc trên vách núi biệt lập; phải leo mới lên được.'],['lava-quarry','Mỏ Đá Nham',-102,-96,'Thợ rèn lấy đá chịu lửa từ các tầng bazan.'],['ash-outpost','Trạm Gác Tro',104,88,'Một trạm canh xa bên đường vượt núi.']],
   lightning:[['rain-valley','Thung Lũng Mưa',-106,92,'Mưa rào đi qua cao nguyên theo từng đợt.'],['copper-ridge','Sống Núi Dây Đồng',101,-99,'Dây dẫn sét chạy dọc những cột đá trên đỉnh giông.'],['storm-shelter','Trạm Trú Giông',-103,-98,'Mái che đá cho khách chờ cơn giông qua.'],['thunder-meadow','Đồng Sấm Xa',105,91,'Từ đồng cỏ rộng có thể nhìn sét đánh trên những đỉnh núi.']],
   wind:[['sky-house-west','Nhà Mây Tây',-92,65,'Ngôi nhà treo dưới chùm bóng bay; leo thang dây để lên sàn.', 'sky-west'],['sky-house-east','Nhà Mây Đông',93,57,'Bóng bay giữ một mái nhà và vườn nhỏ lơ lửng trên không.', 'sky-east'],['sky-house-north','Trạm Gió Trên Mây',38,-99,'Người giữ gió thả thang dây xuống cho khách.', 'sky-north'],['wind-farm','Cánh Đồng Cối Xay',-101,-95,'Những cánh quạt lớn quay giữa biển cỏ.']]
 };
@@ -289,7 +289,7 @@ function baseTerrainHeight(id,x,z){
   if(distance<river.width+river.bank)return river.y+(ground-river.y)*smooth((distance-river.width)/river.bank);
   return ground;
 }
-export function terrainHeight(id,x,z){const scale=regionMetrics(id).scale;let h=baseTerrainHeight(id,x/scale,z/scale);if(id==='water'){const w=waterwayAt(x,z);h=Math.max(h,-.15);if(w.distance<w.width)h=w.y-4.5*(1-smooth(w.distance/w.width));else if(w.distance<w.width+6)h=w.y+(h-w.y)*smooth((w.distance-w.width)/6);}if(id==='fire'){const d=Math.hypot(x-88,z+96);if(d<12)h=36;else if(d<24)h=Math.max(h,36*(1-smooth((d-12)/12)));}if(id==='ice')h+=(-.6-h)*smooth((z-86)/8);return h;}
+export function terrainHeight(id,x,z){const scale=regionMetrics(id).scale;let h=baseTerrainHeight(id,x/scale,z/scale);if(id==='water'){const w=waterwayAt(x,z);h=Math.max(h,-.15);if(w.distance<w.width)h=w.y-4.5*(1-smooth(w.distance/w.width));else if(w.distance<w.width+6)h=w.y+(h-w.y)*smooth((w.distance-w.width)/6);}if(id==='ice')h+=(-.6-h)*smooth((z-86)/8);return h;}
 
 export function districtAt(id,x,z) {
   const zones=REGIONS[id]?.zones;

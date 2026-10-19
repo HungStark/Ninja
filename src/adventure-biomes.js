@@ -2,6 +2,7 @@ import * as T from 'three';
 import {REGIONS,riverAt,waterSector,waterwayAt,regionMetrics} from './adventure-world.js';
 import {buildHouse} from './adventure-landmarks.js';
 import {buildTreeHouse} from './adventure-treehouse.js';
+import {buildFireCliff} from './adventure-cliff.js';
 
 export function traversalDefinitions(id){
   if(id==='water'){
@@ -11,7 +12,7 @@ export function traversalDefinitions(id){
     for(const [name,x] of [['west',-94],['central',0],['east',96]]){const z=69+Math.sin(x*.028)*7;routes.push({id:`north-${name}`,name:'Bè qua Cửa Sông',kind:'raft',from:[x,z-7.5],to:[x,z+7.5]});}
     return routes;
   }
-  if(id==='fire')return [{id:'red-cliff',name:'Leo Vách Tro Hồng',kind:'climb',from:[88,-70],to:[88,-87],top:36,speed:4}];
+  if(id==='fire')return [{id:'red-cliff',name:'Bậc đá Vách Tro Hồng',kind:'stairs',from:[88,-70],to:[88,-87],top:36,speed:4}];
   if(id==='earth')return [{id:'earth-cave',name:'Lối xuống Đại Hang',kind:'cave',from:[0,-12],to:[0,-20],top:-12,platform:{id:'earth-cave',x:0,z:-32,width:42,depth:50,ellipse:true}}];
   if(id==='wood')return [{id:'heart-tree',name:'Cầu thang lên nhà cổ thụ',kind:'stairs',from:[9,3],to:[9,3],rise:17,speed:4.2,spiral:{x:5,z:0,radius:5,angle:Math.atan2(4,3),turns:2},platform:{id:'heart-tree',x:5,z:0,width:12,depth:12}}];
   if(id==='wind')return REGIONS.wind.zones.filter(z=>z.platform).map((z,i)=>({id:z.platform,name:`Thang dây · ${z.name}`,kind:'ladder',from:[z.x,z.z+4.4],to:[z.x,z.z+4.4],rise:20+i*3,platform:{id:z.platform,x:z.x,z:z.z,width:10,depth:10}}));
@@ -32,11 +33,13 @@ export function buildBiome(c,routes){
   const {id,land,box,cyl,mesh,M,heightAt,animated}=c,fixtures=[];
   const beam=(parent,material,a,b,width=.09)=>{const delta=b.clone().sub(a),o=box(parent,material,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,width,width,delta.length());o.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),delta.normalize());return o;};
   const raft=()=>{const g=new T.Group();g.name='fishing-raft';for(let k=-3;k<=3;k++){const pole=cyl(g,M('#b4a46f'),k*.32,0,0,.18,3.4,7);pole.rotation.x=Math.PI/2;}for(const z of [-1,1])box(g,M('#605841'),0,.15,z,2.6,.12,.14);cyl(g,M('#705f49'),.8,1.8,.5,.065,3.5,6);box(g,M('#d1c29b'),.8,2.4,.5,1.5,1.5,.04);land.add(g);return g;};
-  for(const r of routes){r.fromY=heightAt(...r.from);r.toY=r.top??(r.rise?r.fromY+r.rise:heightAt(...r.to));
+  for(const r of routes){r.fromY=heightAt(...r.from);r.toY=r.top??(r.rise?r.fromY+r.rise:heightAt(...r.to));if(r.id==='red-cliff')buildFireCliff(c,r);
     for(const side of [0,1]){const p=side?r.to:r.from,y=side?r.toY:r.fromY;fixtures.push({kind:'traversal',id:`${r.id}:${side}`,routeId:r.id,side,x:p[0],z:p[1],y,label:r.kind==='raft'?r.name:side?'Đi xuống · '+r.name:r.name,platform:side?r.platform?.id:null});}
     if(r.kind==='raft'){
       r.boat=raft();r.boat.visible=false;
       for(const p of [r.from,r.to]){const w=waterwayAt(...p),y=w.y+.35;for(let j=-2;j<=2;j++)box(land,M('#877457'),p[0]+j*.45,y-.1,p[1],.42,.2,3.3);for(const sx of [-1,1])cyl(land,M('#554c3c'),p[0]+sx*1.25,y+.1,p[1],.1,2.3,6);const idle=raft();idle.position.set(p[0],w.y+.18,p[1]);r.idleBoats??=[];r.idleBoats.push(idle);}
+    }else if(r.id==='red-cliff'){
+      for(let k=0;k<9;k++){const a=k*2.4,p=mesh(new T.OctahedronGeometry(.28),M('#e09861',.3),land,88+Math.sin(a)*3,36.5,-96+Math.cos(a)*3);p.scale.y=.5;}
     }else if(r.kind==='climb'){
       const rock=M('#6c5650'),rope=M('#a89974');
       for(let k=0;k<30;k++){const t=k/29,x=r.from[0]+(r.to[0]-r.from[0])*t,y=r.fromY+(r.toY-r.fromY)*t,z=r.from[1]+(r.to[1]-r.from[1])*t;for(const side of [-1,1]){const grip=mesh(new T.DodecahedronGeometry(.42,0),rock,land,x+side*.65,y,z+.2);grip.scale.set(1.1,.5,.8);grip.userData.noCollision=true;}if(k%5===0)cyl(land,rope,x,y,z+.4,.065,1.5,5);}
@@ -66,7 +69,7 @@ export function buildBiome(c,routes){
       if(id==='wind')for(let k=0;k<7;k++){const a=k*Math.PI*2/7,px=p.x+Math.sin(a)*3.3,pz=p.z+Math.cos(a)*2.8,balloon=mesh(new T.SphereGeometry(2.4,12,9),M(['#c5a36a','#789e91','#c77d6a'][k%3]),land,px,y+11+(k%2)*1.8,pz);balloon.scale.y=1.3;animated.push({kind:'balloon',mesh:balloon,base:balloon.position.y});beam(land,M('#b7ad86'),new T.Vector3(p.x+(px-p.x)*.65,y+3,p.z+(pz-p.z)*.65),new T.Vector3(px,balloon.position.y-2.8,pz),.045);}
       for(const side of [-1,1])beam(land,M('#b9a477'),new T.Vector3(r.from[0]+side*.5,r.fromY,r.from[1]),new T.Vector3(r.to[0]+side*.5,y,r.to[1]),.055);
       for(let yy=r.fromY+.4;yy<y;yy+=.42)box(land,M('#887354'),r.from[0],yy,r.from[1],1.12,.09,.14);
-      box(land,M('#9a7952'),p.x-3,y+.3,p.z+3,1,.6,.7);box(land,M('#d2c89e'),p.x-3,y+.64,p.z+3,.6,.06,.45);
+      box(land,M('#9a7952'),p.x-3.65,y+.3,p.z+3,1,.6,.7);box(land,M('#d2c89e'),p.x-3.65,y+.64,p.z+3,.6,.06,.45);
     }
   }
   if(id==='water'){

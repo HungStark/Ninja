@@ -1,0 +1,14 @@
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs/promises');
+(async()=>{
+ const {createAdventureScene}=await import('../src/adventure-scene.js'),{newJourney}=await import('../src/adventure-data.js');global.innerWidth=1440;global.innerHeight=960;
+ const model=createAdventureScene(),save=newJourney();model.load('nameless',save);
+ const home=model.scene.getObjectsByProperty('name','village-house').find(h=>h.userData.footprint.w<6&&!model.blocked(h.position.x-.2,h.position.z+h.userData.footprint.d/2+3));assert.ok(home);save.position=[home.position.x-.2,home.position.z+home.userData.footprint.d/2+3];
+ const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+ try{
+  const page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(s=>localStorage.setItem('anhoa-adventure-v1',JSON.stringify(s)),save);
+  await page.goto('file:///'+process.cwd().replaceAll('\\','/')+'/index.html?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#continueJourney').click();
+  const advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t),state=()=>page.evaluate(()=>__AN_HOA__.adventure());await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await advance(.2);const start=await state();assert.ok(Math.hypot(start.position[0]-save.position[0],start.position[1]-save.position[1])<.1);
+  await page.keyboard.down('w');await advance(3);await page.keyboard.up('w');await page.keyboard.down('s');await advance(3);await page.keyboard.up('s');const backed=await state();assert.ok(backed.position[1]>save.position[1]-1,'can back out after pushing into a ruined door');
+  await page.keyboard.press('Escape');await fs.mkdir('test-results/world-fixes',{recursive:true});await page.screenshot({path:'test-results/world-fixes/unstuck-menu.png'});await page.locator('#dialogActions button').filter({hasText:'Thoát kẹt'}).click();await advance(.2);const recovered=await state();assert.equal(recovered.phase,'explore');assert.equal(recovered.save.village,'nameless');assert.equal(recovered.save.gold,backed.save.gold);assert.deepEqual(recovered.save.progression,backed.save.progression);assert.ok(Math.hypot(recovered.position[0]-backed.position[0],recovered.position[1]-backed.position[1])>1,'manual recovery really leaves the current corner');await page.screenshot({path:'test-results/world-fixes/after-unstuck.png'});assert.deepEqual(errors,[]);console.log('PASS: real keyboard doorway push/backstep, Escape > Thoát kẹt, actual recovery movement and unchanged currency/progression.');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

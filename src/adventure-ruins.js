@@ -9,36 +9,31 @@ export function buildThatchedRuin(c,g,w,d,index){
   const shell=new T.Group();shell.name='thatched-ruin';g.add(shell);
   box(shell,dark,0,.09,0,w,.15,d);
   const beam=(a,b,r=.09,material=timber)=>{const p=new T.Vector3(...a),q=new T.Vector3(...b),v=q.clone().sub(p),o=mesh(new T.CylinderGeometry(r*.7,r,v.length(),5),material,shell,...p.clone().add(q).multiplyScalar(.5).toArray());o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),v.normalize());return o;};
-  // A real open doorway and two empty window frames, with plaster left around them.
-  const door=.96,window=.68,wx=w*.33,front=d/2;
+  // Closed exterior walls: each plaster face is authored once. The former lower
+  // side strips overlapped the tall wall panels and fought for the same depth.
+  const door=1.35,window=.68,wx=w*.33,front=d/2;
+  box(shell,plaster[index%3],0,h/2,front,w,h,.23).name='ruin-front-wall';
+  box(shell,plaster[1],0,h/2,-d/2,w,h,.26).name='ruin-rear-wall';
   for(const s of [-1,1]){
-    const left=s<0?-w/2:door/2,right=s<0?-door/2:w/2,cx=(left+right)/2;
-    box(shell,plaster[index%3],cx,.52,front,right-left,1.04,.23);
-    box(shell,plaster[(index+1)%3],cx,h-.3,front,right-left,.6,.25);
+    box(shell,dark,s*wx,1.66,front+.137,window,1.04,.035);
     for(const px of [s*wx-window/2,s*wx+window/2])box(shell,timber,px,1.66,front+.055,.09,1.06,.18);
     for(const yy of [1.14,2.18])box(shell,raw,s*wx,yy,front+.07,window+.18,.1,.18);
-    const widths=[Math.abs(left-(s*wx-window/2)),Math.abs(right-(s*wx+window/2))];
-    box(shell,plaster[index%3],left+widths[0]/2,1.62,front,widths[0],1.16,.23);
-    box(shell,plaster[(index+1)%3],right-widths[1]/2,1.62,front,widths[1],1.16,.23);
     const shutter=box(shell,timber,s*(wx+.32),1.52,front+.18,.3,.78,.055);shutter.rotation.z=s*.27;shutter.rotation.y=s*.35;
     box(shell,timber,s*(door/2+.04),1.06,front+.06,.12,2.15,.19);
   }
   box(shell,timber,0,2.2,front+.06,1.2,.15,.22);
-  const doorLeaf=box(shell,raw,.28,.83,front+.33,.5,1.62,.09);doorLeaf.rotation.set(.09,.65,-.17);
-  for(let k=0;k<3;k++)box(shell,timber,.1+k*.16,.84,front+.38,.018,1.45,.015).rotation.z=-.17;
-  // Rear windows matter too: cottages can be approached from every direction.
-  for(const s of [-1,1])box(shell,plaster[1],s*(w/4+.22),h/2,-d/2,w/2-.44,h,.26);
-  box(shell,plaster[0],0,.5,-d/2,.9,1,.26);box(shell,plaster[1],0,h-.25,-d/2,.9,.5,.26);
+  box(shell,raw,0,1.055,front+.17,door,2.08,.09).name='ruin-closed-door';
+  for(let k=0;k<6;k++)box(shell,timber,-door/2+.12+k*.22,1.055,front+.223,.018,2.02,.016);
+  // Recessed dark windows retain the abandoned silhouette without entry gaps.
+  box(shell,dark,0,1.67,-d/2-.153,.9,1.05,.036);
   for(const s of [-1,1])box(shell,timber,s*.46,1.67,-d/2-.06,.1,1.15,.17);
   for(const yy of [1.1,2.23])box(shell,timber,0,yy,-d/2-.06,1.02,.1,.17);
   box(shell,timber,.08,1.62,-d/2-.06,.055,1.05,.1).rotation.z=.14;
   for(const s of [-1,1]){
-    // One collapsed side section reveals the wattle lattice and the interior.
-    box(shell,plaster[(index+1)%3],s*w/2,.45,0,.25,.9,d);
-    box(shell,plaster[index%3],s*w/2,h/2,-d*.31,.25,h,d*.38);
-    if(s===-1)box(shell,plaster[2],s*w/2,h/2,d*.31,.25,h,d*.38);
-    for(let k=0;k<5;k++)beam([s*w/2,.35,-d*.15+k*d*.11],[s*w/2,h-.15,-d*.15+k*d*.11],.025,raw);
-    for(let k=0;k<4;k++)box(shell,raw,s*w/2,.8+k*.39,.1,.035,.035,d*.7);
+    box(shell,plaster[(index+1)%3],s*w/2,h/2,0,.25,h,d-.27).name='ruin-side-wall';
+    // Exposed wattle sits beyond the plaster surface rather than inside it.
+    for(let k=0;k<5;k++)beam([s*(w/2+.16),.35,-d*.15+k*d*.11],[s*(w/2+.16),h-.15,-d*.15+k*d*.11],.025,raw);
+    for(let k=0;k<4;k++)box(shell,raw,s*(w/2+.18),.8+k*.39,.1,.035,.035,d*.7);
     for(const zz of [-d/2,d/2])beam([s*w/2,0,zz],[s*w/2+(s===1?.08:0),h+.1,zz],.11);
     beam([s*w/2,h,front],[0,h+rise,front],.09);
   }

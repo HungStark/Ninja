@@ -15,12 +15,17 @@ export function colliderFromGeometry(geometry,matrix,name){
   const bounds=new T.Box3().setFromPoints(vertices),size=bounds.getSize(new T.Vector3()),dims=[size.x,size.y,size.z].sort((a,b)=>a-b);if(dims[2]<.7||dims[1]<.12||size.x*size.y*size.z<.025)return null;
   const polygon=hull(vertices);if(polygon.length<3)return null;const triangles=[],index=geometry.index,total=index?.count??vertices.length;
   for(let i=0;i<total;i+=3){const a=vertices[index?index.getX(i):i],b=vertices[index?index.getX(i+1):i+1],c=vertices[index?index.getX(i+2):i+2],den=cross(a,b,c);if(Math.abs(den)>1e-8)triangles.push({a,b,c,den});}
+  // Large rock faces used to scan every triangle for each body/camera probe.
+  // Static XZ buckets keep the exact surface while only testing local faces.
+  const buckets=triangles.length>24?new Map():null,cell=Math.max(.5,Math.max(size.x,size.z)/16);
+  if(buckets)for(const t of triangles){const minX=Math.floor((Math.min(t.a.x,t.b.x,t.c.x)-1e-6)/cell),maxX=Math.floor((Math.max(t.a.x,t.b.x,t.c.x)+1e-6)/cell),minZ=Math.floor((Math.min(t.a.z,t.b.z,t.c.z)-1e-6)/cell),maxZ=Math.floor((Math.max(t.a.z,t.b.z,t.c.z)+1e-6)/cell);for(let x=minX;x<=maxX;x++)for(let z=minZ;z<=maxZ;z++){const key=x+','+z;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(t);}}
   let lastX=NaN,lastZ=NaN,last;
   const sample=(x,z)=>{
     if(x===lastX&&z===lastZ)return last;lastX=x;lastZ=z;let point={x,z},inside=true,best=Infinity,closest;
     for(let i=0;i<polygon.length;i++){const a=polygon[i],b=polygon[(i+1)%polygon.length];if(cross(a,b,point)<-1e-7)inside=false;const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz))),p={x:a.x+t*dx,z:a.z+t*dz},d=(x-p.x)**2+(z-p.z)**2;if(d<best){best=d;closest=p;}}
     if(!inside)point=closest;let bottom=Infinity,top=-Infinity;
-    for(const {a,b,c,den} of triangles){const u=cross(point,b,c)/den,v=cross(a,point,c)/den,w=1-u-v;if(u>=-1e-6&&v>=-1e-6&&w>=-1e-6){const y=a.y*u+b.y*v+c.y*w;bottom=Math.min(bottom,y);top=Math.max(top,y);}}
+    const candidates=buckets?buckets.get(Math.floor(point.x/cell)+','+Math.floor(point.z/cell))||[]:triangles;
+    for(const {a,b,c,den} of candidates){const u=cross(point,b,c)/den,v=cross(a,point,c)/den,w=1-u-v;if(u>=-1e-6&&v>=-1e-6&&w>=-1e-6){const y=a.y*u+b.y*v+c.y*w;bottom=Math.min(bottom,y);top=Math.max(top,y);}}
     if(!Number.isFinite(top)){bottom=bounds.min.y;top=bounds.max.y;}else if(top-bottom<1e-5)bottom=bounds.min.y;
     return last={bottom,top};
   };

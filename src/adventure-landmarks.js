@@ -1,6 +1,8 @@
 import * as T from 'three';
 import {buildThatchedRuin,buildWarCemetery} from './adventure-ruins.js';
 import {buildVolcano} from './adventure-volcano.js';
+import {detailVillageHouse} from './adventure-house-details.js';
+import {HOUSE_WIDTH_SCALE,houseShell} from './adventure-building-scale.js';
 
 // These are buildings and silhouettes, rather than a single village template
 // recoloured ten times. All coordinates here are local to a grounded group.
@@ -12,15 +14,25 @@ export function buildGabledRoof(c,g,w,d,eaveY,pitch=.44,material=c.M(c.v.roof),g
   return top;
 }
 
-export function buildHouse(c,x,z,w,d,index){
-  const {id,v,group,box,cyl,mesh,M,obstacle}=c,g=group(x,z),wall=M(id==='earth'?'#bf9060':id==='light'?'#ebe1bd':id==='water'?'#9ab8b7':id==='dark'?'#766b83':'#cabda0'),timber=M('#49463f'),roof=M(v.roof),glow=M('#ecc184',.4);
-  g.name='village-house';g.userData.footprint={x,z,w,d};
+export function buildHouse(c,x,z,w,d,index,yaw=0){
+  w*=HOUSE_WIDTH_SCALE;d*=HOUSE_WIDTH_SCALE;
+  const {id,v,group,box,cyl,mesh,M,obstacle}=c,root=group(x,z),wall=c.surfaces?.wallVariants?.[index%3]||c.surfaces?.wall||M(id==='earth'?'#bf9060':id==='light'?'#ebe1bd':id==='water'?'#9ab8b7':id==='dark'?'#766b83':'#cabda0'),timber=c.surfaces?.wood||M('#49463f'),roof=c.surfaces?.roof||M(v.roof),glow=M('#ecc184',.4);let g=root;
+  g.name='village-house';g.userData.footprint={x,z,w,d,yaw};g.rotation.y=yaw;
+  const at=(lx,lz)=>[x+Math.cos(yaw)*lx+Math.sin(yaw)*lz,z-Math.sin(yaw)*lx+Math.cos(yaw)*lz];
   const stilt=id==='water'?2.2:id==='wood'?1.5:0,levels=id==='light'||id==='lightning'?2:index%4===0?2:1,h=2.7*levels;
-  if(c.heightAt){const corners=[[-1,-1],[-1,1],[1,-1],[1,1]].map(([sx,sz])=>c.heightAt(x+sx*(w/2+.2),z+sz*(d/2+.2))),low=Math.min(...corners),high=Math.max(...corners,c.heightAt(x,z));g.position.y=high+.04;
-    if(!stilt){const depth=high-low+.32;box(g,M(id==='earth'?'#957454':'#828477'),0,-depth/2,0,w+.3,depth,d+.3).name='house-foundation';}
-    else for(const sx of [-1,1])for(const sz of [-1,1]){const px=sx*w*.42,pz=sz*d*.42,depth=g.position.y-c.heightAt(x+px,z+pz)+.2;box(g,timber,px,-depth/2,pz,.24,depth,.24);}
+  if(c.heightAt){const corners=[[-1,-1],[-1,1],[1,-1],[1,1]].map(([sx,sz])=>c.heightAt(...at(sx*(w/2+.2),sz*(d/2+.2)))),low=Math.min(...corners),high=Math.max(...corners,c.heightAt(x,z));g.position.y=high+.04;
+    if(!stilt){const depth=high-low+.32;box(g,c.surfaces?.stone||M(id==='earth'?'#957454':'#828477'),0,-depth/2,0,w+.3,depth,d+.3).name='house-foundation';}
+    else for(const sx of [-1,1])for(const sz of [-1,1]){const px=sx*w*.42,pz=sz*d*.42,depth=g.position.y-c.heightAt(...at(px,pz))+.2;box(g,timber,px,-depth/2,pz,.24,depth,.24);}
   }
-  if(id==='nameless'){buildThatchedRuin(c,g,w,d,index);obstacle(x,z,w+.8,d+.8);return g;}
+  g=houseShell(root,stilt);
+  if(id==='nameless'){
+    buildThatchedRuin(c,g,w,d,index);root.userData.ruined=true;root.userData.style=g.userData.style;root.userData.doorWidth=1.35;root.userData.closedBuilding=true;
+    // Decorative splinters and masonry never form little collision pockets.
+    // A single oriented volume blocks the entire cottage, including its door.
+    g.userData.noCollision=true;
+    const height=(2.65+(index%3)*.16)*g.scale.y,body=box(root,timber,0,height/2-.1,0,w+.5,height+.2,d+.55);body.name='closed-house-body';body.visible=false;c.solidMesh(body,{name:'closed-house-body',stepable:false});
+    obstacle(x,z,w+.8,d+.8);return root;
+  }
   if(id==='earth'){
     for(let k=0;k<levels;k++)box(g,wall,0,1.4+k*2.5,0,w-k*.7,2.8,d-k*.5);
     box(g,roof,0,h+.35,0,w+.5,.35,d+.5);
@@ -47,7 +59,7 @@ export function buildHouse(c,x,z,w,d,index){
     for(let k=0;k<5;k++)box(g,timber,-w*.6+k*w*.3,stilt-.15,d*.65,.15,.2,d*.5);
     box(g,timber,0,stilt-.2,0,w*1.6,.24,d*1.5);
   }else{
-    if(stilt){for(const sx of [-1,1])for(const sz of [-1,1])cyl(g,timber,sx*w*.42,stilt/2,sz*d*.42,.15,stilt,6);box(g,timber,0,stilt,0,w+1,.25,d+1);}
+    if(stilt){for(const sx of [-1,1])for(const sz of [-1,1])cyl(root,timber,sx*w*.42,stilt/2,sz*d*.42,.15,stilt,6);box(root,timber,0,stilt,0,w+1,.25,d+1);}
     box(g,wall,0,stilt+h/2,0,w,h,d);
     for(const sx of [-1,1])for(const sz of [-1,1])box(g,timber,sx*w/2,stilt+h/2,sz*d/2,.17,h+.2,.17);
     if(id==='wind'){
@@ -60,14 +72,15 @@ export function buildHouse(c,x,z,w,d,index){
     }
     for(let floor=1;floor<=levels;floor++)box(g,timber,0,stilt+floor*2.7-.08,d/2+.045,w+.12,.13,.13);
   }
-  box(g,timber,0,stilt+1, d/2+.04,.85,1.95,.12);
-  for(const side of [-1,1])box(g,timber,side*.49,stilt+1,d/2+.09,.12,2.1,.16);box(g,timber,0,stilt+2.04,d/2+.09,1.1,.13,.16);
+  box(g,timber,0,stilt+1, d/2+.04,1.25,1.95,.12);
+  for(const side of [-1,1])box(g,timber,side*.7,stilt+1,d/2+.09,.12,2.1,.16);box(g,timber,0,stilt+2.04,d/2+.09,1.55,.13,.16);
   const windowFloors=['ice','wood'].includes(id)?1:levels;
   for(let floor=0;floor<windowFloors;floor++)for(const side of [-1,1]){const ww=id==='earth'?w-floor*.7:w,dd=id==='earth'?d-floor*.5:d,y=stilt+1.65+floor*2.5;box(g,timber,side*ww*.31,y,dd/2+.075,.72,.86,.09);box(g,glow,side*ww*.31,y,dd/2+.13,.55,.68,.05);box(g,timber,side*ww*.31,y,dd/2+.17,.045,.7,.035);}
-  if(stilt)for(let k=0;k<6;k++)box(g,timber,0,stilt-k*.35,d*.5+.25+k*.3,1.5,.2,.6);
+  if(stilt)for(let k=0;k<6;k++)box(root,timber,0,stilt-k*.35,d*.5+.25+k*.3,1.8,.2,.6);
   if(index%3===0){box(g,roof,0,stilt+2.3,d*.5+.7,w,.16,1.6);for(const s of [-1,1])cyl(g,timber,s*w*.4,stilt+1.2,d*.5+1.3,.08,2.4,5);}
-  obstacle(x,z,w+.6,d+.6);
-  return g;
+  detailVillageHouse(c,g,{w,d,h,stilt,index});
+  obstacle(x,z,Math.abs(Math.cos(yaw))*(w+.6)+Math.abs(Math.sin(yaw))*(d+.6),Math.abs(Math.sin(yaw))*(w+.6)+Math.abs(Math.cos(yaw))*(d+.6));
+  return root;
 }
 
 export function buildDistrict(c,zone,index){
@@ -121,7 +134,7 @@ export function buildDistrict(c,zone,index){
   if(id==='fire'){
     if(index===0){const dx=x-zone.x,dz=z-zone.z,distance=Math.hypot(dx,dz);if(distance<20){g.position.x=zone.x+dx/distance*20;g.position.z=zone.z+dz/distance*20;g.position.y=c.heightAt(g.position.x,g.position.z);}g.userData.landmarkId=zone.id;buildVolcano(c,g);}
     if(index===1){for(let k=0;k<3;k++){cyl(g,M('#444447'),k*3-3,5+k%2*2,0,1.8,10+k%2*4,6);cyl(g,M('#302f32'),k*3-3,11+k%2*4,0,.8,4,7);}box(g,M('#dc782f',.8),0,.5,4,10,.25,2);}
-    if(index===2){for(let k=0;k<4;k++){const arch=new T.Group();arch.position.z=k*3.3;g.add(arch);for(const s of [-1,1])box(arch,roof,s*3,3,0,.5,6,.5);box(arch,roof,0,6,0,8,.4,1);}}
+    if(index===2){g.name='fire-grounded-gate-walk';for(let k=0;k<4;k++){const zz=k*3.3,feet=[-1,1].map(s=>c.heightAt(x+s*3,z+zz)-g.position.y),beamY=Math.max(...feet)+6;for(let j=0;j<2;j++){const bottom=feet[j]-.25,top=beamY+.1,post=box(g,roof,(j?1:-1)*3,(bottom+top)/2,zz,.5,top-bottom,.5);post.name='grounded-gate-post';}box(g,roof,0,beamY,zz,8,.4,1);}}
     if(index===3){portal(12);for(const s of [-1,1]){mesh(new T.ConeGeometry(2.6,7,6),M('#ea8a42',.5),g,s*7,4,0);pillar(s*7,0,1.7,3,M('#3f3937'));}}
   }
   if(id==='water'){
