@@ -183,6 +183,8 @@ body:not(.playing)>header,body:not(.playing)>#hud{visibility:hidden}
   #startScreen .loadout-slot b{font-size:21px;line-height:23px}
   #startScreen #loadoutBalance{margin:7px 0}
 }
+/* Encounter names can wrap without floating over the health values. */
+.enemy-status #enemyElement{float:none;display:block;margin-top:5px;line-height:1.5;letter-spacing:.7px;overflow-wrap:anywhere}
 @media(max-width:620px){
   #startScreen{padding:35px 10px}#startScreen .scroll-book{height:calc(100dvh - 70px);--roller:22px;--trim:22px}
   .scroll-paper{inset-inline:12px}.scroll-roller:before,.scroll-roller:after{height:18px}.scroll-roller:before{top:-17px}.scroll-roller:after{bottom:-17px}

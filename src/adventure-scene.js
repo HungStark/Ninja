@@ -10,6 +10,9 @@ import {registerSceneryColliders,colliderFromGeometry} from './adventure-collide
 import {createVillageSurfaces} from './adventure-materials.js';
 import {buildVillageSettlement} from './adventure-settlements.js';
 import {HOUSE_WIDTH_SCALE} from './adventure-building-scale.js';
+import {encounterAppearance} from './encounter-appearance.js';
+import {createVillager} from './villager.js';
+import {villagerAppearance} from './villager-appearance.js';
 import {createCameraHeight} from './camera-height.js';
 
 const mat=(color,extra={})=>new T.MeshStandardMaterial({color,roughness:.95,flatShading:true,...extra});
@@ -242,21 +245,21 @@ export function createAdventureScene(){
     addVegetation(v,rand);addGroundDetails(rand);addBackdrop(v,rand);
     const shrine=group(0,3),stone=M('#89958a');for(let k=0;k<3;k++)cyl(shrine,stone,0,.15+k*.18,0,1.4-k*.3,.2,8);cyl(shrine,M('#475c5f'),0,1,0,.38,1.1);box(shrine,M('#c1c8ae'),0,1.7,0,1,.24,1);const seal=mesh(new T.OctahedronGeometry(.42),M('#96e6cc',.85),shrine,0,2.35,0);animated.push({kind:'float',mesh:seal,base:2.35});
     const halo=mesh(new T.RingGeometry(1.7,1.78,48),M('#a7ead6',.6),shrine,0,.08,0);halo.rotation.x=-Math.PI/2;
-    npc=createChibi('#77725c','#b2b9a9');npc.root.position.set(-4,heightAt(-4,4),4);npc.root.rotation.y=.4;land.add(npc.root);citizens.push(npc);
-    region.npcs.forEach((person,index)=>{const char=createChibi(person.kind==='mentor'?v.color:person.kind==='healer'?'#d0d9c0':'#8a7962',index%2?'#ddd0b5':'#3c4243');char.root.position.set(person.x,heightAt(person.x,person.z),person.z);char.root.rotation.y=Math.atan2(-person.x,-person.z);land.add(char.root);citizens.push(char);if(person.kind==='mentor'){const rune=mesh(new T.TorusGeometry(.8,.04,4,24),M(v.color,.7),char.root,0,2.8,0);rune.rotation.x=Math.PI/2;animated.push({kind:'halo',mesh:rune});}});
-    guard=createChibi('#7a4141','#252833',true);guard.root.position.set(quest.x??8,heightAt(quest.x??8,quest.z??-11),quest.z??-11);guard.root.rotation.y=Math.PI;guard.root.visible=save.quests[id]===1;land.add(guard.root);citizens.push(guard);
+    npc=createVillager(villagerAppearance(id,{kind:'chief'}));npc.root.position.set(-4,heightAt(-4,4),4);npc.root.rotation.y=.4;land.add(npc.root);citizens.push(npc);
+    region.npcs.forEach((person,index)=>{const char=createVillager(villagerAppearance(id,person,index));char.root.position.set(person.x,heightAt(person.x,person.z),person.z);char.root.rotation.y=Math.atan2(-person.x,-person.z);land.add(char.root);citizens.push(char);if(person.kind==='mentor'){const rune=mesh(new T.TorusGeometry(.8,.04,4,24),M(v.color,.7),char.root,0,3.5,0);rune.rotation.x=Math.PI/2;animated.push({kind:'halo',mesh:rune});}});
+    const guardLook=encounterAppearance({kind:'quest',village:id});guard=createChibi(guardLook.coat,guardLook.hair,true);guard.root.position.set(quest.x??8,heightAt(quest.x??8,quest.z??-11),quest.z??-11);guard.root.rotation.y=Math.PI;guard.root.visible=save.quests[id]===1;land.add(guard.root);citizens.push(guard);
     if(!save.bosses?.[id])boss=buildBoss(c,region.boss);
-    if(['water','fire','lightning','dark'].includes(id)&&!save.bosses?.[id]){const leader=createChibi(v.color,id==='dark'?'#d7c9e1':'#30333c',true);leader.root.position.set(region.boss.x+5,heightAt(region.boss.x+5,region.boss.z+3),region.boss.z+3);leader.root.scale.setScalar(1.65);leader.root.rotation.y=Math.PI;land.add(leader.root);citizens.push(leader);}
-    if(['wind','earth','ice','wood','light'].includes(id)){const envoy=createChibi(v.color,'#b7b4a0');envoy.root.position.set(-3,heightAt(-3,8),8);envoy.root.rotation.y=.4;land.add(envoy.root);citizens.push(envoy);}
-    if(id==='nameless'&&treatyReady){const table=group(3,7);box(table,M('#6e5944'),0,1.1,0,3,.2,2);for(const s of [-1,1])for(const zz of [-1,1])box(table,M('#514638'),s*1.2,.5,zz*.75,.18,1,.18);box(table,M('#ded2ae'),0,1.23,0,1.3,.03,1);['water','fire','lightning'].forEach((key,index)=>{const rep=createChibi(village(key).color,index===1?'#7e6f67':'#323944');const x=1+index*2,z=9.5;rep.root.position.set(x,heightAt(x,z),z);rep.root.rotation.y=Math.PI;land.add(rep.root);citizens.push(rep);});}
+    if(['water','fire','lightning','dark'].includes(id)&&!save.bosses?.[id]){const leader=createVillager(villagerAppearance(id,{kind:'leader'}));leader.root.position.set(region.boss.x+5,heightAt(region.boss.x+5,region.boss.z+3),region.boss.z+3);leader.root.rotation.y=Math.PI;land.add(leader.root);citizens.push(leader);}
+    if(['wind','earth','ice','wood','light'].includes(id)){const envoy=createVillager(villagerAppearance(id,{kind:'envoy'}));envoy.root.position.set(-3,heightAt(-3,8),8);envoy.root.rotation.y=.4;land.add(envoy.root);citizens.push(envoy);}
+    if(id==='nameless'&&treatyReady){const table=group(3,7);box(table,M('#6e5944'),0,1.1,0,3,.2,2);for(const s of [-1,1])for(const zz of [-1,1])box(table,M('#514638'),s*1.2,.5,zz*.75,.18,1,.18);box(table,M('#ded2ae'),0,1.23,0,1.3,.03,1);['water','fire','lightning'].forEach((key,index)=>{const rep=createVillager(villagerAppearance(key,{kind:'envoy'}));const x=1+index*2,z=9.5;rep.root.position.set(x,heightAt(x,z),z);rep.root.rotation.y=Math.PI;land.add(rep.root);citizens.push(rep);});}
     registerSceneryColliders(land,physics,{limit:metrics().limit,moving:[...routes.flatMap(r=>[r.boat,...(r.idleBoats||[])]).filter(Boolean),...animated.map(a=>a.mesh),...citizens.map(c=>c.root)],leafColors:[v.tree,'#507747','#658b53','#7d9b77','#656c49','#7c7a50']});
     surface=platformFor(save.surface)?.platform?.id||null;
     hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);let pos=save.position,y=heroHeightAt(...pos);if(Number.isFinite(save.elevation)){const supported=physics.floorAt(...pos,save.elevation+.03);if(Math.abs(supported-save.elevation)<.08)y=supported;}if((surface?platformBlocked(surface,...pos):boundaryBlocked(...pos)||id==='water'&&isDeepWater(...pos)&&!waterDeckAt(...pos,y+.4))||!surface&&physics.overlaps(...pos,y,2.85,.36,true)){pos=[0,7];surface=null;y=heroHeightAt(...pos);}y=physics.floorAt(...pos,y+.3);hero.root.position.set(pos[0],y,pos[1]);physics.reset(y);previousHeroPosition.copy(hero.root.position);hero.root.rotation.y=orbitYaw+Math.PI;destination.visible=false;
-    if(id!=='nameless'&&treatyReady&&!save.campaign?.treatySigned)['water','fire','lightning'].forEach((key,index)=>{const char=createChibi(village(key).color,index===1?'#7e6f67':'#323944'),offset=[[-2,1],[-3,-1],[-1,-3]][index];char.root.position.set(pos[0]+offset[0],heightAt(pos[0]+offset[0],pos[1]+offset[1]),pos[1]+offset[1]);land.add(char.root);party.push({char,offset});});
+    if(id!=='nameless'&&treatyReady&&!save.campaign?.treatySigned)['water','fire','lightning'].forEach((key,index)=>{const char=createVillager(villagerAppearance(key,{kind:'envoy'})),offset=[[-2,1],[-3,-1],[-1,-3]][index];char.root.position.set(pos[0]+offset[0],heightAt(pos[0]+offset[0],pos[1]+offset[1]),pos[1]+offset[1]);land.add(char.root);party.push({char,offset});});
     batchScenery();
     scene.updateMatrixWorld(true);camera.far=340*metrics().scale;camera.fov=68;camera.updateProjectionMatrix();followCamera(1,true,false);
   }
-  function spawnEnemy(x,z){clearEnemy();randomEnemy=createChibi('#754f4a','#2c2932',true);randomEnemy.root.position.set(x,heightAt(x,z),z);land.add(randomEnemy.root);return randomEnemy;}
+  function spawnEnemy(x,z){clearEnemy();const look=encounterAppearance({kind:'random',village:current});randomEnemy=createChibi(look.coat,look.hair,true);randomEnemy.root.position.set(x,heightAt(x,z),z);land.add(randomEnemy.root);return randomEnemy;}
   function clearEnemy(){if(randomEnemy){land.remove(randomEnemy.root);disposeObject(randomEnemy.root);randomEnemy=null;}}
   function followCamera(dt,snap=false,menu=false){
     const p=hero.root.position,planned=ride?.route.carved?ride.cameraY??p.y:p.y,eyeY=cameraHeight.update(planned,dt,snap),head=new T.Vector3(p.x,eyeY+2.35,p.z);
