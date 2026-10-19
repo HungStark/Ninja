@@ -10,6 +10,7 @@ import {registerSceneryColliders,colliderFromGeometry} from './adventure-collide
 import {createVillageSurfaces} from './adventure-materials.js';
 import {buildVillageSettlement} from './adventure-settlements.js';
 import {HOUSE_WIDTH_SCALE} from './adventure-building-scale.js';
+import {createCameraHeight} from './camera-height.js';
 
 const mat=(color,extra={})=>new T.MeshStandardMaterial({color,roughness:.95,flatShading:true,...extra});
 function mesh(g,m,parent,x=0,y=0,z=0){const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
@@ -72,7 +73,7 @@ export function createAdventureScene(){
   const cemetery=REGIONS.nameless.zones.find(z=>z.id==='war-cemetery');
   const reservedLandscape=(x,z,padding=0)=>current==='nameless'&&Math.hypot(x-cemetery.x,z-cemetery.z)<cemetery.radius+1+padding||physics.solids.some(s=>physics.touches(s,x,z,padding));
   let surfaces=null,settlementPaths=[],settlementYards=[];
-  let orbitYaw=0,orbitPitch=.2,orbitDistance=4.2;
+  let orbitYaw=0,orbitPitch=.2,orbitDistance=4.2;const cameraHeight=createCameraHeight();
   const groundHeight=(x,z)=>terrainHeight(current,x,z);
   const bridgeAt=(x,z,padding=0)=>bridges.find(b=>Math.abs((x-b.x)*b.dx+(z-b.z)*b.dz)<=b.half+padding&&Math.abs((x-b.x)*b.dz-(z-b.z)*b.dx)<=b.width/2+padding);
   const bridgeHeight=(b,x,z)=>{const t=Math.max(0,Math.min(1,((x-b.x)*b.dx+(z-b.z)*b.dz+b.half)/(2*b.half)));return b.start+(b.end-b.start)*t+Math.sin(t*Math.PI)*.4+.035;};
@@ -110,7 +111,7 @@ export function createAdventureScene(){
     ride.progress=Math.max(0,Math.min(1,ride.progress+amount));ride.walking=!!amount;if(amount)ride.moved=true;
     const distance=ride.progress*stairs.length;let lo=0,hi=stairs.path.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(stairs.distances[m]<=distance)lo=m;else hi=m;}
     const a=stairs.path[lo],b=stairs.path[lo+1],t=(distance-stairs.distances[lo])/Math.max(.001,stairs.distances[lo+1]-stairs.distances[lo]),p=hero.root.position;
-    p.x=a.x+(b.x-a.x)*t;p.z=a.z+(b.z-a.z)*t;const floor=stairs.heightAt(p.x,p.z);p.y=Number.isFinite(floor)?floor:a.y+(b.y-a.y)*t;
+    p.x=a.x+(b.x-a.x)*t;p.z=a.z+(b.z-a.z)*t;const floor=stairs.heightAt(p.x,p.z);p.y=Number.isFinite(floor)?floor:a.y+(b.y-a.y)*t;ride.cameraY=a.y+(b.y-a.y)*t;
     if(amount){hero.root.rotation.y=Math.atan2((b.x-a.x)*Math.sign(amount),(b.z-a.z)*Math.sign(amount));const target=hero.root.rotation.y-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*5));}
     if(ride.moved&&(ride.progress===0||ride.progress===1)){const side=ride.progress;ride=null;surface=null;physics.reset(p.y);previousHeroPosition.copy(p);return {id:r.id,side,surface:null};}return null;
   }
@@ -258,14 +259,14 @@ export function createAdventureScene(){
   function spawnEnemy(x,z){clearEnemy();randomEnemy=createChibi('#754f4a','#2c2932',true);randomEnemy.root.position.set(x,heightAt(x,z),z);land.add(randomEnemy.root);return randomEnemy;}
   function clearEnemy(){if(randomEnemy){land.remove(randomEnemy.root);disposeObject(randomEnemy.root);randomEnemy=null;}}
   function followCamera(dt,snap=false,menu=false){
-    const p=hero.root.position,head=p.clone().add(new T.Vector3(0,2.35,0));
+    const p=hero.root.position,planned=ride?.route.carved?ride.cameraY??p.y:p.y,eyeY=cameraHeight.update(planned,dt,snap),head=new T.Vector3(p.x,eyeY+2.35,p.z);
     if(menu){hero.root.visible=true;const target=head.clone().add(new T.Vector3(-4,0,0));camera.position.lerp(target.clone().add(new T.Vector3(12,12,17)),snap?1:1-Math.exp(-dt*5));camera.lookAt(target);return;}
     const forward=new T.Vector3(-Math.sin(orbitYaw),0,-Math.cos(orbitYaw)),right=new T.Vector3(Math.cos(orbitYaw),0,-Math.sin(orbitYaw));
     const desired=head.clone().addScaledVector(forward,-orbitDistance).addScaledVector(right,.55);desired.y+=.55+Math.sin(orbitPitch)*orbitDistance;
     const delta=desired.clone().sub(head),length=delta.length(),direction=delta.clone().normalize();
     // Probe collision footprints instead of raycasting every triangle of merged villages.
     for(let d=.6;d<length;d+=.3){const probe=head.clone().addScaledVector(direction,d),solid=surface==='earth-cave'?platformBlocked(surface,probe.x,probe.z):surface&&surface!=='heart-tree'||ride&&!ride.rock&&!ride.route.carved?false:boundaryBlocked(probe.x,probe.z)&&probe.y<heightAt(probe.x,probe.z)+8||probe.y<groundHeight(probe.x,probe.z)+.22||physics.overlaps(probe.x,probe.z,probe.y-.18,.36,.18);if(solid){desired.copy(head).addScaledVector(direction,Math.max(.8,d-.3));break;}}
-    desired.y=Math.max(desired.y,(ride?p.y:heroHeightAt(desired.x,desired.z))+.6);
+    desired.y=Math.max(desired.y,(surface?platformFor(surface)?.toY??groundHeight(desired.x,desired.z):groundHeight(desired.x,desired.z))+.6);
     camera.position.lerp(desired,snap?1:1-Math.exp(-dt*14));
     // A wall can push the shoulder camera into the chibi's large head. Keep the view clear.
     hero.root.visible=camera.position.distanceTo(head)>1.25;
@@ -286,5 +287,5 @@ export function createAdventureScene(){
   }
   function project(x,z,y=3){camera.updateMatrixWorld();const p=new T.Vector3(x,heightAt(x,z)+y,z).project(camera);return {left:(p.x+1)*innerWidth/2,top:(1-p.y)*innerHeight/2,visible:p.z<1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1};}
   function pick(clientX,clientY,canvas){if(!terrain)return null;camera.updateMatrixWorld();terrain.updateMatrixWorld();const r=canvas.getBoundingClientRect(),ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((clientX-r.left)/r.width*2-1,-(clientY-r.top)/r.height*2+1),camera);const hit=ray.intersectObject(terrain,false)[0];return hit?[hit.point.x,hit.point.z]:null;}
-  return {scene,camera,hero,obstacles,interactives,blocked,physicsState:physics.state,get solids(){return physics.solids;},moveHero:(dx,dz)=>physics.move(dx,dz),jump:jumpHero,tryGrabLedge,releaseCliff,recoverHero,heightAt,heroHeightAt,canHeroMove,navigationBlocked,startTraversal,advanceTraversal,unlockAudio:storm.unlock,get surface(){return surface;},get riding(){return !!ride;},get routes(){return routes;},get metrics(){return metrics();},weatherState:storm.state,traversalState:()=>ride?{id:ride.route.id,kind:ride.route.kind,progress:ride.progress,side:ride.side,mode:ride.mode,ledge:ride.index}:null,safeSave:()=>{if(ride?.rock){const p=ride.route.ledges[ride.index];return {position:[p.x,p.z],surface:null,elevation:p.y};}if(ride)return {position:[...(ride.side?ride.route.to:ride.route.from)],surface:ride.side?ride.route.platform?.id||null:null,elevation:ride.side?ride.route.toY:ride.route.fromY};const p=physics.safePosition();return {position:[p.x,p.z],surface,elevation:p.y};},load,update,project,pick,spawnEnemy,clearEnemy,orbit(dx,dy){orbitYaw=Math.atan2(Math.sin(orbitYaw-dx*.005),Math.cos(orbitYaw-dx*.005));orbitPitch=Math.max(-.95,Math.min(1.1,orbitPitch+dy*.003));hero.root.rotation.y=orbitYaw+Math.PI;},faceView(){hero.root.rotation.y=orbitYaw+Math.PI;},followHeading(yaw,dt){const target=yaw-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*8));},zoom(delta){orbitDistance=Math.max(2.8,Math.min(6.5,orbitDistance+delta*.004));},movementAxes(){return {forward:[-Math.sin(orbitYaw),-Math.cos(orbitYaw)],right:[Math.cos(orbitYaw),-Math.sin(orbitYaw)]};},cameraState:()=>({heroVisible:hero.root.visible,yaw:orbitYaw,heroYaw:hero.root.rotation.y,pitch:orbitPitch,distance:orbitDistance,position:camera.position.toArray(),height:camera.position.y-hero.root.position.y}),get guard(){return guard;},get boss(){return boss;},get gates(){return gates;},get bridges(){return bridges;},get randomEnemy(){return randomEnemy;},destination,resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}};
+  return {scene,camera,hero,obstacles,interactives,blocked,physicsState:physics.state,get solids(){return physics.solids;},moveHero:(dx,dz)=>physics.move(dx,dz),jump:jumpHero,tryGrabLedge,releaseCliff,recoverHero,heightAt,heroHeightAt,canHeroMove,navigationBlocked,startTraversal,advanceTraversal,unlockAudio:storm.unlock,get surface(){return surface;},get riding(){return !!ride;},get routes(){return routes;},get metrics(){return metrics();},weatherState:storm.state,traversalState:()=>ride?{id:ride.route.id,kind:ride.route.kind,progress:ride.progress,side:ride.side,mode:ride.mode,ledge:ride.index}:null,safeSave:()=>{if(ride?.rock){const p=ride.route.ledges[ride.index];return {position:[p.x,p.z],surface:null,elevation:p.y};}if(ride)return {position:[...(ride.side?ride.route.to:ride.route.from)],surface:ride.side?ride.route.platform?.id||null:null,elevation:ride.side?ride.route.toY:ride.route.fromY};const p=physics.safePosition();return {position:[p.x,p.z],surface,elevation:p.y};},load,update,project,pick,spawnEnemy,clearEnemy,orbit(dx,dy){orbitYaw=Math.atan2(Math.sin(orbitYaw-dx*.005),Math.cos(orbitYaw-dx*.005));orbitPitch=Math.max(-.95,Math.min(1.1,orbitPitch+dy*.003));hero.root.rotation.y=orbitYaw+Math.PI;},faceView(){hero.root.rotation.y=orbitYaw+Math.PI;},followHeading(yaw,dt){const target=yaw-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*8));},zoom(delta){orbitDistance=Math.max(2.8,Math.min(6.5,orbitDistance+delta*.004));},movementAxes(){return {forward:[-Math.sin(orbitYaw),-Math.cos(orbitYaw)],right:[Math.cos(orbitYaw),-Math.sin(orbitYaw)]};},cameraState:()=>({anchorHeight:cameraHeight.value,heroVisible:hero.root.visible,yaw:orbitYaw,heroYaw:hero.root.rotation.y,pitch:orbitPitch,distance:orbitDistance,position:camera.position.toArray(),height:camera.position.y-hero.root.position.y}),get guard(){return guard;},get boss(){return boss;},get gates(){return gates;},get bridges(){return bridges;},get randomEnemy(){return randomEnemy;},destination,resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}};
 }

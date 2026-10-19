@@ -22,8 +22,19 @@ export function buildThatchedRuin(c,g,w,d,index){
     box(shell,timber,s*(door/2+.04),1.06,front+.06,.12,2.15,.19);
   }
   box(shell,timber,0,2.2,front+.06,1.2,.15,.22);
-  box(shell,raw,0,1.055,front+.17,door,2.08,.09).name='ruin-closed-door';
-  for(let k=0;k<6;k++)box(shell,timber,-door/2+.12+k*.22,1.055,front+.223,.018,2.02,.016);
+  // A breached-looking door is only a facade. The cottage keeps its single,
+  // closed collision volume, so splinters cannot trap or admit the character.
+  const brokenDoor=new T.Group();brokenDoor.name='ruin-broken-door';brokenDoor.userData.closed=true;brokenDoor.userData.splintered=true;shell.add(brokenDoor);
+  box(brokenDoor,dark,0,1.055,front+.145,door,2.08,.025);
+  const plank=(x,y,length,k,tilt=0)=>{const width=.18,shape=new T.Shape();shape.moveTo(-width/2,0);shape.lineTo(width/2,0);shape.lineTo(width/2,length-.08);shape.lineTo(width*.22,length-.03);shape.lineTo(0,length-.14);shape.lineTo(-width*.2,length);shape.lineTo(-width/2,length-.06);shape.closePath();const o=mesh(new T.ExtrudeGeometry(shape,{depth:.065,bevelEnabled:false}),k%2?raw:timber,brokenDoor,x,y,front+.19+(k%2)*.018);o.rotation.z=tilt;return o;};
+  for(let k=0;k<6;k++){
+    const x=-door/2+.12+k*.22;
+    if(k!==3)plank(x,.025,.4+(k%3)*.16,k,(k-2)*.018);
+    if(k!==4){const length=.57+((index+k)%3)*.18,o=plank(x,2.07-length,length,k+1,(k%2?1:-1)*(.025+(index%3)*.025));o.rotation.y=(k-2)*.025;}
+  }
+  const brace=box(brokenDoor,raw,-.38,.65,front+.29,.43,.1,.075);brace.rotation.z=.24;
+  const snapped=box(brokenDoor,timber,.4,1.59,front+.3,.36,.08,.075);snapped.rotation.z=-.18;
+  for(let k=0;k<2;k++){const fallen=box(brokenDoor,k?raw:timber,-.3+k*.52,.035+k*.018,front+.56+k*.1,.16,.045,.92-k*.1);fallen.rotation.y=.45+k*.8;}
   // Recessed dark windows retain the abandoned silhouette without entry gaps.
   box(shell,dark,0,1.67,-d/2-.153,.9,1.05,.036);
   for(const s of [-1,1])box(shell,timber,s*.46,1.67,-d/2-.06,.1,1.15,.17);

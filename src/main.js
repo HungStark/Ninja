@@ -17,6 +17,7 @@ import { NatureArts } from './nature-arts.js';
 import { crossWalls } from './combat.js';
 import { sweepTsunami } from './tsunami.js';
 import { createAdventure } from './adventure.js';
+import { physicalKey, textInputTarget } from './game-input.js';
 import { projectileMotionStep, flightTimeAt, FLIGHT_PROFILE } from './projectile-motion.js';
 import { aimMagneticShots } from './elemental-combat.js';
 import { setupScrollOpening } from './scroll-ui.js';
@@ -1302,7 +1303,9 @@ async function main() {
   document.querySelectorAll('.seal').forEach(el => el.onclick = () => seal(el.dataset.key));
   window.addEventListener('keydown', e => {
     if(adventure?.activeView&&adventure.phase!=='loadout')return;
-    const key = e.key.toLowerCase();
+    if(textInputTarget(e.target)||e.ctrlKey||e.metaKey||e.altKey)return;
+    const key = physicalKey(e);
+    if(keys.includes(key)||['h','m','1','2','3','4','5'].includes(key))e.preventDefault();
     if (e.target instanceof HTMLButtonElement && (!started || paused || won) && key === ' ') return;
     if ([' ', 'backspace', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) e.preventDefault();
     if (e.repeat) return;
