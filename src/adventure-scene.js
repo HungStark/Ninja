@@ -6,7 +6,7 @@ import {REGIONS,regionMetrics,terrainHeight,riverAt,isDeepWater,waterwayAt,water
 import {traversalDefinitions,buildBiome,createStorm,traversalComponent} from './adventure-biomes.js';
 import {addWarVegetation} from './adventure-ruins.js';
 import {createCharacterPhysics} from './adventure-physics.js';
-import {registerSceneryColliders} from './adventure-colliders.js';
+import {registerSceneryColliders,colliderFromGeometry} from './adventure-colliders.js';
 
 const mat=(color,extra={})=>new T.MeshStandardMaterial({color,roughness:.95,flatShading:true,...extra});
 function mesh(g,m,parent,x=0,y=0,z=0){const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
@@ -78,11 +78,15 @@ export function createAdventureScene(){
   const heroHeightAt=(x,z)=>surface?platformFor(surface)?.toY??standingHeightAt(x,z):standingHeightAt(x,z);
   const physics=createCharacterPhysics({position:hero.root.position,baseFloor:(x,z)=>surface?platformFor(surface)?.toY??groundHeight(x,z):current==='ice'?heightAt(x,z):groundHeight(x,z),staticBlocked:(x,z)=>surface?platformBlocked(surface,x,z):boundaryBlocked(x,z)||current==='water'&&isDeepWater(x,z)&&!waterDeckAt(x,z,hero.root.position.y+.4)});
   const waterDeckAt=(x,z,ceiling=Infinity)=>physics.floorAt(x,z,ceiling)>=waterwayAt(x,z).y-.15;
-  function platformBlocked(key,x,z,padding=0){const p=platformFor(key)?.platform;if(!p)return true;const outside=p.ellipse?((x-p.x)/(p.width/2-.5))**2+((z-p.z)/(p.depth/2-.5))**2>1:Math.abs(x-p.x)>=p.width/2-.25||Math.abs(z-p.z)>=p.depth/2-.25;return outside||(p.ellipse?(p.obstacles||[]).some(o=>Math.hypot(x-o.x,z-o.z)<o.r+padding):Math.abs(x-p.x)<2.25+padding&&Math.abs(z-p.z)<1.85+padding);}
+  function platformBlocked(key,x,z,padding=0){const p=platformFor(key)?.platform;if(!p)return true;const dx=x-p.x,dz=z-p.z,outside=p.ellipse?(dx/(p.width/2-.5))**2+(dz/(p.depth/2-.5))**2>1:Math.abs(dx)>=p.width/2-.25||Math.abs(dz)>=p.depth/2-.25;
+    const notch=p.stairNotch&&dx>2.4&&dz>1.5&&!(Math.abs(dz-3)<.8&&dx<5.05);
+    return outside||notch||(p.ellipse||p.customLayout?(p.obstacles||[]).some(o=>Math.hypot(x-o.x,z-o.z)<o.r+padding):Math.abs(dx)<2.25+padding&&Math.abs(dz)<1.85+padding);}
   function canHeroMove(x,z){return physics.canMoveTo(x,z);}
   function navigationBlocked(key=null){return key?(x,z)=>platformBlocked(key,x,z,.3)||physics.overlaps(x,z,platformFor(key)?.toY??0,2.85,.65,true):blocked;}
   function startTraversal(id,side=0){if(ride||!physics.state().grounded)return false;const route=routes.find(r=>r.id===id);if(!route)return false;const p=side?route.to:route.from,y=side?route.toY:route.fromY;if(Math.hypot(hero.root.position.x-p[0],hero.root.position.z-p[1])>2.5||Math.abs(hero.root.position.y-y)>4)return false;physics.reset();ride={route,side,progress:side?1:0,moved:false};if(route.boat){route.boat.visible=true;for(const boat of route.idleBoats||[])boat.visible=false;}return true;}
-  function advanceTraversal(dt,axis=0,automatic=false){if(!ride)return null;const r=ride.route,direction=ride.side?-1:1,length=Math.max(1,Math.hypot(r.to[0]-r.from[0],r.to[1]-r.from[1],r.toY-r.fromY)),amount=dt*(r.kind==='raft'?7:r.speed||3.5)/length*(['raft','cave'].includes(r.kind)||automatic?direction:axis*direction);ride.progress=Math.max(0,Math.min(1,ride.progress+amount));if(amount)ride.moved=true;const t=ride.progress,p=hero.root.position;p.x=r.from[0]+(r.to[0]-r.from[0])*t;p.z=r.from[1]+(r.to[1]-r.from[1])*t;p.y=r.kind==='raft'?-.28:r.fromY+(r.toY-r.fromY)*t;if(r.boat)r.boat.position.set(p.x,p.y-.28,p.z);
+  function advanceTraversal(dt,axis=0,automatic=false){if(!ride)return null;const r=ride.route,direction=ride.side?-1:1,length=Math.max(1,Math.hypot(r.spiral?r.spiral.radius*r.spiral.turns*Math.PI*2:r.to[0]-r.from[0],r.spiral?0:r.to[1]-r.from[1],r.toY-r.fromY)),amount=dt*(r.kind==='raft'?7:r.speed||3.5)/length*(['raft','cave'].includes(r.kind)||automatic?direction:axis*direction);ride.progress=Math.max(0,Math.min(1,ride.progress+amount));if(amount)ride.moved=true;ride.walking=!!amount;const t=ride.progress,p=hero.root.position;p.x=r.from[0]+(r.to[0]-r.from[0])*t;p.z=r.from[1]+(r.to[1]-r.from[1])*t;p.y=r.kind==='raft'?-.28:r.fromY+(r.toY-r.fromY)*t;
+    if(r.spiral){const a=r.spiral.angle+t*r.spiral.turns*Math.PI*2;p.x=r.spiral.x+Math.sin(a)*r.spiral.radius;p.z=r.spiral.z+Math.cos(a)*r.spiral.radius;if(amount){hero.root.rotation.y=Math.atan2(Math.cos(a)*Math.sign(amount),-Math.sin(a)*Math.sign(amount));const target=hero.root.rotation.y-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*8));}}
+    if(r.boat)r.boat.position.set(p.x,p.y-.28,p.z);
     if(ride.moved&&(t===0||t===1)){surface=t===1?r.platform?.id||null:null;if(r.boat){r.boat.visible=false;for(const boat of r.idleBoats||[])boat.visible=true;}ride=null;physics.reset(heroHeightAt(p.x,p.z));previousHeroPosition.copy(p);return {id:r.id,side:t,surface};}return null;
   }
   const destination=mesh(new T.RingGeometry(.3,.5,40),new T.MeshBasicMaterial({color:'#f7dca3',side:T.DoubleSide,transparent:true,opacity:.9}),scene);destination.rotation.x=-Math.PI/2;destination.visible=false;
@@ -94,6 +98,7 @@ export function createAdventureScene(){
     for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){const p=new T.Vector3(x,y,z).applyMatrix4(m),dx=p.x-center.x,dz=p.z-center.z,lx=dx*cos-dz*sin,lz=dx*sin+dz*cos;minX=Math.min(minX,lx);maxX=Math.max(maxX,lx);minZ=Math.min(minZ,lz);maxZ=Math.max(maxZ,lz);bottom=Math.min(bottom,p.y);top=Math.max(top,p.y);}
     return physics.addBox({name,x:center.x,z:center.z,w:maxX-minX,d:maxZ-minZ,yaw,bottom,top,stepable});
   }
+  function solidGeometry(object,{name='landscape-solid'}={}){object.updateWorldMatrix(true,false);const collider=colliderFromGeometry(object.geometry,object.matrixWorld,name);if(collider){object.userData.collider=true;return physics.addBox(collider);}}
   function disposeObject(root){const geoms=new Set(),mats=new Set();root.traverse(o=>{if(o.geometry)geoms.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);});for(const g of geoms)g.dispose();for(const m of mats)m.dispose();}
   function disposeLand(){disposeObject(land);land.clear();physics.clear();obstacles.length=0;interactives.length=0;animated.length=0;citizens.length=0;party.length=0;bridges=[];routes=[];ride=null;surface=null;materials.clear();randomEnemy=null;boss=null;foliage=null;}
   function segmentDistance(x,z,target){const dot=Math.max(0,Math.min(1,(x*target.x+z*target.z)/(target.x*target.x+target.z*target.z||1)));return Math.hypot(x-target.x*dot,z-target.z*dot);}
@@ -192,7 +197,7 @@ export function createAdventureScene(){
     corridors=[...interactives,...routes.flatMap(r=>[{x:r.from[0],z:r.from[1]},{x:r.to[0],z:r.to[1]}])];for(const g of gates)planBridge(g,3.7);for(const zone of region.zones)if(!zone.platform)planBridge(zone,2.5);for(const b of bridges)corridors.push({x:b.x+b.dx*(b.half+3),z:b.z+b.dz*(b.half+3)});addTerrain(v);addWater(v);
     for(const g of gates){road(g,3.7);arch(g,v);}for(const zone of region.zones)if(!zone.platform)road(zone,2.5);addBridges();cyl(land,M(v.path),0,-.075,0,8,.2,id==='earth'?6:id==='lightning'?8:48);
     const setpieceSpot=zone=>{const a=Math.atan2(zone.x,zone.z);let best,score=-Infinity;for(const side of [-1,1])for(const distance of [14,20]){const p={x:zone.x+Math.cos(a)*distance*side,z:zone.z-Math.sin(a)*distance*side};const clearance=Math.min(...corridors.map(t=>segmentDistance(p.x,p.z,t)),metrics().limit-5-Math.abs(p.x),metrics().limit-5-Math.abs(p.z));if(clearance>score){score=clearance;best=p;}}return best;};
-    const c={id,v,land,obstacles,group,box,cyl,mesh,M,obstacle,clearCorridor,animated,setpieceSpot,heightAt,solidMesh};
+    const c={id,v,land,obstacles,group,box,cyl,mesh,M,obstacle,clearCorridor,animated,setpieceSpot,heightAt,solidMesh,solidGeometry};
     interactives.push(...buildBiome(c,routes));
     for(const i of interactives)if(i.platform){i.y=platformFor(i.platform)?.toY;if(i.kind==='landmark'&&i.platform!=='earth-cave')i.z+=3;}
     region.zones.forEach((zone,index)=>{if(!zone.platform&&!['red-cliff','summit-lotus'].includes(zone.id))buildDistrict(c,zone,index%4);const g=group(zone.x,zone.z);if(zone.platform)g.position.y=platformFor(zone.platform).toY;if(id==='nameless'){g.name='cracked-landmark-marker';for(let k=0;k<7;k++){const a=k*2.4,r=1+k%3*.5,x=Math.sin(a)*r,z=Math.cos(a)*r,paver=mesh(new T.DodecahedronGeometry(.48,0),M('#8c8268'),g,x,heightAt(zone.x+x,zone.z+z)-g.position.y+.025,z);paver.scale.set(1,.12,.7);paver.rotation.y=a;}}else for(let k=0;k<2;k++)cyl(g,M(v.path),0,.015+k*.035,0,3.5-k*.35,.035,32);const mark=mesh(new T.OctahedronGeometry(.28),M(v.color,.65),g,0,2.8,0);animated.push({kind:'float',mesh:mark,base:2.8});});
@@ -227,7 +232,7 @@ export function createAdventureScene(){
     const desired=head.clone().addScaledVector(forward,-orbitDistance).addScaledVector(right,.55);desired.y+=.55+Math.sin(orbitPitch)*orbitDistance;
     const delta=desired.clone().sub(head),length=delta.length(),direction=delta.clone().normalize();
     // Probe collision footprints instead of raycasting every triangle of merged villages.
-    for(let d=.6;d<length;d+=.3){const probe=head.clone().addScaledVector(direction,d),solid=surface==='earth-cave'?platformBlocked(surface,probe.x,probe.z):surface||ride?false:boundaryBlocked(probe.x,probe.z)&&probe.y<heightAt(probe.x,probe.z)+8||probe.y<groundHeight(probe.x,probe.z)+.22||physics.overlaps(probe.x,probe.z,probe.y-.18,.36,.18);if(solid){desired.copy(head).addScaledVector(direction,Math.max(.8,d-.3));break;}}
+    for(let d=.6;d<length;d+=.3){const probe=head.clone().addScaledVector(direction,d),solid=surface==='earth-cave'?platformBlocked(surface,probe.x,probe.z):surface&&surface!=='heart-tree'||ride?false:boundaryBlocked(probe.x,probe.z)&&probe.y<heightAt(probe.x,probe.z)+8||probe.y<groundHeight(probe.x,probe.z)+.22||physics.overlaps(probe.x,probe.z,probe.y-.18,.36,.18);if(solid){desired.copy(head).addScaledVector(direction,Math.max(.8,d-.3));break;}}
     desired.y=Math.max(desired.y,(ride?p.y:heroHeightAt(desired.x,desired.z))+.6);
     camera.position.lerp(desired,snap?1:1-Math.exp(-dt*14));
     // A wall can push the shoulder camera into the chibi's large head. Keep the view clear.
@@ -237,7 +242,7 @@ export function createAdventureScene(){
   function update(dt,moving,menu=false,paused=false){
     time+=dt;if(menu)hero.root.rotation.y=.6;if(!ride&&!menu&&!paused)physics.step(dt);
     const velocity={x:dt>0?(hero.root.position.x-previousHeroPosition.x)/dt:0,z:dt>0?(hero.root.position.z-previousHeroPosition.z)/dt:0};previousHeroPosition.copy(hero.root.position);
-    hero.update(time,moving,velocity,dt);citizens.forEach(c=>c.update(time,false,null,dt));if(randomEnemy){randomEnemy.root.position.y=heightAt(randomEnemy.root.position.x,randomEnemy.root.position.z);randomEnemy.update(time,true,null,dt);}
+    hero.update(time,moving||ride?.route.kind==='stairs'&&ride.walking,velocity,dt);citizens.forEach(c=>c.update(time,false,null,dt));if(randomEnemy){randomEnemy.root.position.y=heightAt(randomEnemy.root.position.x,randomEnemy.root.position.z);randomEnemy.update(time,true,null,dt);}
     if(ride&&['ladder','climb'].includes(ride.route.kind))hero.climbPose(time);else if(!physics.state().grounded)hero.airPose(physics.state().verticalSpeed);
     storm.update(dt,current==='lightning'&&!menu,hero.root.position);
     for(const {char,offset} of party){const target=new T.Vector3(hero.root.position.x+offset[0],0,hero.root.position.z+offset[1]),p=char.root.position,walking=Math.hypot(p.x-target.x,p.z-target.z)>.2;p.x+=(target.x-p.x)*(1-Math.exp(-dt*3));p.z+=(target.z-p.z)*(1-Math.exp(-dt*3));p.y=heightAt(p.x,p.z);if(walking)char.root.rotation.y=Math.atan2(target.x-p.x,target.z-p.z);char.update(time,walking,null,dt);}

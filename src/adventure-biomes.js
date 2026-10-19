@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {REGIONS,riverAt,waterSector,waterwayAt,regionMetrics} from './adventure-world.js';
 import {buildHouse} from './adventure-landmarks.js';
+import {buildTreeHouse} from './adventure-treehouse.js';
 
 export function traversalDefinitions(id){
   if(id==='water'){
@@ -12,7 +13,7 @@ export function traversalDefinitions(id){
   }
   if(id==='fire')return [{id:'red-cliff',name:'Leo Vách Tro Hồng',kind:'climb',from:[88,-70],to:[88,-87],top:36,speed:4}];
   if(id==='earth')return [{id:'earth-cave',name:'Lối xuống Đại Hang',kind:'cave',from:[0,-12],to:[0,-20],top:-12,platform:{id:'earth-cave',x:0,z:-32,width:42,depth:50,ellipse:true}}];
-  if(id==='wood')return [{id:'heart-tree',name:'Thang dây lên nhà cổ thụ',kind:'ladder',from:[9,3],to:[9,3],rise:17,platform:{id:'heart-tree',x:5,z:0,width:12,depth:12}}];
+  if(id==='wood')return [{id:'heart-tree',name:'Cầu thang lên nhà cổ thụ',kind:'stairs',from:[9,3],to:[9,3],rise:17,speed:4.2,spiral:{x:5,z:0,radius:5,angle:Math.atan2(4,3),turns:2},platform:{id:'heart-tree',x:5,z:0,width:12,depth:12}}];
   if(id==='wind')return REGIONS.wind.zones.filter(z=>z.platform).map((z,i)=>({id:z.platform,name:`Thang dây · ${z.name}`,kind:'ladder',from:[z.x,z.z+4.4],to:[z.x,z.z+4.4],rise:20+i*3,platform:{id:z.platform,x:z.x,z:z.z,width:10,depth:10}}));
   return [];
 }
@@ -56,13 +57,13 @@ export function buildBiome(c,routes){
       for(const [x,z,h] of [[-6,-32,8],[6,-27,9],[-2,-41,8]]){cyl(g,stone,x,-12+h/2,z,1.1,h,7);const cap=mesh(new T.ConeGeometry(2.1,2.8,7),stone,g,x,-12+h,z);cap.rotation.z=Math.PI;r.platform.obstacles.push({x,z,r:1.7});}
       for(const x of [2.7,4.1])box(g,M('#6c6250'),x,-11.95,-32,.08,.07,15);box(g,M('#6b5740'),3.4,-11.4,-35,1.6,1,2.2);for(const side of [-1,1])cyl(g,M('#48473c'),3.4+side*.85,-11.9,-35,.25,.15,8).rotation.z=Math.PI/2;
     }else{
+      if(id==='wood'){buildTreeHouse(c,r);continue;}
       const {platform:p}=r,y=r.toY;
       const local={...c,id:id==='wood'?'wood':'wind',heightAt:null,obstacle:()=>{},group:(x,z)=>{const g=new T.Group();g.position.set(x,y,z);land.add(g);return g;}};
       const house=buildHouse(local,p.x,p.z,4.2,3.4,1);house.name='balloon-house';
       box(land,M('#8e8266'),p.x,y-.22,p.z,p.width,.44,p.depth);
       for(const side of [-1,1])for(let k=0;k<5;k++){box(land,M('#5d5b43'),p.x+side*4.8,y+.55,p.z-4+k*2,.12,1.3,.12);box(land,M('#5d5b43'),p.x+side*4.8,y+1.1,p.z,.1,.1,9.6);}
       if(id==='wind')for(let k=0;k<7;k++){const a=k*Math.PI*2/7,px=p.x+Math.sin(a)*3.3,pz=p.z+Math.cos(a)*2.8,balloon=mesh(new T.SphereGeometry(2.4,12,9),M(['#c5a36a','#789e91','#c77d6a'][k%3]),land,px,y+11+(k%2)*1.8,pz);balloon.scale.y=1.3;animated.push({kind:'balloon',mesh:balloon,base:balloon.position.y});beam(land,M('#b7ad86'),new T.Vector3(p.x+(px-p.x)*.65,y+3,p.z+(pz-p.z)*.65),new T.Vector3(px,balloon.position.y-2.8,pz),.045);}
-      else {house.name='central-tree-house';cyl(land,M('#64533d'),0,12,-7,3.2,27,10);c.obstacles.push({x:0,z:-7,w:3,d:3});for(let k=0;k<8;k++){const a=k*2.4,crown=mesh(new T.IcosahedronGeometry(7,1),M(k%2?'#507747':'#658b53'),land,Math.sin(a)*7,28+Math.sin(k)*3,-7+Math.cos(a)*6);crown.scale.y=.6;beam(land,M('#64533d'),new T.Vector3(0,17,-7),new T.Vector3(Math.sin(a)*8,24,-7+Math.cos(a)*7),.6);}}
       for(const side of [-1,1])beam(land,M('#b9a477'),new T.Vector3(r.from[0]+side*.5,r.fromY,r.from[1]),new T.Vector3(r.to[0]+side*.5,y,r.to[1]),.055);
       for(let yy=r.fromY+.4;yy<y;yy+=.42)box(land,M('#887354'),r.from[0],yy,r.from[1],1.12,.09,.14);
       box(land,M('#9a7952'),p.x-3,y+.3,p.z+3,1,.6,.7);box(land,M('#d2c89e'),p.x-3,y+.64,p.z+3,.6,.06,.45);

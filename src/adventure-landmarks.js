@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {buildThatchedRuin,buildWarCemetery} from './adventure-ruins.js';
+import {buildVolcano} from './adventure-volcano.js';
 
 // These are buildings and silhouettes, rather than a single village template
 // recoloured ten times. All coordinates here are local to a grounded group.
@@ -118,7 +119,7 @@ export function buildDistrict(c,zone,index){
     if(index===3){for(const s of [-1,1]){const post=box(g,wood,s*3.4,3.1,0,.45,6.2,.45);post.rotation.z=s*.06;}const lintel=box(g,roof,-.3,6.1,0,8,.45,1);lintel.rotation.z=-.08;box(g,roof,2.6,.24,1.3,3.1,.3,.6).rotation.y=.4;for(let k=0;k<7;k++){const fallen=box(g,wood,-7+k*2.2,.42,-4,1.2,.8,1.2);fallen.rotation.z=Math.sin(k)*.16;}for(let k=0;k<3;k++)mesh(new T.DodecahedronGeometry(.6,0),stone,g,k-1,.3,2);}
   }
   if(id==='fire'){
-    if(index===0){const cone=mesh(new T.ConeGeometry(13,23,10,1,true),M('#55443f'),g,0,9,0);const crater=ring(g,4.2,20,M('#ed7d3c',.9));crater.rotation.x=Math.PI/2;for(let k=0;k<5;k++){const lava=box(g,M('#db6b31',1),Math.sin(k*2)*4,5+k*2,Math.cos(k*2)*4,.7,9,.15);lava.rotation.z=.15+k*.12;}}
+    if(index===0){const dx=x-zone.x,dz=z-zone.z,distance=Math.hypot(dx,dz);if(distance<20){g.position.x=zone.x+dx/distance*20;g.position.z=zone.z+dz/distance*20;g.position.y=c.heightAt(g.position.x,g.position.z);}g.userData.landmarkId=zone.id;buildVolcano(c,g);}
     if(index===1){for(let k=0;k<3;k++){cyl(g,M('#444447'),k*3-3,5+k%2*2,0,1.8,10+k%2*4,6);cyl(g,M('#302f32'),k*3-3,11+k%2*4,0,.8,4,7);}box(g,M('#dc782f',.8),0,.5,4,10,.25,2);}
     if(index===2){for(let k=0;k<4;k++){const arch=new T.Group();arch.position.z=k*3.3;g.add(arch);for(const s of [-1,1])box(arch,roof,s*3,3,0,.5,6,.5);box(arch,roof,0,6,0,8,.4,1);}}
     if(index===3){portal(12);for(const s of [-1,1]){mesh(new T.ConeGeometry(2.6,7,6),M('#ea8a42',.5),g,s*7,4,0);pillar(s*7,0,1.7,3,M('#3f3937'));}}

@@ -18,6 +18,15 @@ for(const id of ['fire','wind','earth','wood']){load(id);const route=world.route
  if(route.platform){assert.equal(world.surface,route.platform.id);assert.equal(world.canHeroMove(route.platform.x+route.platform.width,route.platform.z),false,'cannot walk off elevated floors / through cave walls');const safe=world.safeSave(),save=newJourney();save.village=id;save.position=safe.position;save.surface=safe.surface;assert.equal(readJourney({getItem:()=>JSON.stringify(save)}).surface,route.platform.id);if(id==='earth')assert.ok(world.camera.position.y<0,'camera remains inside the cave');}
  assert.ok(world.startTraversal(route.id,1));for(let k=0;k<1600&&world.riding;k++){world.advanceTraversal(1/60,1);world.update(1/60,false);}assert.equal(world.surface,null);assert.ok(Math.abs(world.hero.root.position.y-route.fromY)<.05);
 }
+load('wood');{
+ const route=world.routes[0];world.hero.root.position.set(route.from[0],route.fromY,route.from[1]);assert.ok(world.startTraversal(route.id));world.advanceTraversal(2,1);
+ assert.ok(Math.hypot(world.hero.root.position.x-route.from[0],world.hero.root.position.z-route.from[1])>3,'stairs walk around the trunk');assert.ok(world.hero.root.position.y>route.fromY+1);
+ const paused=world.hero.root.position.clone();world.advanceTraversal(.5,0);assert.ok(world.hero.root.position.distanceTo(paused)<1e-8,'stairs can pause');
+ for(let k=0;k<1600&&world.riding;k++){world.advanceTraversal(1/60,1);world.update(1/60,false);}assert.equal(world.riding,false);
+ const path=findPath(route.to,[5,3],world.navigationBlocked(route.platform.id));assert.ok(path.length,'stair landing opens onto the wraparound deck');
+ const safe=world.safeSave(),save=newJourney();save.village='wood';Object.assign(save,safe);world.load('wood',save);assert.equal(world.surface,'heart-tree');assert.ok(Math.abs(world.hero.root.position.y-route.toY)<.05,'upper tree-house save restores its floor');
+ assert.equal(world.canHeroMove(5,0),false,'tree trunk remains solid');assert.equal(world.canHeroMove(10,5),false,'open stair notch has no invisible floor');
+}
 load('lightning');world.update(12,false);assert.equal(world.weatherState().raining,true);assert.ok(world.weatherState().strikes>0);world.update(45,false);assert.equal(world.weatherState().raining,false);world.update(40,false);assert.equal(world.weatherState().raining,true);
 const old=newJourney();delete old.worldRevision;old.village='water';old.position=[60,-50];const migrated=readJourney({getItem:()=>JSON.stringify(old)});assert.deepEqual(migrated.position,[120,-100]);assert.equal(migrated.worldRevision,2);migrated.position=[132,-124];assert.deepEqual(readJourney({getItem:()=>JSON.stringify(migrated)}).position,[132,-124]);
 console.log('PASS: seven fourfold villages, all places reachable with real traversal legs, impassable deep rivers/ferries, input-driven climbing and ladders, elevated saves, cave floor/camera, intermittent storms, ruins and old-save migration.');
