@@ -23,8 +23,8 @@ const roundTrip=readJourney({getItem:()=>JSON.stringify(save)});assert.deepEqual
 
 const context={};vm.runInNewContext(fs.readFileSync('game-core.js','utf8'),context);const {Fighter}=context.SealGameCore;
 const fighter=new Fighter();fighter.autoRestore=false;fighter.resistances=equipmentState(save).armor.resistances;
-close(fighter.receive(40,false,false,'water').damage,30);close(fighter.receive(40,false,false,'ice').damage,35.2);close(fighter.receive(40,false,false,'fire').damage,40);close(fighter.receive(4,false,false,'weapon').damage,4);
-fighter.hp=200;fighter.shield=50;close(fighter.receive(100,false,false,'water').damage,25);close(fighter.hp,175);fighter.reflect=1;assert.equal(fighter.receive(100,false,false,'water').reflected,true);close(fighter.hp,175);
+close(fighter.receive(40,false,false,'water').damage,38);close(fighter.receive(40,false,false,'ice').damage,38);close(fighter.receive(40,false,false,'fire').damage,40);close(fighter.receive(4,false,false,'weapon').damage,4);
+fighter.hp=200;fighter.shield=50;close(fighter.receive(100,false,false,'water').damage,45);close(fighter.hp,155);fighter.reflect=1;assert.equal(fighter.receive(100,false,false,'water').reflected,true);close(fighter.hp,155);
 const hero=createHero();assert.equal(hero.root.getObjectByName('hero-covered-eye'),undefined);assert.equal(hero.root.getObjectsByProperty('name','hero-visible-eye').length,2);assert.ok(hero.root.getObjectByName('hero-crimson-scarf'));assert.equal(hero.root.getObjectsByProperty('name','hero-torn-coattail').length,4);assert.ok(hero.root.getObjectsByProperty('name','hero-black-hair').reduce((n,o)=>n+o.userData.strands,0)===45);
 for(const armor of ARMORS){hero.setEquipment({armor,bag:BAGS[3]});hero.update(1,true,{x:2,z:1},.016);const size=new T.Box3().setFromObject(hero.root).getSize(new T.Vector3());assert.ok(size.y>2.8&&size.y<3.6);assert.equal(hero.root.userData.equipment.armor,armor.id);assert.ok(size.toArray().every(Number.isFinite));}
 hero.airPose(1);hero.climbPose(2);

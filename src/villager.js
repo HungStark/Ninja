@@ -43,8 +43,10 @@ export function createVillager(profile){
     box(head,hair,side*.105,.09,.23,.12,.024,.025).rotation.z=side*(profile.variant%2?.08:-.1);
     if(profile.age==='elder')box(head,material('#916c54'),side*.17,-.035,.208,.06,.012,.013).rotation.z=side*.15;
   }
-  const nose=mesh(new T.ConeGeometry(.048,.14,4),skin,head,0,-.035,.262);nose.rotation.x=Math.PI/2;
-  box(head,material('#885b4a'),0,-.155,.225,.105,.018,.022);
+  if(profile.job!=='ninja'){
+    const nose=mesh(new T.ConeGeometry(.048,.14,4),skin,head,0,-.035,.262);nose.rotation.x=Math.PI/2;
+    box(head,material('#885b4a'),0,-.155,.225,.105,.018,.022);
+  }
   const cap=mesh(new T.SphereGeometry(1,10,6,0,Math.PI*2,0,Math.PI*.55),hair,head,0,.085,-.015,faceWidth+.025,.3,.255);
   if(profile.hairStyle==='bald'){cap.scale.set(faceWidth+.01,.16,.24);cap.position.set(0,-.015,-.09);}
   else if(profile.hairStyle==='short')for(const side of [-1,1])box(head,hair,side*.19,.18,.1,.18,.15,.22).rotation.z=side*.18;
@@ -127,5 +129,5 @@ export function createVillager(profile){
     arms.forEach((arm,i)=>{arm.rotation.x=rest[i].x+(moving?-Math.sin(stride+i*Math.PI)*.24:Math.sin(time*1.2+i)*.025);});
     if(!moving&&profile.job==='smith')arms[1].rotation.x=-.35+Math.sin(time*1.5)*.16;
   }
-  return {root,cloth,hair,update};
+  return {root,body,head,arms,legs,cloth,hair,update};
 }

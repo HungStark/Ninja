@@ -15,6 +15,7 @@ import {planVillageShop,buildVillageShop} from './village-shop.js';
 import {createHero} from './hero.js';
 import {equipmentState} from './equipment.js';
 import {createVillager} from './villager.js';
+import {createNinja} from './ninja.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {createCameraHeight} from './camera-height.js';
 
@@ -23,48 +24,6 @@ function mesh(g,m,parent,x=0,y=0,z=0){const o=new T.Mesh(g,m);o.position.set(x,y
 const box=(p,m,x,y,z,w,h,d)=>mesh(new T.BoxGeometry(w,h,d),m,p,x,y,z);
 const cyl=(p,m,x,y,z,r,h,n=8)=>mesh(new T.CylinderGeometry(r,r,h,n),m,p,x,y,z);
 function seeded(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
-
-export function createChibi(coat='#345c63',hair='#252b32',enemy=false){
-  const root=new T.Group(),body=new T.Group();root.add(body);
-  const cloth=mat(coat),ink=mat('#222c34'),skin=mat('#c9a48a'),metal=mat('#9da7a0'),hairMat=mat(hair),strap=mat('#51473d');
-  const torso=mesh(new T.CylinderGeometry(.34,.43,.65,6),cloth,body,0,1.03,0);
-  box(body,ink,0,.78,0,.76,.12,.48);box(body,strap,.21,1.09,.22,.11,.57,.06).rotation.z=-.35;
-  box(body,ink,0,1.87,.02,.83,.69,.66); // angular hair silhouette
-  mesh(new T.SphereGeometry(.43,10,7),skin,body,0,1.8,.065).scale.set(1,1.02,.85);
-  const cap=mesh(new T.SphereGeometry(.455,9,5,0,Math.PI*2,0,Math.PI*.53),hairMat,body,0,1.95,0);
-  for(let i=0;i<5;i++){const t=mesh(new T.ConeGeometry(.15,.44,4),hairMat,body,-.34+i*.16,2.18+Math.sin(i*2)*.06,-.05);t.rotation.z=(i-2)*-.23;}
-  box(body,cloth,0,1.99,.356,.8,.15,.06);box(body,metal,0,2,.397,.3,.12,.024);
-  box(body,ink,0,1.65,.338,.67,.27,.07);
-  for(const x of [-.16,.16]){box(body,ink,x,1.847,.397,.17,.057,.025).rotation.z=x>0?-.13:.13;box(body,mat(enemy?'#e5aa83':'#c4d6bd'),x,1.84,.414,.065,.035,.012);}
-  const arms=[],legs=[],knees=[],feet=[];
-  for(const side of [-1,1]){
-    const arm=new T.Group();arm.position.set(side*.43,1.28,0);body.add(arm);box(arm,cloth,side*.055,-.19,0,.25,.43,.28);box(arm,ink,side*.055,-.43,.03,.22,.21,.24);arms.push(arm);
-    const leg=new T.Group();leg.position.set(side*.21,.73,0);body.add(leg);box(leg,ink,0,-.155,0,.27,.31,.3);
-    const knee=new T.Group();knee.position.y=-.31;leg.add(knee);box(knee,ink,0,-.145,0,.25,.29,.28);box(knee,cloth,0,-.15,.025,.29,.16,.32);
-    const foot=new T.Group();foot.position.y=-.31;knee.add(foot);box(foot,ink,0,-.02,.075,.31,.19,.48);legs.push(leg);knees.push(knee);feet.push(foot);
-  }
-  box(body,strap,.39,.88,-.12,.23,.3,.25);const sword=box(body,ink,-.26,1.16,-.36,.13,1.5,.12);sword.rotation.z=-.45;
-  const scarf=box(body,cloth,-.24,1.4,-.35,.22,.78,.07);scarf.rotation.z=-.3;
-  root.scale.setScalar(1.25);
-  let stride=0,localX=0,localZ=0;
-  return {root,cloth,hair:hairMat,airPose(v){const tuck=v>0?.65:.38;arms.forEach((a,i)=>{a.rotation.x=-.65;a.rotation.z=i===0?.25:-.25;});legs.forEach((l,i)=>{l.rotation.x=-tuck*.5+(i===0?.1:-.1);l.rotation.z=0;knees[i].rotation.x=tuck;feet[i].rotation.x=-l.rotation.x-tuck;feet[i].rotation.z=0;});body.rotation.x=.06;},climbPose(t){arms.forEach((a,i)=>{a.rotation.x=-2.1+Math.sin(t*6+i*Math.PI)*.35;a.rotation.z=i===0?.12:-.12;});knees.forEach((k,i)=>k.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25);body.rotation.x=-.1;},locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,legs:legs.map((l,i)=>({hip:[l.rotation.x,l.rotation.z],knee:knees[i].rotation.x,ankle:feet[i].rotation.x})),lean:[body.rotation.x,body.rotation.z]}),update(time,moving,velocity=null,dt=1/60){
-    // Animate actual travel in the character's local frame, including strafes and backsteps.
-    const yaw=root.rotation.y,vx=moving?(velocity?.x??Math.sin(yaw)*4.6):0,vz=moving?(velocity?.z??Math.cos(yaw)*4.6):0,blend=1-Math.exp(-dt*14);
-    localX+=(Math.cos(yaw)*vx-Math.sin(yaw)*vz-localX)*blend;localZ+=(Math.sin(yaw)*vx+Math.cos(yaw)*vz-localZ)*blend;
-    const speed=Math.hypot(localX,localZ),weight=Math.min(1,speed/3),side=speed>.001?localX/speed:0,forward=speed>.001?localZ/speed:0,lateral=Math.abs(side),back=forward<0?1:0;
-    // Cadence follows distance rather than wall-clock time, so changing direction never resets a step.
-    stride+=speed*dt*(2.4+lateral*.3);
-    legs.forEach((leg,i)=>{const phase=stride+i*Math.PI,swing=Math.sin(phase)*weight,lift=Math.max(0,Math.cos(phase))*weight,knee=lift*(.5+back*.12);
-      leg.position.x=(i===0?-1:1)*(.21+lateral*weight*.045);leg.position.y=.73+lift*.025;
-      leg.rotation.x=-swing*forward*(back?.4:.58)-knee*.48;leg.rotation.z=swing*side*.34;
-      knees[i].rotation.x=knee;feet[i].rotation.x=-leg.rotation.x-knee;feet[i].rotation.z=-leg.rotation.z;
-      arms[i].rotation.x=.06+swing*forward*.3;arms[i].rotation.z=(i===0?.04:-.04)-swing*side*.2;
-    });
-    body.position.y=Math.sin(time*2)*.012*(1-weight)+Math.abs(Math.sin(stride))*.028*weight;
-    body.rotation.x=forward*weight*(.045+Math.max(0,speed-4.6)*.025);body.rotation.z=-side*weight*.055+Math.sin(stride)*.018*weight;
-    scarf.rotation.x=-weight*.35+Math.sin(time*(weight>0?9:2))*(.07+weight*.04);
-  }};
-}
 
 export function createAdventureScene(){
   const scene=new T.Scene(),camera=new T.PerspectiveCamera(49,innerWidth/innerHeight,.1,340),land=new T.Group();scene.add(land);
@@ -252,7 +211,7 @@ export function createAdventureScene(){
     const halo=mesh(new T.RingGeometry(1.7,1.78,48),M('#a7ead6',.6),shrine,0,.08,0);halo.rotation.x=-Math.PI/2;
     npc=createVillager(villagerAppearance(id,{kind:'chief'}));npc.root.position.set(-4,heightAt(-4,4),4);npc.root.rotation.y=.4;land.add(npc.root);citizens.push(npc);
     region.npcs.forEach((person,index)=>{const char=createVillager(villagerAppearance(id,person,index));char.root.position.set(person.x,heightAt(person.x,person.z),person.z);char.root.rotation.y=Math.atan2(-person.x,-person.z);land.add(char.root);citizens.push(char);if(person.kind==='mentor'){const rune=mesh(new T.TorusGeometry(.8,.04,4,24),M(v.color,.7),char.root,0,3.5,0);rune.rotation.x=Math.PI/2;animated.push({kind:'halo',mesh:rune});}});
-    const guardLook=encounterAppearance({kind:'quest',village:id});guard=createChibi(guardLook.coat,guardLook.hair,true);guard.root.position.set(quest.x??8,heightAt(quest.x??8,quest.z??-11),quest.z??-11);guard.root.rotation.y=Math.PI;guard.root.visible=save.quests[id]===1;land.add(guard.root);citizens.push(guard);
+    const guardLook=encounterAppearance({kind:'quest',village:id});guard=createNinja(guardLook);guard.root.position.set(quest.x??8,heightAt(quest.x??8,quest.z??-11),quest.z??-11);guard.root.rotation.y=Math.PI;guard.root.visible=save.quests[id]===1;land.add(guard.root);citizens.push(guard);
     if(!save.bosses?.[id])boss=buildBoss(c,region.boss);
     if(['water','fire','lightning','dark'].includes(id)&&!save.bosses?.[id]){const leader=createVillager(villagerAppearance(id,{kind:'leader'}));leader.root.position.set(region.boss.x+5,heightAt(region.boss.x+5,region.boss.z+3),region.boss.z+3);leader.root.rotation.y=Math.PI;land.add(leader.root);citizens.push(leader);}
     if(['wind','earth','ice','wood','light'].includes(id)){const envoy=createVillager(villagerAppearance(id,{kind:'envoy'}));envoy.root.position.set(-3,heightAt(-3,8),8);envoy.root.rotation.y=.4;land.add(envoy.root);citizens.push(envoy);}
@@ -264,7 +223,7 @@ export function createAdventureScene(){
     batchScenery();
     scene.updateMatrixWorld(true);camera.far=340*metrics().scale;camera.fov=68;camera.updateProjectionMatrix();followCamera(1,true,false);
   }
-  function spawnEnemy(x,z){clearEnemy();const look=encounterAppearance({kind:'random',village:current});randomEnemy=createChibi(look.coat,look.hair,true);randomEnemy.root.position.set(x,heightAt(x,z),z);land.add(randomEnemy.root);return randomEnemy;}
+  function spawnEnemy(x,z){clearEnemy();const look=encounterAppearance({kind:'random',village:current});randomEnemy=createNinja(look);randomEnemy.root.position.set(x,heightAt(x,z),z);land.add(randomEnemy.root);return randomEnemy;}
   function clearEnemy(){if(randomEnemy){land.remove(randomEnemy.root);disposeObject(randomEnemy.root);randomEnemy=null;}}
   function followCamera(dt,snap=false,menu=false){
     const p=hero.root.position,planned=ride?.route.carved?ride.cameraY??p.y:p.y,eyeY=cameraHeight.update(planned,dt,snap),head=new T.Vector3(p.x,eyeY+2.35,p.z);

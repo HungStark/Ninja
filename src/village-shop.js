@@ -1,6 +1,8 @@
 import * as T from 'three';
 import {REGIONS,regionMetrics,waterwayAt,riverAt,terrainHeight} from './adventure-world.js';
 import {buildGabledRoof} from './adventure-landmarks.js';
+import {ARMORS} from './equipment.js';
+import {createArmorWardrobe} from './hero-armor.js';
 
 export function planVillageShop(id,targets=[]){
   // Commerce stays in the same place after bosses fall or the treaty party arrives.
@@ -55,7 +57,10 @@ export function buildVillageShop(c,plot){
   for(const side of [-1,1])box(g,wood,-4.5+side*.75,1.6,5.2,.1,2.3,.1);
   box(g,wood,-4.5,2.75,5.2,1.6,.1,.12);
   const mannequin=cyl(g,M('#96947d'),-4.5,1.59,5.2,.4,1.1,6);mannequin.scale.z=.55;
-  for(const side of [-1,1])box(g,accent,-4.5+side*.23,1.6,5.42,.39,.7,.16);
+  const display=new T.Group();display.name='shop-regional-armor';display.position.set(-4.5,.48,5.2);display.scale.setScalar(.82);g.add(display);
+  const anchor=(x,y,z)=>{const a=new T.Group();a.position.set(x,y,z);display.add(a);return a;};
+  const wardrobe=createArmorWardrobe({body:anchor(0,0,0),shoulders:[anchor(-.36,2.04,0),anchor(.36,2.04,0)],bracers:[anchor(-.38,1.58,0),anchor(.38,1.58,0)],shins:[anchor(-.175,.71,0),anchor(.175,.71,0)],hips:[anchor(-.175,1.21,0),anchor(.175,1.21,0)]});
+  wardrobe.build(ARMORS.find(a=>a.id===id+'-guard'));
   box(g,wood,-2.8,1.05,6.2,1,.9,.9);box(g,M('#8f7756'),-2.8,1.5,6.2,.65,.45,.4);
   c.obstacles.push({x:plot.x,z:plot.z,w:7.2,d:4.2});
   return {root:g,merchant:{x:plot.x+4,z:plot.z+5.25,y:plot.base+floor}};

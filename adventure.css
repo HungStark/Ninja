@@ -49,10 +49,19 @@ body.adventure-view #world.camera-dragging{cursor:grabbing}
 .journey-top #openJournal{white-space:nowrap}
 .journey-top #openJournal .journey-discovery-count{font-size:10px;color:#e4c78f}
 .journey-top #openJournal kbd{display:inline-block}
-.progression-card{width:min(1180px,100%)}
-.training-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding-top:20px;align-items:start}
+.progression-card{width:min(1640px,100%)}
+.training-layout{display:grid;grid-template-columns:minmax(200px,240px) minmax(240px,300px) minmax(0,1fr);gap:22px;padding-top:20px;align-items:start}
 .training-stats{min-width:0}.training-stats .progression-note{margin-top:0}
-.hero-equipment-panel{position:sticky;top:115px;min-width:0;max-height:calc(92vh - 145px);overflow:auto;padding:18px;background:#122a307d;border:1px solid #c1bd8a38;border-radius:4px}
+.training-inventory{min-width:0;padding:18px;background:#122a307d;border:1px solid #c1bd8a38;border-radius:4px}
+.training-inventory h4{display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px;font-size:12px;font-weight:500;color:#e7d4a9}.training-inventory h4 small{color:#9bb5aa}
+.gear-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:240px;overflow:auto;padding:3px}
+.gear-tile{position:relative;display:block;width:100%;aspect-ratio:1;padding:0;overflow:hidden;border:1px solid #79988a66;border-radius:4px;background:radial-gradient(ellipse at 50% 40%,#47675f,#182e33);cursor:pointer}
+.gear-tile img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}.gear-tile[aria-pressed=true]{border:2px solid #e6c780;background:radial-gradient(ellipse,#688273,#243e3d)}.gear-tile[aria-pressed=true]::after{content:'✓';position:absolute;right:3px;bottom:2px;color:#f5d98d;font-size:12px}.gear-tile:hover{border-color:#e6c780}.gear-tile:focus-visible{outline:2px solid #f5d98d;outline-offset:1px}
+.gear-detail{min-height:100px;margin-top:16px;padding:12px;border:1px solid #c1bd8a38;background:#19383a;font-size:12px;color:#eddbb4;overflow-wrap:anywhere}.gear-detail p{color:#b9d0bd;line-height:1.6;font-size:11px}.gear-detail small{color:#a5baac;line-height:1.6;font-size:10px}
+.training-inventory label{display:block;color:#b8cdbb;font-size:11px;margin-top:16px}.training-inventory select{width:100%;max-width:100%;margin-top:6px;padding:9px 6px;background:#19363c;color:#efdfbc;border:1px solid #adbc9740;border-radius:3px;font:11px 'Segoe UI'}.training-inventory .journey-secondary{width:100%;font-size:11px;padding:10px 6px}
+.hero-worn small,.hero-worn strong{display:block}.hero-worn small{font-size:9px;letter-spacing:1px;color:#9bb6a6;margin-top:12px}.hero-worn strong{font-size:12px;color:#ead8af;margin-top:6px;line-height:1.5}.hero-worn p{font-size:10px;line-height:1.6;color:#b7cfbb;margin:6px 0 0}
+.training-stats .attribute-grid{grid-template-columns:1fr}.training-stats .system-grid{grid-template-columns:1fr}.training-stats .attribute-card{padding:18px}.training-stats .attribute-card>strong{font-size:25px}.shop-item-icon img{display:block;width:100%;height:100%;object-fit:contain}.shop-item-icon.armor,.shop-item-icon.armguard{width:100px;height:100px}
+.hero-equipment-panel{position:sticky;top:115px;min-width:0;padding:18px;background:#122a307d;border:1px solid #c1bd8a38;border-radius:4px}
 .hero-equipment-panel h3{font:24px Georgia;color:#efe1be;margin:10px 0 0;overflow-wrap:anywhere}
 .hero-preview{height:355px;width:100%;background:radial-gradient(ellipse at 50% 65%,#52736b55,transparent 70%);border-bottom:1px solid #bdc39d26;margin-bottom:14px}
 .hero-preview canvas{display:block;width:100%;height:100%}
@@ -74,7 +83,9 @@ body.adventure-view #world.camera-dragging{cursor:grabbing}
 .shop-item-icon{width:52px;height:52px;display:grid;place-items:center;border:1px solid var(--item-color);color:var(--item-color);font:35px Georgia;background:#273d3a}
 #shopEquipment{display:block;margin:0 22px 22px;width:calc(100% - 44px);padding:12px}#shopFeedback{font-size:12px;color:#dfc58b;min-height:18px;line-height:1.6}
 body[data-journey=shop] #journeyToast,body[data-journey=shop] #worldLabels{visibility:hidden}body[data-journey=shop] #startScreen{display:none!important}
-@media(max-width:850px){.training-layout{grid-template-columns:210px minmax(0,1fr);gap:15px}.hero-equipment-panel{padding:12px}.hero-preview{height:310px}.training-stats .attribute-grid{grid-template-columns:1fr}.training-stats .system-grid{grid-template-columns:1fr}.shop-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1350px){.training-stats .attribute-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.training-stats .system-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1100px){.training-layout{grid-template-columns:180px 220px minmax(0,1fr);gap:14px}.hero-equipment-panel,.training-inventory{padding:12px}}
+@media(max-width:900px){.training-layout{grid-template-columns:210px minmax(0,1fr);gap:15px}.training-stats{grid-column:1/-1}.hero-equipment-panel{position:static;padding:12px}.hero-preview{height:310px}.training-stats .attribute-grid{grid-template-columns:1fr}.training-stats .system-grid{grid-template-columns:1fr}.shop-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.training-layout{display:block;padding-top:13px}.hero-equipment-panel{position:static;max-width:100%;max-height:none;overflow:visible;margin-bottom:20px}.hero-preview{height:320px}.hero-equipment-panel h3{text-align:center}.training-stats .attribute-grid{grid-template-columns:1fr}.shop-items{grid-template-columns:1fr}#shopBody{padding:15px}.shop-wallet{font-size:10px}.journey-ammo{font-size:7px}.shop-card .atlas-heading{padding:15px}}
 .atlas-inspection{display:flex;align-items:flex-start;gap:8px;padding:13px 0;font-size:11px;color:#dcc997;line-height:1.6}.atlas-inspection input{width:15px;height:15px;flex:0 0 15px;accent-color:#d8bb7e;margin:2px 0 0}
 .journey-controls{gap:16px;max-width:calc(100vw - 30px)}

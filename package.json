@@ -2,7 +2,7 @@
   "name": "an-hoa-hand-seal-game",
   "version": "0.3.0",
   "private": true,
-  "description": "Third-person chibi ninja exploration across ten villages, with hand-seal duels and checkpoint respawns",
+  "description": "Third-person ninja exploration across ten villages, with hand-seal duels and checkpoint respawns",
   "scripts": {
     "start": "node server.cjs",
     "build": "node tools/build.mjs",
@@ -49,7 +49,10 @@
     "test:movement": "node tests/movement-core.mjs && node tests/movement-browser.cjs",
     "test:scenery": "node tests/scenery-collision-core.mjs && node tests/scenery-inspection-browser.cjs",
     "test:shuriken": "node tests/shuriken-equipment.mjs && node tests/shuriken-browser.cjs",
-    "test:equipment": "node tests/shuriken-equipment.mjs && node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs"
+    "test:ninjas": "node tests/ninja-models.mjs && node tests/enemy-movement-core.mjs && node tests/enemy-encounters-browser.cjs",
+    "test:armor": "node tests/armor-designs.mjs && node tests/shop-hero-browser.cjs",
+    "test:equipment": "node tests/shuriken-equipment.mjs && node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs",
+    "test:armguards": "node tests/armguards-core.mjs && node tests/armguards-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

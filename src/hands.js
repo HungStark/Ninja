@@ -6,6 +6,7 @@ import { handMaterials } from './hand-materials.js';
 import { poses } from "./poses.js";
 import { createSealShadow, createHandFire, createHandWater, createHandLightning, createHandElement } from './hand-vfx.js';
 import { inkMaterial, addInkOutline } from './ink-outline.js';
+import {createArmguardModel,disposeArmguard} from './armguard-model.js';
 export async function createHands() {
   const bytes = Uint8Array.from(atob(HAND_GLB_BASE64), (c) => c.charCodeAt(0));
   const gltf = await new GLTFLoader().parseAsync(bytes.buffer, "");
@@ -21,7 +22,8 @@ export async function createHands() {
   const fireLight = new T.PointLight("#ff9a42", 0, 4, 2);
   fireLight.position.set(0, 0.1, -0.8);
   scene.add(fireLight);
-  const hands = [], materials = handMaterials();
+  const hands = [], materials = Object.fromEntries(Object.entries(handMaterials()).map(([k,m])=>[k,m.clone()]));
+  const baseColors=Object.fromEntries(Object.entries(materials).map(([k,m])=>[k,m.color.clone()]));
   const ink = inkMaterial(.35, '#60484a'), nailInk = inkMaterial(.18, '#916c70'), armorInk = inkMaterial(.40, '#111827');
   const inkMaterials = [ink, nailInk, armorInk], outlines = [];
   for (const side of [-1, 1]) {
@@ -48,7 +50,22 @@ export async function createHands() {
       else if(surface.name.endsWith('_nail'))outlines.push(addInkOutline(surface,nailInk));
       else if(['sleeve','wrist_cuff','glove_back','wrist_plate'].includes(surface.name))outlines.push(addInkOutline(surface,armorInk));
     }
-    hands.push({ side, wrapper, joints, fromPosition: wrapper.position.clone(), fromRotation: wrapper.quaternion.clone(), fromJoints: Object.fromEntries(Object.entries(joints).map(([name, joint]) => [name, joint.quaternion.clone()])) });
+    hands.push({ side, wrapper, joints, surfaces, fromPosition: wrapper.position.clone(), fromRotation: wrapper.quaternion.clone(), fromJoints: Object.fromEntries(Object.entries(joints).map(([name, joint]) => [name, joint.quaternion.clone()])) });
+  }
+  let equippedArmguard={id:'bare-wrists',gloves:false};
+  function setArmguard(item){
+    item=item||{id:'bare-wrists',color:'#403640',gloves:false};equippedArmguard={id:item.id,gloves:!!item.gloves};
+    for(const [k,m] of Object.entries(materials))m.color.copy(baseColors[k]);
+    if(item.id!=='bare-wrists'){
+      materials.cloth.color.set('#24212b');materials.glove.color.set(item.color);materials.trim.color.set(item.elite?'#d8b67a':'#aaa99d');
+      if(item.gloves){materials.skin.color.set('#26232d');materials.nail.color.set(item.color);materials.crease.color.set('#17151d');}
+    }
+    for(const hand of hands){
+      if(hand.armguard)disposeArmguard(hand.armguard);
+      // The seal model's wrist origin is at the palm; its forearm extends down -Y.
+      const model=createArmguardModel({...item,gloves:false});model.scale.setScalar(.7);model.position.set(0,-.075,-.015);hand.joints.wrist.add(model);hand.armguard=model;
+      const layer=hand.surfaces[0].layers.mask;model.traverse(o=>o.layers.mask=layer);
+    }
   }
   let lastPose = -1, transitionAge = 1, castAge = 10, sealPulse = 0;
   const tempQ = new T.Quaternion(), tempE = new T.Euler(), auraMat = new T.MeshBasicMaterial({ color: new T.Color("#ffcc7a").multiplyScalar(1.5), transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending });
@@ -161,5 +178,5 @@ export async function createHands() {
     fireLight.intensity = T.MathUtils.damp(fireLight.intensity, fireIntensity * 2.6, 13, dt);
   }
   const setInkViewport=(width,height)=>inkMaterials.forEach(m=>m.uniforms.viewport.value.set(width,height));
-  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning, handWind,handDark,handLight,handEarth,handWood,handIce,lightFinger,lightOrigin,outlines, setInkViewport };
+  return { scene, root, hands, gltf, update, seal, cast, fireLight, setReady, clearEffects, shadow, handFire, handWater, handLightning, handWind,handDark,handLight,handEarth,handWood,handIce,lightFinger,lightOrigin,outlines, setInkViewport,setArmguard,armguardState:()=>({...equippedArmguard,skin:materials.skin.color.getHexString()}) };
 }

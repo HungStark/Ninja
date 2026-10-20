@@ -1,5 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {createArmorWardrobe} from './hero-armor.js';
+import {createArmguardModel} from './armguard-model.js';
 
 export function createHero(){
   const root=new T.Group(),body=new T.Group();root.name='crimson-masked-hero';root.add(body);
@@ -80,31 +82,28 @@ export function createHero(){
     const elbow=new T.Group();elbow.position.set(side*.02,-.46,0);arm.add(elbow);const lower=mesh(new T.CylinderGeometry(.115,.085,.37,8),dark,elbow,0,-.185,.01);
     box(elbow,M('#403640'),0,-.18,.1,.13,.25,.028);
     for(let i=0;i<3;i++){const lace=box(elbow,red,0,-.08-i*.095,.123,.15,.016,.012);lace.rotation.z=side*.28;}
-    const hand=ball(elbow,dark,0,-.43,.035,.078,.1,.07);for(let i=0;i<3;i++)ball(elbow,skin,(i-1)*.035,-.49,.073,.018,.034,.021);
-    arms.push({side,pivot:arm,upper,lower,elbow,hand});
+    const hand=ball(elbow,dark,0,-.43,.035,.078,.1,.07),fingers=[];for(let i=0;i<3;i++)fingers.push(ball(elbow,skin,(i-1)*.035,-.49,.073,.018,.034,.021));
+    arms.push({side,pivot:arm,upper,lower,elbow,hand,fingers});
   }
   const gear=new T.Group();gear.name='hero-equipment';body.add(gear);let gearKey='',equipment=null;
+  const armorAnchor=(parent,name)=>{const g=new T.Group();g.name=name;parent.add(g);return g;};
+  const armorAnchors={body:gear,shoulders:arms.map(a=>armorAnchor(a.pivot,'armor-shoulder')),bracers:arms.map(a=>armorAnchor(a.elbow,'armor-bracer')),shins:legs.map(l=>armorAnchor(l.knee,'armor-shin')),hips:legs.map(l=>armorAnchor(l.pivot,'armor-hip'))};
+  const wardrobe=createArmorWardrobe(armorAnchors);
   function setEquipment(state){
     cloth.color.set(state?.hero?.coat||'#211e25');hair.color.set(state?.hero?.hair||'#161821');
-    const armor=state?.armor||{id:'traveler',color:'#29252c',style:'wrap'},bag=state?.bag||{id:'pouch-30',capacity:10};
-    const key=armor.id+':'+bag.id;if(key===gearKey)return;gearKey=key;equipment={armor:armor.id,bag:bag.id};
-    const geometries=new Set();gear.traverse(o=>{if(o.geometry)geometries.add(o.geometry);});for(const g of geometries)g.dispose();gear.clear();
-    const plate=M(armor.color),trim=M(armor.elite?'#c4a574':'#8d878a');
-    // Equipment owns its geometry so swapping it never disposes the live body.
+    const armor=state?.armor||{id:'traveler',color:'#29252c',style:'wrap'},bag=state?.bag||{id:'pouch-30',capacity:10},armguard=state?.armguard||{id:'bare-wrists',color:'#403640'};
+    const key=armor.id+':'+bag.id+':'+armguard.id;if(key===gearKey)return;gearKey=key;equipment={armor:armor.id,bag:bag.id,armguard:armguard.id,gloves:!!armguard.gloves};
+    wardrobe.clear();
+    const trim=M(armor.elite?'#c4a574':'#8d878a');
     const b=(m,x,y,z,w,h,d)=>mesh(new T.BoxGeometry(w,h,d),m,gear,x,y,z);
     if(armor.id==='traveler'){
       const sash=b(red,0,1.77,.26,.095,.77,.035);sash.rotation.z=.51;
       const harness=b(strap,0,1.77,.3,.075,.8,.032);harness.rotation.z=-.48;
       b(trim,.08,1.91,.33,.075,.07,.02).rotation.z=-.48;
-    }else if(armor.style==='mantle'){
-      const cape=mesh(new T.CylinderGeometry(.37,.43,.72,8,1,true),plate,gear,0,1.77,-.04);cape.scale.z=.65;
-      for(const side of [-1,1])b(trim,side*.3,2.05,.1,.15,.11,.3);
-    }else if(armor.style==='lamellar')for(let r=0;r<4;r++)for(const side of [-1,1])b(r%2?plate:trim,side*.18,1.93-r*.18,.232,.32,.16,.09);
-    else{b(plate,0,1.76,0,.68,.74,.49);for(const side of [-1,1]){b(trim,side*.17,1.98,.27,.23,.045,.045);b(plate,side*.16,1.63,.28,.26,.23,.09);b(trim,side*.16,1.67,.331,.21,.025,.02);}}
-    if(armor.style==='plate'||armor.elite)for(const side of [-1,1]){b(plate,side*.4,2.03,0,.27,.18,.38);b(trim,side*.41,2.12,.015,.25,.035,.35);}
-    if(armor.style==='fur'){const collar=mesh(new T.TorusGeometry(.31,.09,6,14),M('#e0d9c9'),gear,0,2.11,0);collar.rotation.x=Math.PI/2;}
-    if(armor.style==='wrap'&&armor.id!=='traveler'){b(plate,0,1.65,.26,.65,.76,.07);b(trim,0,1.66,.315,.075,.72,.03).rotation.z=-.4;}
-    if(armor.id!=='traveler')b(dark,0,1.77,.325,.06,.64,.025);
+      root.userData.armorAppearance={region:'traveler',elite:false,triangles:0,draws:0};
+    }else root.userData.armorAppearance=wardrobe.build(armor);
+    for(const anchor of armorAnchors.bracers){anchor.traverse(o=>o.geometry?.dispose());anchor.clear();anchor.add(createArmguardModel(armguard));}
+    for(const arm of arms)for(const finger of arm.fingers)finger.material=armguard.gloves?dark:skin;
     const size=bag.capacity>=50?1.65:bag.capacity>=30?1.4:bag.capacity>=20?1.15:1;
     b(strap,.32,1.09,-.19,.27*size,.31*size,.26*size);b(trim,.32,1.19,-.19-.14*size,.23*size,.07,.035);
     b(strap,.18,.77,-.15,.22,.28,.13);root.userData.equipment={...equipment};
@@ -121,5 +120,5 @@ export function createHero(){
   }
   function airPose(v){legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;});arms.forEach(a=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;});}
   function climbPose(t){arms.forEach((a,i)=>{a.pivot.rotation.x=-2+Math.sin(t*6+i*Math.PI)*.35;});legs.forEach((l,i)=>l.knee.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25);body.rotation.x=-.1;}
-  return {root,group:root,cloth,hair,legs,arms,update,airPose,climbPose,setEquipment,locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
+  return {root,group:root,cloth,hair,legs,arms,armorAnchors,update,airPose,climbPose,setEquipment,locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
 }

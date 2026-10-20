@@ -22,20 +22,44 @@ const regions=[
   ['wood','Mộc Linh','#668457','wrap',{wood:.25,earth:.12}],
   ['dark','Nguyệt Ảnh','#655573','mantle',{dark:.25,fire:.12}]
 ];
-export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#29252c',style:'wrap',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>[
-  {id:v+'-guard',village:v,name:'Giáp '+name,price:140,color,style,resistances},
-  {id:v+'-elite',village:v,name:'Giáp '+name+' tinh anh',price:350,color,style,elite:true,resistances:Object.fromEntries(Object.entries(resistances).map(([e,r])=>[e,Math.min(.4,r+.1)]))}
-])];
+export const ARMOR_DESIGNS={
+  nameless:'Giáp da vá, đường khâu thủ công và đai khóa đồng',
+  water:'Vảy giáp xếp lớp, viền bạc và huy hiệu giọt nước',
+  fire:'Giáp phiến sơn đỏ, dây buộc và huy hiệu than hồng',
+  lightning:'Mảng giáp góc cạnh với tia sét khảm trên ngực',
+  earth:'Giáp đá nhiều mặt, vai nặng và ấn thạch ở ngực',
+  wind:'Vai lông vũ, đai lụa chéo và giáp nhẹ ôm tay',
+  light:'Giáp nghi lễ với đĩa mặt trời và đá sáng',
+  ice:'Cổ lông thú, giáp băng và tinh thể trên vai',
+  wood:'Lá giáp xếp chồng, vỏ cây đan và đai sợi',
+  dark:'Giáp lệch vai, áo quấn bất đối xứng và khóa trăng'
+};
+const elements=['water','fire','lightning','earth','wind','light','ice','wood','dark'];
+function gearVariants(v,legacy){
+  const keys=Object.keys(legacy),primary=keys[0],pair=keys.slice(0,2),triad=[...new Set([...keys,...elements])].slice(0,3),rates=(ids,values)=>Object.fromEntries(ids.map((id,i)=>[id,values[i]]));
+  return [
+    {suffix:'guard',label:'',price:140,rates:rates(pair,[.05,.05])},
+    {suffix:'guard-focus',label:' chuyên hệ',price:160,rates:{[primary]:.08}},
+    {suffix:'elite',label:' tinh anh',price:350,elite:true,rates:rates(pair,[.11,.08])},
+    {suffix:'elite-focus',label:' tinh anh chuyên hệ',price:390,elite:true,rates:{[primary]:.14}},
+    {suffix:'elite-triad',label:' tinh anh tam hệ',price:430,elite:true,rates:rates(triad,[.08,.08,.08])}
+  ];
+}
+export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#29252c',style:'wrap',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-'+g.suffix,village:v,name:'Giáp '+name+g.label,description:ARMOR_DESIGNS[v],price:g.price,color,style,elite:!!g.elite,resistances:g.rates})))];
+export const ARM_GUARDS=[{id:'bare-wrists',name:'Băng tay lữ hành',price:0,color:'#403640',style:'wrap',bonuses:{},gloves:false},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-bracers'+(g.suffix==='guard'?'':g.suffix==='guard-focus'?'-focus':'-'+g.suffix),village:v,name:'Giáp tay '+name+g.label,description:g.elite?'Giáp tay kèm găng phủ bàn tay, khớp ngón vẫn linh hoạt.':'Giáp cổ tay và cẳng tay, để hở các ngón kết ấn.',price:g.price-40,color,style,elite:!!g.elite,bonuses:g.rates,gloves:!!g.elite})))];
 export const armorById=id=>ARMORS.find(a=>a.id===id);
+export const armguardById=id=>ARM_GUARDS.find(a=>a.id===id);
 export const bagById=id=>BAGS.find(b=>b.id===id);
 export const shurikenById=id=>SHURIKEN_TYPES.find(s=>s.id===id);
-export function newEquipment(){return {version:1,armor:'traveler',bag:'pouch-30',shuriken:'iron',ownedArmor:['traveler'],ownedBags:['pouch-30'],ammo:{iron:10,steel:0,tempered:0,chakra:0}};}
+export function newEquipment(){return {version:1,armor:'traveler',armguard:'bare-wrists',bag:'pouch-30',shuriken:'iron',ownedArmor:['traveler'],ownedArmguards:['bare-wrists'],ownedBags:['pouch-30'],ammo:{iron:10,steel:0,tempered:0,chakra:0}};}
 export function readEquipment(raw){
   if(!raw||raw.version!==1)return newEquipment();
   const clean=newEquipment();
   clean.ownedArmor=[...new Set(['traveler',...(Array.isArray(raw.ownedArmor)?raw.ownedArmor.filter(id=>armorById(id)):[])])];
+  clean.ownedArmguards=[...new Set(['bare-wrists',...(Array.isArray(raw.ownedArmguards)?raw.ownedArmguards.filter(id=>armguardById(id)):[])])];
   clean.ownedBags=[...new Set(['pouch-30',...(Array.isArray(raw.ownedBags)?raw.ownedBags.filter(id=>bagById(id)):[])])];
   clean.armor=clean.ownedArmor.includes(raw.armor)?raw.armor:'traveler';clean.bag=clean.ownedBags.includes(raw.bag)?raw.bag:'pouch-30';
+  clean.armguard=clean.ownedArmguards.includes(raw.armguard)?raw.armguard:'bare-wrists';
   clean.shuriken=shurikenById(raw.shuriken)?raw.shuriken:'iron';let room=bagById(clean.bag).capacity;
   // Preserve the most valuable ammunition when an old save exceeds the new bag size.
   for(const s of [...SHURIKEN_TYPES].reverse()){const n=raw.ammo?.[s.id];clean.ammo[s.id]=Math.min(room,Number.isSafeInteger(n)&&n>=0?n:0);room-=clean.ammo[s.id];}
@@ -44,16 +68,18 @@ export function readEquipment(raw){
 export function selectAvailableShuriken(e){if(e.ammo[e.shuriken]>0)return true;const next=SHURIKEN_TYPES.find(s=>e.ammo[s.id]>0);if(!next)return false;e.shuriken=next.id;return true;}
 export function cycleShuriken(save){const e=save.equipment,available=SHURIKEN_TYPES.filter(s=>e.ammo[s.id]>0);if(!available.length)return false;const i=available.findIndex(s=>s.id===e.shuriken);e.shuriken=available[(i+1)%available.length].id;return true;}
 export const ammoCount=equipment=>Object.values(equipment.ammo).reduce((a,b)=>a+b,0);
-export function equipmentState(save){const e=save.equipment;return {hero:{...save.hero},armor:armorById(e.armor),bag:bagById(e.bag),shuriken:shurikenById(e.shuriken),ammo:{...e.ammo},count:ammoCount(e),available:e.ammo[e.shuriken]||0};}
-export function shopStock(village){return [...SHURIKEN_TYPES.map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village).map(a=>({...a,kind:'armor'})),...BAGS.filter(b=>b.price>0).map(b=>({...b,kind:'bag'}))];}
+export function equipmentState(save){const e=save.equipment;return {hero:{...save.hero},armor:armorById(e.armor),armguard:armguardById(e.armguard)||ARM_GUARDS[0],bag:bagById(e.bag),shuriken:shurikenById(e.shuriken),ammo:{...e.ammo},count:ammoCount(e),available:e.ammo[e.shuriken]||0};}
+export function damageMultiplierFor(stats,element){return (stats.damageMultiplier||1)+(element==='weapon'?0:stats.elementBonuses?.[element]||0);}
+export function shopStock(village){return [...SHURIKEN_TYPES.map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village).map(a=>({...a,kind:'armor'})),...ARM_GUARDS.filter(a=>a.village===village).map(a=>({...a,kind:'armguard'})),...BAGS.filter(b=>b.price>0).map(b=>({...b,kind:'bag'}))];}
 export function buyEquipment(save,id){
   const item=shopStock(save.village).find(item=>item.id===id),e=save.equipment;if(!item)return {ok:false,reason:'Món hàng không bán tại cửa hàng này.'};
-  if(item.kind==='armor'&&e.ownedArmor.includes(id)||item.kind==='bag'&&e.ownedBags.includes(id))return {ok:false,reason:'Bạn đã sở hữu món này.'};
+  if(item.kind==='armor'&&e.ownedArmor.includes(id)||item.kind==='armguard'&&e.ownedArmguards.includes(id)||item.kind==='bag'&&e.ownedBags.includes(id))return {ok:false,reason:'Bạn đã sở hữu món này.'};
   if(save.gold<item.price)return {ok:false,reason:'Không đủ xu.'};
   if(item.kind==='shuriken'&&ammoCount(e)+item.quantity>bagById(e.bag).capacity)return {ok:false,reason:'Túi không đủ chỗ. Hãy mua hoặc đeo túi lớn hơn.'};
   if(item.kind==='bag'&&item.capacity<ammoCount(e))return {ok:false,reason:'Túi này không chứa hết số phi tiêu đang mang.'};
   save.gold-=item.price;
   if(item.kind==='armor'){e.ownedArmor.push(id);e.armor=id;}
+  if(item.kind==='armguard'){e.ownedArmguards.push(id);e.armguard=id;}
   if(item.kind==='bag'){e.ownedBags.push(id);e.bag=id;}
   if(item.kind==='shuriken'){e.ammo[id]+=item.quantity;if(!e.ammo[e.shuriken])e.shuriken=id;}
   return {ok:true,item};
@@ -61,6 +87,7 @@ export function buyEquipment(save,id){
 export function equipItem(save,kind,id){
   const e=save.equipment;
   if(kind==='armor'&&e.ownedArmor.includes(id))e.armor=id;
+  else if(kind==='armguard'&&e.ownedArmguards.includes(id))e.armguard=id;
   else if(kind==='bag'&&e.ownedBags.includes(id)&&bagById(id).capacity>=ammoCount(e))e.bag=id;
   else if(kind==='shuriken'&&shurikenById(id))e.shuriken=id;
   else return false;return true;

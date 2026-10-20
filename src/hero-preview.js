@@ -11,6 +11,8 @@ export function createHeroPreview(){
       hero=createHero();scene.add(hero.root);hero.root.rotation.y=.25;camera=new T.PerspectiveCamera(34,1,.1,30);camera.position.set(2.2,2.15,6.7);camera.lookAt(0,1.65,0);
       const ring=new T.Mesh(new T.RingGeometry(.55,.64,32),new T.MeshBasicMaterial({color:'#b7ab82',transparent:true,opacity:.45,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.005;scene.add(ring);
     }
-    container.replaceChildren(renderer.domElement);hero.setEquipment(state);const width=container.clientWidth||250,height=container.clientHeight||370;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();hero.update(0,false);renderer.render(scene,camera);
+    container.replaceChildren(renderer.domElement);hero.setEquipment(state);const width=container.clientWidth||250,height=container.clientHeight||370;renderer.setSize(width,height,false);camera.aspect=width/height;
+    hero.update(0,false);const bounds=new T.Box3().setFromObject(hero.root),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3()),distance=Math.max(size.y,size.x/camera.aspect)*.5/Math.tan(T.MathUtils.degToRad(camera.fov/2))*1.12;
+    camera.position.set(center.x+.25,center.y+.1,center.z+distance);camera.lookAt(center);camera.updateProjectionMatrix();renderer.render(scene,camera);
   }};
 }
