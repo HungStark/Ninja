@@ -1,8 +1,8 @@
 export const SHURIKEN_TYPES=[
-  {id:'iron',name:'Phi tiêu sắt',damage:4,price:8,quantity:10,color:'#aeb8bc'},
-  {id:'steel',name:'Phi tiêu thép',damage:7,price:24,quantity:10,color:'#d5dfe3'},
-  {id:'tempered',name:'Phi tiêu tinh luyện',damage:11,price:55,quantity:10,color:'#78bcd1'},
-  {id:'chakra',name:'Phi tiêu dẫn chakra',damage:16,price:100,quantity:10,color:'#dec47e'}
+  {id:'iron',name:'Phi tiêu sắt',damage:4,price:8,quantity:10,color:'#707983'},
+  {id:'steel',name:'Phi tiêu bạc',damage:5,price:24,quantity:10,color:'#c3cbd5'},
+  {id:'tempered',name:'Phi tiêu vàng',damage:7,price:55,quantity:10,color:'#e6b53f'},
+  {id:'chakra',name:'Phi tiêu bạch kim',damage:10,price:100,quantity:10,color:'#e9faff',energy:true}
 ];
 export const BAGS=[
   {id:'pouch-30',name:'Túi hành trang',capacity:10,price:0},
@@ -22,7 +22,7 @@ const regions=[
   ['wood','Mộc Linh','#668457','wrap',{wood:.25,earth:.12}],
   ['dark','Nguyệt Ảnh','#655573','mantle',{dark:.25,fire:.12}]
 ];
-export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#52684f',style:'vest',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>[
+export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#29252c',style:'wrap',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>[
   {id:v+'-guard',village:v,name:'Giáp '+name,price:140,color,style,resistances},
   {id:v+'-elite',village:v,name:'Giáp '+name+' tinh anh',price:350,color,style,elite:true,resistances:Object.fromEntries(Object.entries(resistances).map(([e,r])=>[e,Math.min(.4,r+.1)]))}
 ])];
@@ -39,8 +39,10 @@ export function readEquipment(raw){
   clean.shuriken=shurikenById(raw.shuriken)?raw.shuriken:'iron';let room=bagById(clean.bag).capacity;
   // Preserve the most valuable ammunition when an old save exceeds the new bag size.
   for(const s of [...SHURIKEN_TYPES].reverse()){const n=raw.ammo?.[s.id];clean.ammo[s.id]=Math.min(room,Number.isSafeInteger(n)&&n>=0?n:0);room-=clean.ammo[s.id];}
-  return clean;
+  selectAvailableShuriken(clean);return clean;
 }
+export function selectAvailableShuriken(e){if(e.ammo[e.shuriken]>0)return true;const next=SHURIKEN_TYPES.find(s=>e.ammo[s.id]>0);if(!next)return false;e.shuriken=next.id;return true;}
+export function cycleShuriken(save){const e=save.equipment,available=SHURIKEN_TYPES.filter(s=>e.ammo[s.id]>0);if(!available.length)return false;const i=available.findIndex(s=>s.id===e.shuriken);e.shuriken=available[(i+1)%available.length].id;return true;}
 export const ammoCount=equipment=>Object.values(equipment.ammo).reduce((a,b)=>a+b,0);
 export function equipmentState(save){const e=save.equipment;return {hero:{...save.hero},armor:armorById(e.armor),bag:bagById(e.bag),shuriken:shurikenById(e.shuriken),ammo:{...e.ammo},count:ammoCount(e),available:e.ammo[e.shuriken]||0};}
 export function shopStock(village){return [...SHURIKEN_TYPES.map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village).map(a=>({...a,kind:'armor'})),...BAGS.filter(b=>b.price>0).map(b=>({...b,kind:'bag'}))];}
@@ -63,5 +65,5 @@ export function equipItem(save,kind,id){
   else if(kind==='shuriken'&&shurikenById(id))e.shuriken=id;
   else return false;return true;
 }
-export function takeShuriken(save){const e=save.equipment;if(!e.ammo[e.shuriken])return null;e.ammo[e.shuriken]--;return {...shurikenById(e.shuriken)};}
+export function takeShuriken(save){const e=save.equipment;if(!selectAvailableShuriken(e))return null;const item={...shurikenById(e.shuriken)};e.ammo[e.shuriken]--;selectAvailableShuriken(e);return item;}
 export function emergencySupply(save){if(ammoCount(save.equipment)>0||save.gold>=SHURIKEN_TYPES[0].price)return false;save.equipment.ammo.iron=10;save.equipment.shuriken='iron';return true;}

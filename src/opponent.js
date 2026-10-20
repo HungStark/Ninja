@@ -80,12 +80,12 @@ export async function createOpponent(scene, spawnPosition, playerModel = false) 
   return { group, rig, update, shield, aura, legs, setInkViewport, setAppearance };
 }
 
-// Full-volume body with the same hand skeleton/poses and navy/gold FPS clothing.
+// The exploration hero with the articulated hand-seal rig used by combat.
 export async function createPlayerAvatar(scene) {
   const hero=createHero(),group=hero.root;scene.add(group);group.userData.height=3.2;
   for(const arm of hero.arms)arm.pivot.visible=false;
   const rig=await createHands();rig.scene.remove(rig.root);group.add(rig.root);rig.root.position.set(0,2,.02);rig.root.rotation.y=Math.PI;rig.root.scale.setScalar(.9);
-  const upperMat=toon('#263747'),lowerMat=toon('#202a35'),up=new T.Vector3(0,1,0);
+  const upperMat=hero.cloth,lowerMat=toon('#14151c'),up=new T.Vector3(0,1,0);
   const previousPosition=group.position.clone();
   const sleeves=[-1,1].map(side=>{const upper=new T.Mesh(new T.CylinderGeometry(.14,.16,1,10),upperMat),lower=new T.Mesh(new T.CylinderGeometry(.1,.13,1,10),lowerMat);group.add(upper,lower);return {side,upper,lower};});
   const segment=(mesh,a,b)=>{const d=b.clone().sub(a);mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.scale.y=d.length();mesh.quaternion.setFromUnitVectors(up,d.normalize());};

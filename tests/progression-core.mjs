@@ -5,9 +5,8 @@ import {newJourney,readJourney,discoverZone,completeLesson,resolveBattle} from '
 import {REGIONS} from '../src/adventure-world.js';
 const {Fighter,GameRules,shuriken,spells}=SealGameCore;
 assert.equal(new Fighter().hp,200);assert.equal(shuriken.damage,4);
-const buff=spells.find(s=>s.id==='water-barrier');assert.equal(buff.weaponDamage,10);assert.equal(buff.duration,10);assert.equal(buff.cooldown,12);
-const rules=new GameRules(['water-barrier'],{maxChakra:115});assert.equal(rules.chakra,115);for(const key of buff.sequence)rules.seal(key);assert.equal(rules.cast().ok,true);assert.equal(rules.remaining(buff.id),12);rules.tick(10);assert.equal(rules.remaining(buff.id),2);rules.tick(2);assert.equal(rules.remaining(buff.id),0);assert.equal(rules.chakra,115);
-const fighter=new Fighter();fighter.waterWeaponTime=10;assert.equal(fighter.waterWeapon(shuriken).damage,10);fighter.tick(10);assert.equal(fighter.waterWeapon(shuriken).damage,4);
+const buff=spells.find(s=>s.id==='water-barrier');assert.equal(buff.style,'waterbubbles');assert.equal(buff.damage,12);assert.equal(buff.count,4);assert.equal(buff.duration,4);assert.equal(buff.cooldown,6);
+const rules=new GameRules(['water-barrier'],{maxChakra:115});assert.equal(rules.chakra,115);for(const key of buff.sequence)rules.seal(key);assert.equal(rules.cast().ok,true);assert.equal(rules.remaining(buff.id),6);rules.tick(4);assert.equal(rules.remaining(buff.id),2);rules.tick(2);assert.equal(rules.remaining(buff.id),0);assert.equal(rules.chakra,115);
 const p=newProgression();assert.equal(systemLevel(p,'water'),1);assert.equal(systemLevel(p,'fire'),0);assert.equal(remainingPoints(p),1);
 for(let level=2;level<=10;level++){const before=earnedPoints(p);gainExperience(p,'water',LEVEL_XP[level-1]-(p.xp.water||0));assert.equal(systemLevel(p,'water'),level);assert.equal(earnedPoints(p)-before,LEVEL_POINTS[level-1]);}
 assert.equal(earnedPoints(p),20);gainExperience(p,'water',1e8);assert.equal(earnedPoints(p),20);assert.equal(p.xp.water,2100);
@@ -26,4 +25,4 @@ const novice=encounterProfile(newJourney(),'random','nameless');assert.equal(nov
 const legacy={...newJourney(),learnedSpells:spells.map(s=>s.id)};delete legacy.progression;const migrated=readJourney({getItem:()=>JSON.stringify(legacy)});assert.equal(migrated.learnedSpells.length,45);for(const element of Object.keys(migrated.progression.xp))assert.equal(systemLevel(migrated.progression,element),5);
 const malformed=readProgression({xp:{water:1e8,fire:-1,missing:999},attributes:{health:999,strength:999,mana:-7},books:['missing','water-volley','water-volley']});assert.equal(earnedPoints(malformed),20);assert.equal(malformed.attributes.health,20);assert.equal(malformed.attributes.strength,0);assert.deepEqual(malformed.books,['water-volley']);
 const read=readJourney({getItem:()=>JSON.stringify(pupil)});assert.deepEqual(read.progression,pupil.progression);assert.deepEqual(read.learnedSpells,pupil.learnedSpells);
-console.log('PASS: base200HP/4/10 damage,10s buff/12s cooldown, chakra caps, nine independent level10 systems, exact20 points per system, one shared attribute pool, additive base bonuses, level5 eligibility, teacher/book prerequisites, loot and sanitized legacy saves.');
+console.log('PASS: base200HP/4 damage, four staggered water bubbles/6s cooldown, chakra caps, nine independent level10 systems, exact20 points per system, one shared attribute pool, additive base bonuses, level5 eligibility, teacher/book prerequisites, loot and sanitized legacy saves.');

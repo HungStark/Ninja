@@ -23,6 +23,7 @@
     "test:fire": "node tests/fire.cjs",
     "test:flight": "node tests/projectile-motion.mjs && node tests/flight-burst.mjs && node tests/element-flight.cjs",
     "test:water": "node tests/water.cjs",
+    "test:water-bubbles": "node tests/water-bubbles.mjs && node tests/water-bubbles-browser.cjs",
     "test:lightning": "node tests/lightning.cjs",
     "test:dark": "node tests/dark-clones.cjs && node tests/dark.cjs",
     "test:wind": "node tests/wind.cjs",
@@ -47,7 +48,8 @@
     "test:ruins": "node tests/nameless-ruins.cjs",
     "test:movement": "node tests/movement-core.mjs && node tests/movement-browser.cjs",
     "test:scenery": "node tests/scenery-collision-core.mjs && node tests/scenery-inspection-browser.cjs",
-    "test:equipment": "node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs"
+    "test:shuriken": "node tests/shuriken-equipment.mjs && node tests/shuriken-browser.cjs",
+    "test:equipment": "node tests/shuriken-equipment.mjs && node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

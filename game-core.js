@@ -39,7 +39,7 @@
     { id: 'water-lance', name: 'Thủy ngục', kind: 'attack', style: 'prison', rank: 'A', sequence: [...'wezxc'], cost: 38, damage: 12, size: .55, count: 1, speed: flightSpeeds.quick, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
     { id: 'water-volley', name: 'Ném thuyền', kind: 'attack', style: 'boat', rank: 'S', sequence: [...'wecvzx'], cost: 56, damage: 90, size: 1.7, count: 1, speed: flightSpeeds.heavy, blastRadius: 3.5, controlDuration:1, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm • 108 sát thương và choáng 1 giây khi trúng' },
     { id: 'water-tsunami', name: 'Sóng thần', kind: 'attack', style: 'tsunami', rank: 'SS', sequence: [...'wecvzxer'], cost: 72, damage: 30, size: 1, count: 1, speed: flightSpeeds.heavy, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức • đẩy phân thân ra sau đối thủ, không phá hủy • sát thương vừa phải' },
-    { id: 'water-barrier', name: 'Thủy phi tiêu', kind: 'defense', style: 'waterweapon', rank: 'C', sequence: [...'wea'], cost: 26, damage: 0, duration:10, cooldown:12, weaponDamage:10, weaponSpeedMultiplier:2, count:0, subtitle:'Phủ nước lên phi tiêu trong 10 giây • mỗi phi tiêu 10 sát thương, tốc độ gấp đôi • hồi chiêu 12 giây' },
+    { id: 'water-barrier', name: 'Thủy bộc cầu', kind: 'attack', style: 'waterbubbles', rank: 'C', sequence: [...'wea'], cost: 26, damage: 10, duration:4, detonationInterval:1, cooldown:6, count:4, size:.5, placementRadius:2.1, blastRadius:2.8, subtitle:'4 bong bóng nổ lần lượt ở giây 1–2–3–4 • mỗi quả 12 sát thương, bán kính 2,8 m • hồi 6 giây' },
     { id: 'water-reflect', name: 'Thủy thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence: [...'wedf'], cost: 32, damage: 0, shield: 95, duration: 5, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
   ].map(s => ({ ...s, damage:Math.round(s.damage*1.2*100)/100, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
   // Keep saved lightning IDs while giving each art its own behavior.
@@ -166,7 +166,7 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 200) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.waterWeaponTime=0;this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
+    constructor(maxHp = 200) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
     get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime||0,this.woodControlTime||0,this.lightningControlTime,this.boatControlTime);}
     set controlTime(value){this.waterControlTime=value;}
     get staticStacks(){return this.staticCharges.length;}
@@ -176,7 +176,7 @@
       this.burns=this.burns.map(t=>t-dt).filter(t=>t>1e-7);
       this.staticCharges=this.staticCharges.map(t=>t-dt).filter(t=>t>1e-7);
       const magneticDt=Math.max(0,dt-this.magneticDelay);this.magneticDelay=Math.max(0,this.magneticDelay-dt);this.magneticTime=Math.max(0,this.magneticTime-magneticDt);
-      for(const key of ['waterWeaponTime','lightningControlTime','boatControlTime','ignitionTime','woodControlTime','iceControlTime','waterControlTime','darkControlTime','windControlTime','earthControlTime','invulnerableTime','shieldTime']){this[key]=Math.max(0,(this[key]||0)-dt);if(this[key]<1e-7)this[key]=0;}
+      for(const key of ['lightningControlTime','boatControlTime','ignitionTime','woodControlTime','iceControlTime','waterControlTime','darkControlTime','windControlTime','earthControlTime','invulnerableTime','shieldTime']){this[key]=Math.max(0,(this[key]||0)-dt);if(this[key]<1e-7)this[key]=0;}
       if(!this.ignitionTime)this.ignitionLevel=0;
       if (!this.shieldTime) { this.shield = 0; this.reflect = 0; }
     }
@@ -201,8 +201,7 @@
       this.lightningControlTime=Math.max(this.lightningControlTime,stun);this.magneticDelay=stun;this.magneticTime=magnetic;
       return {stacks,stun,magnetic};
     }
-    waterWeapon(base){const buff=spells.find(s=>s.style==='waterweapon');return this.waterWeaponTime>0?{...base,damage:base.damage+buff.weaponDamage-shuriken.damage,speed:base.speed*buff.weaponSpeedMultiplier,waterInfused:true}:base;}
-    elementalState(){return {burnStacks:this.burns.length,burnTimes:[...this.burns],staticStacks:this.staticStacks,staticTimes:[...this.staticCharges],waterWeaponTime:this.waterWeaponTime,lightningControlTime:this.lightningControlTime,boatControlTime:this.boatControlTime,magneticTime:this.magneticTime,magneticDelay:this.magneticDelay,magneticActive:this.magneticActive,ignitionTime:this.ignitionTime,ignitionLevel:this.ignitionLevel};}
+    elementalState(){return {burnStacks:this.burns.length,burnTimes:[...this.burns],staticStacks:this.staticStacks,staticTimes:[...this.staticCharges],lightningControlTime:this.lightningControlTime,boatControlTime:this.boatControlTime,magneticTime:this.magneticTime,magneticDelay:this.magneticDelay,magneticActive:this.magneticActive,ignitionTime:this.ignitionTime,ignitionLevel:this.ignitionLevel};}
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
     receive(damage, reflected = false, ignoreShield=false, element=null) {
       if(this.invulnerableTime>0)return {damage:0,absorbed:0,reflected:false,restored:false,immune:true};

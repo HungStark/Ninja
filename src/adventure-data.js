@@ -86,16 +86,16 @@ export function campaignObjective(save) {
 }
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
-export function newJourney(name='Lữ Khách',coat='#263747',hair='#d6dce2') {
-  return {version:1,worldRevision:2,surface:null,elevation:null,expeditions:{},equipment:newEquipment(),hero:{look:'silver-sentinel-v1',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],progression:newProgression(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
+  return {version:1,worldRevision:2,surface:null,elevation:null,expeditions:{},equipment:newEquipment(),hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],progression:newProgression(),campaign:{treatySigned:false,deliveries:[]},gold:100000,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
     const s=JSON.parse(storage.getItem(SAVE_KEY));
     if(s?.version!==1||!village(s.village)||!village(s.checkpoint)||typeof s.hero?.name!=='string')return null;
     const hex=c=>/^#[\da-f]{6}$/i.test(c);
-    const clean=newJourney(s.hero.name,hex(s.hero.coat)?s.hero.coat:'#345c63',hex(s.hero.hair)?s.hero.hair:'#252b32');
-    clean.equipment=readEquipment(s.equipment);if(s.hero.look!=='silver-sentinel-v1')clean.hero.hair='#d6dce2';
+    const clean=newJourney(s.hero.name,hex(s.hero.coat)?s.hero.coat:'#211e25',hex(s.hero.hair)?s.hero.hair:'#161821');
+    clean.equipment=readEquipment(s.equipment);if(s.hero.look!=='crimson-wanderer-v2'){clean.hero.hair='#161821';clean.hero.coat='#211e25';}
     clean.village=s.village;clean.checkpoint=s.checkpoint;
     const limit=s.worldRevision===2?regionMetrics(s.village).limit:70;
     clean.position=Array.isArray(s.position)&&s.position.length===2&&s.position.every(n=>Number.isFinite(n)&&Math.abs(n)<=limit)?[...s.position]:[0,7];

@@ -6,7 +6,7 @@ const loadoutForSpell = spell => spell.kind === 'attack' ? [spell.id] : [spell.i
 assert.equal(new Set(keys).size, 12);
 assert.equal(elements.length, 9); assert.equal(spells.length, 45);
 assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 45);
-for(const spell of spells)assert.equal(spell.cooldown,spell.id==='dark-orb'?2:spell.id==='water-barrier'?12:context.SealGameCore.cooldownByRank[spell.rank]);
+for(const spell of spells)assert.equal(spell.cooldown,spell.id==='dark-orb'?2:spell.id==='water-barrier'?6:context.SealGameCore.cooldownByRank[spell.rank]);
 for(const id of ['fire-volley','water-lance'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-orb').speed,id+' matches Phong nhan');
 for(const id of ['fire-lance','fire-meteor','water-volley','water-tsunami'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-volley').speed,id+' matches Phong loc');
 const balance=new GameRules(['fire-volley','fire-barrier']);balance.chakra=0;balance.tick(2);assert.equal(balance.chakra,10);balance.chakra=100;
@@ -15,7 +15,7 @@ spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));asser
 const weapons=new GameRules(['fire-volley']);weapons.chakra=0;weapons.seal('q');assert.equal(weapons.throwShuriken().weapon.damage,4);assert.equal(weapons.chakra,0);assert.equal(weapons.casts,0);assert.equal(weapons.shurikenThrows,1);assert.equal(weapons.sequence.length,0);assert.equal(weapons.throwShuriken().ok,false);weapons.tick(.45);assert.equal(weapons.throwShuriken().ok,true);spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>weapons.seal(k));assert.equal(weapons.throwShuriken().reason,'spellReady');assert.equal(weapons.sequence.join(''),'qwdf');
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
-  assert.equal(list.filter(s=>s.kind==='attack').length,['dark','earth','wood'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,['dark','earth','wood'].includes(element.id)?1:2);
+  assert.equal(list.filter(s=>s.kind==='attack').length,['dark','earth','wood','water'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,['dark','earth','wood','water'].includes(element.id)?1:2);
 }
 for (const spell of spells) {
   const r = new GameRules(loadoutForSpell(spell)); spell.sequence.slice(0,-1).forEach(k => r.seal(k));
@@ -104,8 +104,8 @@ assert.ok(intersectFireWall([-3,1,0],[3,1,0],{...wall,normal:[1,0,0]}),'Wall rot
 assert.deepEqual(Array.from(meteorTarget([0,1.72,7],[0,0,-1])),[0,.08,-24]);
 const downward=meteorTarget([0,1.72,7],[0,-.1,-.995]);assert.ok(downward[2]>-11&&downward[2]<-10);
 const water = spells.filter(s=>s.element==='water');
-assert.deepEqual(Array.from(water.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[5,6,8]);
-assert.deepEqual(Array.from(water.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,4]);
+assert.deepEqual(Array.from(water.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[5,6,8,3]);
+assert.deepEqual(Array.from(water.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[4]);
 assert.equal(water.find(s=>s.style==='prison').controlDuration,3);
 assert.ok(water.find(s=>s.style==='tsunami').damage < water.find(s=>s.style==='boat').damage);
 assert.equal(water.find(s=>s.id==='water-reflect').style,'waterwall');

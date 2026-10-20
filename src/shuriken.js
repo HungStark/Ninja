@@ -9,23 +9,28 @@ export class ShurikenVisuals {
     const hole=new T.Path();hole.absarc(0,0,.014,0,Math.PI*2,true);shape.holes.push(hole);
     this.geometry=new T.ExtrudeGeometry(shape,{depth:.012,bevelEnabled:true,bevelSize:.002,bevelThickness:.002,bevelSegments:1,steps:1});this.geometry.translate(0,0,-.006);
     this.edges=new T.EdgesGeometry(this.geometry,25);
-    this.material=vfxToon('#c0cbd6',{side:T.DoubleSide,emissive:'#263849',emissiveIntensity:.35});
+    this.materials=new Map();
     this.ink=new T.LineBasicMaterial({color:'#263747'});
-    this.waterMaterial=new T.MeshBasicMaterial({color:'#59cfff',transparent:true,opacity:.35,depthWrite:false,blending:T.AdditiveBlending});
-    this.waterShell=new T.SphereGeometry(.18,12,8);this.waterRing=new T.TorusGeometry(.17,.018,4,24);
+    this.energyMaterial=new T.MeshBasicMaterial({color:new T.Color('#8aeaff').multiplyScalar(1.7),transparent:true,opacity:.8,depthWrite:false,blending:T.AdditiveBlending});
+    this.energyArc=new T.TorusGeometry(.147,.004,4,24,Math.PI*.65);
+    this.energySpark=new T.SphereGeometry(.006,6,4);
   }
   update(shots){
     for(const [shot,root] of this.objects)if(!shots.includes(shot)){root.removeFromParent();this.objects.delete(shot);}
     for(const shot of shots){if(shot.style!=='shuriken')continue;let root=this.objects.get(shot);
-      if(!root){root=new T.Group();const spinner=new T.Group();spinner.add(new T.Mesh(this.geometry,this.material),new T.LineSegments(this.edges,this.ink));root.add(spinner);root.userData.spinner=spinner;
-        if(shot.waterInfused){
-          const shell=new T.Mesh(this.waterShell,this.waterMaterial);shell.scale.set(1,1,.55);spinner.add(shell);
-          for(let i=0;i<2;i++){const ring=new T.Mesh(this.waterRing,this.waterMaterial);ring.rotation.set(i*.9,.7+i*.4,0);spinner.add(ring);}
-          for(let i=0;i<5;i++){const drop=new T.Mesh(this.waterShell,this.waterMaterial);drop.scale.set(.18,.18,.4+i*.13);drop.position.set(Math.sin(i*2.4)*.12,Math.cos(i*2.4)*.12,-.2-i*.1);root.add(drop);}
+      if(!root){root=new T.Group();const spinner=new T.Group(),color=shot.color||'#707983';
+        if(!this.materials.has(color))this.materials.set(color,vfxToon(color,{side:T.DoubleSide,emissive:color,emissiveIntensity:.13}));
+        const blade=new T.Mesh(this.geometry,this.materials.get(color));blade.name='shuriken-blade';spinner.add(blade,new T.LineSegments(this.edges,this.ink));root.add(spinner);root.userData.spinner=spinner;root.userData.blade=blade;
+        if(shot.energy){
+          const energy=new T.Group();energy.name='platinum-blade-energy';spinner.add(energy);root.userData.energy=energy;
+          for(let i=0;i<2;i++){const arc=new T.Mesh(this.energyArc,this.energyMaterial);arc.rotation.z=i*Math.PI;arc.position.z=(i?1:-1)*.014;energy.add(arc);}
+          for(let i=0;i<3;i++){const angle=i*Math.PI*2/3,spark=new T.Mesh(this.energySpark,this.energyMaterial);spark.position.set(Math.cos(angle)*.15,Math.sin(angle)*.15,.014);energy.add(spark);}
         }
         this.scene.add(root);this.objects.set(shot,root);}
       root.position.fromArray(shot.p);this.direction.fromArray(shot.v).normalize();root.quaternion.setFromUnitVectors(this.forward,this.direction);root.userData.spinner.rotation.z=shot.age*38;
+      if(root.userData.energy)root.userData.energy.rotation.z=-shot.age*15;
     }
   }
+  visualState(shot){const root=this.objects.get(shot);return root?{bladeColor:'#'+root.userData.blade.material.color.getHexString(),energy:!!root.userData.energy,energyRotation:root.userData.energy?.rotation.z||0,bladeDepth:.016}:null;}
   reset(){for(const root of this.objects.values())root.removeFromParent();this.objects.clear();}
 }

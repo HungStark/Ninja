@@ -11,7 +11,7 @@ import {gainExperience,regionElement,canLearn,learnFromBook} from '../src/progre
 const read=save=>readJourney({getItem:()=>JSON.stringify(save)});
 const validIds=new Set(SealGameCore.spells.map(spell=>spell.id));
 assert.deepEqual(STARTER_SPELLS,['water-barrier']);
-assert.equal(SealGameCore.spells.find(s=>s.id===STARTER_SPELLS[0]).style,'waterweapon');
+assert.equal(SealGameCore.spells.find(s=>s.id===STARTER_SPELLS[0]).style,'waterbubbles');
 assert.equal(ALL_ADVENTURE_SPELLS.length,45);
 assert.equal(new Set(ALL_ADVENTURE_SPELLS).size,45);
 assert.ok(ALL_ADVENTURE_SPELLS.every(id=>validIds.has(id)));
@@ -89,7 +89,7 @@ assert.equal(mentorReady(start,'water'),true);
 const waterReward=completeLesson(start,'water');
 assert.deepEqual(waterReward.spellIds,['water-lance']);
 assert.equal(campaignObjective(start).targetKind,'boss');
-assert.equal(start.gold,0);assert.equal(start.xp,0);assert.equal(start.wins,0);assert.deepEqual(start.quests,{});
+assert.equal(start.gold,100000);assert.equal(start.xp,0);assert.equal(start.wins,0);assert.deepEqual(start.quests,{});
 assert.equal(canTravel(start,'fire').allowed,false,'Learning alone must not unlock Hỏa/Lôi');
 const namelessLesson=newJourney();namelessLesson.lessons.nameless=1;
 for(const id of REGIONS.nameless.mentor.zoneIds)discoverZone(namelessLesson,'nameless',id);
@@ -143,4 +143,4 @@ const oldReward=learn(legacy,'water');assert.equal(oldReward.learned,false);asse
 assert.equal(campaignObjective(legacy).targetKind,'boss','A completed legacy lesson must not loop back to the mentor');
 const corrupt=read({...newJourney(),learnedSpells:['bad','water-barrier','water-barrier'],discoveries:['water:lotus','water:lotus','bad'],lessons:{water:1,fire:2,missing:1},mentors:{water:'true',missing:true},bosses:{dark:1},campaign:{treatySigned:false,deliveries:['earth','missing','earth']}});
 assert.deepEqual(corrupt.learnedSpells,['water-barrier']);assert.deepEqual(corrupt.discoveries,['water:lotus']);assert.deepEqual(corrupt.lessons,{water:1});assert.deepEqual(corrupt.mentors,{});assert.deepEqual(corrupt.bosses,{});assert.deepEqual(corrupt.campaign.deliveries,[]);
-console.log('PASS: one water buff starter, actual graph routes, both leader orders, peaceful mentor prerequisites, treaty ceremony, five local deliveries/victories, final gate, all45 arts, idempotent rewards, defeats, and legacy/sanitized saves.');
+console.log('PASS: one water-bubble starter, actual graph routes, both leader orders, peaceful mentor prerequisites, treaty ceremony, five local deliveries/victories, final gate, all45 arts, idempotent rewards, defeats, and legacy/sanitized saves.');
