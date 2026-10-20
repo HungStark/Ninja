@@ -3,6 +3,7 @@ import { toon } from './materials.js';
 import { createHands } from './hands.js';
 import { inkMaterial, addInkOutline } from './ink-outline.js';
 import {encounterAppearance,createEncounterCreature} from './encounter-appearance.js';
+import {createHero} from './hero.js';
 
 // The opponent uses the same articulated hands and twelve poses as the player.
 export async function createOpponent(scene, spawnPosition, playerModel = false) {
@@ -80,6 +81,18 @@ export async function createOpponent(scene, spawnPosition, playerModel = false) 
 }
 
 // Full-volume body with the same hand skeleton/poses and navy/gold FPS clothing.
-export function createPlayerAvatar(scene) {
-  return createOpponent(scene, new T.Vector3(), true);
+export async function createPlayerAvatar(scene) {
+  const hero=createHero(),group=hero.root;scene.add(group);group.userData.height=3.2;
+  for(const arm of hero.arms)arm.pivot.visible=false;
+  const rig=await createHands();rig.scene.remove(rig.root);group.add(rig.root);rig.root.position.set(0,2,.02);rig.root.rotation.y=Math.PI;rig.root.scale.setScalar(.9);
+  const upperMat=toon('#263747'),lowerMat=toon('#202a35'),up=new T.Vector3(0,1,0);
+  const previousPosition=group.position.clone();
+  const sleeves=[-1,1].map(side=>{const upper=new T.Mesh(new T.CylinderGeometry(.14,.16,1,10),upperMat),lower=new T.Mesh(new T.CylinderGeometry(.1,.13,1,10),lowerMat);group.add(upper,lower);return {side,upper,lower};});
+  const segment=(mesh,a,b)=>{const d=b.clone().sub(a);mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.scale.y=d.length();mesh.quaternion.setFromUnitVectors(up,d.normalize());};
+  function update(dt,time,pose,ready,fighter,hit=0,casting=false,moving=false,reducedMotion=false){
+    const velocity={x:dt>0?(group.position.x-previousPosition.x)/dt:0,z:dt>0?(group.position.z-previousPosition.z)/dt:0};previousPosition.copy(group.position);
+    hero.update(reducedMotion?0:time,moving&&!reducedMotion,velocity,dt);rig.update(dt,time,pose,ready,moving,casting?.8:0,reducedMotion);group.updateMatrixWorld(true);
+    for(let i=0;i<sleeves.length;i++){const s=sleeves[i],wrist=group.worldToLocal(rig.hands[i].wrapper.getWorldPosition(new T.Vector3())),shoulder=new T.Vector3(-s.side*.38,1.97,0),elbow=new T.Vector3(-s.side*.49,1.6,.3);segment(s.upper,shoulder,elbow);segment(s.lower,elbow,wrist);}
+  }
+  return {group,rig,legs:hero.legs,update,setEquipment:hero.setEquipment,setInkViewport:(w,h)=>rig.setInkViewport(w,h)};
 }

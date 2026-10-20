@@ -285,7 +285,7 @@ export class DarkDomain {
         b.impactDone=true;const live=fighters.find(f=>f.owner===b.targetOwner);
         if(live&&distance(b.p,live.pos)<1.5&&live.fighter.invulnerableTime<=0){
           b.victim=live;live.fighter.darkControlTime=b.duration;
-          const result=live.fighter.receive(b.damage,true,true);crush?.(b,live,result);
+          const result=live.fighter.receive(b.damage,true,true,'dark');crush?.(b,live,result);
         }
         b.phase=b.victim?'pressing':'missed';this.splash(b.p);
       }

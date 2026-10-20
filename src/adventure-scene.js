@@ -11,6 +11,9 @@ import {createVillageSurfaces} from './adventure-materials.js';
 import {buildVillageSettlement} from './adventure-settlements.js';
 import {HOUSE_WIDTH_SCALE} from './adventure-building-scale.js';
 import {encounterAppearance} from './encounter-appearance.js';
+import {planVillageShop,buildVillageShop} from './village-shop.js';
+import {createHero} from './hero.js';
+import {equipmentState} from './equipment.js';
 import {createVillager} from './villager.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {createCameraHeight} from './camera-height.js';
@@ -68,9 +71,9 @@ export function createAdventureScene(){
   scene.add(new T.HemisphereLight('#dfede6','#46433f',2.35));
   const sun=new T.DirectionalLight('#ffe5b9',3.1);sun.position.set(-35,65,28);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:180});sun.shadow.bias=-.0005;sun.shadow.normalBias=.03;scene.add(sun);
   const fill=new T.DirectionalLight('#a9cfdf',1.1);fill.position.set(20,25,-35);scene.add(fill);
-  const hero=createChibi(),previousHeroPosition=new T.Vector3();scene.add(hero.root);
+  const hero=createHero(),previousHeroPosition=new T.Vector3();scene.add(hero.root);
   const obstacles=[],interactives=[],animated=[],citizens=[],party=[],materials=new Map();
-  let npc,guard,boss,terrain,foliage,gates=[],bridges=[],routes=[],ride=null,surface=null,randomEnemy=null,current='nameless',time=0,corridors=[];
+  let shopPlot=null,npc,guard,boss,terrain,foliage,gates=[],bridges=[],routes=[],ride=null,surface=null,randomEnemy=null,current='nameless',time=0,corridors=[];
   const storm=createStorm(scene);
   const metrics=()=>regionMetrics(current);
   const cemetery=REGIONS.nameless.zones.find(z=>z.id==='war-cemetery');
@@ -137,7 +140,7 @@ export function createAdventureScene(){
   function disposeLand(){disposeObject(land);land.clear();physics.clear();obstacles.length=0;interactives.length=0;animated.length=0;citizens.length=0;party.length=0;bridges=[];routes=[];ride=null;surface=null;materials.clear();randomEnemy=null;boss=null;foliage=null;}
   function segmentDistance(x,z,target){const dot=Math.max(0,Math.min(1,(x*target.x+z*target.z)/(target.x*target.x+target.z*target.z||1)));return Math.hypot(x-target.x*dot,z-target.z*dot);}
   const laneDistance=(x,z,p)=>{const dx=p.b[0]-p.a[0],dz=p.b[1]-p.a[1],t=Math.max(0,Math.min(1,((x-p.a[0])*dx+(z-p.a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-p.a[0]-dx*t,z-p.a[1]-dz*t);};
-  const clearCorridor=(x,z,padding=0)=>settlementYards.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+padding)||settlementPaths.some(p=>laneDistance(x,z,p)<p.width/2+padding)||Math.hypot(x,z)<9+padding||corridors.some(t=>segmentDistance(x,z,t)<2.25+padding)||interactives.some(t=>Math.hypot(x-t.x,z-t.z)<3.2+padding);
+  const clearCorridor=(x,z,padding=0)=>shopPlot&&Math.abs(x-shopPlot.x)<8+padding&&Math.abs(z-shopPlot.z-2)<10+padding||settlementYards.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+padding)||settlementPaths.some(p=>laneDistance(x,z,p)<p.width/2+padding)||Math.hypot(x,z)<9+padding||corridors.some(t=>segmentDistance(x,z,t)<2.25+padding)||interactives.some(t=>Math.hypot(x-t.x,z-t.z)<3.2+padding);
   function obstacle(x,z,w,d){const halfW=w/2+.7,halfD=d/2+.7;if(clearCorridor(x,z,Math.hypot(halfW,halfD)))return false;obstacles.push({x,z,w:halfW,d:halfD});return true;}
   function boundaryBlocked(x,z){return Math.abs(x)>metrics().limit-1||Math.abs(z)>metrics().limit-1||(current==='earth'&&Math.abs(x)<4.5&&z<-13.2&&z>-23);}
   function baseBlocked(x,z){return boundaryBlocked(x,z)||(current==='water'&&isDeepWater(x,z)&&!waterDeckAt(x,z))||obstacles.some(o=>Math.abs(x-o.x)<o.w&&Math.abs(z-o.z)<o.d);}
@@ -218,7 +221,7 @@ export function createAdventureScene(){
     for(const {material,objects} of batches.values()){if(objects.length<2)continue;const geos=objects.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);return g;});const geo=mergeGeometries(geos,false);for(const g of geos)g.dispose();if(!geo)continue;for(const o of objects){o.parent.remove(o);o.geometry.dispose();}const combined=new T.Mesh(geo,material);combined.castShadow=true;combined.receiveShadow=true;land.add(combined);}
   }
   function load(id,save){
-    disposeLand();settlementPaths=[];settlementYards=[];surfaces=createVillageSurfaces(id);current=id;const v=village(id),region=REGIONS[id],rand=seeded(VILLAGES.indexOf(v)*913+1049);
+    disposeLand();shopPlot=null;settlementPaths=[];settlementYards=[];surfaces=createVillageSurfaces(id);current=id;const v=village(id),region=REGIONS[id],rand=seeded(VILLAGES.indexOf(v)*913+1049);
     routes=traversalDefinitions(id);storm.reset();blocked.limit=metrics().limit;
     const shadowExtent=metrics().limit+12;Object.assign(sun.shadow.camera,{left:-shadowExtent,right:shadowExtent,top:shadowExtent,bottom:-shadowExtent,far:metrics().limit*2+180});sun.shadow.camera.updateProjectionMatrix();
     scene.background=new T.Color(v.sky);scene.fog=new T.Fog(v.sky,75*metrics().scale,235*metrics().scale);sun.color.set(id==='dark'?'#c7c2ee':id==='ice'?'#e2f5ff':'#ffe4b7');sun.intensity=id==='dark'?1.75:id==='nameless'?2.45:3.1;
@@ -230,10 +233,12 @@ export function createAdventureScene(){
     const treatyReady=['water','fire','lightning'].every(key=>save.bosses?.[key]);
     if(id==='nameless'&&treatyReady){interactives.push({kind:'treaty',x:3,z:7,label:'Bàn ký hiệp ước'});['water','fire','lightning'].forEach((key,index)=>interactives.push({kind:'treaty',id:key,x:1+index*2,z:9.5,label:REGIONS[key].boss.name}));}
     if(['wind','earth','ice','wood','light'].includes(id))interactives.push({kind:'envoy',x:-3,z:8,label:`Đại diện ${v.name}`});
+    shopPlot=planVillageShop(id,interactives);interactives.push({kind:'shop',id:'village-shop',...shopPlot.entry,area:{x1:shopPlot.x-6.5,x2:shopPlot.x+6.5,z1:shopPlot.z+4.5,z2:shopPlot.z+12,y:shopPlot.base+.45},label:'Thương hội · '+v.name});
     corridors=[...interactives,...routes.flatMap(r=>[{x:r.from[0],z:r.from[1]},{x:r.to[0],z:r.to[1]}])];for(const g of gates)planBridge(g,3.7);for(const zone of region.zones)if(!zone.platform)planBridge(zone,2.5);for(const b of bridges)corridors.push({x:b.x+b.dx*(b.half+3),z:b.z+b.dz*(b.half+3)});addTerrain(v);addWater(v);
-    for(const g of gates){road(g,3.7);arch(g,v);}for(const zone of region.zones)if(!zone.platform)road(zone,2.5);addBridges();cyl(land,M(v.path),0,-.075,0,8,.2,id==='earth'?6:id==='lightning'?8:48);
-    const setpieceSpot=zone=>{const a=Math.atan2(zone.x,zone.z);let best,score=-Infinity;for(const side of [-1,1])for(const distance of [14,20]){const p={x:zone.x+Math.cos(a)*distance*side,z:zone.z-Math.sin(a)*distance*side};const clearance=Math.min(...corridors.map(t=>segmentDistance(p.x,p.z,t)),metrics().limit-5-Math.abs(p.x),metrics().limit-5-Math.abs(p.z));if(clearance>score){score=clearance;best=p;}}return best;};
+    for(const g of gates){road(g,3.7);arch(g,v);}for(const zone of region.zones)if(!zone.platform)road(zone,2.5);addBridges();road(shopPlot.entry,2.6);cyl(land,M(v.path),0,-.075,0,8,.2,id==='earth'?6:id==='lightning'?8:48);
+    const setpieceSpot=zone=>{const a=Math.atan2(zone.x,zone.z);let best,score=-Infinity;for(const side of [-1,1])for(const distance of [14,20]){const p={x:zone.x+Math.cos(a)*distance*side,z:zone.z-Math.sin(a)*distance*side};const clearance=Math.min(Math.hypot(p.x-shopPlot.x,p.z-shopPlot.z)-15,...corridors.map(t=>segmentDistance(p.x,p.z,t)),metrics().limit-5-Math.abs(p.x),metrics().limit-5-Math.abs(p.z));if(clearance>score){score=clearance;best=p;}}return best;};
     const c={id,v,land,obstacles,group,box,cyl,mesh,M,obstacle,clearCorridor,animated,setpieceSpot,heightAt,solidMesh,solidGeometry,surfaces,mainRoads:corridors.filter(t=>!t.platform),reserveLane:p=>settlementPaths.push(p),reserveYard:p=>settlementYards.push(p)};
+    const store=buildVillageShop(c,shopPlot);const merchant=createVillager(villagerAppearance(id,{kind:'envoy',id:'shopkeeper'}));merchant.root.position.set(store.merchant.x,store.merchant.y,store.merchant.z);land.add(merchant.root);citizens.push(merchant);
     interactives.push(...buildBiome(c,routes));
     for(const i of interactives)if(i.platform){i.y=platformFor(i.platform)?.toY;if(i.kind==='landmark'&&i.platform!=='earth-cave')i.z+=3;}else if(id==='fire'&&i.id==='summit-lotus')i.y=36;
     region.zones.forEach((zone,index)=>{if(!zone.platform&&!['red-cliff','summit-lotus'].includes(zone.id))buildDistrict(c,zone,index%4);const g=group(zone.x,zone.z);if(id==='fire'&&zone.id==='red-cliff')g.userData.noCollision=true;if(zone.platform)g.position.y=platformFor(zone.platform).toY;if(id==='fire'&&zone.id==='summit-lotus')g.position.y=36;if(id==='nameless'){g.name='cracked-landmark-marker';for(let k=0;k<7;k++){const a=k*2.4,r=1+k%3*.5,x=Math.sin(a)*r,z=Math.cos(a)*r,paver=mesh(new T.DodecahedronGeometry(.48,0),M('#8c8268'),g,x,heightAt(zone.x+x,zone.z+z)-g.position.y+.025,z);paver.scale.set(1,.12,.7);paver.rotation.y=a;}}else for(let k=0;k<2;k++)cyl(g,M(v.path),0,.015+k*.035,0,3.5-k*.35,.035,32);const mark=mesh(new T.OctahedronGeometry(.28),M(v.color,.65),g,0,2.8,0);animated.push({kind:'float',mesh:mark,base:2.8});});
@@ -254,7 +259,7 @@ export function createAdventureScene(){
     if(id==='nameless'&&treatyReady){const table=group(3,7);box(table,M('#6e5944'),0,1.1,0,3,.2,2);for(const s of [-1,1])for(const zz of [-1,1])box(table,M('#514638'),s*1.2,.5,zz*.75,.18,1,.18);box(table,M('#ded2ae'),0,1.23,0,1.3,.03,1);['water','fire','lightning'].forEach((key,index)=>{const rep=createVillager(villagerAppearance(key,{kind:'envoy'}));const x=1+index*2,z=9.5;rep.root.position.set(x,heightAt(x,z),z);rep.root.rotation.y=Math.PI;land.add(rep.root);citizens.push(rep);});}
     registerSceneryColliders(land,physics,{limit:metrics().limit,moving:[...routes.flatMap(r=>[r.boat,...(r.idleBoats||[])]).filter(Boolean),...animated.map(a=>a.mesh),...citizens.map(c=>c.root)],leafColors:[v.tree,'#507747','#658b53','#7d9b77','#656c49','#7c7a50']});
     surface=platformFor(save.surface)?.platform?.id||null;
-    hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);let pos=save.position,y=heroHeightAt(...pos);if(Number.isFinite(save.elevation)){const supported=physics.floorAt(...pos,save.elevation+.03);if(Math.abs(supported-save.elevation)<.08)y=supported;}if((surface?platformBlocked(surface,...pos):boundaryBlocked(...pos)||id==='water'&&isDeepWater(...pos)&&!waterDeckAt(...pos,y+.4))||!surface&&physics.overlaps(...pos,y,2.85,.36,true)){pos=[0,7];surface=null;y=heroHeightAt(...pos);}y=physics.floorAt(...pos,y+.3);hero.root.position.set(pos[0],y,pos[1]);physics.reset(y);previousHeroPosition.copy(hero.root.position);hero.root.rotation.y=orbitYaw+Math.PI;destination.visible=false;
+    hero.setEquipment(equipmentState(save));hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);let pos=save.position,y=heroHeightAt(...pos);if(Number.isFinite(save.elevation)){const supported=physics.floorAt(...pos,save.elevation+.03);if(Math.abs(supported-save.elevation)<.08)y=supported;}if((surface?platformBlocked(surface,...pos):boundaryBlocked(...pos)||id==='water'&&isDeepWater(...pos)&&!waterDeckAt(...pos,y+.4))||!surface&&physics.overlaps(...pos,y,2.85,.36,true)){pos=[0,7];surface=null;y=heroHeightAt(...pos);}y=physics.floorAt(...pos,y+.3);hero.root.position.set(pos[0],y,pos[1]);physics.reset(y);previousHeroPosition.copy(hero.root.position);hero.root.rotation.y=orbitYaw+Math.PI;destination.visible=false;
     if(id!=='nameless'&&treatyReady&&!save.campaign?.treatySigned)['water','fire','lightning'].forEach((key,index)=>{const char=createVillager(villagerAppearance(key,{kind:'envoy'})),offset=[[-2,1],[-3,-1],[-1,-3]][index];char.root.position.set(pos[0]+offset[0],heightAt(pos[0]+offset[0],pos[1]+offset[1]),pos[1]+offset[1]);land.add(char.root);party.push({char,offset});});
     batchScenery();
     scene.updateMatrixWorld(true);camera.far=340*metrics().scale;camera.fov=68;camera.updateProjectionMatrix();followCamera(1,true,false);

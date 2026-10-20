@@ -162,7 +162,7 @@ export class WoodGarden {
   bind(actor,duration){actor.fighter.woodControlTime=Math.max(actor.fighter.woodControlTime||0,duration);this.bindings.push({fighter:actor.fighter,owner:actor.owner});}
   hit(shot,p,actors,impact){
     if(impact){impact(shot,p);return shot.hitResult;}
-    const victim=actors.find(a=>a.owner!==shot.owner),result=victim.fighter.receive(shot.damage,false,shot.ignoreShield);shot.hitResult=result;
+    const victim=actors.find(a=>a.owner!==shot.owner),result=victim.fighter.receive(shot.damage,false,shot.ignoreShield,'wood');shot.hitResult=result;
     if(shot.style==='vinehit'&&!result.immune)this.bind(victim,shot.controlDuration);return result;
   }
   advance(dt,actors,walls=[],impact){

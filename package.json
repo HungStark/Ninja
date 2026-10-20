@@ -46,7 +46,8 @@
     "test:biomes": "node tests/biomes-core.mjs && node tests/biomes-browser.cjs",
     "test:ruins": "node tests/nameless-ruins.cjs",
     "test:movement": "node tests/movement-core.mjs && node tests/movement-browser.cjs",
-    "test:scenery": "node tests/scenery-collision-core.mjs && node tests/scenery-inspection-browser.cjs"
+    "test:scenery": "node tests/scenery-collision-core.mjs && node tests/scenery-inspection-browser.cjs",
+    "test:equipment": "node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

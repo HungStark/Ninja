@@ -2,7 +2,11 @@
 
 ## Chế độ khám phá · Kẻ Lữ Hành
 
-Mở `index.html` hoặc chạy `npm start`. Màn hình đầu cho phép tạo nhân vật chibi (tên, màu áo, màu tóc), tiếp tục bản lưu, hoặc vào đấu trường luyện tập cũ. Khi chạy máy chủ, giữ thêm `adventure.css` cùng các file game.
+Mở `index.html` hoặc chạy `npm start`. Màn hình đầu cho phép tạo nhẫn giả tóc bạc, che một mắt và đeo mặt nạ (tên, màu áo, sắc tóc), tiếp tục bản lưu, hoặc vào đấu trường luyện tập. Khi chạy máy chủ, giữ thêm `adventure.css` cùng các file game.
+
+- **Trang bị:** nhấn **C** để xem nhân vật 3D ở bên trái bảng thuộc tính và đổi giáp, loại phi tiêu, túi đã sở hữu. Giáp thay đổi ngoại hình cả khi khám phá và trong trận đấu, kháng đúng các hệ ghi trên món đồ; sức mạnh vẫn tăng sát thương theo phần trăm từ chỉ số gốc.
+- **Thương hội:** mỗi làng có một cửa hàng lớn, biển hiệu và quầy hàng; tìm bằng nhật ký **B**, bản đồ nhỏ hoặc nút tìm cửa hàng trong bảng **C**. Tới trước cửa/quầy rồi nhấn **E**. Phi tiêu sắt/thép/tinh luyện/dẫn chakra gây **4/7/11/16 sát thương**, bán bó 10 giá **8/24/55/100 xu**. Thủy phi tiêu cộng **6 sát thương**, giữ mức khởi đầu 4 → 10.
+- **Túi và tiếp tế:** khởi đầu có **10 phi tiêu sắt**, túi 10 chỗ; túi nâng cấp chứa **20/30/50** chiếc, tính tổng mọi loại. Ném thành công tiêu hao một chiếc, kết ấn và kích hoạt buff không tốn phi tiêu. Nhấn **T** trong trận để đổi loại còn hàng. Mua đồ, trang bị và số phi tiêu còn lại đều được lưu; rút lui không hoàn trả số đã dùng. Khi hết hoàn toàn phi tiêu và không đủ 8 xu, cửa hàng có gói tiếp tế khẩn cấp 10 phi tiêu sắt miễn phí.
 
 - **Tạm mở mọi làng để kiểm tra:** nhấn **M**, chọn bất kỳ làng nào rồi bấm **Dịch chuyển tới làng này**. Công tắc **Tạm mở tất cả làng để kiểm tra** bật mặc định và có thể tắt trong bản đồ để dùng lại khóa theo truyện. Di chuyển kiểm tra không tự đánh bại thủ lĩnh, học chiêu, ký hiệp ước hoặc mở khóa vĩnh viễn các làng.
 - Va chạm cảnh vật được lấy từ hình học thực tế, gồm cả đá vẽ bằng instancing, thân cây, cột, cầu ván, bến, sàn nhà sàn và các công trình ở mười làng. Đá giữ mặt nghiêng thật, sàn gỗ có mặt đỡ để nhảy lên và lưu lại độ cao. Tán cây nối vào thân, không treo rời trên không.

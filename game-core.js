@@ -201,12 +201,13 @@
       this.lightningControlTime=Math.max(this.lightningControlTime,stun);this.magneticDelay=stun;this.magneticTime=magnetic;
       return {stacks,stun,magnetic};
     }
-    waterWeapon(base){const buff=spells.find(s=>s.style==='waterweapon');return this.waterWeaponTime>0?{...base,damage:buff.weaponDamage,speed:base.speed*buff.weaponSpeedMultiplier,waterInfused:true}:base;}
+    waterWeapon(base){const buff=spells.find(s=>s.style==='waterweapon');return this.waterWeaponTime>0?{...base,damage:base.damage+buff.weaponDamage-shuriken.damage,speed:base.speed*buff.weaponSpeedMultiplier,waterInfused:true}:base;}
     elementalState(){return {burnStacks:this.burns.length,burnTimes:[...this.burns],staticStacks:this.staticStacks,staticTimes:[...this.staticCharges],waterWeaponTime:this.waterWeaponTime,lightningControlTime:this.lightningControlTime,boatControlTime:this.boatControlTime,magneticTime:this.magneticTime,magneticDelay:this.magneticDelay,magneticActive:this.magneticActive,ignitionTime:this.ignitionTime,ignitionLevel:this.ignitionLevel};}
     defend(spell) { this.shield = spell.shield; this.shieldTime = spell.duration; this.reflect = spell.style === 'reflect' ? 1 : 0; this.color = spell.color; this.defenseElement = spell.element; this.hp = Math.min(this.maxHp, this.hp + spell.heal); }
-    receive(damage, reflected = false, ignoreShield=false) {
+    receive(damage, reflected = false, ignoreShield=false, element=null) {
       if(this.invulnerableTime>0)return {damage:0,absorbed:0,reflected:false,restored:false,immune:true};
       if (this.reflect && !reflected) { this.reflect--; return { damage: 0, reflected: true }; }
+      const resistance=Math.max(0,Math.min(.8,Number(this.resistances?.[element])||0));damage=Math.max(0,damage)*(1-resistance);
       const absorbed = ignoreShield?0:Math.min(this.shield, damage); this.shield -= absorbed;
       if(absorbed>0&&this.shield<=1e-7){this.shield=0;this.shieldTime=0;this.reflect=0;}
       const actual = Math.min(this.hp, Math.max(0, damage - absorbed)); this.hp -= actual;
