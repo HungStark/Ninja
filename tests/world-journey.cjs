@@ -93,7 +93,7 @@ const {pathToFileURL}=require('node:url');
     mark('journal pause and phone layout');
     await page.evaluate(()=>__AN_HOA__.explore.moveTo([0,7]));await advance(.25);await click('openJournal');
     assert.equal((await state()).phase,'journal');const pausedAt=(await state()).position;await advance(3);assert.deepEqual((await state()).position,pausedAt);
-    assert.equal(await page.locator('[data-zone]').count(),REGIONS[(await state()).save.village].zones.length);assert.equal(await page.locator('[data-person]').count(),3);
+    assert.equal(await page.locator('[data-zone]').count(),REGIONS[(await state()).save.village].zones.length);assert.equal(await page.locator('[data-person]').count(),REGIONS[(await state()).save.village].npcs.length);
     await page.setViewportSize({width:390,height:844});await advance(.1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     const closeBox=await page.locator('#closeJournal').boundingBox();assert.ok(closeBox&&closeBox.x>=0&&closeBox.y>=0&&closeBox.x+closeBox.width<=390&&closeBox.y+closeBox.height<=844);
     await snapshot('journal-mobile');await click('closeJournal');await page.setViewportSize({width:1440,height:960});await advance(.1);

@@ -56,6 +56,7 @@ export function villagerAppearance(villageId,person={kind:'chief'},index=0){
   if(kind==='envoy')Object.assign(p,{height:3.13,hairStyle:'bun'});
   if(kind==='leader')Object.assign(p,{height:3.35,width:1.16,hat:villageId==='dark'?'hood':null});
   Object.assign(p,variants[id]||{});
+  Object.assign(p,person.appearance||{});if(person.activity)p.activity=person.activity;
   if(villageId==='ice')p.fur=true;
   return p;
 }

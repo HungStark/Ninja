@@ -1,4 +1,6 @@
 import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {createVillageActivity} from './village-activities.js';
 
 // Human proportions and profession-specific silhouettes, without a chibi base.
 export function createVillager(profile){
@@ -119,6 +121,11 @@ export function createVillager(profile){
     const scroll=cone(prop,linen,-.45,1.19,.16,.08,.08,.48,7);scroll.rotation.z=.3;box(prop,accent,-.45,1.2,.245,.18,.055,.025);
   }
   root.scale.setScalar(profile.height/3);
+  if(profile.activity){
+    // Batch static pieces per joint, preserving the articulated head and limbs.
+    const obsolete=new Set();root.traverse(parent=>{if(parent.isMesh)return;const batches=new Map();for(const child of [...parent.children])if(child.isMesh){child.updateMatrix();const geo=(child.geometry.index?child.geometry.toNonIndexed():child.geometry.clone()).applyMatrix4(child.matrix);if(!batches.has(child.material))batches.set(child.material,[]);batches.get(child.material).push(geo);obsolete.add(child.geometry);parent.remove(child);}for(const [mat,geos] of batches){const geo=mergeGeometries(geos);geos.forEach(g=>g.dispose());const o=new T.Mesh(geo,mat);o.castShadow=o.receiveShadow=true;parent.add(o);}});obsolete.forEach(g=>g.dispose());
+  }
+  const activity=profile.activity?createVillageActivity({root,body,head,arms,profile,material}):null;
   let stride=0;
   const rest=arms.map(a=>a.rotation.clone());
   function update(time,moving,velocity=null,dt=1/60){
@@ -128,6 +135,7 @@ export function createVillager(profile){
     legs.forEach((leg,i)=>{leg.rotation.x=moving?Math.sin(stride+i*Math.PI)*.35:0;});
     arms.forEach((arm,i)=>{arm.rotation.x=rest[i].x+(moving?-Math.sin(stride+i*Math.PI)*.24:Math.sin(time*1.2+i)*.025);});
     if(!moving&&profile.job==='smith')arms[1].rotation.x=-.35+Math.sin(time*1.5)*.16;
+    activity?.update(time,moving);
   }
-  return {root,body,head,arms,legs,cloth,hair,update};
+  return {root,body,head,arms,legs,cloth,hair,update,workstation:activity?.station||null};
 }

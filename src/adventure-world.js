@@ -1,4 +1,5 @@
 // Authored places, people and terrain. Base coordinates expand per region below.
+import {landmarkResidents} from './adventure-residents.js';
 export const WORLD_LIMIT = 140;
 export const GATE_RADIUS = 62;
 export const ARRIVAL_RADIUS = 57;
@@ -235,6 +236,7 @@ REGIONS.earth.zones.push({id:'great-cave',name:'Đại Hang Địa Tâm',x:0,z:-
 REGIONS.ice.zones.push({id:'polar-sea',name:'Biển Băng Cực Bắc',x:-98,z:111,radius:18,description:'Băng trôi và những tảng băng xanh phủ một vùng biển đóng băng.'},{id:'snow-ridge',name:'Sống Núi Tuyết',x:106,z:-104,radius:15,description:'Tuyết bị gió nén thành các triền dốc. Hãy thận trọng vì nền băng hơi trơn.'});
 REGIONS.wood.zones.push({id:'heart-tree-house',name:'Nhà Trên Cây Trung Tâm',x:5,z:0,radius:5,platform:'heart-tree',description:'Cầu thang gỗ ôm quanh thân cổ thụ, dẫn lên căn nhà có hiên và đèn ấm giữa tán lá.'},{id:'deep-canopy',name:'Rừng Tán Kín',x:104,z:-103,radius:18,description:'Những tầng cây rậm che bầu trời; đường đất len giữa các rễ lớn.'});
 REGIONS.earth.zones.push({id:'cave-crystals',name:'Mạch Tinh Khoáng',x:11,z:-40,radius:4,platform:'earth-cave',description:'Tinh khoáng phát sáng trong nhánh sâu của Đại Hang.'});
+for(const [id,region] of Object.entries(REGIONS))region.npcs.push(...landmarkResidents(id,region.zones));
 
 // Rivers share their exact banks and water level with rendering and bridge placement.
 export const LANDSCAPES={

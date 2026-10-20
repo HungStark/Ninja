@@ -53,7 +53,8 @@
     "test:armor": "node tests/armor-designs.mjs && node tests/shop-hero-browser.cjs",
     "test:equipment": "node tests/shuriken-equipment.mjs && node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs",
     "test:armguards": "node tests/armguards-core.mjs && node tests/armguards-browser.cjs",
-    "test:dash": "node tests/dash-boost.mjs && node tests/enemy-movement-core.mjs && node tests/dash-boost-browser.cjs"
+    "test:dash": "node tests/dash-boost.mjs && node tests/enemy-movement-core.mjs && node tests/dash-boost-browser.cjs",
+    "test:residents": "node tests/residents-core.mjs && node tests/residents-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

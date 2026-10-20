@@ -5,7 +5,8 @@ import {newJourney,readJourney,discoverZone,completeLesson,resolveBattle} from '
 import {REGIONS} from '../src/adventure-world.js';
 const {Fighter,GameRules,shuriken,spells}=SealGameCore;
 assert.equal(new Fighter().hp,200);assert.equal(shuriken.damage,4);
-const buff=spells.find(s=>s.id==='water-barrier');assert.equal(buff.style,'waterbubbles');assert.equal(buff.baseDamage,10);assert.equal(buff.damage,12);assert.equal(buff.count,4);assert.equal(buff.duration,4);assert.equal(buff.cooldown,6);
+for(const [id,damage] of [['water-lance',14.4],['water-volley',108],['water-tsunami',36],['water-barrier',10],['water-reflect',0]]){const spell=spells.find(s=>s.id===id);assert.equal(spell.baseDamage,damage);assert.equal(spell.damage,damage,'Water spells use explicit base damage without an elemental multiplier');}
+const buff=spells.find(s=>s.id==='water-barrier');assert.equal(buff.style,'waterbubbles');assert.equal(buff.baseDamage,10);assert.equal(buff.damage,10);assert.equal(buff.count,4);assert.equal(buff.duration,4);assert.equal(buff.cooldown,6);
 const rules=new GameRules(['water-barrier'],{maxChakra:115});assert.equal(rules.chakra,115);for(const key of buff.sequence)rules.seal(key);assert.equal(rules.cast().ok,true);assert.equal(rules.remaining(buff.id),6);rules.tick(4);assert.equal(rules.remaining(buff.id),2);rules.tick(2);assert.equal(rules.remaining(buff.id),0);assert.equal(rules.chakra,115);
 const p=newProgression();assert.equal(systemLevel(p,'water'),1);assert.equal(systemLevel(p,'fire'),0);assert.equal(remainingPoints(p),1);
 for(let level=2;level<=10;level++){const before=earnedPoints(p);gainExperience(p,'water',LEVEL_XP[level-1]-(p.xp.water||0));assert.equal(systemLevel(p,'water'),level);assert.equal(earnedPoints(p)-before,LEVEL_POINTS[level-1]);}
