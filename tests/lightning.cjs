@@ -63,7 +63,7 @@ const fs=require('node:fs/promises');
     await advance(4.8);assert.equal((await state()).lightningArt.shields,0);
 
     await reset();await cast('lightning-reflect');await advance(.3);
-    s=await state();assert.equal(s.lightningArt.fields.length,1);assert.ok(Math.abs(s.lightningArt.fields[0].life-9.7)<.001);
+    s=await state();assert.equal(s.lightningArt.fields.length,1);assert.ok(Math.abs(s.lightningArt.fields[0].life-4.7)<.001);
     assert.equal(s.reflect,0,'Lôi trận slows rather than reflects');await screenshot('field');
     await enemy('fire-orb',[0,1.72,-5],[0,0,1]);const before=shot(await state(),'orb','enemy').position[2];
     await advance(.5);s=await state();const incoming=shot(s,'orb','enemy');
@@ -73,10 +73,10 @@ const fs=require('node:fs/promises');
     await advance(.3);await cast('lightning-orb');await advance(.1);
     assert.equal(shot(await state(),'orb','player').slowFactor,1,'Own projectiles remain at full speed');
     await advance(1);assert.equal((await state()).health,957,'Slowed shots still deal their original damage');
-    await reset();await cast('lightning-reflect');await advance(9.9);assert.equal((await state()).lightningArt.fields.length,1);
-    await advance(.11);assert.equal((await state()).lightningArt.fields.length,0,'Field ends after ten seconds');
+    await reset();await cast('lightning-reflect');await advance(4.9);assert.equal((await state()).lightningArt.fields.length,1);
+    await advance(.11);assert.equal((await state()).lightningArt.fields.length,0,'Field ends after five seconds');
     await reset();await cast('lightning-reflect');await advance(1.1);await cast('lightning-reflect');await advance(.1);
-    assert.equal((await state()).lightningArt.fields.length,1,'Recast replaces the old field');assert.ok((await state()).lightningArt.fields[0].life>9.8);
+    assert.equal((await state()).lightningArt.fields.length,1,'Recast replaces the old field');assert.ok((await state()).lightningArt.fields[0].life>4.8);
     await click('qualityButton');await click('qualityButton');await advance(.1);await screenshot('field-low');
     await reset();assert.equal((await state()).lightningArt.fields.length,0);
 

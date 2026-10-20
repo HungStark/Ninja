@@ -40,9 +40,9 @@ function gearVariants(v,legacy){
   return [
     {suffix:'guard',label:'',price:140,rates:rates(pair,[.05,.05])},
     {suffix:'guard-focus',label:' chuyên hệ',price:160,rates:{[primary]:.08}},
-    {suffix:'elite',label:' tinh anh',price:350,elite:true,rates:rates(pair,[.11,.08])},
-    {suffix:'elite-focus',label:' tinh anh chuyên hệ',price:390,elite:true,rates:{[primary]:.14}},
-    {suffix:'elite-triad',label:' tinh anh tam hệ',price:430,elite:true,rates:rates(triad,[.08,.08,.08])}
+    {suffix:'elite',label:' tinh anh',price:390,elite:true,rates:rates(pair,[.11,.08])},
+    {suffix:'elite-focus',label:' tinh anh chuyên hệ',price:430,elite:true,rates:{[primary]:.14}},
+    {suffix:'elite-triad',label:' tinh anh tam hệ',price:350,elite:true,rates:rates(triad,[.08,.08,.08])}
   ];
 }
 export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#29252c',style:'wrap',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-'+g.suffix,village:v,name:'Giáp '+name+g.label,description:ARMOR_DESIGNS[v],price:g.price,color,style,elite:!!g.elite,resistances:g.rates})))];

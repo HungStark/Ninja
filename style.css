@@ -224,3 +224,6 @@ body:not(.playing)>header,body:not(.playing)>#hud{visibility:hidden}
   #startScreen .kind-filters button{white-space:nowrap;font-size:9px;padding:5px 6px}
   #startScreen #selectElementLoadout{margin-left:0}
 }
+:root #dashBoostButton{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid #b3d7ca66;border-radius:4px;background:#193535d9;color:#c9e5d4;font-size:10px;pointer-events:auto}
+#dashBoostButton:disabled{cursor:default;color:#b2bcb4;border-color:#79968b55}#dashBoostButton kbd{font-size:11px}#dashBoostButton:focus-visible{outline:2px solid #d8e9c8;outline-offset:3px}
+@media(max-width:620px){:root #dashBoostButton{bottom:80px;font-size:9px;padding:6px 9px}}

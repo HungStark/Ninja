@@ -127,7 +127,7 @@ const lightning=spells.filter(s=>s.element==='lightning');
 assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[4,6,8]);
 assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,5]);
 assert.equal(lightning.find(s=>s.id==='lightning-volley').style,'bird');
-assert.equal(lightning.find(s=>s.style==='stormfield').duration,10);
+assert.equal(lightning.find(s=>s.style==='stormfield').duration,5);
 const field={owner:'player',p:[0,0,0],radius:9,height:8,life:10,slowFactor:.3};
 const step=(p,v,dt,owner='enemy',fields=[field])=>projectileTimeStep(p,v,dt,owner,fields);
 assert.ok(Math.abs(step([0,2,0],[0,0,20],.1).travelTime-.03)<1e-10);

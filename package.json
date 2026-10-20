@@ -52,7 +52,8 @@
     "test:ninjas": "node tests/ninja-models.mjs && node tests/enemy-movement-core.mjs && node tests/enemy-encounters-browser.cjs",
     "test:armor": "node tests/armor-designs.mjs && node tests/shop-hero-browser.cjs",
     "test:equipment": "node tests/shuriken-equipment.mjs && node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs",
-    "test:armguards": "node tests/armguards-core.mjs && node tests/armguards-browser.cjs"
+    "test:armguards": "node tests/armguards-core.mjs && node tests/armguards-browser.cjs",
+    "test:dash": "node tests/dash-boost.mjs && node tests/enemy-movement-core.mjs && node tests/dash-boost-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

@@ -1,4 +1,5 @@
 import {flightDistanceAt,flightTimeAt} from './projectile-motion.js';
+import {STEP_DISTANCE,STEP_DURATION} from './dash-boost.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 // Predict only released, approaching projectiles. A wide wave still needs a defense.
@@ -35,7 +36,7 @@ export function createEnemyMovement(random=Math.random){
         else if(reaction<=0){
           const prediction=incomingThreat([pending],position);
           if(prediction){
-            const distance=clamp(prediction.radius+.85,1.15,2.4);
+            const distance=STEP_DISTANCE;
             // Prefer moving away from the line of fire, and turn inward at arena edges.
             direction=Math.abs(position[0]-prediction.x)>.08?Math.sign(position[0]-prediction.x):direction;
             if(Math.abs(position[0]+direction*distance)>5.3)direction*=-1;
@@ -46,17 +47,17 @@ export function createEnemyMovement(random=Math.random){
       }
       if(!pending&&mode!=='dodging'&&idle<=0&&!casting){
         direction=position[0]>.8?-1:position[0]<-.8?1:-direction;
-        target=clamp(position[0]+direction*(1.1+random()*1.1),-4,4);mode='circling';idle=2.4+random()*1.8;
+        target=clamp(position[0]+direction*STEP_DISTANCE,-5.3,5.3);mode='circling';idle=2.4+random()*1.8;
       }
       if(['dodging','circling'].includes(mode)){
-        const speed=(mode==='dodging'?(beginner?2.25:heavy?2.6:3.2):heavy?.8:1.15)*clamp(slow,0,1)*(casting?.7:1);
+        const speed=(STEP_DISTANCE/STEP_DURATION)*(heavy?.8:1)*clamp(slow,0,1)*(casting?.7:1);
         const x=position[0]+clamp(target-position[0],-speed*dt,speed*dt),next=constrain([x,position[1],position[2]]);
         velocity=dt>0?(next[0]-position[0])/dt:0;
-        if(Math.abs(target-next[0])<.03||Math.abs(x-position[0])>.001&&Math.abs(velocity)<.01){mode='idle';target=next[0];}
+        if(Math.abs(target-next[0])<1e-6||Math.abs(x-position[0])>.001&&Math.abs(velocity)<.01){mode='idle';target=next[0];}
         return next;
       }
       return position;
     },
-    state:()=>({mode,target,velocity,dodges,reaction,cooldown})
+    state:()=>({mode,target,velocity,dodges,reaction,cooldown,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION})
   };
 }

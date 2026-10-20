@@ -6,6 +6,10 @@ import {createHands} from '../src/hands.js';
 import {newJourney} from '../src/adventure-data.js';
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
 assert.equal(ARMORS.length,51);assert.equal(ARM_GUARDS.length,51);
+for(const catalogue of [ARMORS,ARM_GUARDS])for(const region of new Set(catalogue.filter(i=>i.village).map(i=>i.village))){
+ const stock=catalogue.filter(i=>i.village===region),rates=i=>Object.keys(i.resistances||i.bonuses).length;
+ for(const elite of [false,true]){const tier=stock.filter(i=>!!i.elite===elite).sort((a,b)=>rates(b)-rates(a));for(let i=1;i<tier.length;i++)assert.ok(tier[i].price>tier[i-1].price,`${region}: fewer affected elements must cost more within the same tier`);}
+}
 for(const item of [...ARMORS,...ARM_GUARDS]){
  const rates=Object.values(item.resistances||item.bonuses).sort((a,b)=>b-a);if(!rates.length)continue;
  assert.deepEqual(rates,item.elite?(rates.length===3?[.08,.08,.08]:rates.length===2?[.11,.08]:[.14]):rates.length===2?[.05,.05]:[.08],item.id);
