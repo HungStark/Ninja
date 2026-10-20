@@ -33,10 +33,11 @@ export class WaterBubbles {
     for(const tilt of [0,Math.PI/2]){const ring=new T.Mesh(this.ring,material);ring.rotation.x=tilt;root.add(ring);}
     root.scale.setScalar(.1);this.scene.add(root);this.bursts.push({root,material,radius,age:0,life:.5});
     this.detonations.push({owner,position:[...p],radius,damage,time});if(this.detonations.length>64)this.detonations.shift();
-    const victim=actors.find(a=>a.owner!==owner);
-    if(victim&&Math.hypot(...victim.pos.map((v,i)=>v-p[i]))<=radius){
-      const delta=victim.pos.map((v,i)=>v-p[i]),length=Math.hypot(...delta)||1;
-      hit({owner,element:'water',style:'waterbubbles',damage,unreflectable:true,v:delta.map(v=>v/length),color:spell.color},p);
+    for(const victim of actors.filter(a=>a.owner!==owner&&a.fighter?.hp!==0)){
+      if(Math.hypot(...victim.pos.map((v,i)=>v-p[i]))<=radius){
+        const delta=victim.pos.map((v,i)=>v-p[i]),length=Math.hypot(...delta)||1;
+        hit({owner,victimId:victim.id,element:'water',style:'waterbubbles',damage,unreflectable:true,v:delta.map(v=>v/length),color:spell.color},p);
+      }
     }
   }
   advance(dt,actors,hit){

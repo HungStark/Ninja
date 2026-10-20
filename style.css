@@ -227,3 +227,8 @@ body:not(.playing)>header,body:not(.playing)>#hud{visibility:hidden}
 :root #dashBoostButton{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid #b3d7ca66;border-radius:4px;background:#193535d9;color:#c9e5d4;font-size:10px;pointer-events:auto}
 #dashBoostButton:disabled{cursor:default;color:#b2bcb4;border-color:#79968b55}#dashBoostButton kbd{font-size:11px}#dashBoostButton:focus-visible{outline:2px solid #d8e9c8;outline-offset:3px}
 @media(max-width:620px){:root #dashBoostButton{bottom:80px;font-size:9px;padding:6px 9px}}
+
+/* Simultaneous opening encounter: independent health for all three attackers. */
+.squad-battle .enemy-status{visibility:hidden}
+#encounterSquad{position:fixed;z-index:8;top:112px;left:50%;transform:translateX(-50%);display:flex;gap:8px;width:min(650px,calc(100vw - 24px));pointer-events:none}
+#encounterSquad[hidden]{display:none}#encounterSquad>div{flex:1;min-width:0;padding:9px 12px;border:1px solid #b99f6a77;background:#142c31e8;color:#f3dfb4;font-size:12px}#encounterSquad strong{display:block;font-size:12px}#encounterSquad span{display:block;color:#b5ceca;margin:4px 0}#encounterSquad progress{width:100%;height:5px;accent-color:#db9f76}#encounterSquad .defeated{opacity:.45}@media(max-width:640px){#encounterSquad{top:90px}#encounterSquad>div{padding:6px}#encounterSquad strong{font-size:10px}}

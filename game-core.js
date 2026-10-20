@@ -45,7 +45,7 @@
   ].map(s => ({ ...s, baseDamage:s.damage, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
   // Keep saved lightning IDs while giving each art its own behavior.
   const lightningSpells = [
-    { id: 'lightning-lance', name: 'Lôi thương', kind: 'attack', style: 'lance', rank: 'B', sequence: [...'erdf'], cost: 40, damage: 62, size: .3, count: 1, speed: 38, subtitle: 'Thương sét dài • mũi nhọn và đuôi điện' },
+    { id: 'lightning-lance', name: 'Lôi thương', kind: 'attack', style: 'lance', rank: 'B', sequence: [...'erdf'], cost: 40, damage: 50, baseDamage:50, size: .3, count: 1, speed: 38, subtitle: 'Thương sét dài • mũi nhọn và đuôi điện' },
     { id: 'lightning-volley', name: 'Lôi điểu', kind: 'attack', style: 'bird', rank: 'S', sequence: [...'ercvzx'], cost: 56, damage: 102, size: .9, count: 1, speed: 27, subtitle: 'Chim hiện ra từ cầu sét rồi lao tới • góc nhìn trên cao' },
     { id: 'lightning-thunder', name: 'Thiên lôi', kind: 'attack', style: 'thunder', rank: 'SS', sequence: [...'ercvzxer'], cost: 82, damage: 150, size: 1, count: 1, speed: 0, blastRadius: 4.5, chargeTime: 1.4, subtitle: 'Ngước nhìn mây chớp điện • trả góc nhìn rồi sét đánh xuống' },
     { id: 'lightning-barrier', name: 'Điện giật', kind: 'defense', style: 'discharge', rank: 'C', sequence: [...'era'], cost: 26, damage: 0, count: 0, requiresStatic:true, subtitle: 'Tiêu thụ 1–3 điểm tĩnh điện • choáng 0,5 / 1 / 2 giây, sau đó từ tính hút chiêu Lôi 3 / 5 / 7 giây' },

@@ -6,9 +6,9 @@ import {toon} from './materials.js';
 
 export function encounterAppearance(encounter){
   if(!encounter)return {kind:'duel',id:'duel',village:'nameless',coat:'#33495f',hair:'#182b3d'};
-  const id=encounter.village,v=village(id);
+  const id=encounter.kind==='random'&&encounter.element?encounter.element:encounter.village,v=village(id);
   if(encounter.kind==='boss')return {kind:'creature',id,archetype:['water','fire'].includes(id)?'dragon':id==='lightning'?'bird':['wind','ice'].includes(id)?'beast':id==='dark'?'wraith':'golem',name:encounter.name};
-  return {kind:'ninja',id:encounter.kind+'-'+id,village:id,coat:encounter.kind==='quest'?v.color:'#754f4a',hair:encounter.kind==='quest'&&id==='ice'?'#d0dfdf':encounter.kind==='quest'&&id==='light'?'#d4c59e':'#252833',name:encounter.name};
+  return {kind:'ninja',id:encounter.kind+'-'+id,village:id,coat:v.color,hair:encounter.kind==='quest'&&id==='ice'?'#d0dfdf':encounter.kind==='quest'&&id==='light'?'#d4c59e':'#252833',name:encounter.name};
 }
 
 // Both exploration and combat build their guardians from the same silhouette.

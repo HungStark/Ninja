@@ -12,7 +12,7 @@ export function speakerPortrait(speaker){
 }
 
 export function dialogueCast(item,save,region,biome){
-  if(!item||!['npc','lore','healer','mentor','expedition-giver','envoy','treaty','boss','quest'].includes(item.kind))return null;
+  if(!item||!['npc','lore','healer','mentor','expedition-giver','envoy','treaty','boss','quest','shop','intro-guardian','village-guard'].includes(item.kind))return null;
   const hero={name:save.hero.name,role:'Người giữ ấn',coat:save.hero.coat,hair:save.hero.hair,armor:armorById(save.equipment?.armor),id:'hero'};
   const n=region.npcs.find(n=>n.id===(item.kind==='expedition-giver'?'fire-khoi':item.id)),index=region.npcs.indexOf(n);
   const npc=n?{name:n.name,role:n.role,coat:n.kind==='mentor'?biome.color:n.kind==='healer'?'#d0d9c0':'#8a7962',hair:index%2?'#ddd0b5':'#3c4243',elder:n.kind==='mentor',id:n.id}:{name:item.kind==='npc'?'Trưởng làng':item.kind==='envoy'?'Đại diện '+biome.name:item.kind==='boss'?region.boss.name:item.kind==='quest'?item.label:'Đại diện các làng',role:biome.name,coat:item.kind==='npc'?'#77725c':biome.color,hair:item.kind==='npc'?'#b2b9a9':'#30333c',elder:item.kind==='npc',id:item.kind};
@@ -22,6 +22,7 @@ export function dialogueCast(item,save,region,biome){
 
 export function conversationLines(item,save,cast,body){
   const {hero,npc}=cast,line=(speaker,text)=>({speaker,text});
+  if(item.id==='nameless-resident-war-cemetery'&&save.story?.stage==='mother')return [line(hero,'Mẹ, con nhớ cha và em. Con muốn làm điều gì đó để cuộc chiến này chấm dứt.'),line(npc,body),line(hero,'Con hứa sẽ đem lại hòa bình cho thế giới này. Con sẽ trở về bên mẹ.')];
   if(item.kind==='npc')return [line(hero,save.quests[save.village]===2?'Tôi đã giải quyết xong việc được giao và trở về báo tin.':'Trưởng làng, có điều gì tôi có thể giúp không?'),line(npc,body)];
   if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire>=2?'Tôi đã trở lại. Những bông Hồng Liên này có giúp được người bị thương không?':'Tôi nghe nói có người cần thuốc chữa thương. Tôi có thể giúp gì?'),line(npc,body)];
   if(item.kind==='envoy')return [line(hero,'Tôi đến để chuyển lời từ ba làng Thủy, Hỏa và Lôi.'),line(npc,body)];

@@ -1,3 +1,4 @@
+import {GUARDIAN_HEALTH} from './adventure-world.js';
 // Journey progression is independent for each element; all bonuses use base values.
 export const SYSTEMS=['fire','water','lightning','wind','earth','light','dark','wood','ice'];
 export const LEVEL_POINTS=[1,1,1,1,2,2,2,3,3,4];
@@ -58,14 +59,14 @@ export function teachAvailable(save,element){
   const ids=Object.keys(SKILL_LEVELS[element]||{}).filter(id=>canLearn(save.progression,id)&&!save.learnedSpells.includes(id));
   save.learnedSpells.push(...ids);save.progression.books=save.progression.books.filter(id=>!ids.includes(id));return ids;
 }
-// Early enemies use small, explicit move lists instead of the duel's full arsenal.
+// Explicit arsenals and encounter strength; opening trio is authored separately.
 export function encounterProfile(save,kind,region){
-  const element=region==='nameless'&&!save.bosses.water?'water':regionElement(region),stage=Object.keys(save.bosses).filter(id=>id!=='nameless').length;
+  const element=regionElement(region),stage=Object.keys(save.bosses).filter(id=>id!=='nameless').length;
   const ordered=Object.keys(SKILL_LEVELS[element]).sort((a,b)=>requiredLevel(a)-requiredLevel(b));
   if(kind==='boss'){
-    const hp={nameless:240,water:280,fire:380,lightning:440,earth:560,wind:500,light:620,ice:660,wood:700,dark:950}[region];
-    return {element,hp,spellIds:ordered.slice(0,region==='water'?3:['fire','lightning','nameless'].includes(region)?3:5),damageMultiplier:region==='water'?.5:['fire','lightning'].includes(region)?.65:.8,sealDelay:region==='water'?.6:.46,restTime:region==='water'?2.8:2,weaponInterval:region==='water'?1.4:1.1};
+    const hp=GUARDIAN_HEALTH[region];
+    return {element,hp,spellIds:ordered.slice(0,3),phaseSpellIds:ordered,phases:['water','fire','lightning','nameless'].includes(region)?2:3,damageMultiplier:['water','fire','lightning'].includes(region)?.75:.95,sealDelay:.43,restTime:2.1,weaponInterval:1.9};
   }
-  const beginner=!save.bosses.water;
-  return {element,hp:beginner?(kind==='quest'?90:60):Math.min(220,100+stage*15),spellIds:beginner?['water-barrier']:ordered.slice(0,Math.min(3,1+Math.floor(stage/3))),damageMultiplier:beginner?.45:.65,sealDelay:beginner?.85:.65,restTime:beginner?4:2.8,weaponInterval:beginner?1.8:1.3};
+  const guard=kind==='village-guard',early=['fire','water','lightning'].includes(region),count=guard?(early?2:3):Math.min(3,1+Math.floor(stage/2));
+  return {element,hp:guard?(early?155:240+stage*12):110+stage*15,spellIds:ordered.slice(0,count),damageMultiplier:guard?.65:.55,sealDelay:guard?.62:.75,restTime:guard?2.9:3.8,weaponInterval:guard?2.3:3.2};
 }

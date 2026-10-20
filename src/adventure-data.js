@@ -1,6 +1,7 @@
+import {newStory,readStory,HOME,openingObjective,FIRST_VILLAGES,completeSidequestTarget,villageSidequests} from './journey-story.js';
 import {newEquipment,readEquipment} from './equipment.js';
 import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS,regionMetrics} from './adventure-world.js';
-import {newProgression,readProgression,regionElement,gainExperience,systemLevel,teachAvailable,canLearn,addBooks} from './progression.js';
+import {newProgression,readProgression,regionElement,gainExperience,systemLevel,teachAvailable,canLearn,addBooks,spellElement} from './progression.js';
 export {STARTER_SPELLS,MENTOR_SPELLS} from './adventure-world.js';
 
 // The atlas is also the source of truth for walking between village maps.
@@ -35,26 +36,27 @@ const firstLeaders=['water','fire','lightning'];
 const treatyDelivered=(save,id)=>save.campaign?.deliveries?.includes(id)===true;
 const regionArtsLearned=(save,id)=>save.mentors?.[id]===true;
 export function campaignStage(save) {
-  if(!save.bosses?.water)return 'water';
-  if(!save.bosses?.fire||!save.bosses?.lightning)return 'fire-lightning';
+  if(save.story&&save.story.stage!=='infiltrate')return 'opening';
+  if(!save.story?.peaceSeals?.includes('water'))return 'water';
+  if(!['fire','lightning'].every(id=>save.story?.peaceSeals?.includes(id)))return 'fire-lightning';
   if(!save.campaign?.treatySigned)return 'treaty';
-  if(!CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.bosses?.[id]))return 'envoy';
+  if(!CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.story?.peaceSeals?.includes(id)))return 'envoy';
   return save.bosses?.dark?'complete':'dark';
 }
 export function canTravel(save,target) {
   if(!village(target))return {allowed:false,reason:'Miền đất này không tồn tại trên địa đồ.'};
   if(target==='dark'){
-    const ready=save.campaign?.treatySigned&&CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.bosses?.[id]);
+    const ready=save.campaign?.treatySigned&&CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.story?.peaceSeals?.includes(id));
     return {allowed:!!ready,reason:ready?'Hòa ước đã nối liền năm miền. Đã đến lúc đối mặt kẻ chủ mưu.':'Trao hòa ước và đánh bại thế lực canh giữ tại Thổ, Phong, Quang, Băng, Mộc trước khi tới Làng Ám.'};
   }
-  if(target===save.village||target==='nameless'||target==='water'||save.visited?.includes(target))return {allowed:true,reason:''};
-  if(!save.bosses?.water)return {allowed:false,reason:'Hãy tới Làng Thủy, học thủy thuật từ Lưu Thủy và đánh bại thủ lĩnh Hải Châu trước.'};
-  if(target==='fire'||target==='lightning')return {allowed:true,reason:''};
+  if(target==='nameless'||target===save.village)return {allowed:true,reason:''};
+  if(save.story&&save.story.stage!=='infiltrate')return {allowed:false,reason:'Gặp mẹ, học thuật từ trưởng làng, giải cứu hộ vệ rồi trở về báo cáo trước khi rời quê nhà.'};
+  if(FIRST_VILLAGES.includes(target))return {allowed:true,reason:''};
   if(!save.campaign?.treatySigned)return {allowed:false,reason:'Thuyết phục thủ lĩnh Hỏa và Lôi, rồi trở về Làng Vô Danh để ba làng ký hòa ước.'};
   return {allowed:true,reason:''};
 }
 export function canSignTreaty(save) {
-  return save.village==='nameless'&&!save.campaign?.treatySigned&&firstLeaders.every(id=>save.bosses?.[id]===true);
+  return save.village==='nameless'&&!save.campaign?.treatySigned&&firstLeaders.every(id=>save.story?.peaceSeals?.includes(id));
 }
 export function signTreaty(save) {
   if(!canSignTreaty(save))return false;
@@ -66,20 +68,20 @@ export function deliverTreaty(save,id) {
   save.campaign.deliveries??=[];save.campaign.deliveries.push(id);return true;
 }
 export function campaignObjective(save) {
+  const opening=openingObjective(save);if(opening)return opening;
   const stage=campaignStage(save);
   const lesson=id=>({title:`Học thuật tại ${village(id).name}`,description:REGIONS[id].mentor.clue,targetVillage:id,targetKind:'mentor'});
   const challenge=id=>({title:`Đối mặt ${REGIONS[id].boss.name}`,description:`Tìm ${REGIONS[id].boss.title} tại ${REGIONS[id].zones[3].name}. Chiến thắng để nhận bí thuật và tiếp tục hành trình.`,targetVillage:id,targetKind:'boss'});
-  if(stage==='water')return regionArtsLearned(save,'water')?challenge('water'):lesson('water');
-  if(stage==='fire-lightning'){
-    const local=['fire','lightning'].includes(save.village)&&!save.bosses?.[save.village]?save.village:['fire','lightning'].find(id=>!save.bosses?.[id]);
-    return regionArtsLearned(save,local)?challenge(local):lesson(local);
+  const infiltrate=id=>save.bosses[id]?{title:'Thương lượng dấu ấn hòa bình',description:'Hộ vệ đã bị khuất phục. Gặp trưởng '+village(id).name+' để đối thoại và nhận dấu ấn hòa bình.',targetVillage:id,targetKind:'npc'}:{title:'Khuất phục hộ vệ '+village(id).name,description:'Thâm nhập làng, đánh bại cảnh vệ trên đường và đối mặt '+REGIONS[id].boss.name+'. Có thể tìm cao nhân và giúp cư dân để chuẩn bị.',targetVillage:id,targetKind:'boss'};
+  if(stage==='water'||stage==='fire-lightning'){
+    const id=FIRST_VILLAGES.includes(save.village)&&!save.story.peaceSeals.includes(save.village)?save.village:FIRST_VILLAGES.find(id=>!save.story.peaceSeals.includes(id));return infiltrate(id);
   }
   if(stage==='treaty')return {title:'Ba làng ký hòa ước',description:'Hải Châu, Xích Nham và Chấn Thiên đang chờ ở Làng Vô Danh. Trở về dự lễ ký kết và nhận hòa ước để mang tới năm miền.',targetVillage:'nameless',targetKind:'treaty'};
   if(stage==='envoy'){
-    const unfinished=id=>!treatyDelivered(save,id)||!save.bosses?.[id];
+    const unfinished=id=>!treatyDelivered(save,id)||!save.story.peaceSeals.includes(id);
     const id=CAMPAIGN_REGIONS.includes(save.village)&&unfinished(save.village)?save.village:CAMPAIGN_REGIONS.find(unfinished);
     if(!treatyDelivered(save,id))return {title:`Trao hòa ước cho ${village(id).name}`,description:'Mang bản hòa ước đã ký tới sứ giả thường trú, giúp người dân chống các thế lực phá ấn và học nghệ thuật của miền đất này.',targetVillage:id,targetKind:'envoy'};
-    return regionArtsLearned(save,id)?challenge(id):lesson(id);
+    return infiltrate(id);
   }
   if(stage==='dark')return regionArtsLearned(save,'dark')?challenge('dark'):lesson('dark');
   return {title:'Hòa ước của chín miền',description:'Vô Nguyệt đã thất bại. Chín làng nối lại thủy lộ và đường núi; những người thầy vẫn chờ bạn trên hành trình tự do.',targetVillage:'nameless',targetKind:'complete'};
@@ -87,7 +89,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
-  return {version:1,worldRevision:2,surface:null,elevation:null,expeditions:{},equipment:newEquipment(),hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[0,7],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[...STARTER_SPELLS],progression:newProgression(),campaign:{treatySigned:false,deliveries:[]},gold:100000,xp:0,wins:0};
+  return {version:1,worldRevision:2,surface:null,elevation:null,expeditions:{},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:100000,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -117,14 +119,16 @@ export function readJourney(storage) {
     clean.campaign.deliveries=clean.campaign.treatySigned?[...new Set(Array.isArray(s.campaign?.deliveries)?s.campaign.deliveries.filter(id=>CAMPAIGN_REGIONS.includes(id)):[])]:[];
     // Saves made before the exploration update already owned every art. Keep that progress.
     const known=Array.isArray(s.learnedSpells)?s.learnedSpells.filter(id=>ALL_ADVENTURE_SPELLS.includes(id)):ALL_ADVENTURE_SPELLS;
-    clean.learnedSpells=[...new Set([...STARTER_SPELLS,...known])];
+    clean.learnedSpells=[...new Set([...(s.story?.revision===1?[]:STARTER_SPELLS),...known])];
     if(!s.progression)for(const v of VILLAGES){
       if(clean.mentors[v.id])clean.learnedSpells.push(...REGIONS[v.id].mentor.spellIds);
       if(clean.bosses[v.id])clean.learnedSpells.push(...bossRewardSpells(v.id));
     }
     clean.learnedSpells=[...new Set(clean.learnedSpells)];
     clean.progression=readProgression(s.progression,clean.learnedSpells);
+    if(s.story?.revision===1&&s.progression&&!Object.hasOwn(s.progression.xp||{},'water'))delete clean.progression.xp.water;
     clean.learnedSpells=clean.learnedSpells.filter(id=>canLearn(clean.progression,id));
+    clean.story=readStory(s.story,clean);
     for(const key of ['gold','xp','wins'])clean[key]=Number.isSafeInteger(s[key])&&s[key]>=0?s[key]:0;
     return clean;
   }catch{return null;}
@@ -135,7 +139,7 @@ export function discoverZone(save,id,zoneId) {
   save.discoveries??=[];
   if(save.discoveries.includes(key))return false;
   save.discoveries.push(key);
-  const element=id==='nameless'&&!save.bosses.water?'water':regionElement(id);
+  const element=id==='nameless'?spellElement(save.story?.starter)||'water':regionElement(id);
   if(systemLevel(save.progression,element)>0)gainExperience(save.progression,element,30);
   return true;
 }
@@ -158,7 +162,16 @@ export function completeLesson(save,id) {
 }
 export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
 export function resolveBattle(save,encounter,victory) {
-  if(victory&&encounter.kind==='boss'){
+  if(victory&&encounter.kind==='intro-trio'){
+    if(save.story.stage==='guardian'){save.story.stage='report';save.story.guardianRestored=true;save.bosses.nameless=true;save.gold+=120;save.xp+=140;save.wins++;gainExperience(save.progression,save.story.starter.split('-')[0],120);}
+  }
+  else if(victory&&encounter.kind==='village-guard'){
+    if(!save.story.defeatedGuards.includes(encounter.guardId)){save.story.defeatedGuards.push(encounter.guardId);save.gold+=35;save.xp+=75;save.wins++;gainExperience(save.progression,encounter.element,75);}
+  }
+  else if(victory&&encounter.kind==='sidequest'){
+    const q=villageSidequests(encounter.village).find(q=>q.id===encounter.questId);if(q&&completeSidequestTarget(save,q)){save.wins++;gainExperience(save.progression,q.element,35);}
+  }
+  else if(victory&&encounter.kind==='boss'){
     const boss=REGIONS[encounter.village]?.boss;
     save.bosses??={};
     if(boss&&!save.bosses[encounter.village]){
@@ -168,7 +181,7 @@ export function resolveBattle(save,encounter,victory) {
     }
   }
   else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;gainExperience(save.progression,encounter.element||(encounter.village==='nameless'?'water':regionElement(encounter.village)),encounter.kind==='quest'?65:45);if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
-  else{save.village=save.checkpoint;save.position=[0,7];}
+  else{save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
   return save;
 }
 

@@ -5,8 +5,9 @@ export const GATE_RADIUS = 62;
 export const ARRIVAL_RADIUS = 57;
 export function regionMetrics(id){const scale=['water','fire','lightning','wind','earth','ice','wood'].includes(id)?2:1;return {scale,limit:70*scale,size:140*scale,area:(140*scale)**2,gateRadius:70*scale-8,arrivalRadius:70*scale-13};}
 
-// The journey begins with one gift: water coating for ordinary shuriken.
+// Legacy saved journeys used this starter. New journeys choose their art in journey-story.
 export const STARTER_SPELLS = Object.freeze(['water-barrier']);
+export const GUARDIAN_HEALTH={nameless:360,water:520,fire:580,lightning:620,earth:850,wind:780,light:980,ice:1000,wood:1080,dark:1600};
 
 export const REGIONS = {
   nameless: {
@@ -199,7 +200,7 @@ const basicArts={nameless:'wind-orb',fire:'fire-volley',water:'water-lance',ligh
 for(const [id,region] of Object.entries(REGIONS)){
   region.mentor.spellIds=id==='water'?['water-lance','water-reflect','water-volley']:[...new Set([basicArts[id],region.mentor.spellId])];
   region.boss.rewardSpells=[...ELEMENT_SPELLS[id==='nameless'?'wind':id]];
-  region.boss.hp={nameless:240,water:280,fire:380,lightning:440,earth:560,wind:500,light:620,ice:660,wood:700,dark:950}[id];
+  region.boss.hp=GUARDIAN_HEALTH[id];
   region.boss.story+=' Chiến thắng để nhận sách bí thuật; hãy đạt đủ cấp hệ rồi mở sách để học.';
 }
 // The great beasts are the leaders' summoned guardians, rather than anonymous encounters.

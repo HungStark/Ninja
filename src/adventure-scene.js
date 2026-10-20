@@ -1,3 +1,5 @@
+import {HOME,INTRO_SQUAD,villageGuards,villageSidequests} from './journey-story.js';
+import {createVandalFireworks} from './vandal-fireworks.js';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {buildHouse,buildDistrict,buildBoss} from './adventure-landmarks.js';
@@ -33,10 +35,10 @@ export function createAdventureScene(){
   const hero=createHero(),previousHeroPosition=new T.Vector3();scene.add(hero.root);
   const obstacles=[],interactives=[],animated=[],citizens=[],party=[],residents=[],materials=new Map();
   let shopPlot=null,npc,guard,boss,terrain,foliage,gates=[],bridges=[],routes=[],ride=null,surface=null,randomEnemy=null,current='nameless',time=0,corridors=[];
-  const storm=createStorm(scene);
+  const storm=createStorm(scene),fireworks=createVandalFireworks(scene);let roadGuards=[],sabotage=null;
   const metrics=()=>regionMetrics(current);
   const cemetery=REGIONS.nameless.zones.find(z=>z.id==='war-cemetery');
-  const reservedLandscape=(x,z,padding=0)=>current==='nameless'&&Math.hypot(x-cemetery.x,z-cemetery.z)<cemetery.radius+1+padding||physics.solids.some(s=>physics.touches(s,x,z,padding));
+  const reservedLandscape=(x,z,padding=0)=>current==='nameless'&&Math.hypot(x-HOME.x,z-HOME.z)<6+padding||current==='nameless'&&Math.hypot(x-cemetery.x,z-cemetery.z)<cemetery.radius+1+padding||physics.solids.some(s=>physics.touches(s,x,z,padding));
   let surfaces=null,settlementPaths=[],settlementYards=[];
   let orbitYaw=0,orbitPitch=.2,orbitDistance=4.2;const cameraHeight=createCameraHeight();
   const groundHeight=(x,z)=>terrainHeight(current,x,z);
@@ -180,7 +182,7 @@ export function createAdventureScene(){
     for(const {material,objects} of batches.values()){if(objects.length<2)continue;const geos=objects.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);return g;});const geo=mergeGeometries(geos,false);for(const g of geos)g.dispose();if(!geo)continue;for(const o of objects){o.parent.remove(o);o.geometry.dispose();}const combined=new T.Mesh(geo,material);combined.castShadow=true;combined.receiveShadow=true;land.add(combined);}
   }
   function load(id,save){
-    disposeLand();shopPlot=null;settlementPaths=[];settlementYards=[];surfaces=createVillageSurfaces(id);current=id;const v=village(id),region=REGIONS[id],rand=seeded(VILLAGES.indexOf(v)*913+1049);
+    disposeLand();fireworks.reset();sabotage=null;roadGuards=[];shopPlot=null;settlementPaths=[];settlementYards=[];surfaces=createVillageSurfaces(id);current=id;const v=village(id),region=REGIONS[id],rand=seeded(VILLAGES.indexOf(v)*913+1049);
     routes=traversalDefinitions(id);storm.reset();blocked.limit=metrics().limit;
     const shadowExtent=metrics().limit+12;Object.assign(sun.shadow.camera,{left:-shadowExtent,right:shadowExtent,top:shadowExtent,bottom:-shadowExtent,far:metrics().limit*2+180});sun.shadow.camera.updateProjectionMatrix();
     scene.background=new T.Color(v.sky);scene.fog=new T.Fog(v.sky,75*metrics().scale,235*metrics().scale);sun.color.set(id==='dark'?'#c7c2ee':id==='ice'?'#e2f5ff':'#ffe4b7');sun.intensity=id==='dark'?1.75:id==='nameless'?2.45:3.1;
@@ -188,8 +190,14 @@ export function createAdventureScene(){
     const quest=QUESTS[id];interactives.push(...gates,{kind:'save',x:0,z:5,label:'Ấn hồi sinh'},{kind:'npc',x:-4,z:5,label:'Trưởng làng'},{kind:'quest',x:quest.x??8,z:quest.z??-9.5,label:quest.enemy});
     for(const zone of region.zones)interactives.push({kind:'landmark',id:zone.id,x:zone.x,z:zone.z,platform:zone.platform,label:zone.name});
     for(const person of region.npcs)interactives.push({kind:person.kind,id:person.id,x:person.x,z:person.z,label:person.name,...(person.platform?{platform:person.platform}:{}),...(person.elevation!==undefined?{y:person.elevation}:{})});
-    if(!save.bosses?.[id])interactives.push({kind:'boss',id:region.boss.id,x:region.boss.x,z:region.boss.z,label:region.boss.name});
-    const treatyReady=['water','fire','lightning'].every(key=>save.bosses?.[key]);
+    if(id!=='nameless'&&!save.bosses?.[id])interactives.push({kind:'boss',id:region.boss.id,x:region.boss.x,z:region.boss.z,label:region.boss.name});
+    const treatyReady=['water','fire','lightning'].every(key=>save.story?.peaceSeals?.includes(key));
+    if(id==='nameless'){
+      interactives.push({kind:'home',id:'family-home',x:HOME.spawn[0],z:HOME.spawn[1],label:'Ngôi nhà của gia đình'});
+      if(!save.story?.guardianRestored)interactives.push({kind:'intro-guardian',id:'broken-guardian',x:region.boss.x,z:region.boss.z+5,label:'Hộ vệ bị phá hỏng · Ba ninja đột kích'});
+    }
+    for(const g of villageGuards(id))if(!save.story?.defeatedGuards.includes(g.id))interactives.push({...g});
+    for(const q of villageSidequests(id))if(save.story?.sidequests[q.id]===1)interactives.push({kind:'sidequest-target',id:q.id,questType:q.type,x:q.x,z:q.z,label:q.targetName});
     if(id==='nameless'&&treatyReady){interactives.push({kind:'treaty',x:3,z:7,label:'Bàn ký hiệp ước'});['water','fire','lightning'].forEach((key,index)=>interactives.push({kind:'treaty',id:key,x:1+index*2,z:9.5,label:REGIONS[key].boss.name}));}
     if(['wind','earth','ice','wood','light'].includes(id))interactives.push({kind:'envoy',x:-3,z:8,label:`Đại diện ${v.name}`});
     shopPlot=planVillageShop(id,interactives);interactives.push({kind:'shop',id:'village-shop',...shopPlot.entry,area:{x1:shopPlot.x-6.5,x2:shopPlot.x+6.5,z1:shopPlot.z+4.5,z2:shopPlot.z+12,y:shopPlot.base+.45},label:'Thương hội · '+v.name});
@@ -206,13 +214,20 @@ export function createAdventureScene(){
     // A village can grow around its own districts, without ever borrowing the
     // same six central house positions from the other nine maps.
     for(let k=0;!surfaces&&k<(id==='nameless'?800:240)&&houses<26*metrics().scale;k++){const zone=region.zones[k%region.zones.length],a=rand()*Math.PI*2,r=8+rand()*12,x=zone.x+Math.sin(a)*r,z=zone.z+Math.cos(a)*r,w=3.4+rand()*2.3,d=3.2+rand()*2.1;if(Math.abs(x)>metrics().limit-7||Math.abs(z)>metrics().limit-7||clearCorridor(x,z,4*HOUSE_WIDTH_SCALE)||houseInRiver(x,z,w*HOUSE_WIDTH_SCALE,d*HOUSE_WIDTH_SCALE)||obstacles.some(o=>Math.abs(x-o.x)<o.w+4&&Math.abs(z-o.z)<o.d+4))continue;buildHouse(c,x,z,w,d,houses++);}
+    if(id==='nameless')buildHouse(c,HOME.x,HOME.z,4.4,3.8,1);
     addVegetation(v,rand);addGroundDetails(rand);addBackdrop(v,rand);
     const shrine=group(0,3),stone=M('#89958a');for(let k=0;k<3;k++)cyl(shrine,stone,0,.15+k*.18,0,1.4-k*.3,.2,8);cyl(shrine,M('#475c5f'),0,1,0,.38,1.1);box(shrine,M('#c1c8ae'),0,1.7,0,1,.24,1);const seal=mesh(new T.OctahedronGeometry(.42),M('#96e6cc',.85),shrine,0,2.35,0);animated.push({kind:'float',mesh:seal,base:2.35});
     const halo=mesh(new T.RingGeometry(1.7,1.78,48),M('#a7ead6',.6),shrine,0,.08,0);halo.rotation.x=-Math.PI/2;
     npc=createVillager(villagerAppearance(id,{kind:'chief'}));npc.root.position.set(-4,heightAt(-4,4),4);npc.root.rotation.y=.4;land.add(npc.root);citizens.push(npc);
     region.npcs.forEach((person,index)=>{const char=createVillager(villagerAppearance(id,person,index));char.root.position.set(person.x,person.platform?platformFor(person.platform)?.toY??heightAt(person.x,person.z):person.elevation??heightAt(person.x,person.z),person.z);char.root.rotation.y=person.yaw??Math.atan2(-person.x,-person.z);land.add(char.root);citizens.push(char);if(person.activity)residents.push({person,char});if(person.kind==='mentor'){const rune=mesh(new T.TorusGeometry(.8,.04,4,24),M(v.color,.7),char.root,0,3.5,0);rune.rotation.x=Math.PI/2;animated.push({kind:'halo',mesh:rune});}});
     const guardLook=encounterAppearance({kind:'quest',village:id});guard=createNinja(guardLook);guard.root.position.set(quest.x??8,heightAt(quest.x??8,quest.z??-11),quest.z??-11);guard.root.rotation.y=Math.PI;guard.root.visible=save.quests[id]===1;land.add(guard.root);citizens.push(guard);
-    if(!save.bosses?.[id])boss=buildBoss(c,region.boss);
+    if(id==='nameless'||!save.bosses?.[id]){
+      boss=buildBoss(c,region.boss);
+      if(id==='nameless'&&!save.story?.guardianRestored){boss.body.rotation.z=-.48;boss.body.position.y=-1.3;const motion=animated.find(a=>a.kind==='boss'&&a.mesh===boss.body);if(motion){motion.kind='broken-guardian';motion.base=-1.3;}boss.body.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.color?.multiplyScalar(.55);if(o.material.emissive)o.material.emissive.set('#000000');}});}
+    }
+    if(id==='nameless'&&!save.story?.guardianRestored)for(let i=0;i<3;i++){
+      const n=INTRO_SQUAD[i],char=createNinja(encounterAppearance({kind:'intro-trio',...n}));char.root.position.set(region.boss.x+(i-1)*3,heightAt(region.boss.x+(i-1)*3,region.boss.z+5),region.boss.z+5);char.root.rotation.y=Math.PI;land.add(char.root);citizens.push(char);
+    }
     if(['water','fire','lightning','dark'].includes(id)&&!save.bosses?.[id]){const leader=createVillager(villagerAppearance(id,{kind:'leader'}));leader.root.position.set(region.boss.x+5,heightAt(region.boss.x+5,region.boss.z+3),region.boss.z+3);leader.root.rotation.y=Math.PI;land.add(leader.root);citizens.push(leader);}
     if(['wind','earth','ice','wood','light'].includes(id)){const envoy=createVillager(villagerAppearance(id,{kind:'envoy'}));envoy.root.position.set(-3,heightAt(-3,8),8);envoy.root.rotation.y=.4;land.add(envoy.root);citizens.push(envoy);}
     if(id==='nameless'&&treatyReady){const table=group(3,7);box(table,M('#6e5944'),0,1.1,0,3,.2,2);for(const s of [-1,1])for(const zz of [-1,1])box(table,M('#514638'),s*1.2,.5,zz*.75,.18,1,.18);box(table,M('#ded2ae'),0,1.23,0,1.3,.03,1);['water','fire','lightning'].forEach((key,index)=>{const rep=createVillager(villagerAppearance(key,{kind:'envoy'}));const x=1+index*2,z=9.5;rep.root.position.set(x,heightAt(x,z),z);rep.root.rotation.y=Math.PI;land.add(rep.root);citizens.push(rep);});}
@@ -238,14 +253,24 @@ export function createAdventureScene(){
       const entry=interactives.find(i=>i.id===person.id);Object.assign(entry,{x:char.root.position.x,z:char.root.position.z,y:char.root.position.y});
       if(char.workstation){land.attach(char.workstation);registerSceneryColliders(char.workstation,physics,{limit:metrics().limit});}
     }
+    for(const entry of interactives.filter(i=>['village-guard','sidequest-target'].includes(i.kind))){
+      let chosen=null;for(const radius of [0,2,4,6,9,13]){for(let k=0;k<16;k++){const a=k*Math.PI/8,x=entry.x+Math.sin(a)*radius,z=entry.z+Math.cos(a)*radius,y=physics.floorAt(x,z,heightAt(x,z)+.5);if(!blocked(x,z)&&!physics.overlaps(x,z,y,2.9,.6,true)&&!citizens.some(c=>Math.hypot(c.root.position.x-x,c.root.position.z-z)<2.1)){chosen={x,z,y};break;}}if(chosen)break;}
+      if(chosen)Object.assign(entry,chosen);else entry.y=physics.floorAt(entry.x,entry.z,heightAt(entry.x,entry.z)+.5);
+      if(entry.kind==='village-guard'||entry.questType==='combat'){
+        const char=createNinja(encounterAppearance({kind:entry.kind,village:id}));char.root.position.set(entry.x,entry.y,entry.z);char.root.rotation.y=Math.atan2(-entry.x,-entry.z);land.add(char.root);citizens.push(char);if(entry.kind==='village-guard')roadGuards.push({entry,char});
+      }else{const p=group(entry.x,entry.z);p.position.y=entry.y;const scroll=box(p,M('#ded0a0'),0,.7,0,.55,.16,.35);scroll.name='sidequest-recovery-item';const mark=mesh(new T.OctahedronGeometry(.22),M(v.color,.4),p,0,1.7,0);animated.push({kind:'float',mesh:mark,base:1.7});}
+    }
     surface=platformFor(save.surface)?.platform?.id||null;
     hero.setEquipment(equipmentState(save));hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);let pos=save.position,y=heroHeightAt(...pos);if(Number.isFinite(save.elevation)){const supported=physics.floorAt(...pos,save.elevation+.03);if(Math.abs(supported-save.elevation)<.08)y=supported;}if((surface?platformBlocked(surface,...pos):boundaryBlocked(...pos)||id==='water'&&isDeepWater(...pos)&&!waterDeckAt(...pos,y+.4))||!surface&&physics.overlaps(...pos,y,2.85,.36,true)){pos=[0,7];surface=null;y=heroHeightAt(...pos);}y=physics.floorAt(...pos,y+.3);hero.root.position.set(pos[0],y,pos[1]);physics.reset(y);previousHeroPosition.copy(hero.root.position);hero.root.rotation.y=orbitYaw+Math.PI;destination.visible=false;
     if(id!=='nameless'&&treatyReady&&!save.campaign?.treatySigned)['water','fire','lightning'].forEach((key,index)=>{const char=createVillager(villagerAppearance(key,{kind:'envoy'})),offset=[[-2,1],[-3,-1],[-1,-3]][index];char.root.position.set(pos[0]+offset[0],heightAt(pos[0]+offset[0],pos[1]+offset[1]),pos[1]+offset[1]);land.add(char.root);party.push({char,offset});});
     batchScenery();
     scene.updateMatrixWorld(true);camera.far=340*metrics().scale;camera.fov=68;camera.updateProjectionMatrix();followCamera(1,true,false);
   }
-  function spawnEnemy(x,z){clearEnemy();const look=encounterAppearance({kind:'random',village:current});randomEnemy=createNinja(look);randomEnemy.root.position.set(x,heightAt(x,z),z);land.add(randomEnemy.root);return randomEnemy;}
-  function clearEnemy(){if(randomEnemy){land.remove(randomEnemy.root);disposeObject(randomEnemy.root);randomEnemy=null;}}
+  function spawnEnemy(x,z,element=current==='nameless'?['water','fire','lightning'][Math.floor(Math.random()*3)]:current){
+    clearEnemy();const look=encounterAppearance({kind:'random',village:element});randomEnemy=createNinja(look);randomEnemy.root.position.set(x,physics.floorAt(x,z,heightAt(x,z)+.5),z);land.add(randomEnemy.root);
+    sabotage={age:0,element};interactives.push({kind:'roamer',id:'roaming-vandal',x,z,y:randomEnemy.root.position.y,label:'Ninja phá hoại · '+village(element).name,element});return randomEnemy;
+  }
+  function clearEnemy(){const i=interactives.findIndex(i=>i.kind==='roamer');if(i>=0)interactives.splice(i,1);sabotage=null;fireworks.reset();if(randomEnemy){land.remove(randomEnemy.root);disposeObject(randomEnemy.root);randomEnemy=null;}}
   function followCamera(dt,snap=false,menu=false){
     const p=hero.root.position,planned=ride?.route.carved?ride.cameraY??p.y:p.y,eyeY=cameraHeight.update(planned,dt,snap),head=new T.Vector3(p.x,eyeY+2.35,p.z);
     if(menu){hero.root.visible=true;const target=head.clone().add(new T.Vector3(-4,0,0));camera.position.lerp(target.clone().add(new T.Vector3(12,12,17)),snap?1:1-Math.exp(-dt*5));camera.lookAt(target);return;}
@@ -263,7 +288,9 @@ export function createAdventureScene(){
   function update(dt,moving,menu=false,paused=false){
     time+=dt;if(menu)hero.root.rotation.y=.6;if(!ride&&!menu&&!paused)physics.step(dt);
     const velocity={x:dt>0?(hero.root.position.x-previousHeroPosition.x)/dt:0,z:dt>0?(hero.root.position.z-previousHeroPosition.z)/dt:0};previousHeroPosition.copy(hero.root.position);
-    hero.update(time,moving||ride?.route.kind==='stairs'&&ride.walking,velocity,dt);citizens.forEach(c=>c.update(time,false,null,dt));if(randomEnemy){randomEnemy.root.position.y=heightAt(randomEnemy.root.position.x,randomEnemy.root.position.z);randomEnemy.update(time,true,null,dt);}
+    hero.update(time,moving||ride?.route.kind==='stairs'&&ride.walking,velocity,dt);citizens.forEach(c=>c.update(time,false,null,dt));if(randomEnemy){randomEnemy.update(time,false,null,dt);const swing=Math.sin(time*2.6);if(randomEnemy.arms[1])randomEnemy.arms[1].pivot.rotation.x=-.7-swing*.5;}
+    const source=randomEnemy?.root.position,targets=obstacles.slice(0,24).map(o=>[o.x,heightAt(o.x,o.z)+1,o.z]);if(source)targets.sort((a,b)=>Math.hypot(a[0]-source.x,a[2]-source.z)-Math.hypot(b[0]-source.x,b[2]-source.z));fireworks.update(paused?0:dt,paused?null:source,targets.slice(0,4));
+    if(sabotage&&!paused){sabotage.age+=dt;if(sabotage.age>=30)clearEnemy();}
     if(ride?.rock){if(['hang','mantle'].includes(ride.mode))hero.climbPose(time);else if(ride.mode==='jump')hero.airPose(1-ride.jumpTime*2);}
     else if(ride&&['ladder','climb'].includes(ride.route.kind))hero.climbPose(time);else if(!physics.state().grounded)hero.airPose(physics.state().verticalSpeed);
     storm.update(dt,current==='lightning'&&!menu,hero.root.position);
@@ -275,5 +302,5 @@ export function createAdventureScene(){
   }
   function project(x,z,y=3){camera.updateMatrixWorld();const p=new T.Vector3(x,heightAt(x,z)+y,z).project(camera);return {left:(p.x+1)*innerWidth/2,top:(1-p.y)*innerHeight/2,visible:p.z<1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1};}
   function pick(clientX,clientY,canvas){if(!terrain)return null;camera.updateMatrixWorld();terrain.updateMatrixWorld();const r=canvas.getBoundingClientRect(),ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((clientX-r.left)/r.width*2-1,-(clientY-r.top)/r.height*2+1),camera);const hit=ray.intersectObject(terrain,false)[0];return hit?[hit.point.x,hit.point.z]:null;}
-  return {scene,camera,hero,obstacles,interactives,residentsState:()=>residents.map(({person,char})=>({id:person.id,name:person.name,landmark:person.landmark,activity:person.activity,platform:person.platform||null,position:char.root.position.toArray(),armPose:char.arms.map(a=>a.rotation.x),headPose:char.head.rotation.toArray().slice(0,3),bodyLean:char.body.rotation.x})),blocked,physicsState:physics.state,get solids(){return physics.solids;},moveHero:(dx,dz)=>physics.move(dx,dz),jump:jumpHero,tryGrabLedge,releaseCliff,recoverHero,heightAt,heroHeightAt,canHeroMove,navigationBlocked,startTraversal,advanceTraversal,unlockAudio:storm.unlock,get surface(){return surface;},get riding(){return !!ride;},get routes(){return routes;},get metrics(){return metrics();},weatherState:storm.state,traversalState:()=>ride?{id:ride.route.id,kind:ride.route.kind,progress:ride.progress,side:ride.side,mode:ride.mode,ledge:ride.index}:null,safeSave:()=>{if(ride?.rock){const p=ride.route.ledges[ride.index];return {position:[p.x,p.z],surface:null,elevation:p.y};}if(ride)return {position:[...(ride.side?ride.route.to:ride.route.from)],surface:ride.side?ride.route.platform?.id||null:null,elevation:ride.side?ride.route.toY:ride.route.fromY};const p=physics.safePosition();return {position:[p.x,p.z],surface,elevation:p.y};},load,update,project,pick,spawnEnemy,clearEnemy,orbit(dx,dy){orbitYaw=Math.atan2(Math.sin(orbitYaw-dx*.005),Math.cos(orbitYaw-dx*.005));orbitPitch=Math.max(-.95,Math.min(1.1,orbitPitch+dy*.003));hero.root.rotation.y=orbitYaw+Math.PI;},faceView(){hero.root.rotation.y=orbitYaw+Math.PI;},followHeading(yaw,dt){const target=yaw-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*8));},zoom(delta){orbitDistance=Math.max(2.8,Math.min(6.5,orbitDistance+delta*.004));},movementAxes(){return {forward:[-Math.sin(orbitYaw),-Math.cos(orbitYaw)],right:[Math.cos(orbitYaw),-Math.sin(orbitYaw)]};},cameraState:()=>({anchorHeight:cameraHeight.value,heroVisible:hero.root.visible,yaw:orbitYaw,heroYaw:hero.root.rotation.y,pitch:orbitPitch,distance:orbitDistance,position:camera.position.toArray(),height:camera.position.y-hero.root.position.y}),get guard(){return guard;},get boss(){return boss;},get gates(){return gates;},get bridges(){return bridges;},get randomEnemy(){return randomEnemy;},destination,resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}};
+  return {scene,camera,hero,obstacles,interactives,guardsState:()=>roadGuards.map(g=>({...g.entry})),sabotageState:()=>sabotage?{...sabotage,remaining:Math.max(0,30-sabotage.age),...fireworks.state()}:null,residentsState:()=>residents.map(({person,char})=>({id:person.id,name:person.name,landmark:person.landmark,activity:person.activity,platform:person.platform||null,position:char.root.position.toArray(),armPose:char.arms.map(a=>a.rotation.x),headPose:char.head.rotation.toArray().slice(0,3),bodyLean:char.body.rotation.x})),blocked,physicsState:physics.state,get solids(){return physics.solids;},moveHero:(dx,dz)=>physics.move(dx,dz),jump:jumpHero,tryGrabLedge,releaseCliff,recoverHero,heightAt,heroHeightAt,canHeroMove,navigationBlocked,startTraversal,advanceTraversal,unlockAudio:storm.unlock,get surface(){return surface;},get riding(){return !!ride;},get routes(){return routes;},get metrics(){return metrics();},weatherState:storm.state,traversalState:()=>ride?{id:ride.route.id,kind:ride.route.kind,progress:ride.progress,side:ride.side,mode:ride.mode,ledge:ride.index}:null,safeSave:()=>{if(ride?.rock){const p=ride.route.ledges[ride.index];return {position:[p.x,p.z],surface:null,elevation:p.y};}if(ride)return {position:[...(ride.side?ride.route.to:ride.route.from)],surface:ride.side?ride.route.platform?.id||null:null,elevation:ride.side?ride.route.toY:ride.route.fromY};const p=physics.safePosition();return {position:[p.x,p.z],surface,elevation:p.y};},load,update,project,pick,spawnEnemy,clearEnemy,orbit(dx,dy){orbitYaw=Math.atan2(Math.sin(orbitYaw-dx*.005),Math.cos(orbitYaw-dx*.005));orbitPitch=Math.max(-.95,Math.min(1.1,orbitPitch+dy*.003));hero.root.rotation.y=orbitYaw+Math.PI;},faceView(){hero.root.rotation.y=orbitYaw+Math.PI;},followHeading(yaw,dt){const target=yaw-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*8));},zoom(delta){orbitDistance=Math.max(2.8,Math.min(6.5,orbitDistance+delta*.004));},movementAxes(){return {forward:[-Math.sin(orbitYaw),-Math.cos(orbitYaw)],right:[Math.cos(orbitYaw),-Math.sin(orbitYaw)]};},cameraState:()=>({anchorHeight:cameraHeight.value,heroVisible:hero.root.visible,yaw:orbitYaw,heroYaw:hero.root.rotation.y,pitch:orbitPitch,distance:orbitDistance,position:camera.position.toArray(),height:camera.position.y-hero.root.position.y}),get guard(){return guard;},get boss(){return boss;},get gates(){return gates;},get bridges(){return bridges;},get randomEnemy(){return randomEnemy;},destination,resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}};
 }

@@ -5,7 +5,7 @@ const residents={
   'tea-road':['Cô Trà','Chủ quán trà mái vỡ','merchant','market','Mái quán chưa vá xong, nhưng trà thì vẫn nóng. Khách đi qua đây thường kể tin từ ba làng.'],
   'old-bridge':['Thợ Mộc Tín','Người vá cầu sau chiến tranh','carpenter','repair','Tôi thay từng tấm ván một. Cây cầu này từng đưa quân lính qua sông; mong lần tới chỉ còn khách bộ hành.'],
   'bell-shrine':['Ông Tịnh','Người trông miếu chuông','priest','reading','Trên chuông có tên những người góp đồng đúc miếu. Tôi đang chép lại để chiến tranh không xóa mất họ.'],
-  'war-cemetery':['Bà Liên','Người viếng mộ','mourner','mourning','Hôm nay tôi mang hoa cho cả những nấm mộ không tên. Người nằm xuống cũng từng mong được trở về nhà.']
+  'war-cemetery':['Mẹ · Bà Liên','Mẹ của người giữ ấn','mourner','mourning','Cha và em trai con nằm ở đây, từ cuộc chiến giữa ba làng Hỏa, Thủy và Lôi. Mẹ không mong con trả thù; mẹ chỉ mong không gia đình nào phải chịu cảnh chia lìa như chúng ta nữa.']
  },
  water:{
   'floating-market':['Chị Vân','Người bán cá chợ nổi','merchant','market','Cá mới từ bến về đấy. Gặp luồng nước sâu thì tìm bè, đừng thử lội ngang sông.'],

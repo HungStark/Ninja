@@ -13,7 +13,7 @@ const terrainSignatures=new Set(),layoutSignatures=new Set();
 for(const v of VILLAGES){
   const save=newJourney();save.village=v.id;world.load(v.id,save);
   const region=REGIONS[v.id];assert.ok(region.zones.length>=4);assert.equal(region.npcs.filter(n=>n.landmark).length,region.zones.length);assert.ok(region.npcs.some(n=>n.kind==='mentor'));assert.ok(region.boss.hp>200);
-  assert.ok(world.interactives.find(i=>i.kind==='boss'));assert.ok(world.interactives.find(i=>i.kind==='mentor'));assert.equal(world.interactives.filter(i=>i.kind==='landmark').length,region.zones.length);
+  assert.ok(world.interactives.find(i=>i.kind===(v.id==='nameless'?'intro-guardian':'boss')));assert.ok(world.interactives.find(i=>i.kind==='mentor'));assert.equal(world.interactives.filter(i=>i.kind==='landmark').length,region.zones.length);
   const heights=[];for(let x=-60;x<=60;x+=12)for(let z=-60;z<=60;z+=12)heights.push(terrainHeight(v.id,x,z));
   assert.ok(Math.max(...heights)-Math.min(...heights)>3,`${v.id}: landscape needs elevation changes`);
   terrainSignatures.add(heights.map(n=>n.toFixed(1)).join(','));layoutSignatures.add(JSON.stringify(region.houses));
