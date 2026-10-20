@@ -1,4 +1,5 @@
-import {newStory,readStory,HOME,openingObjective,FIRST_VILLAGES,completeSidequestTarget,villageSidequests} from './journey-story.js';
+import {combatExperienceRewards} from './combat-experience.js';
+import {newStory,readStory,HOME,openingObjective,FIRST_VILLAGES,completeSidequestTarget,villageSidequests,INTRO_SQUAD} from './journey-story.js';
 import {newEquipment,readEquipment} from './equipment.js';
 import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS,regionMetrics} from './adventure-world.js';
 import {newProgression,readProgression,regionElement,gainExperience,systemLevel,teachAvailable,canLearn,addBooks,spellElement} from './progression.js';
@@ -163,24 +164,24 @@ export function completeLesson(save,id) {
 export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
 export function resolveBattle(save,encounter,victory) {
   if(victory&&encounter.kind==='intro-trio'){
-    if(save.story.stage==='guardian'){save.story.stage='report';save.story.guardianRestored=true;save.bosses.nameless=true;save.gold+=120;save.xp+=140;save.wins++;gainExperience(save.progression,save.story.starter.split('-')[0],120);}
+    if(save.story.stage==='guardian'){save.story.stage='report';save.story.guardianRestored=true;save.bosses.nameless=true;save.gold+=120;save.xp+=140;save.wins++;for(const reward of combatExperienceRewards({...encounter,squad:encounter.squad||INTRO_SQUAD},120))gainExperience(save.progression,reward.element,reward.xp);}
   }
   else if(victory&&encounter.kind==='village-guard'){
-    if(!save.story.defeatedGuards.includes(encounter.guardId)){save.story.defeatedGuards.push(encounter.guardId);save.gold+=35;save.xp+=75;save.wins++;gainExperience(save.progression,encounter.element,75);}
+    if(!save.story.defeatedGuards.includes(encounter.guardId)){save.story.defeatedGuards.push(encounter.guardId);save.gold+=35;save.xp+=75;save.wins++;for(const reward of combatExperienceRewards(encounter,75))gainExperience(save.progression,reward.element,reward.xp);}
   }
   else if(victory&&encounter.kind==='sidequest'){
-    const q=villageSidequests(encounter.village).find(q=>q.id===encounter.questId);if(q&&completeSidequestTarget(save,q)){save.wins++;gainExperience(save.progression,q.element,35);}
+    const q=villageSidequests(encounter.village).find(q=>q.id===encounter.questId);if(q&&completeSidequestTarget(save,q)){save.wins++;for(const reward of combatExperienceRewards(encounter,35))gainExperience(save.progression,reward.element,reward.xp);}
   }
   else if(victory&&encounter.kind==='boss'){
     const boss=REGIONS[encounter.village]?.boss;
     save.bosses??={};
     if(boss&&!save.bosses[encounter.village]){
       save.bosses[encounter.village]=true;save.gold+=boss.rewardGold;save.xp+=boss.rewardXp;save.wins++;
-      gainExperience(save.progression,regionElement(encounter.village),180);
+      for(const reward of combatExperienceRewards(encounter,180))gainExperience(save.progression,reward.element,reward.xp);
       addBooks(save,bossRewardSpells(encounter.village));
     }
   }
-  else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;gainExperience(save.progression,encounter.element||(encounter.village==='nameless'?'water':regionElement(encounter.village)),encounter.kind==='quest'?65:45);if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
+  else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;for(const reward of combatExperienceRewards(encounter,encounter.kind==='quest'?65:45))gainExperience(save.progression,reward.element,reward.xp);if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
   else{save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
   return save;
 }

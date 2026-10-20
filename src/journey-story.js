@@ -1,3 +1,4 @@
+import {HIDDEN_GUARD_COUNT,GUARDIAN_GUARD_COUNT} from './guard-placement.js';
 import {REGIONS,regionMetrics} from './adventure-world.js';
 import {SKILL_LEVELS,spellElement,gainExperience,addBooks} from './progression.js';
 
@@ -49,8 +50,14 @@ export function openingObjective(save){
 }
 export function villageGuards(id){
   if(!REGIONS[id]||id==='nameless')return [];
-  const r=REGIONS[id],scale=regionMetrics(id).scale,zone=r.zones.find(z=>!z.platform);
-  return [0,1,2].map(i=>({id:`${id}-sentry-${i+1}`,village:id,element:id,name:`Cảnh vệ ${['tiền trạm','đường làng','hộ vệ'][i]}`,x:(i===0?-13:i===1?12:zone.x*.68)*scale/(i===2?scale:1),z:i===0?18*scale:i===1?-20*scale:zone.z*.68,kind:'village-guard',label:'Cảnh vệ · '+['Tiền trạm','Đường làng','Trạm gác'][i]}));
+  const r=REGIONS[id],zones=r.zones.filter(z=>!z.platform&&z.id!=='summit-lotus'),limit=regionMetrics(id).limit,guards=[];
+  for(let i=0;i<HIDDEN_GUARD_COUNT;i++){
+    const zone=zones[i%zones.length],a=i*2.4+id.length,radius=6+Math.floor(i/zones.length)*17;
+    guards.push({id:id+'-sentry-'+(i+1),village:id,element:id,name:'Cảnh vệ ẩn thân '+(i+1),x:Math.max(-limit+8,Math.min(limit-8,zone.x+Math.sin(a)*radius)),z:Math.max(-limit+8,Math.min(limit-8,zone.z+Math.cos(a)*radius)),guardRole:'hidden',disguise:['stump','bush','rock'][i%3],kind:'village-guard',label:'Cảnh vệ ẩn thân · '+(i+1)});
+  }
+  const length=Math.hypot(r.boss.x,r.boss.z)||1,fx=-r.boss.x/length,fz=-r.boss.z/length;
+  for(let i=0;i<GUARDIAN_GUARD_COUNT;i++){const side=i?-1:1;guards.push({id:id+'-guardian-sentry-'+(i+1),village:id,element:id,name:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ'),x:r.boss.x+fx*10+fz*side*9,z:r.boss.z+fz*10-fx*side*9,guardRole:'guardian',disguise:null,kind:'village-guard',label:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ')});}
+  return guards;
 }
 const taskByActivity={
   mourning:['Hoa cho người nằm lại','Tìm bó bạch cúc bị gió cuốn để đặt trước mộ những người đã mất.','Bạch cúc'],
@@ -75,11 +82,11 @@ export function villageSidequests(id){
   return people.map((person,i)=>{
     const zones=r.zones.filter(z=>!z.platform&&z.id!=='summit-lotus'),zone=zones[(i+1)%zones.length],template=taskByActivity[person.activity]||['Dấu vết cuộc sống','Tìm vật dụng thất lạc tại địa danh gần làng rồi mang trở về.','Vật dụng thất lạc'];
     const type=person.activity==='mourning'?'retrieve':i%3===1||person.activity==='lookout'?'combat':i%4===3?'survey':'retrieve',element=id==='nameless'?'wind':id;
-    const arts=Object.keys(SKILL_LEVELS[element]),scroll=i%2===1?arts[1+i%Math.max(1,arts.length-1)]:null;
+    const arts=Object.keys(SKILL_LEVELS[element]),scroll=id!=='nameless'&&i%2===1?arts[1+i%Math.max(1,arts.length-1)]:null;
     return {id:`${id}:npc:${person.id}`,giver:person.id,giverName:person.name,village:id,type,element,zone:zone.id,
       title:type==='combat'?`Bảo vệ ${zone.name}`:template[0],description:type==='combat'?`${person.name} nhờ bạn đánh bại kẻ phá hoại tại ${zone.name}, rồi trở lại báo tin.`:`${person.name}: ${template[1]} Tới ${zone.name}, sau đó trở lại gặp tôi.`,
       targetName:type==='combat'?'Kẻ phá hoại · '+zone.name:template[2],x:zone.x+(i%2?2.5:-2.5),z:zone.z+3.5,
-      rewardGold:scroll?0:65+i*9,rewardScroll:scroll,rewardXp:45+i*3};
+      rewardGold:scroll?0:65+i*9,rewardScroll:scroll,rewardXp:id==='nameless'?0:45+i*3};
   });
 }
 export function questForNPC(id,item){const giver=item.kind==='npc'?`${id}-chief`:item.kind==='shop'?`${id}-merchant`:item.kind==='envoy'?`${id}-envoy`:item.kind==='expedition-giver'?'fire-khoi':item.id;return villageSidequests(id).find(q=>q.giver===giver);}

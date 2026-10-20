@@ -67,6 +67,6 @@ export function encounterProfile(save,kind,region){
     const hp=GUARDIAN_HEALTH[region];
     return {element,hp,spellIds:ordered.slice(0,3),phaseSpellIds:ordered,phases:['water','fire','lightning','nameless'].includes(region)?2:3,damageMultiplier:['water','fire','lightning'].includes(region)?.75:.95,sealDelay:.43,restTime:2.1,weaponInterval:1.9};
   }
-  const guard=kind==='village-guard',early=['fire','water','lightning'].includes(region),count=guard?(early?2:3):Math.min(3,1+Math.floor(stage/2));
-  return {element,hp:guard?(early?155:240+stage*12):110+stage*15,spellIds:ordered.slice(0,count),damageMultiplier:guard?.65:.55,sealDelay:guard?.62:.75,restTime:guard?2.9:3.8,weaponInterval:guard?2.3:3.2};
+  const elite=kind==='guardian-guard',guard=kind==='village-guard'||elite,early=['fire','water','lightning'].includes(region),count=guard?(elite?(early?3:4):early?2:3):Math.min(3,1+Math.floor(stage/2));
+  return {element,hp:elite?(early?260:390+stage*15):guard?(early?155:240+stage*12):110+stage*15,spellIds:ordered.slice(0,count),damageMultiplier:elite?.85:guard?.65:.55,sealDelay:elite?.52:guard?.62:.75,restTime:elite?2.3:guard?2.9:3.8,weaponInterval:elite?1.8:guard?2.3:3.2};
 }

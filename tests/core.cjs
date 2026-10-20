@@ -91,7 +91,7 @@ const healed=new Fighter();healed.hp=190;healed.defend(spells.find(s=>s.id==='wo
 const fire = spells.filter(s=>s.element==='fire');
 const fireVolley = fire.find(s=>s.style==='volley');
 for(const id of ['fire-orb','water-orb','lightning-orb'])assert.equal(spells.some(s=>s.id===id),false);
-assert.equal(fireVolley.damage,24*2/5);
+assert.equal(fireVolley.damage,11);
 assert.equal(fireVolley.count, 3); assert.equal(fireVolley.holdTime, .5); assert.equal(fireVolley.salvoInterval, .1); assert.ok(fireVolley.size < .1);
 assert.deepEqual(Array.from(fire.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[4,6,8]);
 assert.deepEqual(Array.from(fire.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,5]);

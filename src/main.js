@@ -545,7 +545,6 @@ async function main() {
     const result = rules.cast({burnStacks:enemy.burns.length,staticStacks:enemy.staticStacks,woodGarden:natureArts.wood.ready('player'),snowFull:natureArts.snowReady('player'),snowAmount:natureArts.snowAmount('player'),earthCrater:!!earthArts.crater('player'),windAirborne:windArts.canCombo('player'),darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('player').length,shadowCloneCount:darkDomain.cloneCount('player'),shadowUpgrades:darkDomain.upgradable('player').length});
     if (!result.ok) { announce({ burn:'Cần gây bỏng lên đối thủ trước.',static:'Cần tích tĩnh điện lên đối thủ trước.', spellCooldown:'Chiêu này đang hồi · còn '+(result.remaining||0).toFixed(1)+' giây.',snowCost:'Cần gọi mưa tuyết bằng chiêu 10 ấn và tích ít nhất 3 tuyết để thi triển.',garden:'Cần gieo hạt bằng chiêu 10 ấn và chờ cây trồi lên trước.',once:'Chiêu 10 ấn này chỉ dùng một lần mỗi trận.',snow:'Cần gọi tuyết và tích đủ 90 tuyết trước khi dùng Tuyết Táng.', crater: 'Cần hố Địa Bộc Thiên Tinh của bạn đã hình thành trước khi tạo chông.', sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.',airborne:'Cần địch đang bị lốc của bạn hất tung và chưa nối liên trảm.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Bên bạn đã đủ 3 bò bóng, không còn chó để nâng cấp.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Chakra chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
     const spell = result.spell;
-    if(adventure?.inBattle)adventure.awardExperience(spell.element,2);
     activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); playerAvatar.rig.cast(); fireSound();
     const upgrading=spell.style==='shadowclone'&&darkDomain.cloneCount('player')>=spell.maxClones;
     launch(spell, 'player', playerPos(), aim()); announce(upgrading?'Nâng thành bò bóng · 57 sát thương!':spell.name + '!');
@@ -613,7 +612,7 @@ async function main() {
     const multiplier=shot.owner==='player'?damageMultiplierFor(battlePlayerStats,shot.element):(shot.damageScale??bossDamageMultiplier());
     const victim=shot.owner==='player'?(combatEnemies().find(a=>a.id===shot.victimId)||combatEnemies().filter(a=>a.fighter.hp>0).sort((a,b)=>vlen(vsub(a.pos,pos))-vlen(vsub(b.pos,pos)))[0]):null;
     const fighter = shot.owner === 'enemy' ? player : victim?.fighter||enemy, result = fighter.receive(shot.damage*multiplier, shot.reflected || shot.unreflectable,!!shot.ignoreShield,shot.waterInfused?'water':shot.element);
-    if(adventure?.inBattle&&shot.owner==='player'&&result.damage>0)adventure.awardExperience(shot.element==='weapon'?(shot.waterInfused?'water':adventure.trainingElement):shot.element,result.damage*.5);
+    if(adventure?.inBattle&&shot.owner==='player'&&result.damage>0)adventure.awardCombatExperience(result.damage*.5,victim?.id||shot.victimId);
     shot.hitResult=result;
     if(result.immune)return true;
     fighter.applyElementHit(shot.element,result,shot.style);
@@ -692,7 +691,7 @@ async function main() {
     return true;
   }
   function shadowCrushImpact(binding,victim,result) {
-    if(adventure?.inBattle&&binding.owner==='player'&&result.damage>0)adventure.awardExperience('dark',result.damage*.5);
+    if(adventure?.inBattle&&binding.owner==='player'&&result.damage>0)adventure.awardCombatExperience(result.damage*.5,victim.id||'primary');
     if(victim.owner==='enemy'){
       aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;enemyHit=.3;hitTimer=.14;
       $('enemyAction').textContent='Ảnh tượng · bị nhấn chìm 2 giây';tone(80,.15,'triangle',.06);
@@ -1338,7 +1337,7 @@ async function main() {
     ['startScreen', 'pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden'));
     initAudio(); audio?.resume(); renderGuide(); announce('Lia chuột để ngắm. Bấm trái né trái, bấm phải né phải.'); updateUI(); tick(0); requestAimLock(event);
   }
-  function pause() { if (!started || won) return; paused = true;dashBoost.cancelDash(); if (spellVoice) { try { window.speechSynthesis.pause(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
+  function pause() { if (!started || won) return;$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;dashBoost.cancelDash(); if (spellVoice) { try { window.speechSynthesis.pause(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
   function resume(event) { paused = false; if (spellVoice) { try { window.speechSynthesis.resume(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
     squad.reset();guardianPhases.reset();squadHud.hidden=true;
@@ -1350,7 +1349,7 @@ async function main() {
     clearMeteorView();
     if (next) round++;
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
-    started = false; paused = false; won = false; moveTargetX = 0; moveDirection = 0; aiSpell = null; enemyPose = -1; releaseAimLock();
+    $('changeLoadout').hidden=false;$('changeLoadout').disabled=false;$('changeLoadout').style.display='';started = false; paused = false; won = false; moveTargetX = 0; moveDirection = 0; aiSpell = null; enemyPose = -1; releaseAimLock();
     shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; fields.length = 0; effects.reset(); hands.clearEffects(); player = new Fighter(); enemy = new Fighter(); activePose = -1;
     bossEnraged=false;opponent.group.scale.setScalar(1);opponent.setAppearance(null);enemyMovement.reset();enemyMoving=false;
     opponent.group.rotation.set(0, 0, 0); camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 };
@@ -1359,7 +1358,7 @@ async function main() {
   function toggleSound() { muted = !muted; if (muted) stopSpellVoice(); $('soundButton').textContent = muted ? '♫̸' : '♪'; $('soundButton').setAttribute('aria-pressed', String(muted)); }
   function nextBattle(){if(adventure?.inBattle){const victory=adventureVictory;prepare();adventure.finishBattle(victory);}else prepare(true);}
   $('cycleAmmo').onclick=()=>{if(started&&!paused&&!won&&adventure?.inBattle){adventure.cycleShuriken();updateUI();}};
-  $('startButton').onclick = start; $('resumeButton').onclick = resume; $('resetButton').onclick = e => { started = false; start(e); }; $('changeLoadout').onclick = () => {if(adventure?.inBattle){prepare();adventure.finishBattle(false);}else prepare();}; $('nextButton').onclick = nextBattle; $('castButton').onclick = cast; $('soundButton').onclick = toggleSound;
+  $('startButton').onclick = start; $('resumeButton').onclick = resume; $('resetButton').onclick = e => { started = false; start(e); }; $('changeLoadout').onclick = () => {if(adventure?.retreatLocked){announce('Không thể rút lui khi chưa có dấu ấn hòa bình.',true);return;}if(adventure?.inBattle){prepare();adventure.finishBattle(false);}else prepare();}; $('nextButton').onclick = nextBattle; $('castButton').onclick = cast; $('soundButton').onclick = toggleSound;
   $('helpButton').onclick = () => $('guide').classList.toggle('hidden');
   $('dashBoostButton').onclick=armDash;
   document.querySelectorAll('.seal').forEach(el => el.onclick = () => seal(el.dataset.key));
@@ -1371,7 +1370,7 @@ async function main() {
     if (e.target instanceof HTMLButtonElement && (!started || paused || won) && key === ' ') return;
     if ([' ', 'backspace', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) e.preventDefault();
     if (e.repeat) return;
-    if (key === 'escape'&&adventure?.phase==='loadout'){e.stopImmediatePropagation();prepare();adventure.cancelBattle();return;}
+    if (key === 'escape'&&adventure?.phase==='loadout'){e.stopImmediatePropagation();if(adventure.retreatLocked){announce('Cảnh vệ đã áp sát · Phải giao chiến.',true);return;}prepare();adventure.cancelBattle();return;}
     if (key === 'enter') { e.preventDefault(); if (won) nextBattle(); else if (!started) start(e); else if (paused) resume(e); return; }
     if (key === 'escape') { if (started && !won && !paused) pause(); return; }
     if (key === 'h') { $('guide').classList.toggle('hidden'); return; }

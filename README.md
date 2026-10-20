@@ -2,7 +2,7 @@
 
 ## Chế độ khám phá · Kẻ Lữ Hành
 
-Mỗi NPC có một nhiệm vụ phụ riêng (119 việc trên toàn thế giới), gồm tìm vật, khảo sát hoặc đánh kẻ phá hoại. Nhận và trả việc qua đối thoại; theo dấu trong nhật ký **B** hoặc khung nhiệm vụ. Thưởng xu hoặc cuộn giấy chưa có; cần đủ cấp rồi mở **C** để học từ sách. Ninja lang thang đứng ném pháo phá làng, không đuổi theo người chơi; tới gần nhấn **E** để chiến đấu, bỏ qua thì rời đi sau 30 giây.
+Mỗi NPC có một nhiệm vụ phụ riêng (119 việc trên toàn thế giới), gồm tìm vật, khảo sát hoặc đánh kẻ phá hoại. Nhận và trả việc qua đối thoại; theo dấu trong nhật ký **B** hoặc khung nhiệm vụ. Làng Vô Danh chỉ thưởng xu, không thưởng sách hoặc kinh nghiệm nhiệm vụ. Các làng khác có thể thưởng cuộn giấy chưa có, luôn đúng hệ của làng; cần đủ cấp rồi mở **C** để học từ sách. Ninja lang thang đứng ném pháo phá làng, không đuổi theo người chơi; tới gần nhấn **E** để chiến đấu, bỏ qua thì rời đi sau 30 giây.
 
 Mở `index.html` hoặc chạy `npm start`. Màn hình đầu cho phép tạo nhẫn giả tóc đen rối, lộ hai mắt, mặt nạ đen, khăn choàng và vạt áo đen đỏ rách (tên, màu áo, sắc tóc), tiếp tục bản lưu, hoặc vào đấu trường luyện tập. Bản lưu cũ tự nhận diện mạo mới và giữ tiến trình, trang bị. Khi chạy máy chủ, giữ thêm `adventure.css` cùng các file game.
 
@@ -28,7 +28,7 @@ Mở `index.html` hoặc chạy `npm start`. Màn hình đầu cho phép tạo n
 - **Lôi:** mưa giông xen các khoảng tạnh, tia sét và ánh chớp, tiếng sấm khi âm thanh đã được kích hoạt bằng thao tác chuột. **Phong:** cối xay gió và ba nhà treo dưới chùm bóng bay, có sàn khám phá; tới thang dây nhấn **E**, giữ **W** để leo theo chiều đã chọn. Lên tới sàn có thể đi lại và dùng đầu thang phía trên để xuống.
 - **Thổ:** nhiều cụm đá và Đại Hang Địa Tâm giữa làng; nhấn **E** tại cửa để xuống hang, đi bộ khám phá nhũ đá, hồ ngầm và tinh khoáng, rồi trở lại cửa bên trong để đi ra. **Băng:** tuyết, sông và biển băng; khi thả phím nhân vật trượt nhẹ rồi dừng, va chạm vẫn chặn chuyển động. **Mộc:** rừng dày và nhà trên cổ thụ ở trung tâm, có thang dây và sàn đi lại. Vị trí trên nhà hoặc trong hang được lưu; tải lại vẫn đứng đúng tầng.
 - **Mở đầu mới:** nhân vật có **200 máu**, **100.000 xu**, xuất hiện ở khu nhà cạnh nghĩa trang. Gặp mẹ trước mộ cha và em trai để lập lời hứa hòa bình. Trưởng làng cho chọn đúng một thuật: **Hỏa liên đạn**, **Thủy bộc cầu** (4 quả, mỗi quả 10 sát thương gốc, nổ giây 1–2–3–4, hồi 6 giây) hoặc **Lôi thương** (50 sát thương gốc); sau đó tặng túi và 10 phi tiêu. Ba ninja Hỏa/Thủy/Lôi cùng trấn giữ hộ vệ bị phá hỏng, mỗi người 85 máu và một thuật cơ bản. Thắng cả ba để hồi sinh hộ vệ rồi trở về báo cáo. Bản lưu cũ giữ tiến trình; tạo hành trình mới để chơi đoạn mở đầu.
-- **Dấu ấn hòa bình:** sau khi báo cáo có thể thâm nhập Thủy, Hỏa, Lôi theo thứ tự tùy chọn. Mỗi làng có ba cảnh vệ cố định; hạ rồi sẽ biến mất vĩnh viễn khỏi bản lưu và cho kinh nghiệm đúng hệ. Khuất phục quái thú hộ vệ rồi gặp trưởng làng để thương lượng nhận dấu ấn. Đủ ba dấu ấn mới đưa đại diện về Vô Danh ký hiệp ước.
+- **Dấu ấn hòa bình:** sau khi báo cáo có thể thâm nhập Thủy, Hỏa, Lôi theo thứ tự tùy chọn. Mỗi làng (trừ Vô Danh) có **8 cảnh vệ ẩn thân**, ngụy trang thành gốc cây, bụi rậm hoặc đá, rải tại các địa danh và cách nhau ít nhất **15 m** theo vị trí đã kiểm tra va chạm. Bên linh thú còn có **2 Hộ vệ** hiện hình sẵn, canh hai phía; họ có nhiều máu hơn, sát thương cao hơn và nhiều chiêu hơn cảnh vệ thường. Tới gần 10 m sẽ có tiếng bụp và khói trắng bung ra, cảnh vệ hiện hình rồi chạy đuổi theo đường tránh vật cản. Khi bị áp sát mà chưa có dấu ấn hòa bình, không thể rút lui ở đối thoại, màn chọn chiêu hoặc menu tạm dừng. Có dấu ấn thì được từ chối; hạ cảnh vệ sẽ xóa họ khỏi bản lưu và cho kinh nghiệm đúng hệ. Khuất phục quái thú hộ vệ rồi gặp trưởng làng để thương lượng nhận dấu ấn. Đủ ba dấu ấn mới đưa đại diện về Vô Danh ký hiệp ước.
 - **Những miền xa:** mang hiệp ước tới Thổ, Phong, Quang, Băng, Mộc; đánh bại hộ vệ và thương lượng thêm dấu ấn ở mỗi làng. Sau đó cổng Ám mở để đối mặt Vô Nguyệt, kẻ giật dây chiến tranh.
 - Cao nhân giao nhiệm vụ khám phá yên bình. Sau bài học đầu, có thể trở lại để xin dạy thêm mọi thuật đã đủ cấp. Thắng thủ lĩnh nhận **sách kỹ năng**, giữ trong Tu luyện; sách chỉ học được khi đủ cấp và phải bấm **Học từ sách**. Lên cấp, sở hữu sách hoặc thắng thủ lĩnh không tự học chiêu. Đủ **45 chiêu** đều có đường học.
 - **Hộ vệ nhiều phase:** Thủy/Hỏa/Lôi có 520/580/620 máu, hai phase. Thổ/Phong/Quang/Băng/Mộc/Ám có 850/780/980/1000/1080/1600 máu, ba phase. Mất máu sẽ mở thêm thuật, tăng nhịp đánh và dùng đòn đặc trưng (nham nứt, lôi vũ, rễ cây, nguyệt thực…); vòng sáng trên đất báo trước khoảng 1,25–1,5 giây. Mỗi hộ vệ chỉ trao thưởng một lần.
@@ -43,7 +43,7 @@ Game ninja 3D góc nhìn thứ nhất, kết ấn bằng hai tay và quyết đ�
 
 ## Tu luyện theo hệ và thuộc tính chung
 
-Mỗi hệ có kinh nghiệm riêng, khai mở ở cấp 1 và tối đa cấp 10. Thủy được khai mở ngay từ đầu; cao nhân mở các hệ tiếp theo qua bài học. Khám phá địa danh của hệ đã khai mở, luyện chiêu, gây sát thương và thắng trận đều tăng kinh nghiệm hệ. Phi tiêu nước tăng Thủy; phi tiêu thường rèn hệ đang theo học tại vùng hiện tại. Một lần tăng cấp không tự trao kỹ năng.
+Mỗi hệ có kinh nghiệm riêng, khai mở ở cấp 1 và tối đa cấp 10. Hệ của thuật được chọn ở trưởng làng là hệ khởi đầu. **Kinh nghiệm giao chiến dựa vào hệ của đối thủ**: dùng chiêu Thủy hay phi tiêu đánh ninja Hỏa đều tăng Hỏa; thi triển chiêu không tự cho kinh nghiệm. Trong trận ba ninja, sát thương tính riêng theo từng người và thưởng thắng trận chia cho cả Hỏa, Thủy, Lôi. Khám phá và bài học từ cao nhân vẫn có phần kinh nghiệm riêng. Một lần tăng cấp không tự trao kỹ năng.
 
 Điểm nhận tại các cấp **1 → 10** lần lượt là **1, 1, 1, 1, 2, 2, 2, 3, 3, 4**, tổng 20 điểm mỗi hệ. Điểm từ mọi hệ gom vào **một quỹ chung**. Nhân vật chỉ có một bộ thuộc tính áp dụng cho tất cả chiêu và mọi hệ:
 
@@ -109,7 +109,7 @@ Hệ Hỏa có hiệu ứng và cơ chế riêng:
 
 | Chiêu | Số ấn | Chuỗi phím | Chakra | Tác dụng |
 | --- | --- | --- | --- | --- |
-| Hỏa liên đạn | 4 | Q W D F | 40 | Ba hỏa cầu nhỏ xếp ngang phía trên tay, giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây tới điểm ngắm đã chọn; mỗi viên 9,6 sát thương (tổng 28,8), mỗi viên gây sát thương tích một tầng bỏng |
+| Hỏa liên đạn | 4 | Q W D F | 40 | Ba hỏa cầu nhỏ xếp ngang phía trên tay, giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây tới điểm ngắm đã chọn; mỗi viên 11 sát thương gốc (tổng 33), mỗi viên gây sát thương tích một tầng bỏng |
 | Rồng lửa | 6 | Q W C V Z X | 56 | Rồng cuộn thành vòng lửa trước mặt trong 1,1 giây rồi lao tới; camera chuyển lên trên bên trái và trở lại sau cú đánh, 104 sát thương |
 | Thiên thạch | 8 | Q W C V Z X E R | 82 | Bay một đường thẳng từ trời tới đất trong 3,4 giây; camera ngước lên, zoom in trong 0,24 giây rồi zoom out dần trong cảnh trời 1,4 giây, trở về trong 0,4 giây; 150 sát thương trong bán kính 5,5 m |
 | Phóng hỏa | 3 | Q W A | 26 | Tiêu thụ 1–5 tầng bỏng trên đối thủ, gây ngay 10 / 20 / 30 / 45 / 60 sát thương; lửa bùng lớn theo số tầng |

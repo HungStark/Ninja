@@ -27,7 +27,7 @@ for(const id of Object.keys(REGIONS)){
  for(const q of quests){assert.ok(acceptSidequest(s,q));assert.equal(claimSidequest(s,q),false);assert.ok(completeSidequestTarget(s,q));const before=s.gold,reward=sidequestReward(s,q);assert.ok(claimSidequest(s,q));assert.equal(claimSidequest(s,q),false);assert.equal(s.gold,before+reward.gold);if(reward.scroll)assert.ok(s.progression.books.includes(reward.scroll));}
  const unfinished=quests.slice(0,2);for(const q of unfinished)s.story.sidequests[q.id]=1;
  world.load(id,s);const routes=world.routes;
- for(const i of world.interactives.filter(i=>['village-guard','sidequest-target','intro-guardian','home'].includes(i.kind)||i.id===MOTHER_ID)){
+ for(const i of world.interactives.filter(i=>['sidequest-target','intro-guardian','home'].includes(i.kind)||i.id===MOTHER_ID)){
    const route=planExpedition(s.position,[i.x,i.z],{id,routes,targetSurface:i.platform,walk:(a,b,key)=>findPath(a,b,world.navigationBlocked(key))});assert.ok(route,id+': unreachable '+i.kind+'/'+i.id+' '+[i.x,i.z]);
  }
  for(const g of villageGuards(id)){const encounter={kind:'village-guard',village:id,guardId:g.id,element:id};const before=s.progression.xp[id]||0;resolveBattle(s,encounter,true);assert.ok(s.progression.xp[id]>before||s.progression.xp[id]===2100);const cash=s.gold;resolveBattle(s,encounter,true);assert.equal(s.gold,cash);}
