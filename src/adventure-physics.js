@@ -36,5 +36,5 @@ export function createCharacterPhysics({position,baseFloor,staticBlocked,radius=
       if(velocity<=0&&nextY<=floor){position.y=floor;velocity=0;grounded=true;remember();}else position.y=nextY;
     }
   }
-  return {solids,addBox,touches,top,bottom,floorAt,overlaps,canMoveTo,move,reset,jump,step,recover,clear(){solids.length=0;cells.clear();safeHistory.length=0;lastSafe={x:position.x,y:position.y,z:position.z};reset();},state:()=>({grounded,verticalSpeed:velocity,ground:floorAt(position.x,position.z,position.y+.03),jumpHeight:jumpSpeed*jumpSpeed/(2*gravity)}),safePosition:()=>grounded&&!overlaps(position.x,position.z,position.y)?{x:position.x,y:position.y,z:position.z}:{...lastSafe}};
+  return {solids,addBox,touches,top,bottom,floorAt,overlaps,canMoveTo,move,reset,jump,step,recover,restore(state){grounded=state.grounded;velocity=state.verticalSpeed;remember();},clear(){solids.length=0;cells.clear();safeHistory.length=0;lastSafe={x:position.x,y:position.y,z:position.z};reset();},state:()=>({grounded,verticalSpeed:velocity,ground:floorAt(position.x,position.z,position.y+.03),jumpHeight:jumpSpeed*jumpSpeed/(2*gravity)}),safePosition:()=>grounded&&!overlaps(position.x,position.z,position.y)?{x:position.x,y:position.y,z:position.z}:{...lastSafe}};
 }

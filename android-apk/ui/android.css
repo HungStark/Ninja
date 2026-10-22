@@ -69,7 +69,7 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 }
 
 /* Exploration reserves separate regions for navigation, quests and thumb controls. */
-.android-ui{--explore-quest:clamp(180px,25vw,240px);--explore-map:clamp(100px,13vw,130px);--explore-joystick:clamp(88px,25vh,108px);--explore-button:clamp(52px,14vh,60px);--explore-actions-width:calc(2 * var(--explore-button) + 10px);--explore-top:calc(var(--safe-top) + 88px)}
+.android-ui{--explore-quest:clamp(180px,25vw,240px);--explore-map:clamp(100px,13vw,130px);--explore-joystick:clamp(101.2px,28.75vh,124.2px);--explore-button:clamp(52px,14vh,60px);--explore-actions-width:calc(2 * var(--explore-button) + 10px);--explore-top:calc(var(--safe-top) + 88px)}
 .android-ui .journey-controls,.android-ui .journey-character,.android-ui .journey-progression-launch{display:none!important}
 .android-ui .journey-top{position:relative;z-index:2;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:18px;min-height:calc(var(--safe-top) + 62px);padding:calc(var(--safe-top) + 8px) calc(var(--safe-right) + 12px) 8px calc(var(--safe-left) + 12px);box-sizing:border-box}
 .android-ui .journey-brand{min-width:0;gap:8px}.android-ui .journey-brand>b{font-size:28px;line-height:36px;padding:0 5px}.android-ui .journey-brand>span{font-size:13px;letter-spacing:2px}.android-ui .journey-brand small{font-size:6px;letter-spacing:2px}
@@ -82,11 +82,11 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 .android-ui .journey-left-rail .journey-quest h3{font-size:16px;line-height:1.3;margin:3px 0 8px;overflow-wrap:normal}.android-ui .journey-left-rail .journey-quest p{font-size:10px;line-height:1.6}.android-ui .campaign-content{padding:0 10px 12px;touch-action:pan-y}
 .android-ui .journey-minimap{top:var(--explore-top);right:calc(var(--safe-right) + 12px);width:var(--explore-map);height:min(calc(var(--explore-map) + 35px),calc(100dvh - var(--explore-top) - var(--safe-bottom) - var(--explore-joystick) - 28px));min-height:80px;box-sizing:border-box;padding:7px;display:flex;flex-direction:column;gap:4px;z-index:1}
 .android-ui .journey-minimap>div{font-size:6px;letter-spacing:.2px;flex:0 0 auto}.android-ui .journey-minimap svg{flex:1 1 0;min-height:0;width:100%;margin:0}.android-ui .journey-minimap p{font-size:6px;line-height:1.4;flex:0 0 auto}.android-ui .journey-minimap p>span{display:none}
-#androidJoystick{position:absolute;left:auto;right:calc(var(--safe-right) + 16px);bottom:calc(var(--safe-bottom) + 14px);width:var(--explore-joystick);height:var(--explore-joystick);border:1px solid #c9d6c469;border-radius:50%;background:#1b343d8c;display:grid;place-items:center}
+#androidJoystick{position:absolute;left:calc(var(--safe-left) + 16px);right:auto;bottom:calc(var(--safe-bottom) + 14px);width:var(--explore-joystick);height:var(--explore-joystick);border:1px solid #c9d6c469;border-radius:50%;background:#1b343d8c;display:grid;place-items:center}
 #androidJoystick i{width:44%;height:44%;border:1px solid #dac99a99;border-radius:50%;background:#526962b3;pointer-events:none}
-.android-explore-actions{position:absolute;left:calc(var(--safe-left) + 14px);right:auto;bottom:calc(var(--safe-bottom) + 14px);display:grid;grid-template-columns:repeat(2,var(--explore-button));grid-template-rows:repeat(2,var(--explore-button));gap:10px}
+.android-explore-actions{position:absolute;left:auto;right:calc(var(--safe-right) + 14px);bottom:calc(var(--safe-bottom) + 14px);display:grid;grid-template-columns:calc(var(--explore-button) * 1.6) var(--explore-button);grid-template-rows:repeat(2,var(--explore-button));gap:10px;align-items:center}
 .android-explore-actions>button{width:100%;height:100%;margin:0;border:1px solid #dfc99466;border-radius:6px;background:#19343de8;color:#ecdbb5;font-size:21px;padding:4px}.android-explore-actions>button small{display:block;font-size:8px;margin-top:2px}
-.android-explore-actions>#androidRun{grid-column:1;grid-row:1}.android-explore-actions>[data-mobile-key="c"]{grid-column:2;grid-row:1}.android-explore-actions>[data-mobile-key="e"]{grid-column:1;grid-row:2}.android-explore-actions>[data-mobile-key=" "]{grid-column:2;grid-row:2}
+.android-explore-actions>[data-mobile-key="c"]{grid-column:2;grid-row:1}.android-explore-actions>[data-mobile-key="e"]{grid-column:2;grid-row:2}.android-explore-actions>[data-mobile-key=" "]{grid-column:1;grid-row:1 / 3;height:calc(var(--explore-button) * 1.6);border-radius:50%;font-size:30px}
 .android-ui .nearby-action{left:calc(var(--safe-left) + var(--explore-actions-width) + 28px);right:calc(var(--safe-right) + var(--explore-joystick) + 32px);bottom:calc(var(--safe-bottom) + 14px);transform:none;width:auto;max-width:300px;max-height:calc(var(--explore-joystick) - 12px);margin:0 auto;box-sizing:border-box;overflow:auto;white-space:normal;overflow-wrap:normal;padding:10px 12px;font-size:10px;line-height:1.5;z-index:2}
 .android-ui .nearby-action kbd{display:inline-block;margin:0 6px 0 0}
 .android-explore-messages{position:absolute;left:calc(var(--safe-left) + var(--explore-quest) + 24px);right:calc(var(--safe-right) + max(var(--explore-map) + 24px,var(--explore-joystick) + 32px));top:var(--explore-top);bottom:calc(var(--safe-bottom) + max(var(--explore-joystick) + 28px,2 * var(--explore-button) + 38px));display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;pointer-events:none;z-index:1}
@@ -95,3 +95,25 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 .android-ui:not([data-journey=explore]) #journeyHud{visibility:hidden}
 .android-ui #worldLabels .android-hud-covered{visibility:hidden;pointer-events:none!important}
 @media(max-width:700px) and (orientation:landscape){.android-ui .journey-top{gap:10px}.android-ui .journey-brand small{display:none}.android-ui .journey-brand>span{font-size:11px;letter-spacing:1px}.android-ui .journey-location h2{font-size:15px}.android-ui .journey-location>span{font-size:19px}}
+
+/* The story drops over the scene and controls so long objectives remain readable. */
+.android-ui .journey-left-rail{display:none}
+.android-ui .journey-top nav>.journey-quest{position:relative;inset:auto;transform:none;width:clamp(112px,19vw,190px);padding:0;overflow:visible;margin:0;backdrop-filter:none}
+.android-ui #adventure .journey-top .campaign-toggle{width:100%;height:44px;justify-content:space-between;font-size:10px;text-align:left}
+.android-ui .journey-top .campaign-toggle>span{display:block}
+.android-ui .journey-top .campaign-toggle small{font-size:7px;letter-spacing:0;display:block;white-space:nowrap}
+.android-ui .journey-top .campaign-toggle small b{display:none}
+.android-ui .journey-top .campaign-toggle strong{font-size:9px;margin-top:3px}
+.android-ui .journey-top .campaign-content{position:absolute;right:0;top:calc(100% + 4px);width:min(370px,65vw);height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 62px);max-height:none;box-sizing:border-box;padding:14px;background:#142c32f5;border:1px solid #ccb17c88;box-shadow:0 8px 24px #0008;overflow:auto}
+.android-ui .journey-top:has(.campaign-toggle[aria-expanded=true]){z-index:25}
+.android-ui #adventure:has(.campaign-toggle[aria-expanded=true]){z-index:21}
+.android-ui #adventure:has(.campaign-toggle[aria-expanded=true]){z-index:21}
+.android-ui #adventure .journey-top .campaign-content h3{font-size:20px;line-height:1.4;margin:0 0 12px}
+.android-ui .journey-top .campaign-content p{font-size:12px;line-height:1.8}
+.android-ui #adventure .journey-top .campaign-content button{width:100%;height:auto;min-height:44px;font-size:11px;text-align:left;justify-content:space-between;padding:10px}
+.android-ui .nearby-action{left:calc(var(--safe-left) + var(--explore-joystick) + 32px);right:calc(var(--safe-right) + 2.6 * var(--explore-button) + 38px)}
+.android-sprint-hint{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);color:#ecdbb5;font-size:9px;white-space:nowrap;pointer-events:none}
+#androidJoystick.sprint-armed,#androidJoystick.sprint-locked{border-color:#f2d277;background:#806c3e99;box-shadow:0 0 14px #ecd19366}
+#androidJoystick.sprint-locked .android-sprint-hint{font-size:0}
+#androidJoystick.sprint-locked .android-sprint-hint:after{content:'⇈ Đang chạy · Chạm để dừng';font-size:9px}
+.android-ui #adventure:has(.journey-modal:not([hidden])) .journey-top{z-index:2}

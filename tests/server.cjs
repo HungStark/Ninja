@@ -8,7 +8,7 @@ const assert = require("node:assert/strict");
       child.once("error", reject);
       child.once("exit", (code) => reject(Error("server exit " + code)));
     });
-    for (const [url, type] of [["/", "text/html"], ["/game.js", "text/javascript"], ["/adventure.css", "text/css"], ["/assets/ninja-hands.glb", "model/gltf-binary"]]) {
+    for (const [url, type] of [["/", "text/html"], ["/game.js", "text/javascript"], ["/adventure.css", "text/css"], ["/android.css", "text/css"], ["/assets/ninja-hands.glb", "model/gltf-binary"]]) {
       const res = await fetch("http://127.0.0.1:4319" + url);
       assert.equal(res.status, 200);
       assert.ok(res.headers.get("content-type").includes(type));

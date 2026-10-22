@@ -6,13 +6,19 @@ const loadoutForSpell = spell => spell.kind === 'attack' ? [spell.id] : [spell.i
 assert.equal(new Set(keys).size, 12);
 assert.equal(elements.length, 9); assert.equal(spells.length, 45);
 assert.equal(new Set(spells.map(s => s.sequence.join(''))).size, 45);
+assert.equal(new Set(elements.map(e=>e.prefix)).size,elements.length);
+for(const el of elements)for(const spell of spells.filter(s=>s.element===el.id)){
+ assert.equal(spell.sequence.slice(0,2).join(''),el.prefix);
+ assert.ok(spell.sequence.slice(2).every(k=>!el.prefix.includes(k)));
+ assert.ok(spell.sequence.every((k,i)=>!i||k!==spell.sequence[i-1]));
+}
 for(const spell of spells)assert.equal(spell.cooldown,spell.id==='dark-orb'?2:spell.id==='water-barrier'?6:context.SealGameCore.cooldownByRank[spell.rank]);
 for(const id of ['fire-volley','water-lance'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-orb').speed,id+' matches Phong nhan');
 for(const id of ['fire-lance','fire-meteor','water-volley','water-tsunami'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-volley').speed,id+' matches Phong loc');
 const balance=new GameRules(['fire-volley','fire-barrier']);balance.chakra=0;balance.tick(2);assert.equal(balance.chakra,10);balance.chakra=100;
 spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.equal(balance.remaining('fire-volley'),6);balance.tick(1.01);
-spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast({burnStacks:1}).ok,true);assert.ok(balance.remaining('fire-volley')>0&&balance.remaining('fire-barrier')>0);balance.clear();spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));const savedChakra=balance.chakra;assert.equal(balance.cast().reason,'spellCooldown');assert.equal(balance.chakra,savedChakra);assert.equal(balance.sequence.join(''),'qwdf');balance.tick(16);assert.equal(Object.keys(balance.cooldowns).length,0);
-const weapons=new GameRules(['fire-volley']);weapons.chakra=0;weapons.seal('q');assert.equal(weapons.throwShuriken().weapon.damage,4);assert.equal(weapons.chakra,0);assert.equal(weapons.casts,0);assert.equal(weapons.shurikenThrows,1);assert.equal(weapons.sequence.length,0);assert.equal(weapons.throwShuriken().ok,false);weapons.tick(.45);assert.equal(weapons.throwShuriken().ok,true);spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>weapons.seal(k));assert.equal(weapons.throwShuriken().reason,'spellReady');assert.equal(weapons.sequence.join(''),'qwdf');
+spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast({burnStacks:1}).ok,true);assert.ok(balance.remaining('fire-volley')>0&&balance.remaining('fire-barrier')>0);balance.clear();spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));const savedChakra=balance.chakra;assert.equal(balance.cast().reason,'spellCooldown');assert.equal(balance.chakra,savedChakra);assert.equal(balance.sequence.join(''),spells.find(s=>s.id==='fire-volley').sequence.join(''));balance.tick(16);assert.equal(Object.keys(balance.cooldowns).length,0);
+const weapons=new GameRules(['fire-volley']);weapons.chakra=0;weapons.seal('q');assert.equal(weapons.throwShuriken().weapon.damage,4);assert.equal(weapons.chakra,0);assert.equal(weapons.casts,0);assert.equal(weapons.shurikenThrows,1);assert.equal(weapons.sequence.length,1);assert.equal(weapons.throwShuriken().ok,false);weapons.tick(.45);assert.equal(weapons.throwShuriken().ok,true);spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>weapons.seal(k));assert.equal(weapons.throwShuriken().reason,'spellReady');assert.equal(weapons.sequence.join(''),spells.find(s=>s.id==='fire-volley').sequence.join(''));
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
   assert.equal(list.filter(s=>s.kind==='attack').length,['dark','earth','wood','water'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,['dark','earth','wood','water'].includes(element.id)?1:2);
@@ -25,7 +31,7 @@ for (const spell of spells) {
 }
 assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort((a,b)=>a-b),[2,3,4,5,6,8,10]);
 assert.equal(spells.find(s=>s.id==='wind-reflect').duration,5);
-const wind=spells.filter(s=>s.element==='wind');assert.equal(wind.length,5);assert.deepEqual(Array.from(wind.map(s=>s.sequence.length)).sort(),[2,3,4,6,8]);assert.equal(wind.find(s=>s.style==='tornado').controlDuration,2);assert.equal(wind.find(s=>s.style==='aircombo').duration,2);assert.equal(wind.find(s=>s.style==='aircombo').damage,wind.find(s=>s.style==='tornado').damage);const windCombo=new GameRules(['wind-lance']);wind.find(s=>s.style==='aircombo').sequence.forEach(k=>windCombo.seal(k));assert.equal(windCombo.cast().reason,'airborne');assert.equal(windCombo.chakra,100);assert.equal(windCombo.casts,0);assert.equal(windCombo.sequence.length,3);assert.equal(windCombo.cast({windAirborne:true}).ok,true);const airborneFighter=new Fighter();airborneFighter.windControlTime=2;airborneFighter.waterControlTime=3;assert.equal(airborneFighter.controlTime,3);airborneFighter.windControlTime=4;assert.equal(airborneFighter.controlTime,4);assert.equal(airborneFighter.controlSource,'Phong lốc');airborneFighter.tick(4);assert.equal(airborneFighter.controlTime,0);
+const wind=spells.filter(s=>s.element==='wind');assert.equal(wind.length,5);assert.deepEqual(Array.from(wind.map(s=>s.sequence.length)).sort(),[3,3,4,6,8]);assert.equal(wind.find(s=>s.style==='tornado').controlDuration,2);assert.equal(wind.find(s=>s.style==='aircombo').duration,2);assert.equal(wind.find(s=>s.style==='aircombo').damage,wind.find(s=>s.style==='tornado').damage);const windCombo=new GameRules(['wind-lance']);wind.find(s=>s.style==='aircombo').sequence.forEach(k=>windCombo.seal(k));assert.equal(windCombo.cast().reason,'airborne');assert.equal(windCombo.chakra,100);assert.equal(windCombo.casts,0);assert.equal(windCombo.sequence.length,3);assert.equal(windCombo.cast({windAirborne:true}).ok,true);const airborneFighter=new Fighter();airborneFighter.windControlTime=2;airborneFighter.waterControlTime=3;assert.equal(airborneFighter.controlTime,3);airborneFighter.windControlTime=4;assert.equal(airborneFighter.controlTime,4);assert.equal(airborneFighter.controlSource,'Phong lốc');airborneFighter.tick(4);assert.equal(airborneFighter.controlTime,0);
 const dark=spells.filter(s=>s.element==='dark');
 assert.equal(dark.length,5);assert.equal(dark.find(s=>s.style==='domain').duration,30);
 assert.equal(dark.filter(s=>s.requiresDomain).length,2);
@@ -47,8 +53,8 @@ for(const element of elements){
  // Light's dome requires a laser, and its longer seal chain does not imply a higher cost than Jacob.
  for(let i=1;i<attack.length;i++){if(!['water','dark','wind','light','wood','ice'].includes(element.id))assert.ok(attack[i].damage*attack[i].count>attack[i-1].damage*attack[i-1].count);if(!['dark','wind','light','wood','ice'].includes(element.id))assert.ok(attack[i].cost>attack[i-1].cost);}
  const volley=attack.at(-1), orb=list.find(s=>s.id===element.id+'-orb'), chain=new GameRules(orb?[orb.id,volley.id]:[volley.id]);
- const prefix=['dark','wood'].includes(element.id)?orb.sequence.length:2;
- volley.sequence.slice(0,prefix).forEach(k=>chain.seal(k));assert.equal(chain.ready()?.id,element.id==='dark'?undefined:orb?.id);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);
+ const prefix=2;
+ volley.sequence.slice(0,prefix).forEach(k=>chain.seal(k));assert.equal(chain.ready()?.id,orb?.sequence.length===2?orb.id:undefined);assert.equal(chain.casts,0);assert.equal(chain.chakra,100);
  volley.sequence.slice(prefix,-1).forEach(k=>chain.seal(k));assert.equal(chain.ready(),undefined);assert.equal(chain.cast().reason,'sequence');
  chain.seal(volley.sequence.at(-1));assert.equal(chain.cast().spell.id,volley.id);
 }
@@ -67,7 +73,7 @@ assert.equal(validateLoadout(defenseOnly).ok,true,'A defense-only loadout can en
 assert.equal(validateLoadout([...defenseOnly,'fire-volley']).ok,false,'Preparation retains the five-slot limit');
 assert.deepEqual(Array.from(new GameRules(defenseOnly).loadout),defenseOnly);
 const r=new GameRules(); r.seal('q'); r.seal('e'); assert.equal(r.sequence.join(''),'e');
-r.seal('q');r.seal('w');r.seal('a');assert.equal(r.sequence.join(''),'a');r.tick(7.1);assert.equal(r.sequence.length,0);
+r.clear();r.seal('q');r.seal('w');const partial=r.sequence.join('');r.tick(70);assert.equal(r.sequence.join(''),partial);r.clear();
 assert.equal(r.cast().reason,'sequence');
 const missing=spells.find(s=>s.id==='dark-orb');missing.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().ok,false);
 assert.equal(r.setLoadout([]).ok,false); assert.equal(r.loadout.join(','),defaultLoadout.join(','));r.clear();

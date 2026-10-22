@@ -196,7 +196,8 @@ export function createAdventureScene(){
     land.traverse(o=>{if(!o.isMesh||!o.visible||o.isInstancedMesh||o===terrain||Array.isArray(o.material))return;for(let p=o;p&&p!==land;p=p.parent)if(moving.has(p))return;if(!o.geometry.attributes.uv)return;const key=o.material.uuid;if(!batches.has(key))batches.set(key,{material:o.material,objects:[]});batches.get(key).objects.push(o);});
     for(const {material,objects} of batches.values()){if(objects.length<2)continue;const geos=objects.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);return g;});const geo=mergeGeometries(geos,false);for(const g of geos)g.dispose();if(!geo)continue;for(const o of objects){o.parent.remove(o);o.geometry.dispose();}const combined=new T.Mesh(geo,material);combined.castShadow=true;combined.receiveShadow=true;land.add(combined);}
   }
-  function load(id,save){
+  function load(id,save,{preserveHero=false}={}){
+    const standing=preserveHero?{position:hero.root.position.clone(),surface,physics:physics.state(),yaw:hero.root.rotation.y}:null;
     disposeLand();fireworks.reset();guardSmoke.reset();sabotage=null;roadGuards=[];guardCharacters.clear();shopPlot=null;settlementPaths=[];settlementYards=[];surfaces=createVillageSurfaces(id);current=id;const v=village(id),region=REGIONS[id],rand=seeded(VILLAGES.indexOf(v)*913+1049);
     setQuality(visualQuality);
     routes=traversalDefinitions(id);storm.reset();blocked.limit=metrics().limit;
@@ -288,6 +289,7 @@ export function createAdventureScene(){
     // Register the new props once, after all NPC/guard positions are resolved.
     for(const cluster of land.children.filter(o=>o.name==='village-prop-cluster'))registerSceneryColliders(cluster,physics,{limit:metrics().limit});
     if(physics.overlaps(hero.root.position.x,hero.root.position.z,hero.root.position.y)){physics.recover();previousHeroPosition.copy(hero.root.position);}
+    if(standing){surface=standing.surface;hero.root.position.copy(standing.position);hero.root.rotation.y=standing.yaw;physics.restore(standing.physics);previousHeroPosition.copy(standing.position);}
     batchScenery();focusSun();contacts.update([hero,...citizens,...party.map(p=>p.char)],contactFloor);
     scene.updateMatrixWorld(true);camera.far=340*metrics().scale;camera.fov=68;camera.updateProjectionMatrix();followCamera(1,true,false);
   }

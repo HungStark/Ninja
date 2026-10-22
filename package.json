@@ -61,7 +61,8 @@
     "test:spell-presentation": "node tests/spell-presentation-core.mjs && node tests/spell-presentation-browser.cjs",
     "build:android": "node tools/build-android.mjs",
     "build:apk": "powershell -NoProfile -ExecutionPolicy Bypass -File android-apk/Build-APK.ps1",
-    "test:android": "node tools/build-android.mjs && node tests/enemy-nameplates.mjs && node tests/android-controls-browser.cjs"
+    "test:android": "node tools/build-android.mjs && node tests/enemy-nameplates.mjs && node tests/android-controls-browser.cjs && node tests/mobile-gameplay.cjs",
+    "test:interaction-position": "node tests/interaction-position.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

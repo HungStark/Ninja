@@ -19,12 +19,14 @@ Cũng có thể mở thư mục `android-apk` bằng Android Studio và chọn *
 
 - Màn hình ngang, toàn màn hình; xoay ngược ngang vẫn được hỗ trợ. Màn hình dọc hiện hướng dẫn xoay máy.
 - Hai mép có sáu nút kết ấn mỗi bên: trái **Q W E R A S**, phải **D F Z X C V**. Chạm lần lượt để kết ấn; **⌫** xóa chuỗi.
-- Kéo ở vùng chiến trường để ngắm; thao tác trên nút không kéo camera. Có thể dùng nhiều ngón cùng lúc.
+- Trong chiến đấu, tâm ngắm tự bám thẳng vào đối thủ còn sống. Có thể dùng nhiều ngón cùng lúc.
 - **SPACE** thi triển nếu đủ ấn, hoặc ném phi tiêu nếu chưa kết xong chiêu. **‹ / ›** né trái/phải; **G** tăng lực 3 giây để lướt 2 m, hồi 12 giây và giữ nguyên chuỗi ấn.
 - Năm chiêu nằm bên phải, có tranh, kết ấn, hồi chiêu quét vòng tròn và lớp xanh khi thiếu chakra. Chạm mũi tên trên bảng để thu gọn/mở rộng.
 - Bộ chọn **Phi tiêu** liệt kê bốn loại cùng số lượng; loại không còn trong túi bị vô hiệu hóa. Luật tự đổi loại khi ném hết được giữ nguyên.
 - **⚙** tạm dừng, đổi chất lượng và bật/tắt âm thanh. Mặc định Android dùng mức Thấp.
-- Khi khám phá: cần tròn ở dưới phải để đi; bốn nút **⇈** chạy, **C** tu luyện, **E** tương tác và **↑** nhảy nằm thành cụm 2×2 dưới trái. Kéo trên cảnh để xoay camera. Nhiệm vụ, bản đồ và thông báo có vùng riêng; khi mở bảng, các nút khám phá được ẩn.
+- Khi khám phá: cần tròn bên trái lớn hơn 15%; kéo vượt lên phía trên cần để chạy nhanh, thả tay để khóa chạy. Chạm lại cần, tương tác hoặc mở bảng để hủy chạy. Bên phải là nút nhảy tròn lớn, với **C** và **E** thành cột bên phải nút nhảy. Kéo trên cảnh để xoay camera.
+- Tuyến truyện chính mặc định đóng, nằm ngay trái Nhật ký khám phá. Mở ra để đọc bảng nhiệm vụ kéo xuống sát đáy màn hình, phủ lên cảnh và các nút.
+- Chuỗi ấn được giữ khi ném phi tiêu, chờ lâu và nhận khống chế. Hết khống chế có thể kết tiếp; kết sai, xóa thủ công hoặc thi triển thành công mới xóa chuỗi. Hai ấn đầu nhận diện hệ; phần sau dùng 10 ấn còn lại và không lặp liền kề. Phong nhận cần 3 ấn.
 - Thông tin đối thủ bám theo đầu ở cả web và Android. Số tầng bỏng/tĩnh điện có hàng riêng giữa đầu và bảng thông tin. Trong trận ba đối thủ, mỗi người có bảng riêng.
 
 ## Kiểm tra
@@ -33,6 +35,8 @@ Cũng có thể mở thư mục `android-apk` bằng Android Studio và chọn *
 node tools/build-android.mjs
 node tests/enemy-nameplates.mjs
 node tests/android-controls-browser.cjs
+node tests/mobile-gameplay.cjs
+node tests/interaction-position.cjs
 ```
 
 Ảnh kiểm tra nằm trong `test-results/android/`. APK dùng WebView trên thiết bị để dựng WebGL 2. Không có quyền mạng; tài nguyên được phục vụ từ bên trong APK qua `WebViewAssetLoader`, lưu hành trình bằng bộ nhớ riêng của ứng dụng. Bản debug cho phép kiểm tra WebView qua ADB; bản release tắt chức năng này.

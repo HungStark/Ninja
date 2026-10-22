@@ -9,6 +9,7 @@ const files = [
   "index.html",
   "style.css",
   "adventure.css",
+  "android.css",
   "game-core.js",
   "game.js",
   "ket_an.jpg",
