@@ -1,6 +1,7 @@
 import {HIDDEN_GUARD_COUNT,GUARDIAN_GUARD_COUNT} from './guard-placement.js';
 import {REGIONS,regionMetrics} from './adventure-world.js';
 import {SKILL_LEVELS,spellElement,gainExperience,addBooks} from './progression.js';
+import {QUEST_ITEM_MODELS} from './quest-items.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
@@ -93,7 +94,7 @@ export function villageSidequests(id){
     const arts=Object.keys(SKILL_LEVELS[element]),scroll=id!=='nameless'&&i%2===1?arts[1+i%Math.max(1,arts.length-1)]:null;
     return {id:`${id}:npc:${person.id}`,giver:person.id,giverName:person.name,village:id,type,element,zone:zone.id,
       title:type==='combat'?`Bảo vệ ${zone.name}`:template[0],description:type==='combat'?`${person.name} nhờ bạn đánh bại kẻ phá hoại tại ${zone.name}, rồi trở lại báo tin.`:`${person.name}: ${template[1]} Tới ${zone.name}, sau đó trở lại gặp tôi.`,
-      targetName:type==='combat'?'Kẻ phá hoại · '+zone.name:template[2],x:zone.x+(i%2?2.5:-2.5),z:zone.z+3.5,
+      targetName:type==='combat'?'Kẻ phá hoại · '+zone.name:template[2],targetModel:type==='survey'?'notes':QUEST_ITEM_MODELS[person.activity]||'satchel',x:zone.x+(i%2?2.5:-2.5),z:zone.z+3.5,
       rewardGold:scroll?0:65+i*9,rewardScroll:scroll,rewardXp:id==='nameless'?0:45+i*3};
   });
 }

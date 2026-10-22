@@ -25,6 +25,7 @@ import {villagerAppearance} from './villager-appearance.js';
 import {createCameraHeight} from './camera-height.js';
 import {createContactShadows,villageLighting} from './adventure-presentation.js';
 import {dressVillage} from './adventure-dressing.js';
+import {createQuestItem} from './quest-items.js';
 
 const mat=(color,extra={})=>new T.MeshStandardMaterial({color,roughness:.95,flatShading:true,...extra});
 function mesh(g,m,parent,x=0,y=0,z=0){const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
@@ -213,7 +214,7 @@ export function createAdventureScene(){
       if(!save.story?.guardianRestored)interactives.push({kind:'intro-guardian',id:'broken-guardian',x:region.boss.x,z:region.boss.z+5,label:'Hộ vệ bị phá hỏng · Ba ninja đột kích'});
     }
     const guardDefinitions=villageGuards(id);for(const g of guardDefinitions)if(!save.story?.defeatedGuards.includes(g.id))interactives.push({...g});
-    for(const q of villageSidequests(id))if(save.story?.sidequests[q.id]===1)interactives.push({kind:'sidequest-target',id:q.id,questType:q.type,x:q.x,z:q.z,label:q.targetName});
+    for(const q of villageSidequests(id))if(save.story?.sidequests[q.id]===1)interactives.push({kind:'sidequest-target',id:q.id,questType:q.type,targetModel:q.targetModel,x:q.x,z:q.z,label:q.targetName});
     if(id==='nameless'&&treatyReady){interactives.push({kind:'treaty',x:3,z:7,label:'Bàn ký hiệp ước'});['water','fire','lightning'].forEach((key,index)=>interactives.push({kind:'treaty',id:key,x:1+index*2,z:9.5,label:REGIONS[key].boss.name}));}
     if(['wind','earth','ice','wood','light'].includes(id))interactives.push({kind:'envoy',x:-3,z:8,label:`Đại diện ${v.name}`});
     shopPlot=planVillageShop(id,[...interactives,...guardDefinitions.filter(g=>save.story?.defeatedGuards.includes(g.id))]);interactives.push({kind:'shop',id:'village-shop',...shopPlot.entry,area:{x1:shopPlot.x-6.5,x2:shopPlot.x+6.5,z1:shopPlot.z+4.5,z2:shopPlot.z+12,y:shopPlot.base+.45},label:'Thương hội · '+v.name});
@@ -278,7 +279,7 @@ export function createAdventureScene(){
       }
       if(entry.kind==='village-guard'||entry.questType==='combat'){
         const char=createNinja(encounterAppearance({kind:entry.kind,village:id}));char.root.position.set(entry.x,entry.y,entry.z);char.root.rotation.y=Math.atan2(-entry.x,-entry.z);land.add(char.root);citizens.push(char);if(entry.kind==='village-guard'){guardCharacters.add(char);roadGuards.push(createGuardAmbush({entry,char,land,physics,heightAt:(x,z)=>physics.floorAt(x,z,standingHeightAt(x,z)+.55),blocked,findPath,smoke:guardSmoke}));}
-      }else{const p=group(entry.x,entry.z);p.position.y=entry.y;const scroll=box(p,M('#ded0a0'),0,.7,0,.55,.16,.35);scroll.name='sidequest-recovery-item';const mark=mesh(new T.OctahedronGeometry(.22),M(v.color,.4),p,0,1.7,0);animated.push({kind:'float',mesh:mark,base:1.7});}
+      }else{const pickup=createQuestItem({model:entry.targetModel,name:entry.label});pickup.position.set(entry.x,entry.y+.04,entry.z);land.add(pickup);}
     }
     surface=platformFor(save.surface)?.platform?.id||null;
     hero.setEquipment(equipmentState(save));hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);let pos=save.position,y=heroHeightAt(...pos);if(Number.isFinite(save.elevation)){const supported=physics.floorAt(...pos,save.elevation+.03);if(Math.abs(supported-save.elevation)<.08)y=supported;}if((surface?platformBlocked(surface,...pos):boundaryBlocked(...pos)||id==='water'&&isDeepWater(...pos)&&!waterDeckAt(...pos,y+.4))||!surface&&physics.overlaps(...pos,y,2.85,.36,true)){pos=[0,7];surface=null;y=heroHeightAt(...pos);}y=physics.floorAt(...pos,y+.3);hero.root.position.set(pos[0],y,pos[1]);physics.reset(y);previousHeroPosition.copy(hero.root.position);hero.root.rotation.y=orbitYaw+Math.PI;destination.visible=false;

@@ -1,4 +1,5 @@
 import {combatExperienceElement,requiresGuardBattle} from './combat-experience.js';
+import {questAction} from './quest-items.js';
 import {MOTHER_ID,STARTER_CHOICES,INTRO_SQUAD,promiseMother,chooseStarter,reportGuardian,negotiatePeace,villageSidequests,questForNPC,acceptSidequest,claimSidequest,completeSidequestTarget,sidequestReward} from './journey-story.js';
 import {SHURIKEN_TYPES,equipmentState,ammoCount,buyEquipment,equipItem,takeShuriken,cycleShuriken,emergencySupply} from './equipment.js';
 import {equipmentPanel,inventoryPanel,describeGear,shopContent} from './equipment-ui.js';
@@ -185,7 +186,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(item.kind==='sidequest-target'){
       const q=villageSidequests(v.id).find(q=>q.id===item.id);if(!q||save.story.sidequests[q.id]!==1)return;
       if(q.type==='combat'){offerBattle('sidequest',{questId:q.id,name:q.targetName});return;}
-      if(completeSidequestTarget(save,q)){enter();toast((q.type==='survey'?'Đã khảo sát · ':'Đã tìm thấy · ')+q.targetName+' · Trở lại '+q.giverName);}return;
+      if(completeSidequestTarget(save,q)){enter();toast((q.type==='survey'?'Đã khảo sát · ':'Đã thu thập · ')+q.targetName+' · Trở lại '+q.giverName);}return;
     }
     if(item.kind==='lore'&&item.id==='fire-khoi'){interact(world.interactives.find(i=>i.kind==='expedition-giver'));return;}
     if(item.kind==='gate'){const access=travelAccess(item.id);if(!access.allowed){dialog('CON ĐƯỜNG CHƯA MỞ',village(item.id).name,access.reason,[['Theo tuyến truyện chính',()=>{closeDialog();followCampaign();}],['Tiếp tục khám phá',closeDialog,true]]);return;}const old=save.village,next=village(item.id),a=Math.atan2(v.x-next.x,v.y-next.y),arrival=regionMetrics(item.id).arrivalRadius;save.village=item.id;save.surface=null;save.position=[Math.sin(a)*arrival,Math.cos(a)*arrival];if(!inspectionTravel&&!save.visited.includes(item.id))save.visited.push(item.id);world.clearEnemy();enter();cooldown=35;distance=0;toast(`Đã rời ${village(old).name} · ${next.title}`);}
@@ -308,7 +309,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       const revealed=world.advanceGuards(dt,save.learnedSpells.length>0);if(revealed.length)toast('Bụp! Cảnh vệ giải ngụy trang và đang chạy tới bạn');
       const sentry=world.caughtGuard();if(sentry&&!world.riding)offerBattle('village-guard',{guardId:sentry.id,name:sentry.label});
       if(saveTimer>3&&(moving||storageFailed))persist();
-      const near=nearest();$('nearbyAction').hidden=!near;if(near)$('nearbyAction').innerHTML=`<kbd>E</kbd> ${near.kind==='gate'?'Đi tới ':near.kind==='save'?'Kích hoạt ':['quest','boss','roamer','village-guard','intro-guardian'].includes(near.kind)?'Đối mặt ':near.kind==='landmark'?'Tìm hiểu · ':near.kind==='traversal'?'Sử dụng · ':near.kind==='expedition-goal'?'Thu thập · ':'Nói chuyện · '}${esc(near.label)}`;
+      const near=nearest();$('nearbyAction').hidden=!near;if(near)$('nearbyAction').innerHTML=`<kbd>E</kbd> ${questAction(near)||(near.kind==='gate'?'Đi tới ':near.kind==='save'?'Kích hoạt ':['quest','boss','roamer','village-guard','intro-guardian'].includes(near.kind)?'Đối mặt ':near.kind==='landmark'?'Tìm hiểu · ':near.kind==='traversal'?'Sử dụng · ':near.kind==='expedition-goal'?'Thu thập · ':'Nói chuyện · ')}${esc(near.label)}`;
       updateMinimap();
     }
     const ride=world.traversalState();$('journeyTravel').hidden=phase!=='explore'||!ride;if(ride)$('journeyTravel').innerHTML=`<strong>${ride.kind==='raft'?'Bè đang qua sông':ride.kind==='cave'?'Đang đi qua lối hang':ride.kind==='rock-climb'?(ride.mode==='hang'?'Đang bám · W / Space để trèo lên · S để buông':ride.mode==='jump'?'E: bám mép đá':'Space: nhảy gờ kế · S + Space: quay lại · E: leo tự do'):ride.kind==='stairs'?'Đang đi cầu thang · Giữ W để tiếp tục':'Đang leo · Giữ W để tiếp tục'}</strong><small>${['raft','cave'].includes(ride.kind)?'Tự cập bến / đến cửa ở cuối đường':'S để quay lại · thả phím để nghỉ'} · ${Math.round(ride.progress*100)}%</small>`;

@@ -232,3 +232,69 @@ body:not(.playing)>header,body:not(.playing)>#hud{visibility:hidden}
 .squad-battle .enemy-status{visibility:hidden}
 #encounterSquad{position:fixed;z-index:8;top:112px;left:50%;transform:translateX(-50%);display:flex;gap:8px;width:min(650px,calc(100vw - 24px));pointer-events:none}
 #encounterSquad[hidden]{display:none}#encounterSquad>div{flex:1;min-width:0;padding:9px 12px;border:1px solid #b99f6a77;background:#142c31e8;color:#f3dfb4;font-size:12px}#encounterSquad strong{display:block;font-size:12px}#encounterSquad span{display:block;color:#b5ceca;margin:4px 0}#encounterSquad progress{width:100%;height:5px;accent-color:#db9f76}#encounterSquad .defeated{opacity:.45}@media(max-width:640px){#encounterSquad{top:90px}#encounterSquad>div{padding:6px}#encounterSquad strong{font-size:10px}}
+/* Individual spell illustrations and a carried scroll that folds toward the right. */
+.spell-art{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+#spellCatalog .spell{grid-template-columns:58px minmax(0,1fr)}
+#spellCatalog .spell-icon{display:block;width:58px;height:58px;padding:0;border:0;background:transparent;overflow:hidden;border-radius:7px}
+#startScreen .loadout-slot.filled>b{display:block;width:46px;height:46px;flex:0 0 46px;padding:0;background:transparent;overflow:hidden;border-radius:6px}
+#guide.guide{--spell-size:56px;position:absolute;z-index:6;top:112px;right:24px;left:auto;bottom:auto;width:82px;padding:12px;border-radius:8px;max-height:calc(100dvh - 172px);overflow-x:hidden;overflow-y:auto;transition:width .24s ease,padding .24s ease;background:#142c36e8;pointer-events:auto}
+#guide.guide.is-expanded{width:min(396px,calc(100vw - 32px));padding:14px}
+#guideToggle{display:flex;align-items:center;gap:10px;width:100%;min-height:28px;padding:0 0 10px;margin:0;border:0;border-bottom:1px solid #cce1df26;background:none;color:#d5dfd8;text-align:left;white-space:nowrap}
+#guideToggle kbd{flex:none;display:grid;place-items:center;width:26px;height:25px;font-size:12px;background:#ffffff0a;border:1px solid #cce1df60;border-radius:4px}
+#guideToggle span{display:none;letter-spacing:1.5px;font-size:10px;flex:1}
+#guideToggle i{font-style:normal;font-size:22px;line-height:20px}
+#guide.is-expanded #guideToggle span{display:block}
+#guide.is-expanded #guideToggle i{transform:rotate(180deg)}
+#guide #spellList{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+#guide .spell{display:block;position:relative;height:var(--spell-size);min-height:var(--spell-size);min-width:0;width:100%;padding:0;border:0;background:none;text-align:left;opacity:1;overflow:hidden}
+#guide.is-expanded .spell{height:64px;min-height:64px}
+#guide.is-expanded .spell.long-chain{height:82px;min-height:82px}
+#guide.is-expanded .spell-picture{top:50%;transform:translateY(-50%)}
+#guide .spell-picture{position:relative;display:block;width:var(--spell-size);height:var(--spell-size);overflow:hidden;border-radius:7px;border:1px solid #c7d4cd55;box-shadow:0 2px 7px #06151e66}
+#guide .selected .spell-picture{border-color:var(--element);box-shadow:0 0 0 1px var(--element),0 2px 7px #06151e88}
+#guide .spell-details{position:absolute;left:calc(var(--spell-size) + 12px);right:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;min-width:0;overflow:hidden;opacity:0;transform:translateX(10px);transition:opacity .15s ease,transform .24s ease;pointer-events:none}
+#guide.is-expanded .spell-details{opacity:1;transform:translateX(0)}
+#guide .spell-title{display:block;color:#e6e9df;font-size:14px;line-height:1.3;white-space:normal;margin:0 0 7px}
+#guide .spell-sequence{display:flex;flex-wrap:wrap;gap:4px}
+#guide .spell-sequence kbd{display:inline-grid;place-items:center;flex:0 0 22px;width:22px;height:24px;font-size:11px;background:#cce1df0b;border:1px solid #bdd1cc55;border-radius:3px}
+#guide .spell-sequence kbd.done{color:#f4dfaa;background:#e7c47c22;border-color:#e7c47c}
+#guide .cooldown-sweep,#guide .chakra-cover{position:absolute;inset:0;pointer-events:none;display:none}
+#guide .cooldown-sweep{z-index:1;background:conic-gradient(from 0deg,transparent 0deg var(--cooldown-sweep),#020c17d9 var(--cooldown-sweep) 360deg)}
+#guide .on-cooldown .cooldown-sweep{display:block}
+#guide .chakra-cover{z-index:2;background:#123d96cf;box-shadow:inset 0 0 16px #07204aa6}
+#guide .chakra-missing .chakra-cover{display:block}
+#guide .spell-cooldown{position:absolute;inset:0;z-index:3;display:grid;place-items:center;margin:0;font-size:18px;font-weight:700;color:#fff5da;text-shadow:0 1px 4px #000,0 0 5px #000;line-height:1}
+#guide .spell-number{position:absolute;right:3px;bottom:2px;z-index:4;font-size:9px;color:#f4efd9;text-shadow:0 1px 3px #000}
+#guide .spell.on-cooldown .spell-title{color:#bdc7cb}
+#guide .spell.nature-locked .spell-picture,#guide .spell.domain-locked .spell-picture,#guide .spell.combo-locked .spell-picture,#guide .spell.crater-locked .spell-picture{border-style:dashed}
+.enemy-heading{font-size:13px;font-weight:600;color:#e9dec1;line-height:1.4}
+#enemyAction,.enemy-seals{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px;min-height:27px;margin-top:10px}
+#enemyAction kbd,.enemy-seals kbd{display:inline-grid;place-items:center;min-width:23px;height:26px;padding:0 4px;border:1px solid #c3d3cd66;border-radius:3px;background:#b7cec910;color:#e4eee5;font-size:12px}
+#enemyAction .cast-seal,.enemy-seals .cast-seal{color:#ffe3a7;border-color:#e4bd74;background:#d9b26020;font-size:19px;line-height:1}
+#enemyShield:empty{display:none}
+#encounterSquad .enemy-seals{margin-top:6px;min-height:23px;gap:3px}
+#encounterSquad .enemy-seals kbd{min-width:17px;height:21px;font-size:10px}
+@media(max-width:760px){
+ #guide.guide{right:12px;top:104px}
+ #guide.guide.is-expanded{width:min(350px,calc(100vw - 24px))}
+ #guide .spell-title{font-size:12px}
+ #spellCatalog .spell{grid-template-columns:46px minmax(0,1fr)}
+ #spellCatalog .spell-icon{width:46px;height:46px}
+}
+@media(max-height:720px){
+ #guide.guide{--spell-size:46px;width:70px;top:91px;max-height:calc(100dvh - 120px);padding:11px}
+ #guide.guide.is-expanded{width:min(370px,calc(100vw - 24px));padding:12px}
+ #guide #spellList{gap:6px;margin-top:8px}
+ #guide .spell-sequence kbd{flex-basis:19px;width:19px;height:20px;font-size:10px}
+ #guide .spell-title{font-size:12px;margin-bottom:5px}
+}
+@media(max-width:520px){
+ #guide.guide{--spell-size:44px;width:66px;top:238px;right:12px;left:auto;bottom:auto;padding:10px;max-height:calc(100dvh - 280px)}
+ #guide.guide.is-expanded{width:min(330px,calc(100vw - 24px));padding:12px;max-height:calc(100dvh - 280px)}
+ #guide .spell{column-gap:9px;min-height:44px}
+ #guideToggle{gap:6px}#guideToggle span{font-size:9px;letter-spacing:.8px}
+ #spellCatalog .spell{grid-template-columns:40px minmax(0,1fr);gap:7px}
+ #spellCatalog .spell-icon{display:block;width:40px;height:40px}
+ #startScreen .loadout-slot.filled>b{width:36px;height:36px;flex-basis:36px}
+}
+@media(prefers-reduced-motion:reduce){#guide.guide,#guide .spell-details{transition:none}}

@@ -57,7 +57,8 @@
     "test:residents": "node tests/residents-core.mjs && node tests/residents-browser.cjs",
     "test:story": "node tests/journey-story-core.mjs && node tests/campaign-core.mjs && node tests/journey-story-browser.cjs && node tests/journey-encounters-browser.cjs",
     "test:ambush": "node tests/guard-ambush-core.mjs && node tests/guard-reinforcements-core.mjs && node tests/guard-ambush-browser.cjs",
-    "test:presentation": "node tests/presentation-core.mjs && node tests/presentation-browser.cjs"
+    "test:presentation": "node tests/presentation-core.mjs && node tests/presentation-browser.cjs",
+    "test:spell-presentation": "node tests/spell-presentation-core.mjs && node tests/spell-presentation-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"
