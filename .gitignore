@@ -6,3 +6,10 @@ test-results/
 dist/
 .vercel/
 __pycache__/
+android-apk/.gradle/
+android-apk/.local/
+android-apk/app/build/
+android-apk/build/
+android-apk/out/
+android-apk/www/
+android-apk/local.properties

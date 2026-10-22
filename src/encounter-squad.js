@@ -38,7 +38,7 @@ export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwW
         else if(m.pose>=0&&!reducedMotion){m.rig.arms.forEach((a,i)=>{a.pivot.rotation.x=-1.1;a.pivot.rotation.z=(i?1:-1)*.35;});}
       }
     },
-    state:()=>members.map(m=>({id:m.id,name:m.profile.name,element:m.profile.element,hp:m.fighter.hp,maxHp:m.fighter.maxHp,position:pos(m),spellIds:[...m.profile.spellIds],casts:m.casts,pose:m.pose,sequence:[...m.rules.sequence],sealTrace:[...m.trace],traceCast:m.traceCast}))
+    state:()=>members.map(m=>({id:m.id,name:m.profile.name,element:m.profile.element,hp:m.fighter.hp,maxHp:m.fighter.maxHp,position:pos(m),height:m.rig.height,visible:m.rig.root.visible,chakra:m.rules.chakra,spellIds:[...m.profile.spellIds],casts:m.casts,pose:m.pose,sequence:[...m.rules.sequence],sealTrace:[...m.trace],traceCast:m.traceCast}))
   };
 }
 function direction(a,b){const d=b.map((v,i)=>v-a[i]),n=Math.hypot(...d)||1;return d.map(v=>v/n);}

@@ -298,3 +298,20 @@ body:not(.playing)>header,body:not(.playing)>#hud{visibility:hidden}
  #startScreen .loadout-slot.filled>b{width:36px;height:36px;flex-basis:36px}
 }
 @media(prefers-reduced-motion:reduce){#guide.guide,#guide .spell-details{transition:none}}
+/* Combat information follows each opponent, with a separate row for stack effects. */
+#enemyNameplates{position:fixed;inset:0;z-index:3;pointer-events:none}
+#enemyNameplates[hidden],#enemyNameplates [hidden]{display:none!important}
+#enemyNameplates .enemy-nameplate{position:absolute;left:50%;top:0;right:auto;bottom:auto;transform:translate(-50%,-100%);width:220px;max-width:calc(100vw - 24px);padding:9px 12px;text-align:center;visibility:visible;border:1px solid #b9cec64d;border-radius:5px;background:#142a32df;pointer-events:none}
+#enemyNameplates .enemy-heading{font-size:11px;line-height:1.35}
+#enemyNameplates .enemy-health-row{margin-top:6px;font-size:9px}
+#enemyNameplates .meter{height:5px;margin:6px 0}
+#enemyNameplates #enemyAction,#enemyNameplates .enemy-seals{min-height:22px;margin-top:5px;gap:3px;font-size:10px}
+#enemyNameplates kbd{min-width:20px;height:22px;font-size:10px}
+#enemyNameplates #enemyShield{font-size:9px;line-height:1.35;min-height:0;margin-top:4px}
+#enemyNameplates .enemy-afflictions{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.enemy-afflictions span{display:inline-block;padding:3px 7px;border-radius:4px;font-size:11px;font-weight:600;line-height:16px;box-shadow:0 2px 7px #09131c55}
+.enemy-afflictions .burn-stacks{color:#ffe0a3;background:#6a352de8;border:1px solid #d58254aa}
+.enemy-afflictions .static-stacks{color:#e5dbff;background:#41335ce8;border:1px solid #a798d0aa}
+#targetInfo,#encounterSquad{display:none!important}
+@media(max-width:760px){#enemyNameplates .enemy-nameplate{width:180px;padding:7px 9px}#enemyNameplates .enemy-heading{font-size:10px}#enemyNameplates .enemy-health-row{font-size:8px}#enemyNameplates kbd{min-width:18px;height:21px;font-size:9px}}
+#enemyNameplates.multiple-enemies .enemy-nameplate{width:160px;padding:7px 9px}#enemyNameplates.multiple-enemies .enemy-heading{font-size:10px}#enemyNameplates.multiple-enemies .enemy-health-row{font-size:8px}

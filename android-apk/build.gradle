@@ -1,0 +1,10 @@
+buildscript {
+    repositories { google(); mavenCentral() }
+    dependencies { classpath 'com.android.tools.build:gradle:8.5.2' }
+}
+tasks.register('prepareGame', Exec) {
+    workingDir rootDir.parentFile
+    def bundledNode = new File(rootDir.parentFile, '.tools/node-v24.21.0-win-x64/node.exe')
+    def node = System.getenv('NODE_BINARY') ?: (bundledNode.exists() ? bundledNode.absolutePath : 'node')
+    commandLine node, 'tools/build-android.mjs'
+}

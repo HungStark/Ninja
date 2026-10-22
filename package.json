@@ -58,7 +58,10 @@
     "test:story": "node tests/journey-story-core.mjs && node tests/campaign-core.mjs && node tests/journey-story-browser.cjs && node tests/journey-encounters-browser.cjs",
     "test:ambush": "node tests/guard-ambush-core.mjs && node tests/guard-reinforcements-core.mjs && node tests/guard-ambush-browser.cjs",
     "test:presentation": "node tests/presentation-core.mjs && node tests/presentation-browser.cjs",
-    "test:spell-presentation": "node tests/spell-presentation-core.mjs && node tests/spell-presentation-browser.cjs"
+    "test:spell-presentation": "node tests/spell-presentation-core.mjs && node tests/spell-presentation-browser.cjs",
+    "build:android": "node tools/build-android.mjs",
+    "build:apk": "powershell -NoProfile -ExecutionPolicy Bypass -File android-apk/Build-APK.ps1",
+    "test:android": "node tools/build-android.mjs && node tests/enemy-nameplates.mjs && node tests/android-controls-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

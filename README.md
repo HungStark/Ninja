@@ -41,6 +41,8 @@ NPC có nhịp chớp mắt riêng, chuyển trọng tâm, khớp khuỷu tay v�
 
 Vật phẩm việc cư dân có mô hình theo nhiệm vụ (bó bạch cúc, lưới, dụng cụ, quặng, vải, thuốc, cuộn giấy…), dùng **E · Thu thập** hoặc **Khảo sát** thay vì hội thoại. Cả 45 chiêu có tranh biểu tượng riêng trong quyển trục chọn chiêu và bộ mang theo. Khi giao chiến, quyển trục mặc định thu gọn thành cột biểu tượng bên phải; **H** mở rộng tên và kết ấn. Hồi chiêu hiện vùng tối quét vòng tròn cùng số giây, thiếu chakra phủ xanh đậm lên trên. Đối thủ hiển thị các phím thực tế đã kết ấn, thêm **␣** sau lần thi triển thành công; chuỗi mới thay chuỗi cũ. `npm run test:spell-presentation` kiểm tra vật phẩm, biểu tượng, các lớp trạng thái, H, chuỗi ấn và màn hình nhỏ.
 
+Bản Android nằm trong [`android-apk/`](android-apk/README.md), có Gradle Wrapper, ứng dụng WebView ngoại tuyến, giao diện cảm ứng ngang và script build. Chạy `npm run build:apk` để tạo `android-apk/out/AnHoa-debug.apk`. `npm run test:android` kiểm tra 12 nút kết ấn, camera kéo, né/lướt, hồi chiêu, bảng thông tin đối thủ trên đầu và chỗ dành riêng cho số tầng bỏng.
+
 Nguồn: `src/adventure.js` quản lý hành trình/UI; `src/adventure-scene.js` dựng cảnh, nhân vật và địa hình; `src/adventure-landmarks.js` dựng kiến trúc, địa danh và thủ hộ; `src/adventure-world.js` chứa các vùng, cư dân, bài học và bề mặt địa hình; `src/adventure-data.js` chứa luật chiến dịch, bản lưu và A*. Mô hình low-poly dựng bằng mã, cảnh tĩnh gộp theo vật liệu và thực vật dùng instancing.
 
 Game ninja 3D góc nhìn thứ nhất, kết ấn bằng hai tay và quyết đấu với đối thủ máy. Bản 0.3 thay sân tập bia bằng trận đấu có sinh lực, chakra, phòng ngự và phản đòn.
