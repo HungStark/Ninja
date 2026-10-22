@@ -34,7 +34,15 @@ export function chooseStarter(save,id){
   if(!save.learnedSpells.includes(id))save.learnedSpells.push(id);
   const e=save.equipment;e.ownedBags=[...new Set([...e.ownedBags,'pouch-30'])];e.bag='pouch-30';e.ammo={iron:10,steel:0,tempered:0,chakra:0};e.shuriken='iron';return true;
 }
-export function reportGuardian(save){if(save.story.stage!=='report')return false;save.story.stage='infiltrate';save.gold+=100;return true;}
+export function reportGuardian(save){
+  if(save.story.stage!=='report')return false;
+  for(const {id,element} of STARTER_CHOICES){
+    save.progression.xp[element]??=0;
+    if(!save.learnedSpells.includes(id))save.learnedSpells.push(id);
+  }
+  save.progression.books=save.progression.books.filter(id=>!STARTER_CHOICES.some(s=>s.id===id));
+  save.story.stage='infiltrate';save.gold+=100;return true;
+}
 export function negotiatePeace(save,id){
   if(id==='nameless'||id==='dark'||save.village!==id||!save.bosses[id]||save.story.peaceSeals.includes(id))return false;
   save.story.peaceSeals.push(id);save.gold+=100;return true;
@@ -45,7 +53,7 @@ export function openingObjective(save){
     mother:{title:'Lời hứa trước hai nấm mộ',description:'Tìm mẹ ở nghĩa trang. Cha và em trai đã mất trong cuộc chiến giữa Hỏa, Thủy và Lôi. Hãy lập lời hứa hòa bình với mẹ.',targetKind:'lore',targetId:MOTHER_ID},
     chief:{title:'Chọn con đường nhẫn thuật',description:'Gặp trưởng làng để chọn một trong ba thuật cơ bản, nhận túi đựng và 10 phi tiêu.',targetKind:'npc'},
     guardian:{title:'Giải cứu hộ vệ Vô Danh',description:'Tới Đồi Chuông Gió. Đánh bại cùng lúc ba ninja Hỏa, Thủy, Lôi để hồi sinh hộ vệ đã bị phá hỏng.',targetKind:'intro-guardian'},
-    report:{title:'Báo tin cho trưởng làng',description:'Hộ vệ đã sống lại. Trở lại trưởng làng để nhận sứ mệnh lấy dấu ấn hòa bình từ ba làng.',targetKind:'npc'}
+    report:{title:'Báo tin cho trưởng làng',description:'Hộ vệ đã sống lại. Trở lại trưởng làng để học hai thuật cơ bản còn lại, nhận 100 xu và sứ mệnh lấy dấu ấn hòa bình từ ba làng.',targetKind:'npc'}
   }[s.stage],targetVillage:'nameless'};
 }
 export function villageGuards(id){
