@@ -37,6 +37,8 @@ Mở `index.html` hoặc chạy `npm start`. Màn hình đầu cho phép tạo n
 
 `npm run test:adventure` kiểm tra địa hình, tất cả lối tương tác/cổng, luật chiến dịch, lưu cũ/mới, nhiệm vụ, chiến thắng/thất bại, hồi sinh, chạm trán và điện thoại. `npm run test:world-journey` chạy toàn bộ tuyến truyện qua UI từ một thuật Thủy tới lễ ký, năm chuyến truyền hòa ước và trận cuối. Ảnh ở `test-results/adventure/` và `test-results/world-journey/`. Thêm `?mode=duel` để mở luyện tập; `?test=1&adventure=1` bật kiểm thử khám phá.
 
+NPC có nhịp chớp mắt riêng, chuyển trọng tâm, khớp khuỷu tay và quay đầu nhẹ về người chơi ở gần. Mỗi làng có các cụm vật dụng bên nhà và địa danh, tránh lối đi và điểm nhiệm vụ. Gỗ, vữa, đá, kim loại, đất và tuyết dùng vân cùng độ nhám riêng. Ánh sáng trời giảm để giữ tương phản; bóng mặt trời tập trung quanh người chơi và bóng tiếp đất dùng chung một lượt vẽ, vẫn có ở chế độ Thấp. `npm run test:presentation` kiểm tra bề mặt, biểu cảm, bóng tiếp đất và lưu ảnh các làng vào `test-results/presentation/`.
+
 Nguồn: `src/adventure.js` quản lý hành trình/UI; `src/adventure-scene.js` dựng cảnh, nhân vật và địa hình; `src/adventure-landmarks.js` dựng kiến trúc, địa danh và thủ hộ; `src/adventure-world.js` chứa các vùng, cư dân, bài học và bề mặt địa hình; `src/adventure-data.js` chứa luật chiến dịch, bản lưu và A*. Mô hình low-poly dựng bằng mã, cảnh tĩnh gộp theo vật liệu và thực vật dùng instancing.
 
 Game ninja 3D góc nhìn thứ nhất, kết ấn bằng hai tay và quyết đấu với đối thủ máy. Bản 0.3 thay sân tập bia bằng trận đấu có sinh lực, chakra, phòng ngự và phản đòn.

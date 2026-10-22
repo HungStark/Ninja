@@ -7,6 +7,7 @@ export function createVillager(profile){
   const root=new T.Group(),body=new T.Group();root.add(body);root.name='villager-'+profile.village+'-'+profile.id;root.userData.villager={...profile};
   const colors=new Map(),material=color=>{if(!colors.has(color))colors.set(color,new T.MeshStandardMaterial({color,roughness:.92,flatShading:true}));return colors.get(color);};
   const cloth=material(profile.coat),accent=material(profile.accent),skin=material(profile.skin),hair=material(profile.hair),ink=material('#302e2b'),leather=material('#604936'),linen=material('#d8cbb0'),metal=material('#8b9290');
+  skin.flatShading=false;skin.roughness=.64;hair.roughness=.76;leather.roughness=.73;metal.metalness=.65;metal.roughness=.38;
   const cube=new T.BoxGeometry(1,1,1),sphere=new T.SphereGeometry(1,10,7);
   const mesh=(geo,mat,parent,x,y,z,sx=1,sy=1,sz=1)=>{const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;};
   const box=(p,m,x,y,z,w,h,d)=>mesh(cube,m,p,x,y,z,w,h,d);
@@ -23,31 +24,34 @@ export function createVillager(profile){
     const apron=part('work-apron');box(apron,['smith','miner'].includes(profile.job)?leather:accent,0,1.48,.25,.48*width,1.12,.045);box(apron,leather,.18*width,1.95,.19,.055,.3,.035).rotation.z=.2;
     box(apron,cloth,-.12,1.04,.295,.16,.19,.05);box(apron,cloth,.12,1.04,.295,.16,.19,.05);
   }
-  const legs=[],arms=[];
+  const legs=[],arms=[],forearms=[];
   for(const side of [-1,1]){
     const leg=part('leg-'+side);leg.position.set(side*.17*width,1.08,0);
     cone(leg,robe?ink:cloth,0,-.24,0,.14,.115,.47,7);const shin=cone(leg,ink,0,-.69,.01,.11,.095,.43,7);
     box(leg,leather,0,-.97,.075,.23,.18,.38);legs.push(leg);
     const arm=part('arm-'+side);arm.position.set(side*.37*width,1.96,0);
     const sleeve=cone(arm,cloth,side*.025,-.22,0,.17*width,.145,.45,7);sleeve.rotation.z=side*.1;
-    cone(arm,profile.job==='smith'?skin:cloth,side*.055,-.63,.015,.12,.085,.4,7);
-    if(profile.job!=='smith')cone(arm,accent,side*.055,-.77,.015,.12,.12,.07,7);
-    ball(arm,skin,side*.055,-.9,.03,.095,.125,.09);arms.push(arm);
+    const forearm=part('elbow-'+side,arm);forearm.position.set(side*.055,-.46,.015);
+    cone(forearm,profile.job==='smith'?skin:cloth,0,-.17,0,.12,.085,.4,7);
+    if(profile.job!=='smith')cone(forearm,accent,0,-.31,0,.12,.12,.07,7);
+    ball(forearm,skin,0,-.44,.015,.095,.125,.09);arms.push(arm);forearms.push(forearm);
   }
   cone(body,skin,0,2.2,0,.11,.13,.25,8);
   const head=part('face');head.position.set(0,2.55,.015);
   const faceWidth=female?.255:.275+(profile.variant%2)*.015;
   ball(head,skin,0,0,0,faceWidth,.345,.25);
+  const eyes=part('expressive-eyes',head),brows=part('expressive-brows',head);eyes.position.set(0,.026,.239);brows.position.set(0,.09,.23);
   for(const side of [-1,1]){
     ball(head,skin,side*(faceWidth-.012),-.015,-.005,.055,.085,.05);
-    box(head,linen,side*.105,.025,.229,.105,.035,.018);
-    box(head,ink,side*.103,.026,.243,.037,.04,.012);
-    box(head,hair,side*.105,.09,.23,.12,.024,.025).rotation.z=side*(profile.variant%2?.08:-.1);
+    ball(eyes,material('#e6ddd1'),side*.105,0,0,.06,.025,.012);
+    ball(eyes,ink,side*.103,0,.012,.019,.023,.008);
+    box(brows,hair,side*.105,0,0,.12,.018,.024).rotation.z=side*(profile.activity==='mourning'?-.16:profile.variant%2?.05:-.06);
     if(profile.age==='elder')box(head,material('#916c54'),side*.17,-.035,.208,.06,.012,.013).rotation.z=side*.15;
   }
   if(profile.job!=='ninja'){
     const nose=mesh(new T.ConeGeometry(.048,.14,4),skin,head,0,-.035,.262);nose.rotation.x=Math.PI/2;
-    box(head,material('#885b4a'),0,-.155,.225,.105,.018,.022);
+    const smile=profile.activity==='mourning'?0:.016,curve=new T.QuadraticBezierCurve3(new T.Vector3(-.052,-.15,.226),new T.Vector3(0,-.15-smile,.237),new T.Vector3(.052,-.15,.226));
+    mesh(new T.TubeGeometry(curve,6,.008,4,false),material('#885b4a'),head,0,0,0);
   }
   const cap=mesh(new T.SphereGeometry(1,10,6,0,Math.PI*2,0,Math.PI*.55),hair,head,0,.085,-.015,faceWidth+.025,.3,.255);
   if(profile.hairStyle==='bald'){cap.scale.set(faceWidth+.01,.16,.24);cap.position.set(0,-.015,-.09);}
@@ -126,16 +130,32 @@ export function createVillager(profile){
     const obsolete=new Set();root.traverse(parent=>{if(parent.isMesh)return;const batches=new Map();for(const child of [...parent.children])if(child.isMesh){child.updateMatrix();const geo=(child.geometry.index?child.geometry.toNonIndexed():child.geometry.clone()).applyMatrix4(child.matrix);if(!batches.has(child.material))batches.set(child.material,[]);batches.get(child.material).push(geo);obsolete.add(child.geometry);parent.remove(child);}for(const [mat,geos] of batches){const geo=mergeGeometries(geos);geos.forEach(g=>g.dispose());const o=new T.Mesh(geo,mat);o.castShadow=o.receiveShadow=true;parent.add(o);}});obsolete.forEach(g=>g.dispose());
   }
   const activity=profile.activity?createVillageActivity({root,body,head,arms,profile,material}):null;
-  let stride=0;
+  // Hand-held tools follow the elbow, while workbenches remain on the ground.
+  root.updateMatrixWorld(true);
+  arms.forEach((arm,i)=>{for(const child of [...arm.children])if(child.isGroup&&child!==forearms[i])forearms[i].attach(child);});
+  let stride=0,lookYaw=0,lookPitch=0;
   const rest=arms.map(a=>a.rotation.clone());
-  function update(time,moving,velocity=null,dt=1/60){
+  function update(time,moving,velocity=null,dt=1/60,attention=null){
     stride+=moving?dt*8.5:0;const breath=Math.sin(time*1.7+profile.variant)*.008;
     body.position.y=breath;body.rotation.x=profile.age==='elder'?.055:0;
-    head.rotation.y=Math.sin(time*.37+profile.variant)*.055;
+    body.rotation.z=Math.sin(time*.63+profile.variant)*.012;
+    body.position.x=Math.sin(time*.63+profile.variant)*.013;
+    head.rotation.x=0;head.rotation.y=Math.sin(time*.37+profile.variant)*.055;
     legs.forEach((leg,i)=>{leg.rotation.x=moving?Math.sin(stride+i*Math.PI)*.35:0;});
     arms.forEach((arm,i)=>{arm.rotation.x=rest[i].x+(moving?-Math.sin(stride+i*Math.PI)*.24:Math.sin(time*1.2+i)*.025);});
     if(!moving&&profile.job==='smith')arms[1].rotation.x=-.35+Math.sin(time*1.5)*.16;
     activity?.update(time,moving);
+    forearms.forEach((elbow,i)=>{const work=!moving&&profile.activity,flex=work?Math.min(.38,Math.abs(arms[i].rotation.x)*.24):.08;elbow.rotation.x=-flex-Math.sin(time*1.05+profile.variant+i)*.025;});
+    const cycle=3.4+(profile.variant%5)*.37,blinkPhase=((time+profile.variant*.71)%cycle+cycle)%cycle,blink=blinkPhase<.16?Math.sin(blinkPhase/.16*Math.PI):0;
+    eyes.scale.y=1-blink*.94;
+    let targetYaw=0,targetPitch=0;
+    if(attention&&!moving){const dx=attention.x-root.position.x,dz=attention.z-root.position.z,distance=Math.hypot(dx,dz),angle=Math.atan2(dx,dz)-root.rotation.y,yaw=Math.atan2(Math.sin(angle),Math.cos(angle));
+      if(distance<6&&distance>.5&&Math.abs(yaw)<1.2){const focus=['forging','mining','reading','mourning'].includes(profile.activity)?.3:.8;targetYaw=yaw*focus;targetPitch=Math.max(-.12,Math.min(.12,(root.position.y+2.4-attention.y-2.2)/distance))*.5;}
+    }
+    const ease=1-Math.exp(-Math.max(0,dt)*5);lookYaw+=(targetYaw-lookYaw)*ease;lookPitch+=(targetPitch-lookPitch)*ease;
+    head.rotation.y+=lookYaw;head.rotation.x=(head.rotation.x||0)+lookPitch;head.rotation.z=Math.sin(time*.49+profile.variant)*.017;
+    brows.position.y=.09+Math.sin(time*.7+profile.variant)*.003;
+    root.userData.expression={blink,lookYaw,lookPitch};
   }
-  return {root,body,head,arms,legs,cloth,hair,update,workstation:activity?.station||null};
+  return {root,body,head,arms,forearms,legs,cloth,hair,update,workstation:activity?.station||null};
 }

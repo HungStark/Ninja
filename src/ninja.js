@@ -46,13 +46,13 @@ export function createNinja(look){
   const shoulderGuards=[],bracers=[];
   const arms=base.arms.map((pivot,i)=>({side:i===0?-1:1,pivot})),legs=base.legs.map((pivot,i)=>({side:i===0?-1:1,pivot}));
   for(let i=0;i<2;i++){
-    const side=i===0?-1:1,arm=arms[i].pivot,leg=legs[i].pivot,shoulder=new T.Group(),bracer=new T.Group();arm.add(shoulder,bracer);bracer.position.set(side*.055,-.46,0);shoulderGuards.push(shoulder);bracers.push(bracer);
+    const side=i===0?-1:1,arm=arms[i].pivot,elbow=base.forearms[i],leg=legs[i].pivot,shoulder=new T.Group(),bracer=new T.Group();arm.add(shoulder);elbow.add(bracer);bracer.position.set(0,0,-.015);shoulderGuards.push(shoulder);bracers.push(bracer);
     panel(shoulder,wrap,[[-.12,-.02],[.12,-.02],[.15,-.16],[0,-.21],[-.15,-.16]],.15,.027);
     box(shoulder,accent,0,-.08,.188,.2,.028,.015);
     panel(bracer,dark,[[-.09,0],[-.1,-.19],[-.065,-.34],[.065,-.34],[.1,-.19],[.09,0]],.09,.035);
     panel(bracer,metal,[[-.06,-.035],[-.07,-.18],[0,-.28],[.07,-.18],[.06,-.035]],.133,.017);
     for(let k=0;k<3;k++)box(bracer,wrap,0,-.07-k*.085,.16,.16,.018,.015).rotation.z=side*.1;
-    ball(arm,dark,side*.055,-.89,.03,.098,.122,.094);
+    ball(elbow,dark,0,-.43,.015,.098,.122,.094);
     box(leg,leather,0,-.19,.15,.23,.07,.027);box(leg,leather,0,-.28,.145,.23,.045,.026);
     panel(leg,wrap,[[-.085,-.52],[-.1,-.67],[-.06,-.87],[.06,-.87],[.1,-.67],[.085,-.52]],.105,.027);
     for(let k=0;k<3;k++)box(leg,accent,0,-.55-k*.1,.148,.19,.022,.018).rotation.z=side*.1;
