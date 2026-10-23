@@ -105,3 +105,23 @@ body[data-journey=dialog] #journeyToast{display:none}
 @media(max-width:620px){.journey-travel-hint{bottom:115px;left:auto;right:15px;transform:none;width:170px;padding:11px}.journey-travel-hint strong{font-size:10px}.journey-travel-hint small{font-size:9px}}
 .journey-travel-hint{position:absolute;left:50%;bottom:80px;transform:translateX(-50%);width:min(330px,calc(100vw - 30px));padding:15px 18px;background:#173138ee;border:1px solid #d7c49588;border-radius:4px;text-align:center;color:#ecddbd;pointer-events:none;box-sizing:border-box}.journey-travel-hint strong{display:block;font-size:12px;font-weight:500}.journey-travel-hint small{display:block;font-size:10px;color:#b7cdbc;margin-top:8px}
 @media(max-width:620px){.journey-travel-hint{bottom:115px;left:auto;right:15px;transform:none;width:170px;padding:11px}.journey-travel-hint strong{font-size:10px}.journey-travel-hint small{font-size:9px}}
+
+/* Compact training rows and grouped journal. */
+.training-stats .system-grid{grid-template-columns:1fr;gap:8px;align-content:start}
+details.system-card{padding:0;min-width:0;border-radius:4px;align-self:start}
+.system-card>summary,.journal-group>summary{display:flex;align-items:center;gap:12px;min-height:48px;padding:12px 14px;list-style:none;cursor:pointer;color:#c7d5c5;font-size:12px;line-height:1.6;overflow-wrap:anywhere;touch-action:pan-y}
+.system-card>summary::-webkit-details-marker,.journal-group>summary::-webkit-details-marker{display:none}
+.system-card>summary::after,.journal-group>summary::after{content:'⌄';flex:none;margin-left:auto;font-size:19px;line-height:1;color:#dec797;transition:transform .15s}
+.system-card[open]>summary::after,.journal-group[open]>summary::after{transform:rotate(180deg)}
+.system-card>summary b,.system-card>summary strong{color:#ecdbb4}.system-card>summary b{font-size:14px}
+.system-card>summary:focus-visible,.journal-group>summary:focus-visible{outline:2px solid #e2c78d;outline-offset:-3px}
+.system-content{padding:0 14px 10px;border-top:1px solid #b3c2a820}.system-content>small{display:block;font-size:10px;color:#a9c2ae;margin:12px 0}.system-content .system-art{min-height:48px}
+.journal-group{margin:10px 0;border:1px solid #b3c2a830;background:#122b3188;border-radius:4px;min-width:0}
+.journal-group>summary{font-size:13px}.journal-group>summary>span{color:#ecdbb4;font-weight:600}.journal-group>summary>strong{margin-left:auto;font-weight:400;color:#abc7b4;font-size:11px;text-align:right}.journal-group>summary::after{margin-left:0}
+.journal-group-content{padding:12px;border-top:1px solid #b3c2a820}.journal-group-content>.journal-campaign,.journal-group-content>.journal-story,.journal-group-content>.journal-people{margin:0}.journal-group-content>.journal-story+.journal-story{margin-top:12px}
+.journal-quest-groups>.journal-group:first-child{margin-top:0}.journal-quest-groups>.journal-group:last-child{margin-bottom:0}
+.journal-zone.journal-quest-ready{border-color:#ead292b3;background:linear-gradient(135deg,#526446cc,#253f3e);box-shadow:inset 0 0 0 1px #eed8a02b,0 0 14px #e6c67e14}.journal-quest-ready small,.journal-quest-ready>span{color:#f3d68d}.journal-quest-ready strong{color:#fff0c1}.journal-quest-ready p{color:#d6e4ca}
+.journal-zone.journal-quest-completed{opacity:.48;filter:saturate(.35);background:#10252b;border-color:#83988b26}.journal-zone.journal-quest-completed:hover,.journal-zone.journal-quest-completed:focus-visible{opacity:.75}
+.journal-group[data-journal-group="quests-2"]{border-color:#e4c98577;background:#40543b55}.journal-group[data-journal-group="quests-2"]>summary>span,.journal-group[data-journal-group="quests-2"]>summary>strong{color:#f3db9f}.journal-group[data-journal-group="quests-3"]>summary{opacity:.6}
+.journal-group-tools{display:flex;justify-content:flex-end;gap:8px}.journal-group-tools button{min-height:44px;padding:8px 12px;border:1px solid #b3c2a840;border-radius:3px;background:#223e3f;color:#ddc797;font-size:11px;cursor:pointer}
+@media(max-width:620px){.system-card>summary{font-size:11px;padding:10px;gap:8px}.system-card>summary b{font-size:12px}.journal-group>summary{padding:10px;font-size:12px;gap:8px}.journal-group>summary>strong{font-size:10px;max-width:42%}.journal-group-content{padding:9px}}
