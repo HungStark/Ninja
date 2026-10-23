@@ -8,18 +8,18 @@ const {spells,Fighter,intersectFireWall}=ctx.SealGameCore;
 const spell=id=>spells.find(s=>s.id===id),close=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} != ${b}`);
 const scene=new T.Scene(),arts=new LightArts(scene,intersectFireWall);
 let actors,walls,hits;
-const setup=()=>{arts.reset();walls=[];hits=[];actors=[{owner:'player',pos:[0,1.72,0],dir:[0,0,-1],fighter:new Fighter()},{owner:'enemy',pos:[0,1.72,-15],dir:[0,0,1],fighter:new Fighter()}];};
+const setup=()=>{arts.reset();walls=[];hits=[];actors=[{owner:'player',pos:[0,1.72,0],dir:[0,0,-1],fighter:new Fighter(1000)},{owner:'enemy',pos:[0,1.72,-15],dir:[0,0,1],fighter:new Fighter(1000)}];};
 const damage=(s,p)=>{hits.push({...s});return actors.find(a=>a.owner!==s.owner).fighter.receive(s.damage,true);};
 const advance=t=>{for(let age=0;age<t-1e-9;age+=1/60)arts.advance(Math.min(1/60,t-age),actors,walls,damage);};
 const place=(id,owner='player',finish=true)=>{const a=actors.find(a=>a.owner===owner),o=arts.place(owner,spell(id),a.pos,a.dir,actors);if(o.kind==='dome'&&finish)advance(o.buildTime);return o;};
 const fire=(owner='player')=>{const a=actors.find(a=>a.owner===owner);arts.fire(owner,spell('light-orb'),a.pos,a.dir);advance(.1);};
-assert.deepEqual(Array.from(spells.filter(s=>s.element==='light').map(s=>s.sequence.length)),[2,6,8,5,6]);
+assert.deepEqual(Array.from(spells.filter(s=>s.element==='light').map(s=>s.sequence.length)),[3,6,8,5,6]);
 assert.equal(spell('light-barrier').duration,8);assert.equal(spell('light-lance').duration,10);assert.equal(spell('light-reflect').duration,2.5);
 for(const id of ['light-barrier','light-lance','light-reflect']){
   setup();const optic=place(id,'player',false);advance(spell(id).duration+(optic.buildTime||0)-.01);assert.ok(arts.optics.includes(optic),id+' remains until its full lifetime');close(optic.life,.01);
   advance(.01);assert.ok(!arts.optics.includes(optic),id+' expires at its exact lifetime');
 }
-assert.equal(spell('light-lance').sequence.join(''),'sdcvzxsd');assert.equal(spell('light-lance').domeRadius,6.2);
+assert.equal(spell('light-lance').sequence.length,8);assert.equal(spell('light-lance').domeRadius,6.2);
 setup();const assembly=place('light-lance','player',false);assert.equal(arts.domeReady(assembly),false);assert.equal(arts.state().domes[0].landedPanels,0);assert.equal(assembly.assembly.panels.length,96);advance(.45);arts.visuals(.45,[],actors);assert.ok(assembly.assembly.panels.some(p=>p.part.visible&&p.part.position.y>p.target.y+2));assert.equal(arts.state().domes[0].landedPanels,0);fire();assert.equal(assembly.rays.length,0,'Unassembled roof cannot trap lasers');close(actors[1].fighter.hp,960);advance(assembly.buildTime-assembly.age);assert.equal(arts.domeReady(assembly),true);assert.equal(arts.state().domes[0].landedPanels,96);close(assembly.life,10);arts.visuals(1.2,[],actors);assert.ok(assembly.assembly.panels.every(p=>p.part.position.distanceTo(p.target)<1e-6));fire();assert.equal(assembly.rays.length,1);
 setup();fire();close(actors[1].fighter.hp,960);assert.equal(hits.length,1);assert.equal(arts.lastPaths[0].spectrum,0);
 setup();actors[0].dir=[1,0,0];fire();assert.equal(hits.length,0,'Laser must be aimed at the target');

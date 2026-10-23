@@ -43,6 +43,7 @@
     "test:training": "node tests/progression-core.mjs && node tests/training-browser.cjs",
     "test:exploration": "node tests/exploration-camera.cjs",
     "test:locomotion": "node tests/locomotion.cjs",
+    "test:sprint-pose": "node tools/build-android.mjs && node tests/sprint-pose.cjs",
     "test:landscape": "node tests/landscape-core.mjs && node tests/landscape-browser.cjs",
     "test:biomes": "node tests/biomes-core.mjs && node tests/biomes-browser.cjs",
     "test:ruins": "node tests/nameless-ruins.cjs",
@@ -64,7 +65,9 @@
     "test:android": "node tools/build-android.mjs && node tests/enemy-nameplates.mjs && node tests/android-controls-browser.cjs && node tests/mobile-gameplay.cjs",
     "test:interaction-position": "node tests/interaction-position.cjs",
     "test:mobile-touch": "node tools/build-android.mjs && node tests/mobile-touch.cjs",
-    "test:mobile-dialogue": "node tools/build-android.mjs && node tests/mobile-dialogue.cjs"
+    "test:mobile-dialogue": "node tools/build-android.mjs && node tests/mobile-dialogue.cjs",
+    "test:mobile-layout": "node tools/build-android.mjs && node tests/mobile-layout.cjs",
+    "test:mobile-combat": "node tools/build-android.mjs && node tests/mobile-combat-update.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

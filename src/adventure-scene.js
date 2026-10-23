@@ -312,10 +312,10 @@ export function createAdventureScene(){
     hero.root.visible=camera.position.distanceTo(head)>1.25;
     camera.lookAt(head.clone().addScaledVector(forward,5).addScaledVector(right,.25).add(new T.Vector3(0,-Math.tan(orbitPitch)*6,0)));
   }
-  function update(dt,moving,menu=false,paused=false){
+  function update(dt,moving,menu=false,paused=false,sprinting=false){
     time+=dt;if(menu)hero.root.rotation.y=.6;if(!ride&&!menu&&!paused)physics.step(dt);
     const velocity={x:dt>0?(hero.root.position.x-previousHeroPosition.x)/dt:0,z:dt>0?(hero.root.position.z-previousHeroPosition.z)/dt:0};previousHeroPosition.copy(hero.root.position);
-    hero.update(time,moving||ride?.route.kind==='stairs'&&ride.walking,velocity,dt);citizens.forEach(c=>{if(!guardCharacters.has(c))c.update(time,false,null,dt,hero.root.position);});for(const g of roadGuards)g.animate(time,paused?0:dt);guardSmoke.update(paused?0:dt);if(randomEnemy){randomEnemy.update(time,false,null,dt);const swing=Math.sin(time*2.6);if(randomEnemy.arms[1])randomEnemy.arms[1].pivot.rotation.x=-.7-swing*.5;}
+    hero.update(time,moving||ride?.route.kind==='stairs'&&ride.walking,velocity,dt,sprinting&&!paused&&!ride&&physics.state().grounded);citizens.forEach(c=>{if(!guardCharacters.has(c))c.update(time,false,null,dt,hero.root.position);});for(const g of roadGuards)g.animate(time,paused?0:dt);guardSmoke.update(paused?0:dt);if(randomEnemy){randomEnemy.update(time,false,null,dt);const swing=Math.sin(time*2.6);if(randomEnemy.arms[1])randomEnemy.arms[1].pivot.rotation.x=-.7-swing*.5;}
     const source=randomEnemy?.root.position,targets=obstacles.slice(0,24).map(o=>[o.x,heightAt(o.x,o.z)+1,o.z]);if(source)targets.sort((a,b)=>Math.hypot(a[0]-source.x,a[2]-source.z)-Math.hypot(b[0]-source.x,b[2]-source.z));fireworks.update(paused?0:dt,paused?null:source,targets.slice(0,4));
     if(sabotage&&!paused){sabotage.age+=dt;if(sabotage.age>=30)clearEnemy();}
     if(ride?.rock){if(['hang','mantle'].includes(ride.mode))hero.climbPose(time);else if(ride.mode==='jump')hero.airPose(1-ride.jumpTime*2);}

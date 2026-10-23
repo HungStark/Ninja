@@ -27,7 +27,7 @@ const path=require('node:path');
     await page.screenshot({path:out+'/explore-story.png'});await page.locator('#campaignToggle').tap();
     checkpoint='sprint gesture and cancellation';
     const center={x:pad.x+pad.width/2,y:pad.y+pad.height/2,id:1},high={...center,y:center.y-pad.height*.8};
-    const run=async()=>{await touch('touchStart',[center]);await touch('touchMove',[high]);await advance(.15);assert.equal((await journey()).sprinting,true);await touch('touchEnd');assert.equal((await journey()).sprinting,true);assert.deepEqual((await journey()).input.held,[]);};
+    const run=async()=>{await touch('touchStart',[center]);await touch('touchMove',[high]);const target=await page.locator('#androidSprintLock').boundingBox();await touch('touchMove',[{...center,y:target.y-18}]);await advance(.15);assert.equal((await journey()).sprinting,true);await touch('touchEnd');assert.equal((await journey()).sprinting,true);assert.deepEqual((await journey()).input.held,[]);};
     await run();const before=(await journey()).position;await advance(.1);assert.ok(Math.hypot(...(await journey()).position.map((v,i)=>v-before[i]))>.6,'locked run keeps moving after release');
     await touch('touchStart',[center]);await touch('touchEnd');assert.equal((await journey()).sprinting,false);const stopped=(await journey()).position;await advance(.1);assert.deepEqual((await journey()).position,stopped);
     await run();await page.locator('[data-mobile-key="c"]').tap();assert.equal((await journey()).phase,'progression');assert.equal((await journey()).sprinting,false);await page.locator('#closeProgression').tap();await advance(.01);

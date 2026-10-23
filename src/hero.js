@@ -108,17 +108,32 @@ export function createHero(){
     b(strap,.32,1.09,-.19,.27*size,.31*size,.26*size);b(trim,.32,1.19,-.19-.14*size,.23*size,.07,.035);
     b(strap,.18,.77,-.15,.22,.28,.13);root.userData.equipment={...equipment};
   }
-  setEquipment();let stride=0,localX=0,localZ=0;
-  function update(time,moving,velocity=null,dt=1/60){
+  setEquipment();let stride=0,localX=0,localZ=0,sprintBlend=0;
+  function update(time,moving,velocity=null,dt=1/60,sprinting=false){
     const yaw=root.rotation.y,vx=moving?(velocity?.x??Math.sin(yaw)*4.6):0,vz=moving?(velocity?.z??Math.cos(yaw)*4.6):0,blend=1-Math.exp(-dt*14);
     localX+=(Math.cos(yaw)*vx-Math.sin(yaw)*vz-localX)*blend;localZ+=(Math.sin(yaw)*vx+Math.cos(yaw)*vz-localZ)*blend;
-    const speed=Math.hypot(localX,localZ),weight=Math.min(1,speed/3),side=speed>.001?localX/speed:0,forward=speed>.001?localZ/speed:0,back=forward<0?1:0;stride+=speed*dt*(2.4+Math.abs(side)*.3);
-    legs.forEach((leg,i)=>{const phase=stride+i*Math.PI,swing=Math.sin(phase)*weight,lift=Math.max(0,Math.cos(phase))*weight,knee=lift*(.5+back*.12);leg.pivot.rotation.x=-swing*forward*(back?.4:.58)-knee*.48;leg.pivot.rotation.z=swing*side*.34;leg.knee.rotation.x=knee;leg.foot.rotation.x=-leg.pivot.rotation.x-knee;leg.foot.rotation.z=-leg.pivot.rotation.z;arms[i].pivot.rotation.x=.06+swing*forward*.3;arms[i].pivot.rotation.z=-swing*side*.2;arms[i].elbow.rotation.x=-.13;});
-    body.position.y=Math.sin(time*2)*.008*(1-weight)+Math.abs(Math.sin(stride))*.023*weight;body.rotation.x=forward*weight*.045;body.rotation.z=-side*weight*.05;
+    const speed=Math.hypot(localX,localZ),weight=Math.min(1,speed/3),side=speed>.001?localX/speed:0,forward=speed>.001?localZ/speed:0,back=forward<0?1:0;
+    sprintBlend+=((sprinting&&moving&&forward>.25?weight:0)-sprintBlend)*(1-Math.exp(-dt*12));
+    const sprintLean=sprintBlend*.42;
+    stride+=speed*dt*(2.4+Math.abs(side)*.3)*(1+sprintBlend*.08);
+    legs.forEach((leg,i)=>{
+      const phase=stride+i*Math.PI,swing=Math.sin(phase)*weight,lift=Math.max(0,Math.cos(phase))*weight,knee=lift*(.5+back*.12+sprintBlend*.55);
+      leg.pivot.rotation.x=-swing*forward*(back?.4:.58+sprintBlend*.27)-knee*.48-sprintLean;
+      leg.pivot.rotation.z=swing*side*.34;leg.knee.rotation.x=knee;
+      leg.foot.rotation.x=-leg.pivot.rotation.x-knee-sprintLean;leg.foot.rotation.z=-leg.pivot.rotation.z;
+      // Both hands trail behind the shoulders instead of pumping beside the torso.
+      arms[i].pivot.rotation.x=T.MathUtils.lerp(.06+swing*forward*.3,1.02+Math.sin(stride*2)*.025,sprintBlend);
+      arms[i].pivot.rotation.z=T.MathUtils.lerp(-swing*side*.2,arms[i].side*.12,sprintBlend);
+      arms[i].elbow.rotation.x=T.MathUtils.lerp(-.13,-.08,sprintBlend);
+    });
+    // Lean about the hips, keeping the pelvis and leg stride anchored over the feet.
+    body.position.z=-Math.sin(sprintLean)*1.21;
+    body.position.y=(1-Math.cos(sprintLean))*1.21+Math.sin(time*2)*.008*(1-weight)+Math.abs(Math.sin(stride))*.023*weight;
+    body.rotation.x=forward*weight*.045*(1-sprintBlend)+sprintLean;body.rotation.z=-side*weight*.05;
     scarf.rotation.y=Math.sin(time*1.6)*.018+side*weight*.045;
     tails.forEach((tail,i)=>{tail.rotation.x=-.05-weight*.12+Math.sin(time*2.1+i*1.7)*(.025+weight*.045);tail.rotation.z=Math.sin(time*1.7+i)*.025+side*weight*.06;});
   }
   function airPose(v){legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;});arms.forEach(a=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;});}
   function climbPose(t){arms.forEach((a,i)=>{a.pivot.rotation.x=-2+Math.sin(t*6+i*Math.PI)*.35;});legs.forEach((l,i)=>l.knee.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25);body.rotation.x=-.1;}
-  return {root,group:root,cloth,hair,legs,arms,armorAnchors,update,airPose,climbPose,setEquipment,locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
+  return {root,group:root,cloth,hair,legs,arms,armorAnchors,update,airPose,climbPose,setEquipment,locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
 }

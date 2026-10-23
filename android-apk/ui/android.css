@@ -165,3 +165,39 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 .android-ui #journeyDialog #dialogActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;flex:0 0 auto;min-width:0;margin:0;padding-top:7px;border-top:1px solid #c9bd8d33}
 .android-ui #journeyDialog #dialogActions button{width:100%;min-width:0;min-height:40px;margin:0;padding:6px 8px;justify-content:center;text-align:center;font-size:clamp(10px,2.8vh,12px);line-height:1.3;letter-spacing:0;white-space:normal;overflow-wrap:anywhere}
 .android-ui #journeyDialog #dialogActions button:last-child:nth-child(odd){grid-column:1 / -1}
+
+/* Saved HUD placement is independent of each component's responsive layout. */
+.android-ui [data-mobile-widget]{translate:var(--mobile-layout-x,0px) var(--mobile-layout-y,0px);scale:var(--mobile-layout-scale,1);opacity:var(--mobile-layout-opacity,1);transform-origin:center}
+.android-ui #androidJoystick{translate:calc(var(--mobile-layout-x,0px) + var(--joystick-float-x,0px)) calc(var(--mobile-layout-y,0px) + var(--joystick-float-y,0px))}
+.mobile-safe-probe{position:fixed;visibility:hidden;pointer-events:none;width:0;height:0;padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left)}
+.android-pause-settings{flex-wrap:wrap}
+#mobileLayoutEditor[hidden]{display:none!important}
+#mobileLayoutEditor{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;padding:calc(var(--safe-top) + 6px) calc(var(--safe-right) + 8px) calc(var(--safe-bottom) + 6px) calc(var(--safe-left) + 8px);box-sizing:border-box;background:#11272efc;color:#e9dec6;pointer-events:auto;font-family:'Segoe UI',sans-serif;touch-action:pan-y}
+#mobileLayoutEditor *{box-sizing:border-box}
+#mobileLayoutEditor>header{position:static;display:flex;justify-content:space-between;align-items:center;gap:12px;flex:0 0 44px;padding:0 4px 6px;background:none;border:0}
+#mobileLayoutEditor header small{display:block;color:#acbdb1;font-size:7px;letter-spacing:1px}
+#mobileLayoutEditor h2{font:18px Georgia;margin:2px 0 0}
+#mobileLayoutEditor nav{display:flex;gap:5px}
+#mobileLayoutEditor button{border:1px solid #c5bb8e55;border-radius:4px;padding:7px 10px;min-height:34px;background:#223d43;color:#eee1bf;font:11px 'Segoe UI';touch-action:pan-y}
+#mobileLayoutEditor nav button[aria-pressed=true],#mobileLayoutSave{background:#d6be87!important;color:#203439!important;border-color:#e5d0a2!important}
+.mobile-layout-workspace{display:grid;grid-template-columns:minmax(0,1fr) 172px;gap:10px;flex:1 1 0;min-height:0}
+.mobile-layout-preview{min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden}
+.mobile-layout-preview>p{margin:8px 0 0;font-size:9px;color:#b1c2b5}
+#mobileLayoutBoard{position:relative;flex:none;border:1px solid #8ba79466;border-radius:6px;background:radial-gradient(ellipse at 40% 60%,#4b6453,#263c3d 65%,#182e35);overflow:hidden;touch-action:none;box-shadow:inset 0 0 35px #07171c88}
+#mobileLayoutEditor .mobile-layout-proxy{position:absolute;min-height:0;min-width:0;padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;touch-action:none;border:1px solid #d1c18b99;background:#16343ddb;color:#f5e4bc;overflow:hidden;cursor:move;font-size:9px;line-height:1.1}
+#mobileLayoutEditor .mobile-layout-proxy.selected{border:2px solid #ffe1a1;box-shadow:0 0 10px #f9d17a77;z-index:2;background:#79653cd9}
+.mobile-layout-proxy b{font-size:clamp(10px,2.5vh,18px);line-height:1.05}
+.mobile-layout-proxy small{font-size:7px;line-height:1.1;max-width:100%}
+#mobileLayoutEditor .joystick-proxy{border-radius:50%;background:radial-gradient(circle,#91a69a77 0 22%,#19363d88 23%)}
+.layout-guide-rows{font-size:10px;writing-mode:vertical-rl;letter-spacing:4px}
+.mobile-layout-workspace>aside{overflow-y:auto;min-height:0;background:#1a343b;border:1px solid #b6c0a533;border-radius:5px;padding:9px;touch-action:pan-y;overscroll-behavior:contain}
+.mobile-layout-workspace label{display:block;font-size:10px;color:#c7d1bd;margin:0 0 9px}
+.mobile-layout-workspace output{float:right;color:#f1d89e;font-size:10px}
+#mobileLayoutEditor select{display:block;width:100%;min-height:34px;margin-top:5px;border:1px solid #afc0aa77;border-radius:4px;background:#112a32;color:#efe3c9;font-size:11px;padding:5px;touch-action:pan-y}
+#mobileLayoutEditor input[type=range]{display:block;width:100%;height:29px;margin:1px 0 0;accent-color:#d9bc7d;touch-action:pan-y}
+.mobile-layout-workspace aside p{font-size:9px;line-height:1.5;color:#aabcaf;margin:8px 0}
+#mobileLayoutResetItem{width:100%;font-size:10px!important}
+#mobileLayoutEditor>footer{position:static;display:flex;align-items:center;gap:7px;flex:0 0 46px;padding:7px 0 0;background:none;border:0}
+#mobileLayoutEditor>footer button{min-height:36px;white-space:nowrap}
+#mobileLayoutNotice{flex:1;font-size:9px;line-height:1.4;color:#d3c294}
+@media(max-width:600px){.mobile-layout-workspace{grid-template-columns:minmax(0,1fr) 150px;gap:6px}#mobileLayoutEditor h2{font-size:15px}#mobileLayoutEditor nav button{padding:6px;font-size:10px}#mobileLayoutEditor>footer{gap:5px}#mobileLayoutEditor>footer button{font-size:10px;padding:6px}#mobileLayoutNotice{font-size:8px}}

@@ -19,6 +19,7 @@ export function createDashAura(scene){
       });
     },
     clear(){root.visible=false;clock=0;},
+    dispose(){root.removeFromParent();for(const line of wisps){line.geometry.dispose();line.material.dispose();}},
     state:()=>({visible:root.visible,wisps:wisps.length})
   };
 }

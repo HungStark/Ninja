@@ -34,7 +34,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),path
     await page.locator('#openJournal').tap();await advance(.01);await swipe('.journal-card');await swipe('.journal-card',true);await page.locator('#closeJournal').tap();await advance(.01);
     checkpoint='jump keeps the other thumb moving';
     const pad=await page.locator('#androidJoystick').boundingBox(),jump=await page.locator('[data-mobile-key=" "]').boundingBox(),center={x:pad.x+pad.width/2,y:pad.y+pad.height/2,id:1},forward={...center,y:pad.y+10},second={x:jump.x+jump.width/2,y:jump.y+jump.height/2,id:2};
-    await touch('touchStart',[forward]);await advance(.05);assert.ok((await journey()).input.held.includes('w'));
+    await touch('touchStart',[center]);await touch('touchMove',[forward]);await advance(.05);assert.ok((await journey()).input.held.includes('w'));
     await touch('touchStart',[forward,second]);assert.ok((await journey()).input.held.includes('w'));await advance(.1);assert.equal((await journey()).physics.grounded,false);
     await touch('touchEnd',[second]);assert.ok((await journey()).input.held.includes('w'));const moving=(await journey()).position;await advance(.1);assert.ok(Math.hypot(...(await journey()).position.map((v,i)=>v-moving[i]))>.3);await touch('touchEnd');assert.deepEqual((await journey()).input.held,[]);await advance(1);
     checkpoint='release must land on the sprint target';

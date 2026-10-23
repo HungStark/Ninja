@@ -1,5 +1,5 @@
 import {flightDistanceAt,flightTimeAt} from './projectile-motion.js';
-import {STEP_DISTANCE,STEP_DURATION} from './dash-boost.js';
+import {createDashBoost,STEP_DISTANCE,STEP_DURATION,DASH_DISTANCE,DASH_DURATION} from './dash-boost.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 // Predict only released, approaching projectiles. A wide wave still needs a defense.
@@ -21,12 +21,13 @@ export function incomingThreat(shots,position,horizon=1.3){
 }
 
 export function createEnemyMovement(random=Math.random){
+  const boost=createDashBoost();
   let target=0,cooldown=0,reaction=0,pending=null,idle=1.5,mode='idle',direction=1,velocity=0,dodges=0;
   return {
-    reset(x=0){target=x;cooldown=0;reaction=0;pending=null;idle=1.5;mode='idle';direction=1;velocity=0;dodges=0;},
+    reset(x=0){boost.reset();target=x;cooldown=0;reaction=0;pending=null;idle=1.5;mode='idle';direction=1;velocity=0;dodges=0;},
     update(dt,{position,shots=[],beginner=false,heavy=false,blocked=false,casting=false,slow=1,constrain=p=>p}){
       velocity=0;
-      if(blocked){pending=null;target=position[0];mode='idle';return position;}
+      if(blocked){boost.cancelDash();boost.tick(dt);pending=null;target=position[0];mode='idle';return position;}
       cooldown=Math.max(0,cooldown-dt);idle-=dt;
       const threat=incomingThreat(shots,position);
       if(!pending&&cooldown<=0&&threat){pending=threat.shot;reaction=beginner?.32:.18;mode='reacting';}
@@ -36,7 +37,8 @@ export function createEnemyMovement(random=Math.random){
         else if(reaction<=0){
           const prediction=incomingThreat([pending],position);
           if(prediction){
-            const distance=STEP_DISTANCE;
+            // Use the same G charge, 2 m dash and 12 s cooldown as the player.
+            const enhanced=boost.arm()&&boost.consume(),distance=enhanced?DASH_DISTANCE:STEP_DISTANCE;
             // Prefer moving away from the line of fire, and turn inward at arena edges.
             direction=Math.abs(position[0]-prediction.x)>.08?Math.sign(position[0]-prediction.x):direction;
             if(Math.abs(position[0]+direction*distance)>5.3)direction*=-1;
@@ -45,19 +47,20 @@ export function createEnemyMovement(random=Math.random){
           pending=null;cooldown=beginner?2.6:1.5;idle=2+random();
         }
       }
-      if(!pending&&mode!=='dodging'&&idle<=0&&!casting){
+      if(!pending&&mode!=='dodging'&&idle<=0){
         direction=position[0]>.8?-1:position[0]<-.8?1:-direction;
-        target=clamp(position[0]+direction*STEP_DISTANCE,-5.3,5.3);mode='circling';idle=2.4+random()*1.8;
+        target=clamp(position[0]+direction*(.8+random()*.4),-5.3,5.3);mode='circling';idle=2.4+random()*1.8;
       }
       if(['dodging','circling'].includes(mode)){
-        const speed=(STEP_DISTANCE/STEP_DURATION)*(heavy?.8:1)*clamp(slow,0,1)*(casting?.7:1);
-        const x=position[0]+clamp(target-position[0],-speed*dt,speed*dt),next=constrain([x,position[1],position[2]]);
+        const dashing=boost.state().dashing,speed=dashing>0?DASH_DISTANCE/DASH_DURATION:(STEP_DISTANCE/STEP_DURATION)*(heavy?.8:1)*clamp(slow,0,1),travel=speed*(dashing>0?Math.min(dt,dashing):dt);
+        const x=position[0]+clamp(target-position[0],-travel,travel),next=constrain([x,position[1],position[2]]);
         velocity=dt>0?(next[0]-position[0])/dt:0;
-        if(Math.abs(target-next[0])<1e-6||Math.abs(x-position[0])>.001&&Math.abs(velocity)<.01){mode='idle';target=next[0];}
+        if(Math.abs(target-next[0])<1e-6||Math.abs(x-position[0])>.001&&Math.abs(velocity)<.01){mode='idle';target=next[0];boost.cancelDash();}
+        boost.tick(dt);
         return next;
       }
-      return position;
+      boost.tick(dt);return position;
     },
-    state:()=>({mode,target,velocity,dodges,reaction,cooldown,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION})
+    state:()=>({mode,target,velocity,dodges,reaction,cooldown,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION,dashBoost:boost.state()})
   };
 }

@@ -24,6 +24,8 @@ Cũng có thể mở thư mục `android-apk` bằng Android Studio và chọn *
 - Năm chiêu nằm bên phải, tự co thành năm hàng vừa chiều cao màn hình, kể cả chuỗi 10 ấn; có tranh, kết ấn, hồi chiêu quét vòng tròn và lớp xanh khi thiếu chakra. Chạm mũi tên trên bảng để thu gọn/mở rộng.
 - Bộ chọn **Phi tiêu** liệt kê bốn loại cùng số lượng; loại không còn trong túi bị vô hiệu hóa. Luật tự đổi loại khi ném hết được giữ nguyên.
 - **⚙** tạm dừng, đổi chất lượng và bật/tắt âm thanh. Mặc định Android dùng mức Thấp.
+- **Tùy chỉnh giao diện** nằm ở màn hình đầu, menu tạm dừng khám phá và menu cài đặt chiến đấu. Chọn riêng Khám phá/Chiến đấu, kéo từng nút hoặc bảng, chỉnh vị trí/kích thước/độ rõ rồi **Lưu bố cục**. Có Hủy, đặt lại từng thành phần và khôi phục toàn bộ mặc định; bố cục được lưu trên máy và giữ các thành phần trong mép màn hình khi đổi kích thước.
+- Cần di chuyển lấy chỗ đặt ngón tay làm tâm trong vùng gần vị trí đã chọn, có thể chạm cả phần cảnh bên cạnh cần. Tâm được giới hạn trong màn hình; nhấc tay sẽ trả cần về vị trí đã đặt. Nút khóa chạy đi theo cần đang dùng.
 - Khi khám phá: cần tròn bên trái lớn hơn 15%; kéo lên khỏi mép trên cần để hiện nút **Chạy nhanh**, rồi thả tay ngay trên nút đó để ghim chạy thẳng. Thả ngoài nút sẽ dừng. Chạm lại cần hoặc nút đang chạy, tương tác hay mở bảng để hủy chạy. Bên phải là nút nhảy tròn lớn, với **C** và **E** thành cột bên phải nút nhảy. Nhảy giữ nguyên cần đang kéo và trạng thái chạy đã ghim. Kéo trên cảnh để xoay camera.
 - Các bảng thông tin hỗ trợ vuốt lên/xuống, kể cả khi bắt đầu vuốt trên nút hoặc thẻ vật phẩm.
 - Hội thoại trên điện thoại dùng khung cố định: chỉ phần lời thoại cuộn, còn các nút lựa chọn, Tiếp lời và Bỏ qua luôn ở ngoài vùng cuộn. Đổi lời thoại sẽ trở về đầu nội dung.
@@ -40,6 +42,7 @@ node tests/android-controls-browser.cjs
 node tests/mobile-gameplay.cjs
 node tests/mobile-touch.cjs
 node tests/mobile-dialogue.cjs
+node tests/mobile-layout.cjs
 node tests/interaction-position.cjs
 ```
 

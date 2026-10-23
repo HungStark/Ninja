@@ -5,8 +5,10 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   let page,checkpoint='load';
   try{
     page=await browser.newPage({viewport:{width:1440,height:960}});const errors=[];page.on('pageerror',e=>errors.push(e.stack));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+    const {newJourney}=await import('../src/adventure-data.js'),save=newJourney();save.position=[0,7];
+    await page.addInitScript(s=>localStorage.setItem('anhoa-adventure-v1',JSON.stringify(s)),save);
     const state=()=>page.evaluate(()=>__AN_HOA__.adventure()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t);
-    await page.goto('file:///'+path.join(process.cwd(),'index.html').replaceAll('\\','/')+'?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await page.locator('#heroForm button[type=submit]').click();await advance(.3);await page.locator('#campaignToggle').click();
+    await page.goto('file:///'+path.join(process.cwd(),'index.html').replaceAll('\\','/')+'?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await page.locator('#continueJourney').click();await advance(.3);await page.locator('#campaignToggle').click();
     await page.mouse.move(800,450);await page.mouse.wheel(0,575);await advance(.3);
     const move=async(keys,forward,side,name)=>{
       checkpoint=name;const before=await state(),duration=.5;for(const key of keys)await page.keyboard.down(key);await advance(.25);await page.screenshot({path:`${output}/${name}.png`});await advance(.25);for(const key of keys)await page.keyboard.up(key);const after=await state(),yaw=before.camera.yaw,dx=after.position[0]-before.position[0],dz=after.position[1]-before.position[1],speed=4.6*(forward<0?.75:1),length=Math.hypot(forward,side);

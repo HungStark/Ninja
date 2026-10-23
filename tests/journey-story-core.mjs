@@ -8,7 +8,7 @@ import {createAdventureScene} from '../src/adventure-scene.js';
 import {planExpedition} from '../src/adventure-biomes.js';
 import {guardianPhase,signaturePoints,GUARDIAN_SIGNATURES} from '../src/guardian-phases.js';
 const read=s=>readJourney({getItem:()=>JSON.stringify(s)});
-assert.equal(SealGameCore.spells.find(s=>s.id==='lightning-lance').damage,50);
+assert.equal(SealGameCore.spells.find(s=>s.id==='lightning-lance').damage,40);
 for(const choice of STARTER_CHOICES){
  const s=newJourney();assert.deepEqual(s.learnedSpells,[]);assert.equal(systemLevel(s.progression,'water'),0);assert.deepEqual(s.position,HOME.spawn);assert.equal(canTravel(s,'water').allowed,false);assert.equal(campaignObjective(s).targetId,MOTHER_ID);
  assert.equal(chooseStarter(s,choice.id),false);assert.equal(promiseMother(s),true);assert.equal(promiseMother(s),false);assert.equal(chooseStarter(s,choice.id),true);assert.equal(chooseStarter(s,'water-barrier'),false);assert.deepEqual(s.learnedSpells,[choice.id]);assert.equal(s.equipment.ammo.iron,10);assert.equal(systemLevel(s.progression,choice.element),1);assert.deepEqual(read(s).learnedSpells,[choice.id]);
