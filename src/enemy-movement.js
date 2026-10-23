@@ -37,7 +37,7 @@ export function createEnemyMovement(random=Math.random){
         else if(reaction<=0){
           const prediction=incomingThreat([pending],position);
           if(prediction){
-            // Use the same G charge, 2 m dash and 12 s cooldown as the player.
+            // Use the same G charge, dash distance and cooldown as the player.
             const enhanced=boost.arm()&&boost.consume(),distance=enhanced?DASH_DISTANCE:STEP_DISTANCE;
             // Prefer moving away from the line of fire, and turn inward at arena edges.
             direction=Math.abs(position[0]-prediction.x)>.08?Math.sign(position[0]-prediction.x):direction;

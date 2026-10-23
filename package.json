@@ -67,7 +67,9 @@
     "test:mobile-touch": "node tools/build-android.mjs && node tests/mobile-touch.cjs",
     "test:mobile-dialogue": "node tools/build-android.mjs && node tests/mobile-dialogue.cjs",
     "test:mobile-layout": "node tools/build-android.mjs && node tests/mobile-layout.cjs",
-    "test:mobile-combat": "node tools/build-android.mjs && node tests/mobile-combat-update.cjs"
+    "test:mobile-combat": "node tools/build-android.mjs && node tests/mobile-combat-update.cjs",
+    "test:balance": "node tools/build-android.mjs && node tests/balance-core.mjs && node tests/balance-browser.cjs && node tests/balance-effects-browser.cjs",
+    "test:attribute-balance": "node tools/build-android.mjs && node tests/progression-core.mjs && node tests/attribute-balance-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

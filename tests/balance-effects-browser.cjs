@@ -1,0 +1,22 @@
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path');
+(async()=>{
+  const out='test-results/balance-effects';await fs.mkdir(out,{recursive:true});
+  const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  const page=await browser.newPage({viewport:{width:915,height:412},hasTouch:true}),errors=[];page.on('pageerror',e=>errors.push(e.stack));
+  const url='file:///'+path.join(process.cwd(),'android-apk/www/index.html').replaceAll('\\','/');
+  const state=()=>page.evaluate(()=>__AN_HOA__.state()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t),close=(a,b)=>assert.ok(Math.abs(a-b)<1e-5,`${a} != ${b}`);
+  let checkpoint='load';
+  try{
+    await page.goto(url+'?test=1&mode=duel');await page.waitForFunction(()=>document.body.dataset.ready==='true');
+    await page.evaluate(()=>{document.getElementById('clearLoadout').click();for(const id of ['fire-volley','lightning-lance','fire-meteor'])document.querySelector('[data-equip="'+id+'"]').click();document.getElementById('startButton').click();__AN_HOA__.setAIEnabled(false);__AN_HOA__.setHealth('player',10000);__AN_HOA__.setHealth('enemy',10000);});
+    const cast=async id=>{await page.keyboard.press('Backspace');for(const k of await page.evaluate(id=>SealGameCore.spells.find(s=>s.id===id).sequence,id))await page.keyboard.press(k);await page.keyboard.press('Space');};
+    const hit=async id=>{await page.evaluate(id=>{const p=__AN_HOA__.state().playerPosition;__AN_HOA__.launchEnemy(id,[p[0],p[1],p[2]-7],[0,0,1]);},id);await advance(1.7);};
+    checkpoint='default shuriken hit and partial seals';await page.keyboard.press('q');await page.keyboard.press('Space');let s=await state();assert.equal(s.projectiles.find(p=>p.style==='shuriken').damage,2);assert.deepEqual(s.sequence,['q']);await advance(1);close((await state()).enemyHealth,9998);
+    checkpoint='individual burn lifetime';await hit('fire-volley');s=await state();assert.equal(s.elemental.player.burnStacks,3);close(s.health,9982);const old=[...s.elemental.player.burnTimes];assert.ok(old.every(t=>t>0&&t<=6));await advance(2);await hit('fire-volley');s=await state();assert.equal(s.elemental.player.burnStacks,5);close(s.elemental.player.burnTimes[0],old[1]-3.7);assert.ok(s.elemental.player.burnTimes.at(-1)>4);
+    await advance(s.elemental.player.burnTimes[1]+.01);assert.equal((await state()).elemental.player.burnStacks,3,'old layers expire independently');await advance(6);assert.equal((await state()).elemental.player.burnStacks,0);
+    checkpoint='individual static lifetime';await hit('lightning-lance');s=await state();assert.equal(s.elemental.player.staticStacks,1);const remaining=s.elemental.player.staticTimes[0];assert.ok(remaining>6&&remaining<=8);await advance(2);await hit('lightning-lance');s=await state();assert.equal(s.elemental.player.staticStacks,2);close(s.elemental.player.staticTimes[0],remaining-3.7);await advance(s.elemental.player.staticTimes[0]+.01);assert.equal((await state()).elemental.player.staticStacks,1);await advance(8);s=await state();assert.equal(s.elemental.player.staticStacks,0);const hp=s.health;await hit('lightning-lance');close((await state()).health,hp-22);
+    checkpoint='35 second ultimate and blocked recast';await cast('fire-meteor');s=await state();close(s.cooldowns['fire-meteor'],35);assert.equal(s.casts,1);await advance(15);await cast('fire-meteor');s=await state();assert.equal(s.casts,1);assert.equal(s.sequence.length,6);close(s.cooldowns['fire-meteor'],20);await advance(20);await page.keyboard.press('Space');s=await state();assert.equal(s.casts,2);close(s.cooldowns['fire-meteor'],35);assert.equal(s.balanceVersion,'tiered-cooldowns-v2');assert.deepEqual(errors,[]);
+    await page.screenshot({path:out+'/tiered-cooldowns.png'});
+    console.log('PASS: actual mobile default shuriken 2 and partial seals; fire volley 18; independent capped 6s burns and 8s static; lightning 22; 35s ultimate recast gating after full mana recovery.');
+  }catch(e){await page.screenshot({path:out+'/failure.png'}).catch(()=>{});await fs.writeFile(out+'/failure.json',JSON.stringify({checkpoint,message:e.message,state:await state().catch(()=>null),errors},null,2));e.message=checkpoint+': '+e.message;throw e;}finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

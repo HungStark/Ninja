@@ -8,7 +8,7 @@ export function updateSpellAvailability(button,spell,remaining,chakra){
   button.style.setProperty('--cooldown-sweep',(elapsed*360).toFixed(2)+'deg');
   button.classList.toggle('on-cooldown',cooling);button.classList.toggle('chakra-missing',missing);
   const counter=button.querySelector('[data-cooldown]');counter.textContent=cooling?(remaining>=10?Math.ceil(remaining):remaining.toFixed(1)):'';
-  button.dataset.chakraMissing=String(missing);button.setAttribute('aria-label',spell.name+(cooling?' · hồi '+remaining.toFixed(1)+' giây':'')+(missing?' · không đủ chakra':''));
+  button.dataset.chakraMissing=String(missing);button.setAttribute('aria-label',spell.name+(cooling?' · hồi '+remaining.toFixed(1)+' giây':'')+(missing?' · không đủ mana':''));
 }
 export function renderEnemySeals(element,sequence,cast=false){
   const keys=sequence.filter(k=>/^[a-z]$/i.test(k)).map(k=>k.toUpperCase());

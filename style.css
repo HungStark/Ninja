@@ -313,5 +313,12 @@ body:not(.playing)>header,body:not(.playing)>#hud{visibility:hidden}
 .enemy-afflictions .burn-stacks{color:#ffe0a3;background:#6a352de8;border:1px solid #d58254aa}
 .enemy-afflictions .static-stacks{color:#e5dbff;background:#41335ce8;border:1px solid #a798d0aa}
 #targetInfo,#encounterSquad{display:none!important}
+.spell.combo-opportunity{outline:2px solid #e7cf83;outline-offset:-2px;box-shadow:0 0 12px #e7cf8340}
+.spell.combo-opportunity .spell-title{color:#f4dc9a}
+.battle-statistics{text-align:left;margin-top:14px;padding-top:10px;border-top:1px solid #bda36d55;font-size:12px;color:#d8d0bd;max-width:100%;overflow-wrap:anywhere}
+.battle-statistics summary{cursor:pointer;color:#e4cf8d;padding:6px 0;min-height:30px}
+.battle-statistics p{font-size:12px!important;margin:7px 0!important;line-height:1.5}
+.battle-statistics small{display:block;line-height:1.5;color:#aeb7ad}
+#winScreen .pause-card{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
 @media(max-width:760px){#enemyNameplates .enemy-nameplate{width:180px;padding:7px 9px}#enemyNameplates .enemy-heading{font-size:10px}#enemyNameplates .enemy-health-row{font-size:8px}#enemyNameplates kbd{min-width:18px;height:21px;font-size:9px}}
 #enemyNameplates.multiple-enemies .enemy-nameplate{width:160px;padding:7px 9px}#enemyNameplates.multiple-enemies .enemy-heading{font-size:10px}#enemyNameplates.multiple-enemies .enemy-health-row{font-size:8px}

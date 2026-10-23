@@ -47,21 +47,21 @@ const path=require('node:path');
     await page.goto(url+'?test=1&mode=duel');await page.waitForFunction(()=>document.body.dataset.ready==='true');
     await page.evaluate(()=>{document.getElementById('clearLoadout').click();for(const id of ['wind-orb','fire-volley'])document.querySelector('[data-equip="'+id+'"]').click();document.getElementById('startButton').click();__AN_HOA__.setAIEnabled(false);});
     await advance(.01);
-    const recipe=await page.evaluate(()=>SealGameCore.spells.find(s=>s.id==='wind-orb').sequence);assert.equal(recipe.length,3);
-    for(const k of recipe.slice(0,2))await page.locator('[data-touch-seal="'+k+'"]').tap();
-    await page.locator('#castButton').tap();assert.equal((await state()).shurikenThrows,1);assert.deepEqual((await state()).sequence,recipe.slice(0,2));
-    await advance(30);assert.deepEqual((await state()).sequence,recipe.slice(0,2));
+    const recipe=await page.evaluate(()=>SealGameCore.spells.find(s=>s.id==='wind-orb').sequence);assert.equal(recipe.length,2);
+    for(const k of recipe.slice(0,-1))await page.locator('[data-touch-seal="'+k+'"]').tap();
+    await page.locator('#castButton').tap();assert.equal((await state()).shurikenThrows,1);assert.deepEqual((await state()).sequence,recipe.slice(0,-1));
+    await advance(30);assert.deepEqual((await state()).sequence,recipe.slice(0,-1));
     const aimed=async()=>{const s=await state(),delta=s.enemyPosition.map((v,i)=>v-s.playerPosition[i]),len=Math.hypot(...delta),dir=[-Math.sin(s.yaw)*Math.cos(s.pitch),Math.sin(s.pitch),-Math.cos(s.yaw)*Math.cos(s.pitch)];assert.ok(dir.reduce((n,v,i)=>n+v*delta[i]/len,0)>.99999);};
     await page.evaluate(()=>__AN_HOA__.aimAt([30,10,20]));await advance(.1);await aimed();await page.locator('#androidStepRight').tap();await advance(.2);await aimed();
     for(const id of ['water-lance','ice-lance','wind-volley','water-volley']){
       if(id==='ice-lance'){await page.evaluate(()=>__AN_HOA__.launchEnemy('ice-reflect'));await advance(4);}
       await page.evaluate(id=>{const p=__AN_HOA__.state().playerPosition;__AN_HOA__.launchEnemy(id,[p[0],p[1],p[2]-2],[0,0,1]);},id);
       let controlled=false;
-      for(let i=0;i<180;i++){await advance(1/60);assert.deepEqual((await state()).sequence,recipe.slice(0,2),id+' preserves partial seals');if((await state()).controlTime>0){controlled=true;break;}}
-      assert.ok(controlled,id+' applies control');const blocked=await state();await page.locator('[data-touch-seal="'+recipe[2]+'"]').tap();assert.deepEqual((await state()).sequence,blocked.sequence);
-      await advance(5);assert.equal((await state()).controlTime,0);assert.deepEqual((await state()).sequence,recipe.slice(0,2));
+      for(let i=0;i<180;i++){await advance(1/60);assert.deepEqual((await state()).sequence,recipe.slice(0,-1),id+' preserves partial seals');if((await state()).controlTime>0){controlled=true;break;}}
+      assert.ok(controlled,id+' applies control');const blocked=await state();await page.locator('[data-touch-seal="'+recipe.at(-1)+'"]').tap();assert.deepEqual((await state()).sequence,blocked.sequence);
+      await advance(5);assert.equal((await state()).controlTime,0);assert.deepEqual((await state()).sequence,recipe.slice(0,-1));
     }
-    await page.locator('[data-touch-seal="'+recipe[2]+'"]').tap();await page.locator('#castButton').tap();assert.equal((await state()).casts,1);assert.deepEqual((await state()).sequence,[]);
+    await page.locator('[data-touch-seal="'+recipe.at(-1)+'"]').tap();await page.locator('#castButton').tap();assert.equal((await state()).casts,1);assert.deepEqual((await state()).sequence,[]);
     await page.screenshot({path:out+'/combat.png'});assert.deepEqual(errors,[]);
     console.log('PASS: mobile web layout, story overlay, 15% larger left joystick, three right actions, drag/release sprint lock, cancellation, automatic aim, shuriken/timeout/control seal retention and resumed casting.');
   }catch(error){await page.screenshot({path:out+'/failure.png'}).catch(()=>{});error.message=checkpoint+': '+error.message;throw error;}finally{await browser.close();}

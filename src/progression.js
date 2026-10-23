@@ -4,6 +4,7 @@ export const SYSTEMS=['fire','water','lightning','wind','earth','light','dark','
 export const LEVEL_POINTS=[1,1,1,1,2,2,2,3,3,4];
 export const LEVEL_XP=[0,60,150,270,420,620,880,1200,1600,2100];
 export const BASE_STATS={health:200,chakra:100};
+export const ATTRIBUTE_GAINS={health:5,strength:1.5,mana:2};
 export const SKILL_LEVELS={
   water:{'water-barrier':1,'water-lance':2,'water-reflect':3,'water-volley':4,'water-tsunami':5},
   fire:{'fire-volley':1,'fire-barrier':2,'fire-reflect':3,'fire-lance':4,'fire-meteor':5},
@@ -25,7 +26,7 @@ export function systemLevel(progression,element){
 }
 export function earnedPoints(progression){return SYSTEMS.reduce((total,element)=>total+LEVEL_POINTS.slice(0,systemLevel(progression,element)).reduce((a,b)=>a+b,0),0);}
 export function remainingPoints(progression){return Math.max(0,earnedPoints(progression)-Object.values(progression.attributes).reduce((a,b)=>a+b,0));}
-export function combatStats(progression){const a=progression.attributes;return {maxHp:BASE_STATS.health+20*a.health,maxChakra:BASE_STATS.chakra+BASE_STATS.chakra*.01*a.mana,damageMultiplier:1+a.strength*.01,points:remainingPoints(progression)};}
+export function combatStats(progression){const a=progression.attributes;return {maxHp:BASE_STATS.health+ATTRIBUTE_GAINS.health*a.health,maxChakra:BASE_STATS.chakra+BASE_STATS.chakra*ATTRIBUTE_GAINS.mana*a.mana/100,damageMultiplier:1+a.strength*ATTRIBUTE_GAINS.strength/100,points:remainingPoints(progression)};}
 export function readProgression(raw,learned=[]){
   const p=newProgression();
   if(raw&&typeof raw==='object'){

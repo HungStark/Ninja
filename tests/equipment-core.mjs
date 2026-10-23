@@ -8,16 +8,16 @@ import {createHero} from '../src/hero.js';
 import {createAdventureScene} from '../src/adventure-scene.js';
 
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
-let save=newJourney();assert.equal(save.hero.hair,'#161821');assert.equal(equipmentState(save).count,10);
+let save=newJourney();assert.equal(save.hero.hair,'#161821');assert.equal(equipmentState(save).count,0);save.equipment.ammo.iron=10;
 const legacy={...save,hero:{name:'Old hero',coat:'#345c63',hair:'#252b32'},gold:270,equipment:undefined,bosses:{water:true}};
 const migrated=readJourney({getItem:key=>key===SAVE_KEY?JSON.stringify(legacy):null});assert.equal(migrated.gold,270);assert.equal(migrated.bosses.water,true);assert.equal(migrated.hero.hair,'#161821');assert.equal(ammoCount(migrated.equipment),10);
 const invalid=readEquipment({version:1,armor:'not-owned',bag:'pouch-240',ownedArmor:['bogus'],ownedBags:['bogus'],ammo:{iron:100000,steel:9,chakra:-10}});assert.equal(ammoCount(invalid),10);assert.equal(invalid.bag,'pouch-30');assert.equal(invalid.armor,'traveler');
 assert.deepEqual(BAGS.map(b=>b.capacity),[10,20,30,50]);
 for(const bag of BAGS){const old=readEquipment({version:1,bag:bag.id,ownedBags:[bag.id],ammo:{iron:100,steel:10,tempered:10,chakra:10}});assert.equal(old.bag,bag.id);assert.equal(ammoCount(old),bag.capacity);assert.equal(old.ammo.chakra,10);assert.equal(old.ownedBags.includes(bag.id),true);assert.deepEqual(readEquipment(old),old);}
-assert.deepEqual(SHURIKEN_TYPES.map(s=>s.damage),[4,5,7,10]);assert.ok(SHURIKEN_TYPES.every((s,i,list)=>i===0||s.price>list[i-1].price));
+assert.deepEqual(SHURIKEN_TYPES.map(s=>s.damage),[2,2.5,3.5,5]);assert.ok(SHURIKEN_TYPES.every((s,i,list)=>i===0||s.price>list[i-1].price));
 save.gold=1000;assert.equal(buyEquipment(save,'steel').ok,false);assert.equal(save.gold,1000,'a full pouch never consumes money');assert.ok(buyEquipment(save,'pouch-60').ok);assert.equal(save.equipment.bag,'pouch-60');assert.ok(buyEquipment(save,'steel').ok);assert.equal(save.gold,896);assert.equal(ammoCount(save.equipment),20);assert.equal(equipItem(save,'bag','pouch-30'),false);assert.equal(buyEquipment(save,'pouch-60').ok,false);assert.equal(save.gold,896);
 assert.equal(buyEquipment(save,'water-guard').ok,false,'regional armor is sold by its own village');save.village='water';assert.ok(buyEquipment(save,'water-guard').ok);assert.equal(save.equipment.armor,'water-guard');assert.equal(save.gold,756);assert.equal(buyEquipment(save,'water-guard').ok,false);assert.equal(save.gold,756);
-assert.ok(equipItem(save,'shuriken','steel'));for(let i=0;i<10;i++)assert.equal(takeShuriken(save).damage,5);assert.equal(save.equipment.shuriken,'iron');assert.equal(ammoCount(save.equipment),10);assert.ok(equipItem(save,'shuriken','iron'));for(let i=0;i<10;i++)takeShuriken(save);save.gold=0;assert.equal(emergencySupply(save),true);assert.equal(ammoCount(save.equipment),10);assert.equal(emergencySupply(save),false);
+assert.ok(equipItem(save,'shuriken','steel'));for(let i=0;i<10;i++)assert.equal(takeShuriken(save).damage,2.5);assert.equal(save.equipment.shuriken,'iron');assert.equal(ammoCount(save.equipment),10);assert.ok(equipItem(save,'shuriken','iron'));for(let i=0;i<10;i++)takeShuriken(save);save.gold=0;assert.equal(emergencySupply(save),true);assert.equal(ammoCount(save.equipment),10);assert.equal(emergencySupply(save),false);
 assert.equal(equipItem(save,'armor','dark-elite'),false);assert.equal(buyEquipment(save,'chakra').ok,false);assert.equal(save.gold,0);
 const roundTrip=readJourney({getItem:()=>JSON.stringify(save)});assert.deepEqual(roundTrip.equipment,save.equipment);
 

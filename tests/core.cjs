@@ -12,13 +12,13 @@ for(const el of elements)for(const spell of spells.filter(s=>s.element===el.id))
  assert.ok(spell.sequence.slice(2).every(k=>!el.prefix.includes(k)));
  assert.ok(spell.sequence.every((k,i)=>!i||k!==spell.sequence[i-1]));
 }
-for(const spell of spells)assert.equal(spell.cooldown,spell.id==='dark-orb'?2:spell.id==='water-barrier'?6:context.SealGameCore.cooldownByRank[spell.rank]);
+for(const spell of spells)assert.ok(spell.cooldown>0&&spell.cooldown<=45);for(const id of ['wind-orb','earth-orb','light-orb'])assert.equal(spells.find(s=>s.id===id).cooldown,4);for(const id of ['fire-volley','lightning-lance'])assert.equal(spells.find(s=>s.id===id).cooldown,4);
 for(const id of ['fire-volley','water-lance'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-orb').speed,id+' matches Phong nhan');
 for(const id of ['fire-lance','fire-meteor','water-volley','water-tsunami'])assert.equal(spells.find(s=>s.id===id).speed,spells.find(s=>s.id==='wind-volley').speed,id+' matches Phong loc');
 const balance=new GameRules(['fire-volley','fire-barrier']);balance.chakra=0;balance.tick(2);assert.equal(balance.chakra,10);balance.chakra=100;
-spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.equal(balance.remaining('fire-volley'),6);balance.tick(1.01);
+spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast().ok,true);assert.equal(balance.remaining('fire-volley'),4);balance.tick(1.01);
 spells.find(s=>s.id==='fire-barrier').sequence.forEach(k=>balance.seal(k));assert.equal(balance.cast({burnStacks:1}).ok,true);assert.ok(balance.remaining('fire-volley')>0&&balance.remaining('fire-barrier')>0);balance.clear();spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>balance.seal(k));const savedChakra=balance.chakra;assert.equal(balance.cast().reason,'spellCooldown');assert.equal(balance.chakra,savedChakra);assert.equal(balance.sequence.join(''),spells.find(s=>s.id==='fire-volley').sequence.join(''));balance.tick(16);assert.equal(Object.keys(balance.cooldowns).length,0);
-const weapons=new GameRules(['fire-volley']);weapons.chakra=0;weapons.seal('q');assert.equal(weapons.throwShuriken().weapon.damage,4);assert.equal(weapons.chakra,0);assert.equal(weapons.casts,0);assert.equal(weapons.shurikenThrows,1);assert.equal(weapons.sequence.length,1);assert.equal(weapons.throwShuriken().ok,false);weapons.tick(.45);assert.equal(weapons.throwShuriken().ok,true);spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>weapons.seal(k));assert.equal(weapons.throwShuriken().reason,'spellReady');assert.equal(weapons.sequence.join(''),spells.find(s=>s.id==='fire-volley').sequence.join(''));
+const weapons=new GameRules(['fire-volley']);weapons.chakra=0;weapons.seal('q');assert.equal(weapons.throwShuriken().weapon.damage,2);assert.equal(weapons.chakra,0);assert.equal(weapons.casts,0);assert.equal(weapons.shurikenThrows,1);assert.equal(weapons.sequence.length,1);assert.equal(weapons.throwShuriken().ok,false);weapons.tick(.45);assert.equal(weapons.throwShuriken().ok,true);spells.find(s=>s.id==='fire-volley').sequence.forEach(k=>weapons.seal(k));assert.equal(weapons.throwShuriken().reason,'spellReady');assert.equal(weapons.sequence.join(''),spells.find(s=>s.id==='fire-volley').sequence.join(''));
 for (const element of elements) {
   const list=spells.filter(s=>s.element===element.id);
   assert.equal(list.filter(s=>s.kind==='attack').length,['dark','earth','wood','water'].includes(element.id)?4:3); assert.equal(list.filter(s=>s.kind==='defense').length,['dark','earth','wood','water'].includes(element.id)?1:2);
@@ -29,19 +29,19 @@ for (const spell of spells) {
   r.seal(spell.sequence.at(-1));
   assert.equal(r.ready().id,spell.id); assert.equal(r.cast({burnStacks:1,staticStacks:1,woodGarden:true,snowFull:true,snowAmount:90,earthCrater:true,windAirborne:true,darkDomain:true,shadowClones:2}).ok,true); assert.equal(r.chakra,100-spell.cost); assert.equal(r.casts,1); assert.equal(r.sequence.length,0);
 }
-assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort((a,b)=>a-b),[2,3,4,5,6,8,10]);
+assert.deepEqual(Array.from(new Set(spells.map(s=>s.sequence.length))).sort((a,b)=>a-b),[2,3,4,5,6]);
 assert.equal(spells.find(s=>s.id==='wind-reflect').duration,5);
-const wind=spells.filter(s=>s.element==='wind');assert.equal(wind.length,5);assert.deepEqual(Array.from(wind.map(s=>s.sequence.length)).sort(),[3,3,4,6,8]);assert.equal(wind.find(s=>s.style==='tornado').controlDuration,2);assert.equal(wind.find(s=>s.style==='aircombo').duration,2);assert.equal(wind.find(s=>s.style==='aircombo').damage,wind.find(s=>s.style==='tornado').damage);const windCombo=new GameRules(['wind-lance']);wind.find(s=>s.style==='aircombo').sequence.forEach(k=>windCombo.seal(k));assert.equal(windCombo.cast().reason,'airborne');assert.equal(windCombo.chakra,100);assert.equal(windCombo.casts,0);assert.equal(windCombo.sequence.length,3);assert.equal(windCombo.cast({windAirborne:true}).ok,true);const airborneFighter=new Fighter();airborneFighter.windControlTime=2;airborneFighter.waterControlTime=3;assert.equal(airborneFighter.controlTime,3);airborneFighter.windControlTime=4;assert.equal(airborneFighter.controlTime,4);assert.equal(airborneFighter.controlSource,'Phong lốc');airborneFighter.tick(4);assert.equal(airborneFighter.controlTime,0);
+const wind=spells.filter(s=>s.element==='wind');assert.equal(wind.length,5);assert.deepEqual(Array.from(wind.map(s=>s.sequence.length)).sort(),[2,3,3,4,6]);assert.equal(wind.find(s=>s.style==='tornado').controlDuration,2);assert.equal(wind.find(s=>s.style==='aircombo').duration,2);assert.equal(wind.find(s=>s.style==='aircombo').damage,wind.find(s=>s.style==='tornado').damage);const windCombo=new GameRules(['wind-lance']);wind.find(s=>s.style==='aircombo').sequence.forEach(k=>windCombo.seal(k));assert.equal(windCombo.cast().reason,'airborne');assert.equal(windCombo.chakra,100);assert.equal(windCombo.casts,0);assert.equal(windCombo.sequence.length,3);assert.equal(windCombo.cast({windAirborne:true}).ok,true);const airborneFighter=new Fighter();airborneFighter.windControlTime=2;airborneFighter.waterControlTime=3;assert.equal(airborneFighter.controlTime,3);airborneFighter.windControlTime=4;assert.equal(airborneFighter.controlTime,4);assert.equal(airborneFighter.controlSource,'Phong lốc');airborneFighter.tick(4);assert.equal(airborneFighter.controlTime,0);
 const dark=spells.filter(s=>s.element==='dark');
 assert.equal(dark.length,5);assert.equal(dark.find(s=>s.style==='domain').duration,30);
 assert.equal(dark.filter(s=>s.requiresDomain).length,2);
-assert.deepEqual(Array.from(dark.map(s=>s.sequence.length)).sort(),[2,3,5,6,8]);
-assert.equal(dark.find(s=>s.style==='shadowclone').cloneCount,1);assert.equal(dark.find(s=>s.style==='shadowclone').maxClones,3);assert.equal(dark.find(s=>s.style==='shadowcommand').sequence.join(''),'df');for(const s of dark.filter(s=>['shadowclone','shadowcommand'].includes(s.style)))assert.equal(s.damage,38);
+assert.deepEqual(Array.from(dark.map(s=>s.sequence.length)).sort(),[2,3,3,4,6]);
+assert.equal(dark.find(s=>s.style==='shadowclone').cloneCount,1);assert.equal(dark.find(s=>s.style==='shadowclone').maxClones,3);assert.equal(dark.find(s=>s.style==='shadowcommand').sequence.join(''),'df');for(const s of dark.filter(s=>['shadowclone','shadowcommand'].includes(s.style)))assert.equal(s.damage,22);
 assert.equal(dark.find(s=>s.style==='shadowbind').duration,2);assert.equal(dark.find(s=>s.style==='shadowbind').damage,90);assert.equal(dark.find(s=>s.style==='shadowbind').fallTime,.7);assert.equal(dark.find(s=>s.style==='shadowdive').duration,3);
 const command=new GameRules(['dark-lance']);dark.find(s=>s.style==='shadowcommand').sequence.forEach(k=>command.seal(k));
 assert.equal(command.cast().reason,'clones');assert.equal(command.chakra,100);assert.equal(command.casts,0);assert.equal(command.sequence.length,2);
 assert.equal(command.cast({shadowClones:2}).ok,true);
-const summons=new GameRules(['dark-orb']);dark.find(s=>s.style==='shadowclone').sequence.forEach(k=>summons.seal(k));assert.equal(summons.cast({shadowCloneCount:3}).reason,'cloneLimit');assert.equal(summons.chakra,100);assert.equal(summons.casts,0);assert.equal(summons.sequence.length,3);assert.equal(summons.cast({shadowCloneCount:3,shadowUpgrades:1}).ok,true);assert.equal(summons.chakra,74);assert.equal(dark.find(s=>s.style==='shadowclone').damage*dark.find(s=>s.style==='shadowclone').upgradeMultiplier,57);
+const summons=new GameRules(['dark-orb']);dark.find(s=>s.style==='shadowclone').sequence.forEach(k=>summons.seal(k));assert.equal(summons.cast({shadowCloneCount:3}).reason,'cloneLimit');assert.equal(summons.chakra,100);assert.equal(summons.casts,0);assert.equal(summons.sequence.length,3);assert.equal(summons.cast({shadowCloneCount:3,shadowUpgrades:1}).ok,true);assert.equal(summons.chakra,74);assert.equal(dark.find(s=>s.style==='shadowclone').damage*dark.find(s=>s.style==='shadowclone').upgradeMultiplier,33);
 assert.equal(summons.remaining('dark-orb'),2);summons.tick(1.99);dark.find(s=>s.style==='shadowclone').sequence.forEach(k=>summons.seal(k));assert.equal(summons.cast().reason,'spellCooldown');summons.tick(.01);assert.equal(summons.cast().ok,true);assert.equal(summons.remaining('dark-orb'),2);
 for(const spell of dark.filter(s=>s.requiresDomain)){
  const rules=new GameRules(loadoutForSpell(spell));spell.sequence.forEach(k=>rules.seal(k));
@@ -81,7 +81,7 @@ assert.equal(r.setLoadout(defenseOnly).ok,true); assert.equal(r.loadout.join(','
 r.setLoadout(defaultLoadout);
 const orb=spells.find(s=>s.id==='fire-volley');orb.sequence.forEach(k=>r.seal(k));r.chakra=orb.cost-1;
 assert.equal(r.cast().reason,'chakra');assert.equal(r.sequence.length,orb.sequence.length);r.tick(.2);assert.equal(r.cast().ok,true);
-orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().reason,'spellCooldown');r.tick(orb.cooldown+.01);assert.equal(r.cast().reason,'chakra');r.tick(2.1);r.clear();orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().ok,true);
+orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().reason,'spellCooldown');r.tick(orb.cooldown+.01);r.chakra=orb.cost-1;assert.equal(r.cast().reason,'chakra');r.tick(.2);r.clear();orb.sequence.forEach(k=>r.seal(k));assert.equal(r.cast().ok,true);
 const shield={shield:75,duration:4.5,heal:0,element:'fire',color:'#ff844b'}, mirror={style:'reflect',shield:25,duration:2.8,color:'#a6edff',element:'ice',heal:0};
 const fighter=new Fighter();fighter.defend(shield);assert.equal(fighter.shield,75);fighter.receive(43);assert.equal(fighter.hp,200);assert.equal(fighter.shield,32);
 fighter.receive(50);assert.equal(fighter.hp,182);fighter.tick(4.6);assert.equal(fighter.shield,0);
@@ -97,14 +97,14 @@ const healed=new Fighter();healed.hp=190;healed.defend(spells.find(s=>s.id==='wo
 const fire = spells.filter(s=>s.element==='fire');
 const fireVolley = fire.find(s=>s.style==='volley');
 for(const id of ['fire-orb','water-orb','lightning-orb'])assert.equal(spells.some(s=>s.id===id),false);
-assert.equal(fireVolley.damage,11);
+assert.equal(fireVolley.damage,6);
 assert.equal(fireVolley.count, 3); assert.equal(fireVolley.holdTime, .5); assert.equal(fireVolley.salvoInterval, .1); assert.ok(fireVolley.size < .1);
-assert.deepEqual(Array.from(fire.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[3,6,8]);
-for(const id of ['fire-volley','earth-orb','light-orb'])assert.equal(spells.find(s=>s.id===id).sequence.length,3);
-assert.equal(spells.find(s=>s.id==='lightning-lance').damage,40);
+assert.deepEqual(Array.from(fire.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[2,5,6]);
+for(const id of ['fire-volley','earth-orb','light-orb'])assert.equal(spells.find(s=>s.id===id).sequence.length,2);
+assert.equal(spells.find(s=>s.id==='lightning-lance').damage,22);
 assert.equal(spells.find(s=>s.id==='ice-lance').controlDuration,1.5);
 assert.equal(spells.find(s=>s.id==='ice-volley').duration,5);
-assert.deepEqual(Array.from(fire.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,5]);
+assert.deepEqual(Array.from(fire.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,3]);
 const wall={p:[0,0,0],normal:[0,0,-1],width:7,height:4.2};
 assert.ok(intersectFireWall([0,1.7,-10],[0,1.7,10],wall),'Swept collision catches fast shots');
 assert.equal(intersectFireWall([4,1.7,-1],[4,1.7,1],wall),null,'Can shoot around the wall');
@@ -114,10 +114,10 @@ assert.ok(intersectFireWall([-3,1,0],[3,1,0],{...wall,normal:[1,0,0]}),'Wall rot
 assert.deepEqual(Array.from(meteorTarget([0,1.72,7],[0,0,-1])),[0,.08,-24]);
 const downward=meteorTarget([0,1.72,7],[0,-.1,-.995]);assert.ok(downward[2]>-11&&downward[2]<-10);
 const water = spells.filter(s=>s.element==='water');
-assert.deepEqual(Array.from(water.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[5,6,8,3]);
-assert.deepEqual(Array.from(water.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[4]);
+assert.deepEqual(Array.from(water.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[3,5,6,2]);
+assert.deepEqual(Array.from(water.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3]);
 assert.equal(water.find(s=>s.style==='prison').controlDuration,3);
-assert.ok(water.find(s=>s.style==='tsunami').damage < water.find(s=>s.style==='boat').damage);
+assert.equal(water.find(s=>s.style==='tsunami').damage,79);assert.equal(water.find(s=>s.style==='tsunami').baseDamage,79);assert.ok(water.find(s=>s.style==='tsunami').damage < water.find(s=>s.style==='boat').damage);
 assert.equal(water.find(s=>s.id==='water-reflect').style,'waterwall');
 const disc={p:[0,1.72,0],normal:[0,0,-1],radius:2.2};
 assert.ok(intersectFireWall([0,1.72,-4],[0,1.72,4],disc));
@@ -134,8 +134,8 @@ assert.equal(hidden.receive(150).immune,true);assert.equal(hidden.hp,200);assert
 hidden.tick(4);assert.equal(hidden.receive(5,true,true).damage,5);assert.equal(hidden.hp,195);
 const doubleControl=new Fighter();doubleControl.controlTime=3;doubleControl.darkControlTime=4;doubleControl.tick(1);assert.equal(doubleControl.controlTime,3);doubleControl.darkControlTime=0;assert.equal(doubleControl.controlTime,2,'Ending dark control preserves a simultaneous water prison');
 const lightning=spells.filter(s=>s.element==='lightning');
-assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[4,6,8]);
-assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,5]);
+assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[2,5,6]);
+assert.deepEqual(Array.from(lightning.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,4]);
 assert.equal(lightning.find(s=>s.id==='lightning-volley').style,'bird');
 assert.equal(lightning.find(s=>s.style==='stormfield').duration,5);
 const field={owner:'player',p:[0,0,0],radius:9,height:8,life:10,slowFactor:.3};

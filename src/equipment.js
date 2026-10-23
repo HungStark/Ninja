@@ -1,8 +1,8 @@
 export const SHURIKEN_TYPES=[
-  {id:'iron',name:'Phi tiêu sắt',damage:4,price:8,quantity:10,color:'#707983'},
-  {id:'steel',name:'Phi tiêu bạc',damage:5,price:24,quantity:10,color:'#c3cbd5'},
-  {id:'tempered',name:'Phi tiêu vàng',damage:7,price:55,quantity:10,color:'#e6b53f'},
-  {id:'chakra',name:'Phi tiêu bạch kim',damage:10,price:100,quantity:10,color:'#e9faff',energy:true}
+  {id:'iron',name:'Phi tiêu sắt',damage:2,price:8,quantity:10,color:'#707983'},
+  {id:'steel',name:'Phi tiêu bạc',damage:2.5,price:24,quantity:10,color:'#c3cbd5'},
+  {id:'tempered',name:'Phi tiêu vàng',damage:3.5,price:55,quantity:10,color:'#e6b53f'},
+  {id:'chakra',name:'Phi tiêu bạch kim',damage:5,price:100,quantity:10,color:'#e9faff',energy:true}
 ];
 export const BAGS=[
   {id:'pouch-30',name:'Túi hành trang',capacity:10,price:0},

@@ -1,4 +1,4 @@
-export const STEP_DISTANCE=.2,STEP_DURATION=.2,DASH_DISTANCE=2,DASH_DURATION=.2,BOOST_DURATION=3,DASH_COOLDOWN=12;
+export const STEP_DISTANCE=.2,STEP_DURATION=.2,DASH_DISTANCE=3,DASH_DURATION=.2,BOOST_DURATION=3,DASH_COOLDOWN=5;
 export function createDashBoost(){
   let ready=0,cooldown=0,dashing=0,uses=0;
   return {
