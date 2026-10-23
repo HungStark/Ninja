@@ -1,3 +1,5 @@
+import {createBattleIntro} from './battle-intro.js';
+import {empowerDarkGuardian} from './guardian-arts.js';
 import {PRACTICE_BOT_HP} from './enemy-balance.js';
 import {gameAudio} from './game-audio.js';
 import {setupAudioSettings} from './audio-settings.js';
@@ -120,7 +122,32 @@ async function main() {
   duelLoadout=[...loadout];
   const activeBoss=()=>adventure?.inBattle&&adventure.encounter?.kind==='boss'?adventure.encounter:null;
   const bossDamageMultiplier=()=>adventure?.inBattle?clamp((Number(adventure.encounter.damageMultiplier)||1)+(activeBoss()?(guardianPhases.state().phase-1)*.1:0),.1,2.5):1;
-  const guardianPhases=createGuardianPhases(scene);
+  const guardianPhases=createGuardianPhases(scene),battleIntro=createBattleIntro();
+  const phaseTitle=document.createElement('div');phaseTitle.id='guardianPhaseTitle';phaseTitle.hidden=true;document.body.append(phaseTitle);
+  const cinematicActive=()=>battleIntro.active||guardianPhases.transitioning;
+  let guardianAnchor=null;
+  function guardianPhaseChanged(phase){
+    const boss=activeBoss();if(!boss)return;bossEnraged=phase>1;aiRules=new GameRules(boss.phaseSpellIds);aiRules.spells=aiRules.spells.map(s=>phase===3?empowerDarkGuardian(s):{...s,cost:0});aiSpell=null;aiStep=0;enemyPose=-1;aiTimer=2;
+    opponent.group.position.copy(world.opponentSpawn);guardianAnchor=opponent.group.position.clone();opponent.setAppearance({...boss,guardianForm:guardianPhases.form});
+    for(const a of [...windArts.airborne])if(a.victim==='enemy')windArts.release(a,false);
+    if(phase===3)darkDomain.sustain('enemy');
+    $('enemyElement').textContent=boss.name+' · PHASE '+phase+'/'+boss.phases+' · '+(phase===2?'HỘ VỆ THỨC TỈNH':phase===3?'NHÂN THÚ HỢP NHẤT':'DẠNG NGƯỜI');
+  }
+  function checkGuardianDefeat(){
+    if(!activeBoss()||enemy.hp>0||!guardianPhases.beginTransition(enemy,opponent.group.position.toArray()))return false;
+    shots.length=salvos.length=0;dashBoost.cancelDash();moveTargetX=camera.p[0];moveDirection=0;aiSpell=null;aiRules.clear();enemyPose=-1;stopSpellVoice();clearDragonView();clearMeteorView();clearWindView();clearEarthView();clearWaveView();
+    // The new phase starts with a clean arena; player HP, mana, seals and cooldowns survive.
+    earthArts.reset(walls);windArts.reset();lightArts.reset();natureArts.resetForPhase(walls);waterBubbles.reset();darkDomain.reset();effects.reset();walls.length=fields.length=particles.length=0;
+    for(const fighter of [player,enemy]){fighter.snowBuried=false;for(const key of ['waterControlTime','darkControlTime','windControlTime','earthControlTime','iceControlTime','woodControlTime','lightningControlTime','boatControlTime'])fighter[key]=0;}
+    document.body.classList.add('guardian-transform');phaseTitle.hidden=false;phaseTitle.textContent=guardianPhases.phase===1?'HỘ VỆ THỨC TỈNH':'NHÂN THÚ HỢP NHẤT';gameAudio.cast({element:activeBoss().element,rank:'SS',style:'transform'});return true;
+  }
+  function guardianCamera(){
+    if(!guardianPhases.transitioning)return;const tr=guardianPhases.state().transition,q=clamp(tr.age/.8,0,1),back=tr.age>2.5?clamp((tr.age-2.5)/.7,0,1):0,weight=q*(1-back),target=opponent.group.position.clone().add(new T.Vector3(0,2,0)),close=target.clone().add(new T.Vector3(4.8,1.2,8));
+    camera3d.position.fromArray(playerPos()).lerp(close,weight);const normal=new T.Quaternion().setFromEuler(new T.Euler(camera.pitch,camera.yaw,0,'YXZ')),look=new T.Object3D();look.position.copy(camera3d.position);look.lookAt(target);look.rotateY(Math.PI);camera3d.quaternion.copy(normal).slerp(look.quaternion,weight);setWorldFov(baseFov-12*weight);handsPass.enabled=false;
+    opponent.group.scale.setScalar(1+Math.sin(clamp(tr.age/3.2,0,1)*Math.PI)*.1);
+  }
+  function guardianImpact(shot,pos){if(shot.blockable&&crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot)))return;impact(shot,pos);}
+
   const squad=createEncounterSquad(scene,{GameRules,Fighter,keys,random:rand,getPlayer:playerPos,getShots:()=>shots,
     launch:(member,spell,pos,dir)=>{const before=shots.length;launch(spell,'enemy',pos,dir);for(const shot of shots.slice(before)){shot.sourceId=member.id;shot.damageScale=member.profile.damageMultiplier;}},
     throwWeapon:(member,weapon,pos,dir)=>{const before=shots.length;launchShuriken('enemy',weapon,pos,dir);for(const shot of shots.slice(before)){shot.sourceId=member.id;shot.damageScale=member.profile.damageMultiplier;}}
@@ -302,7 +329,7 @@ async function main() {
     $('comboSlots').parentElement.classList.toggle('long-chain',spell.sequence.length>8);
     const ready = rules.ready();
     $('comboLabel').textContent = ready ? 'ẤN HOÀN CHỈNH · ' + ready.name.toUpperCase() : spell.name.toUpperCase() + ' / ' + seq.length + ' / ' + spell.sequence.length + ' ẤN';
-    $('castButton').disabled = (adventure?.inBattle&&!rules.ready()&&!adventure.ammoAvailable)||!started || paused || won || !!darkDomain.transition || player.controlTime > 0 || (ready ? !canCastPlayerSpell(ready) : rules.shurikenCooldown>0);
+    $('castButton').disabled = cinematicActive()||(adventure?.inBattle&&!rules.ready()&&!adventure.ammoAvailable)||!started || paused || won || !!darkDomain.transition || player.controlTime > 0 || (ready ? !canCastPlayerSpell(ready) : rules.shurikenCooldown>0);
     $('castButton').querySelector('span').textContent=ready?(rules.remaining(ready.id)>0?'HỒI '+rules.remaining(ready.id).toFixed(1)+'s':'THI TRIỂN'):'NÉM PHI TIÊU';
     // Hand readiness effects follow exactly the same gate as the Space button.
     hands.setReady($('castButton').disabled ? null : ready?.element);
@@ -312,6 +339,7 @@ async function main() {
   }
   function tone(freq=260,duration=.08,type='sine',volume=.06){gameAudio.tone(freq,duration,type,volume);}
   function seal(key) {
+    if(cinematicActive())return;
     if (!started || paused || won || darkDomain.transition || player.controlTime > 0) return;
     const result = rules.seal(key); activePose = keys.indexOf(key); hands.seal(activePose); poseAge = 0;
     battleMetrics.seal(result.valid,rules.sequence.length);
@@ -332,14 +360,14 @@ async function main() {
     updateUI();
   }
   function lockMobileAim(){
-    if(!androidInterface()||!started||paused||won||adventure?.activeView||touchControls?.aiming)return;
+    if(cinematicActive()||!androidInterface()||!started||paused||won||adventure?.activeView||touchControls?.aiming)return;
     const target=aimedEnemy();if(!target||target.fighter.hp<=0)return;
     const d=vsub(target.pos,playerPos());
     camera.yaw=Math.atan2(-d[0],-d[2]);camera.pitch=Math.atan2(d[1],Math.hypot(d[0],d[2]));
   }
   function aim() { const cp = Math.cos(camera.pitch); return [-Math.sin(camera.yaw) * cp, Math.sin(camera.pitch), -Math.cos(camera.yaw) * cp]; }
   function earthFloor(owner,x,z){return earthArts.floor(owner,x,z)+(earthArts.captured(owner)?0:windArts.height(owner));}
-  function enemyPos() { const p=opponent.group.position;return [p.x,1.72+earthFloor('enemy',p.x,p.z),p.z]; }
+  function enemyPos() { const p=opponent.group.position;return [p.x,activeBoss()&&guardianPhases.phase===2?p.y+(opponent.group.userData.height||4)*.55:1.72+earthFloor('enemy',p.x,p.z),p.z]; }
   function playerPos(){return [camera.p[0],camera.p[1]+earthFloor('player',camera.p[0],camera.p[2]),camera.p[2]];}
 
   function windActors(){return [{id:'player',owner:'player',pos:playerPos(),height:playerAvatar.group.userData.height,dir:aim(),fighter:player},...combatEnemies().map(a=>({...a,dir:vnorm(vsub(playerPos(),a.pos))}))];}
@@ -400,7 +428,7 @@ async function main() {
     }
     if(spell.element==='dark'){
       // The falling elephant applies its hit inside DarkDomain, outside impact().
-      if(spell.style==='shadowbind')spell={...spell,damage:spell.damage*(owner==='player'?damageMultiplierFor(battlePlayerStats,spell.element):bossDamageMultiplier())};
+      if(spell.style==='shadowbind')spell={...spell,damage:spell.damage*(owner==='player'?damageMultiplierFor(battlePlayerStats,spell.element)*(activeBoss()?guardianPhases.damageMultiplier():1):bossDamageMultiplier())};
       const victim={owner:owner==='player'?'enemy':'player',pos:owner==='player'?enemyPos():camera.p,fighter:owner==='player'?enemy:player};
       const result=darkDomain.cast(spell,owner,pos,dir,volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
       if(result&&spell.style==='shadowdive'&&owner==='player'){
@@ -546,6 +574,7 @@ async function main() {
     }
   }
   function cast() {
+    if(cinematicActive())return;
     if (!started || paused || won) return;
     if(darkDomain.transition){announce('Đang chuyển vào hoặc ra khỏi lãnh địa.',true);return;}
     if (player.controlTime > 0) { announce('Đang bị khóa bởi '+player.controlSource+'!', true); return; }
@@ -610,11 +639,12 @@ async function main() {
     return [includeStacks&&f.burns.length?'Bỏng '+f.burns.length+'/5':'',includeStacks&&f.staticStacks?'Tĩnh điện '+f.staticStacks+'/3':'',f.magneticTime>0?'Từ tính '+(f.magneticDelay>0?'sau choáng · ':'')+f.magneticTime.toFixed(1)+'s':''].filter(Boolean).join(' · ');
   }
   function impact(shot, pos) {
-    const multiplier=shot.owner==='player'?damageMultiplierFor(battlePlayerStats,shot.element):(shot.damageScale??bossDamageMultiplier());
+    if(cinematicActive()||(activeBoss()&&shot.owner==='player'&&enemy.hp<=0))return true;
+    const multiplier=shot.owner==='player'?damageMultiplierFor(battlePlayerStats,shot.element)*(activeBoss()?guardianPhases.damageMultiplier():1):(shot.damageScale??bossDamageMultiplier());
     const victim=shot.owner==='player'?(combatEnemies().find(a=>a.id===shot.victimId)||combatEnemies().filter(a=>a.fighter.hp>0).sort((a,b)=>vlen(vsub(a.pos,pos))-vlen(vsub(b.pos,pos)))[0]):null;
     const fighter = shot.owner === 'enemy' ? player : victim?.fighter||enemy, result = fighter.receive(shot.damage*multiplier, shot.reflected || shot.unreflectable,!!shot.ignoreShield,shot.waterInfused?'water':shot.element);
     if(adventure?.inBattle&&shot.owner==='player'&&result.damage>0)adventure.awardCombatExperience(result.damage*.5,victim?.id||shot.victimId);
-    shot.hitResult=result;
+    shot.hitResult=result;if(activeBoss()&&shot.owner==='player')guardianPhases.onDamage(result.damage);
     if(result.immune)return true;
     if(shot.style!=='poisontick')gameAudio.impact(shot.element,result.damage,!result.damage);
     fighter.applyElementHit(shot.element,result,shot.style);
@@ -693,6 +723,7 @@ async function main() {
     return true;
   }
   function shadowCrushImpact(binding,victim,result) {
+    if(activeBoss()&&victim.owner==='enemy')guardianPhases.onDamage(result.damage);
     if(adventure?.inBattle&&binding.owner==='player'&&result.damage>0)adventure.awardCombatExperience(result.damage*.5,victim.id||'primary');
     if(victim.owner==='enemy'){
       aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;enemyHit=.3;hitTimer=.14;
@@ -904,7 +935,7 @@ async function main() {
   let enemyMoving=false;
   function updateAI(dt) {
     enemyMoving=false;
-    if(testAIDisabled)return;
+    if(testAIDisabled||(activeBoss()&&guardianPhases.phase===2))return;
     const old=enemyPos(),next=enemyMovement.update(dt,{position:old,shots,beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(adventure.encounter.village),casting:!!aiSpell,blocked:enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2]),constrain:goal=>lightArts.constrainMovement('enemy',old,earthArts.move(old,goal))});
     opponent.group.position.x=next[0];enemyMoving=Math.abs(next[0]-old[0])>.0001;
     aiRules.tick(dt); aiCastAge += dt;aiWeaponTimer=Math.max(0,aiWeaponTimer-dt);
@@ -917,7 +948,7 @@ async function main() {
     if (aiTimer > 0) return;
     if (!aiSpell) {
       const incoming = shots.some(s => s.owner === 'player' && vlen(vsub(s.p, enemyPos())) < 11);
-      const available=s=>aiRules.remaining(s.id)<=1e-7&&s.cost<=aiRules.chakra&&(!boss||!s.oncePerMatch||!aiRules.usedOnce.has(s.id))&&natureArts.canCast('enemy',s)&&(!s.requiresBurn||player.burns.length)&&(!s.requiresStatic||player.staticStacks)&&(!s.requiresCrater||!!earthArts.crater('enemy'))&&(!s.requiresAirborne||windArts.canCombo('enemy'))&&(!s.requiresDomain||darkDomain.usable)&&(!s.requiresClones||darkDomain.commandable('enemy').length)&&(s.style!=='shadowclone'||darkDomain.canSummon('enemy',s.maxClones));
+      const available=s=>!(activeBoss()&&guardianPhases.phase===3&&s.style==='domain')&&aiRules.remaining(s.id)<=1e-7&&s.cost<=aiRules.chakra&&(!boss||!s.oncePerMatch||!aiRules.usedOnce.has(s.id))&&natureArts.canCast('enemy',s)&&(!s.requiresBurn||player.burns.length)&&(!s.requiresStatic||player.staticStacks)&&(!s.requiresCrater||!!earthArts.crater('enemy'))&&(!s.requiresAirborne||windArts.canCombo('enemy'))&&(!s.requiresDomain||darkDomain.usable)&&(!s.requiresClones||darkDomain.commandable('enemy').length)&&(s.style!=='shadowclone'||darkDomain.canSummon('enemy',s.maxClones));
       const defenses = aiRules.spells.filter(s => s.kind === 'defense' && available(s)), attacks = aiRules.spells.filter(s => s.kind === 'attack' && available(s));
       const choices = incoming && enemy.shieldTime <= 0 && defenses.length && aiCycle % 3 === 2 ? defenses : attacks.length?attacks:defenses;
       const activation=aiRules.spells.find(s=>available(s)&&((s.style==='ignite'&&player.burns.length>=3)||(s.style==='discharge'&&player.staticStacks>=2)));
@@ -928,8 +959,9 @@ async function main() {
       }else if(aiRules.spells.some(s=>s.style==='woodseed')){
         const desired=!natureArts.tree('enemy')?'woodseed':incoming?'walnutwall':['flowerpoison','vinebind','bamboostab'][aiCycle%3];aiSpell=aiRules.spells.find(s=>s.element==='wood'&&s.style===desired&&available(s))||choices[aiCycle%choices.length];
       }else if(aiRules.spells.some(s=>s.style==='shadowclone')){
-        const hasClones=darkDomain.commandable('enemy').length>0;
-        const desired=!darkDomain.usable?'domain':!hasClones?'shadowclone':['shadowcommand','shadowbind','shadowcommand','shadowdive'][Math.max(0,aiCycle-2)%4];
+        const hasClones=darkDomain.commandable('enemy').length>0,avatar=activeBoss()&&guardianPhases.phase===3,needsClones=avatar&&darkDomain.cloneCount('enemy')<4;
+        const pattern=avatar?['shadowclone','shadowcommand','shadowbind','shadowdive']:['shadowcommand','shadowbind','shadowcommand','shadowdive'];
+        const desired=!darkDomain.usable?'domain':!hasClones||needsClones?'shadowclone':pattern[Math.max(0,aiCycle-2)%4];
         aiSpell=aiRules.spells.find(s=>s.style===desired&&available(s))||choices.find(s=>hasClones?['shadowcommand','shadowbind','shadowdive'].includes(s.style):s.style==='shadowclone');
       }else if(aiRules.spells.some(s=>s.style==='tornado')){
         aiSpell=windArts.canCombo('enemy')?aiRules.spells.find(s=>s.style==='aircombo'&&available(s)):incoming&&defenses.length?defenses[aiCycle%defenses.length]:aiRules.spells.find(s=>s.style===['tornado','windslash','windspirit','tornado'][aiCycle%4]&&available(s))||choices[aiCycle%choices.length];
@@ -963,6 +995,11 @@ async function main() {
   }
   function tick(dt) {
     gameAudio.setScene(adventure?.phase==='duel'?'duel':adventure?.village||'nameless',paused?'pause':won?'result':adventure?.phase||'home');
+    if(battleIntro.active){battleIntro.update(paused?0:dt);return;}
+    if(guardianPhases.transitioning){
+      if(!paused){animationTime+=dt;guardianPhases.advanceTransition(dt,enemy,guardianPhaseChanged);opponent.update(dt,animationTime,-1,false,enemy,0,false,false,reducedMotion);}
+      if(!guardianPhases.transitioning){document.body.classList.remove('guardian-transform');phaseTitle.hidden=true;opponent.group.scale.setScalar(1);handsPass.enabled=true;camera3d.position.fromArray(playerPos());camera3d.rotation.set(camera.pitch,camera.yaw,0,'YXZ');setWorldFov(baseFov);}else guardianCamera();updateUI();return;
+    }
     if(adventure?.activeView){adventure.update(dt);return;}
     const running = started && !paused && !won;
     if (!paused) animationTime += dt;
@@ -979,12 +1016,12 @@ async function main() {
       const wasSnowReady=natureArts.snowReady('player');
       const natureWinner=natureArts.advance(dt,windActors(),(owner,p)=>{if(owner==='player'){camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact);
       if(!wasSnowReady&&natureArts.snowReady('player'))announce('Đã tích đủ 90 tuyết · Z X rồi SPACE để dùng Tuyết Táng!');
-      if(natureWinner){(natureWinner==='player'?enemy:player).hp=0;finish(natureWinner==='player');return;}
+      if(natureWinner){(natureWinner==='player'?enemy:player).hp=0;if(natureWinner==='player'&&checkGuardianDefeat())return;finish(natureWinner==='player');return;}
       const remaining = moveTargetX - camera.p[0];
       const dash=dashBoost.state(),isDashing=dash.dashing>0;
       moveDirection = player.controlTime <= 0 && Math.abs(remaining) > .001 ? Math.sign(remaining) : 0;
       if(player.controlTime>0||natureArts.buried('player')){dashBoost.cancelDash();moveTargetX=camera.p[0];moveDirection=0;}
-      const travel=isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):sidestepSpeed*dt*earthArts.slowAt(camera.p[0],camera.p[2]);
+      const travel=isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):sidestepSpeed*dt*earthArts.slowAt(camera.p[0],camera.p[2])*guardianPhases.slowAt(playerPos());
       const goal=[camera.p[0]+moveDirection*Math.min(Math.abs(remaining),travel),playerPos()[1],camera.p[2]];
       if(!natureArts.buried('player'))camera.p[0]=lightArts.constrainMovement('player',playerPos(),earthArts.move(playerPos(),goal))[0];
       dashBoost.tick(dt);
@@ -992,15 +1029,13 @@ async function main() {
       dashAura.update(dt,[camera.p[0],earthFloor('player',camera.p[0],camera.p[2])+darkDomain.depth('player'),camera.p[2]],dashBoost.state().ready>0,reducedMotion);
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
       lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;});
-      guardianPhases.update(dt,enemy.hp,enemy.maxHp,playerPos(),phase=>{
-        bossEnraged=true;const boss=activeBoss();if(!boss)return;
-        const old=aiRules,next=new GameRules(boss.phaseSpellIds||boss.spellIds);next.chakra=old.chakra;next.cooldowns={...old.cooldowns};next.usedOnce=new Set(old.usedOnce);aiRules=next;aiSpell=null;aiStep=0;enemyPose=-1;aiTimer=1;
-        $('enemyElement').textContent=boss.name+' · PHASE '+phase+' / '+boss.phases;announce('Phase '+phase+' · '+guardianPhases.state().signature+' · Né vùng sáng trên mặt đất!',true);burst(enemyPos(),18,1.4,elements.find(e=>e.id===boss.element)?.color||'#e8a368');
-      },impact);
+      if(checkGuardianDefeat()){updateUI();return;}
+      guardianPhases.update(dt,enemy,playerPos(),enemyPos(),guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0});
       updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);battleMetrics.observeWalls(walls);
       enemyDashAura.update(dt,[opponent.group.position.x,earthFloor('enemy',opponent.group.position.x,opponent.group.position.z),opponent.group.position.z],enemy.hp>0&&enemyMovement.state().dashBoost.dashing>0,reducedMotion);
       if(!won)darkDomain.updateClones(dt,animationTime,[{owner:'player',pos:camera.p,fighter:player},{owner:'enemy',pos:enemyPos(),fighter:enemy}],
         (clone,pos)=>impact({owner:clone.owner,element:'dark',style:'shadowstrike',damage:clone.damage,v:vnorm(vsub(pos,clone.p)),unreflectable:true},pos),shadowCrushImpact);
+      if(checkGuardianDefeat()){updateUI();return;}
       if(adventure?.inBattle&&!won&&(player.hp<=0||allEnemiesDefeated())){finish(player.hp>0);return;}
       messageTime -= dt;
       if (messageTime <= 0) { $('message').textContent = rules.ready() ? 'SPACE thi triển · chuột trái/phải để né' : 'SPACE ném phi tiêu · kết ấn theo quyển trục'; $('message').style.color = '#c7c5b6'; }
@@ -1015,10 +1050,11 @@ async function main() {
       hands.update(dt, animationTime, activePose, !!rules.ready()&&!$('castButton').disabled, !!moveDirection, Math.min(1, shots.filter(s => s.phase !== 'staged').length * .2 + recoil * 3), reducedMotion);
       opponent.update(dt, animationTime, enemyPose, !!aiRules.ready(), enemy, enemyHit, aiCastAge < .35, enemyMoving, reducedMotion, enemyMovement.state().velocity);
       opponent.group.position.y=darkDomain.depth('enemy')+earthFloor('enemy',opponent.group.position.x,opponent.group.position.z);
+      if(activeBoss()&&guardianPhases.phase>1){const offset=guardianPhases.offset;if(guardianPhases.phase===2&&guardianAnchor){opponent.group.position.set(guardianAnchor.x+offset.x,guardianAnchor.y+offset.y,guardianAnchor.z+offset.z);opponent.group.rotation.x=offset.lean;}else if(opponent.guardianAura){opponent.guardianAura.position.set(offset.x,.35+offset.y-darkDomain.depth('enemy'),-.8+offset.z);}}
       playerAvatar.group.position.set(camera.p[0],darkDomain.depth('player')+earthFloor('player',camera.p[0],camera.p[2]),camera.p[2]);
       playerAvatar.group.rotation.set(0,Math.PI+camera.yaw,0);
       playerAvatar.update(dt,animationTime,activePose,!!rules.ready()&&!$('castButton').disabled,player,flashTimer,recoil>.05,!!moveDirection,reducedMotion);
-      const air=windArts.airborne.find(a=>a.victim==='enemy');opponent.group.rotation.z=air?Math.sin(air.age*8)*.10:0;opponent.group.rotation.x=air?-.12:0;
+      const air=windArts.airborne.find(a=>a.victim==='enemy');opponent.group.rotation.z=air?Math.sin(air.age*8)*.10:0;opponent.group.rotation.x=air?-.12:activeBoss()&&guardianPhases.phase===2?guardianPhases.offset.lean:0;
     }
     const shadowDepth=Math.max(0,-darkDomain.depth('player')/3);
     $('shadowSubmerge').style.setProperty('--sink',shadowDepth);
@@ -1030,10 +1066,12 @@ async function main() {
     $('shieldStatus').textContent = [elementalStatus(player),natureArts.status('player'),earthArts.status('player'),lightArts.status('player'),player.controlTime > 0 ? player.controlSource+' ' + player.controlTime.toFixed(1) + 's' : '',player.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='player')?'Ảnh độn':'Miễn nhiễm')+' · miễn nhiễm '+player.invulnerableTime.toFixed(1)+'s':'', shieldLabel,playerSpirit?'Tiên linh '+Math.max(0,playerSpirit.life-(playerSpirit.age<playerSpirit.formation?playerSpirit.formation-playerSpirit.age:0)).toFixed(1)+'s':'',playerField?'Lôi trận '+playerField.life.toFixed(1)+'s':'', playerWall ? (playerWall.element === 'ice' ? 'Băng Bích ' : playerWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường ') + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
     $('enemyHP').style.width = enemy.hp / enemy.maxHp * 100 + '%'; $('enemyHealth').textContent = Math.ceil(enemy.hp) + ' / ' + enemy.maxHp;
     const enemyWall = walls.find(w => w.owner === 'enemy' && w.hp > 0 && !['earth','wood'].includes(w.element));
-    $('enemyChakra').textContent = Math.floor(aiRules.chakra) + ' MANA'; $('enemyShield').textContent = [elementalStatus(enemy,false),enemy.controlTime>0?enemy.controlSource+' '+enemy.controlTime.toFixed(1)+'s':'',natureArts.status('enemy'),earthArts.status('enemy'),lightArts.status('enemy'),enemy.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='enemy')?'Ảnh độn':'Miễn nhiễm')+' '+enemy.invulnerableTime.toFixed(1)+'s':'',enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '',enemySpirit?'Tiên linh '+Math.max(0,enemySpirit.life-(enemySpirit.age<enemySpirit.formation?enemySpirit.formation-enemySpirit.age:0)).toFixed(1)+'s':'',enemyField?'Lôi trận '+enemyField.life.toFixed(1)+'s':'', enemyWall ? (enemyWall.element === 'ice'?'Băng Bích ':enemyWall.element === 'wind'?'Tường gió ':enemyWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường lửa ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
+    $('enemyChakra').textContent = activeBoss()?(guardianPhases.phase===2?'THI TRIỂN TRỰC TIẾP':'MANA VÔ HẠN'):Math.floor(aiRules.chakra) + ' MANA'; $('enemyShield').textContent = [elementalStatus(enemy,false),enemy.controlTime>0?enemy.controlSource+' '+enemy.controlTime.toFixed(1)+'s':'',natureArts.status('enemy'),earthArts.status('enemy'),lightArts.status('enemy'),enemy.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='enemy')?'Ảnh độn':'Miễn nhiễm')+' '+enemy.invulnerableTime.toFixed(1)+'s':'',enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '',enemySpirit?'Tiên linh '+Math.max(0,enemySpirit.life-(enemySpirit.age<enemySpirit.formation?enemySpirit.formation-enemySpirit.age:0)).toFixed(1)+'s':'',enemyField?'Lôi trận '+enemyField.life.toFixed(1)+'s':'', enemyWall ? (enemyWall.element === 'ice'?'Băng Bích ':enemyWall.element === 'wind'?'Tường gió ':enemyWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường lửa ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
+    if(activeBoss()&&guardianPhases.phase===2)$('enemyAction').textContent=guardianPhases.state().signature||'Quan sát · chuẩn bị thi triển';
+    if(activeBoss()&&guardianPhases.state().armor>0)$('enemyShield').textContent+=' · Giáp hộ vệ −35% sát thương · '+guardianPhases.state().armor.toFixed(1)+'s';
     const boost=dashBoost.state();
     $('moveHint').textContent = boost.ready>0?'TĂNG LỰC '+boost.ready.toFixed(1)+'s · CLICK TRÁI / PHẢI ĐỂ LƯỚT 3 M':moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'CHUỘT TRÁI: NÉ TRÁI · CHUỘT PHẢI: NÉ PHẢI';
-    $('dashBoostButton').disabled=!started||paused||won||player.controlTime>0||boost.ready>0||boost.cooldown>0;
+    $('dashBoostButton').disabled=cinematicActive()||!started||paused||won||player.controlTime>0||boost.ready>0||boost.cooldown>0;
     $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':'Tăng lực · lướt 3 m';
     $('flash').style.opacity = flashTimer * .32; $('hitMarker').style.opacity = hitTimer > 0 ? 1 : 0;
     const targetEntity=aimedEnemy(),delta = vsub(adventure?.encounter?.squad?targetEntity.pos:natureArts.perceivedPosition('player',windActors()), playerPos()), d = aim(), onTarget = vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7;
@@ -1092,6 +1130,7 @@ async function main() {
     earthArts.visuals(animationTime,reducedMotion);
     world.terrain.deform((x,z)=>earthArts.heightAt(x,z),earthArts.revision);
     if(!windView)darkDomain.intro.updateCamera(camera3d);
+    guardianCamera();
     renderer.info.reset(); renderer.clear(); composer.render();
     enemyNameplates.update(camera3d,[{id:'primary',position:opponent.group.position.toArray(),height:opponent.group.userData.height||3,visible:opponent.group.visible,fighter:enemy},...squad.state().map(s=>({...s,position:[s.position[0],s.position[1]-1.72,s.position[2]],fighter:squad.fighter(s.id),sequence:s.sealTrace,cast:s.traceCast}))],started&&!won);
     if (handsPass.enabled) {
@@ -1298,13 +1337,13 @@ async function main() {
     document.body.classList.remove('aim-locked');
     if (document.pointerLockElement === canvas) document.exitPointerLock?.();
   }
-  function sidestep(direction) {
+  function sidestep(direction) {if(cinematicActive())return;
     if (!started||paused||won||player.controlTime > 0) return;
     if(dashBoost.state().dashing>0)return;
     if(dashBoost.consume()){gameAudio.dash();moveTargetX=clamp(camera.p[0]+direction*DASH_DISTANCE,-6,6);dashAura.clear();updateUI();return;}
     moveTargetX = clamp(moveTargetX + direction * sidestepDistance, -6, 6);
   }
-  function armDash(){
+  function armDash(){if(cinematicActive())return;
     if(!started||paused||won)return;
     if(dashBoost.arm(player.controlTime>0||natureArts.buried('player'))){
       dashAura.update(0,[camera.p[0],earthFloor('player',camera.p[0],camera.p[2])+darkDomain.depth('player'),camera.p[2]],true,reducedMotion);
@@ -1312,12 +1351,21 @@ async function main() {
     }
   }
   function look(dx, dy) {
+    if(cinematicActive())return;
     if (dragonView || meteorView || waveView || earthView || darkDomain.transition || player.controlTime>0) return;
     camera.yaw -= dx * .0025;
     camera.pitch = clamp(camera.pitch - dy * .0025, -.65, .65);
   }
-  function start(event) {
+  function start(event){
+    if(battleIntro.active)return;
+    if(adventure?.encounter){const e=adventure.encounter;const valid=validateLoadout(availableLoadout(loadout));if(!valid.ok){loadoutMessage=valid.reason;renderLoadout();return;}
+      battleIntro.begin(adventure.equipment,e.squad?e.squad.map(n=>({...n,kind:'intro-trio'})):[e]);
+      const initialize=()=>{if(!battleIntro.active)return;battleIntro.preparePortraits();startBattle(event);battleIntro.ready();};if(testMode)initialize();else requestAnimationFrame(()=>setTimeout(initialize,0));
+    }else startBattle(event);
+  }
+  function startBattle(event) {
     if (started) return;
+    phaseTitle.hidden=true;document.body.classList.remove('guardian-transform');
     saveBattleStatistics('restarted');battleMetrics.reset(androidInterface()?'mobile':'desktop');lastPlayerSpell=null;
     dashBoost.reset();dashAura.clear();enemyDashAura.clear();squad.reset();guardianPhases.reset();squadHud.hidden=true;
     loadout=availableLoadout(loadout);
@@ -1344,18 +1392,18 @@ async function main() {
     camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }; opponent.group.position.copy(world.opponentSpawn); opponent.group.rotation.set(0, 0, 0);
     opponent.group.scale.setScalar(1);opponent.setAppearance(adventure?.encounter?.squad?{kind:'intro-trio',...adventure.encounter.squad[0]}:adventure?.encounter||null);enemyMovement.reset();enemyMoving=false;
     if(adventure?.inBattle&&adventure.encounter.squad){squad.start(adventure.encounter.squad,world.opponentSpawn);aiTimer=adventure.encounter.squad[0].initialDelay;}
-    if(activeBoss())guardianPhases.reset(activeBoss());
+    if(activeBoss()){guardianPhases.reset(activeBoss(),enemy);guardianAnchor=opponent.group.position.clone();aiRules.spells=aiRules.spells.map(s=>({...s,cost:0}));$('enemyElement').textContent=activeBoss().name+' · PHASE 1/'+activeBoss().phases+' · DẠNG NGƯỜI';}
     if(adventure?.inBattle)aiTimer=4;
     $('score').textContent = '00'; $('roundText').textContent = 'Trận đấu ' + String(round).padStart(2, '0'); $('currentSeal').textContent = 'Sẵn sàng kết ấn';
     document.body.classList.add('playing'); document.body.classList.remove('paused');
     ['startScreen', 'pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden'));
     gameAudio.unlock(); renderGuide(); announce(androidInterface()?'Giữ và kéo giữa màn hình để ngắm. Chạm các phím để kết ấn.':'Lia chuột để ngắm. Bấm trái né trái, bấm phải né phải.'); updateUI(); tick(0); requestAimLock(event);
   }
-  function pause() { if (!started || won) return;showBattleStatistics();$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;dashBoost.cancelDash(); gameAudio.pauseVoice(true); moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
+  function pause() { if (battleIntro.active || !started || won) return;showBattleStatistics();$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;dashBoost.cancelDash(); gameAudio.pauseVoice(true); moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
   function resume(event) { paused = false; gameAudio.pauseVoice(false); moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
     saveBattleStatistics('left');
-    squad.reset();guardianPhases.reset();squadHud.hidden=true;
+    battleIntro.reset();phaseTitle.hidden=true;document.body.classList.remove('guardian-transform');squad.reset();guardianPhases.reset();squadHud.hidden=true;
     dashBoost.reset();dashAura.clear();enemyDashAura.clear();
     clearEarthView();earthArts.reset(walls);clearWindView();windArts.reset();lightArts.reset();natureArts.reset(walls);waterBubbles.reset();
     darkDomain.reset();
@@ -1391,6 +1439,7 @@ async function main() {
     if (key === 'escape') { if (started && !won && !paused) pause(); return; }
     if (key === 'h') { toggleGuide(); return; }
     if (key === 'm') { toggleSound(); return; }
+    if(cinematicActive())return;
     if (!started || paused || won) return;
     if(key==='g'){e.preventDefault();armDash();return;}
     if(key==='t'&&adventure?.inBattle){e.preventDefault();adventure.cycleShuriken();updateUI();return;}
@@ -1418,7 +1467,7 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({ balanceVersion:BALANCE_VERSION,combatMetrics:battleMetrics.snapshot(),opportunities:opportunities.map(o=>({...o})),spellCooldowns:Object.fromEntries(rules.spells.map(s=>[s.id,s.cooldown])),enemyLabels:enemyNameplates.state(),squad:[{id:'primary',hp:enemy.hp,maxHp:enemy.maxHp,element:adventure?.encounter?.element,spellIds:[...aiRules.loadout],position:enemyPos()},...squad.state()],guardianPhases:guardianPhases.state(),waterBubbles:waterBubbles.state(),dashBoost:{...dashBoost.state(),aura:dashAura.state()},enemyAppearance:{...opponent.group.userData.appearance},enemyMovement:{...enemyMovement.state(),moving:enemyMoving},playerResistance:{...player.resistances},playerElementBonuses:{...battlePlayerStats.elementBonuses},handArmguard:hands.armguardState(),avatarArmguard:playerAvatar.rig.armguardState(),playerEquipment:adventure?.equipment||null,playerMaxHealth:player.maxHp,maxChakra:rules.maxChakra,playerDamageMultiplier:battlePlayerStats.damageMultiplier,journeyLearning,boss:activeBoss()?{name:activeBoss().name,phase:bossEnraged?'enraged':'guarding',phaseNumber:guardianPhases.state().phase,maxPhase:activeBoss().phases,damageMultiplier:bossDamageMultiplier()}:null,enemyMaxHealth:enemy.maxHp,enemyLoadout:[...aiRules.loadout], learnedSpells:[...learnedSpells], elemental:{player:player.elementalState(),enemy:enemy.elementalState(),visuals:effects.elemental.state()}, flightBurst:effects.flightBursts.state(), natureArt:natureArts.state(),usedOnce:[...rules.usedOnce],enemyVisible:opponent.group.visible,enemyPerceivedPosition:natureArts.perceivedPosition('player',windActors()),aiPerceivedTarget:natureArts.perceivedPosition('enemy',windActors()),earthArt:{...earthArts.state(),terrainVertices:world.terrain.changedVertices,playerHeight:earthFloor('player',camera.p[0],camera.p[2]),enemyHeight:earthFloor('enemy',opponent.group.position.x,opponent.group.position.z)},playerPosition:playerPos(),lightArt:lightArts.state(),playerAvatar:{visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,cooldowns:{...rules.cooldowns},enemyCooldowns:{...aiRules.cooldowns},chakraRegen:SealGameCore.chakraRegen,shurikenCooldown:rules.shurikenCooldown,shurikenThrows:rules.shurikenThrows,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: natureArts.buried('player')?'snow-burial':earthView?'earth-'+earthView.phase:windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':meteorView.shot.style==='jacob'?'jacob-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light','Earth','Wood','Ice'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,stones:r.stones.visible,stoneCount:r.stones.children.length,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.opponentSpawn.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, waterInfused:!!s.waterInfused,shurikenType:s.shurikenType||null,energy:!!s.energy, style: s.style, introStage: s.introStage || null, visual: s.element==='weapon'?effects.shurikens.visualState(s):s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], motionTime:s.motionTime||0, motionDistance:s.motionDistance||0, speedRatio:s.flightSpeedRatio??(s.element==='weapon'?1:FLIGHT_PROFILE.launchSpeedRatio), actualSpeed:s.motionSpeed||0, size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
+  const state = () => ({ guardianModel:{hands:opponent.rig.root.visible,aura:!!opponent.guardianAura,auraOpacity:opponent.guardianAura?.userData.opacity??null},enemySpells:aiRules.spells.map(s=>({id:s.id,cost:s.cost,damage:s.damage,cooldown:s.cooldown,maxClones:s.maxClones,cloneCount:s.cloneCount})),battleIntro:battleIntro.state(),balanceVersion:BALANCE_VERSION,combatMetrics:battleMetrics.snapshot(),opportunities:opportunities.map(o=>({...o})),spellCooldowns:Object.fromEntries(rules.spells.map(s=>[s.id,s.cooldown])),enemyLabels:enemyNameplates.state(),squad:[{id:'primary',hp:enemy.hp,maxHp:enemy.maxHp,element:adventure?.encounter?.element,spellIds:[...aiRules.loadout],position:enemyPos()},...squad.state()],guardianPhases:guardianPhases.state(),waterBubbles:waterBubbles.state(),dashBoost:{...dashBoost.state(),aura:dashAura.state()},enemyAppearance:{...opponent.group.userData.appearance},enemyMovement:{...enemyMovement.state(),moving:enemyMoving},playerResistance:{...player.resistances},playerElementBonuses:{...battlePlayerStats.elementBonuses},handArmguard:hands.armguardState(),avatarArmguard:playerAvatar.rig.armguardState(),playerEquipment:adventure?.equipment||null,playerMaxHealth:player.maxHp,maxChakra:rules.maxChakra,playerDamageMultiplier:battlePlayerStats.damageMultiplier,journeyLearning,boss:activeBoss()?{name:activeBoss().name,phase:bossEnraged?'enraged':'guarding',phaseNumber:guardianPhases.state().phase,maxPhase:activeBoss().phases,damageMultiplier:bossDamageMultiplier()}:null,enemyMaxHealth:enemy.maxHp,enemyLoadout:[...aiRules.loadout], learnedSpells:[...learnedSpells], elemental:{player:player.elementalState(),enemy:enemy.elementalState(),visuals:effects.elemental.state()}, flightBurst:effects.flightBursts.state(), natureArt:natureArts.state(),usedOnce:[...rules.usedOnce],enemyVisible:opponent.group.visible,enemyPerceivedPosition:natureArts.perceivedPosition('player',windActors()),aiPerceivedTarget:natureArts.perceivedPosition('enemy',windActors()),earthArt:{...earthArts.state(),terrainVertices:world.terrain.changedVertices,playerHeight:earthFloor('player',camera.p[0],camera.p[2]),enemyHeight:earthFloor('enemy',opponent.group.position.x,opponent.group.position.z)},playerPosition:playerPos(),lightArt:lightArts.state(),playerAvatar:{visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,cooldowns:{...rules.cooldowns},enemyCooldowns:{...aiRules.cooldowns},chakraRegen:SealGameCore.chakraRegen,shurikenCooldown:rules.shurikenCooldown,shurikenThrows:rules.shurikenThrows,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: guardianPhases.transitioning?'guardian-transform':natureArts.buried('player')?'snow-burial':earthView?'earth-'+earthView.phase:windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':meteorView.shot.style==='jacob'?'jacob-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light','Earth','Wood','Ice'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,stones:r.stones.visible,stoneCount:r.stones.children.length,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.opponentSpawn.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX, aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, waterInfused:!!s.waterInfused,shurikenType:s.shurikenType||null,energy:!!s.energy, style: s.style, introStage: s.introStage || null, visual: s.element==='weapon'?effects.shurikens.visualState(s):s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], motionTime:s.motionTime||0, motionDistance:s.motionDistance||0, speedRatio:s.flightSpeedRatio??(s.element==='weapon'?1:FLIGHT_PROFILE.launchSpeedRatio), actualSpeed:s.motionSpeed||0, size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
   window.__AN_HOA__ = { state, flightProfile:{...FLIGHT_PROFILE} };
   adventure=createAdventure({canvas,onLoadJourney:loadJourneySpells,onLearn:id=>{if(spells.some(s=>s.id===id)){learnedSpells.add(id);renderLoadout();}},onBattle:()=>{prepare();adventure.showLoadout();$('startButton').innerHTML='GIAO CHIẾN <span>→</span>';$('changeLoadout').textContent='Rút lui · hồi sinh tại điểm lưu';},onDuel:()=>{restoreDuelSpells();prepare();$('startButton').innerHTML='VÀO TRẬN <span>→</span>';$('changeLoadout').textContent='Về quyển trục chọn chiêu';},onReturn:()=>prepare()});
   touchControls=setupAndroidControls({canvas,getState:()=>({started,paused,won,phase:adventure.phase,equipment:adventure.inBattle?adventure.equipment:null}),seal,cast,step:sidestep,boost:armDash,look,pause,toggleGuide,onAimRelease:lockMobileAim,sprint:(running,locked)=>adventure.setMobileSprint(running,locked),selectAmmo:id=>{if(adventure.inBattle&&adventure.selectShuriken(id))updateUI();}});
@@ -1437,7 +1486,7 @@ async function main() {
   };
   if (testMode) window.__AN_HOA__.advance = seconds => { for (let t = 0; t < seconds; t += 1 / 60) tick(Math.min(1 / 60, seconds - t)); render(); };
   setupAudioSettings(gameAudio,{onOpen:()=>{const running=started&&!paused&&!won&&!adventure.activeView;if(running)pause();return running;},onClose:wasRunning=>{if(wasRunning)resume();}});
-  if(testMode)window.__AN_HOA__.audio=gameAudio;
+  if(testMode){window.__AN_HOA__.audio=gameAudio;window.__AN_HOA__.guardianArt=index=>guardianPhases.trigger(index,playerPos(),enemyPos(),enemy);}
   setupScrollOpening();
   renderLoadout(); renderGuide(); updateUI(); $('loading').classList.add('hidden'); document.body.dataset.ready = 'true'; tick(.016); render(); if (!testMode) requestAnimationFrame(frame);
 }

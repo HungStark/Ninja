@@ -10,9 +10,9 @@ for(const [region,hp] of Object.entries(base)){
   assert.equal(GUARDIAN_HEALTH[region],botHealth(hp));assert.equal(REGIONS[region].boss.hp,botHealth(hp));
   for(const stage of [0,3,8]){
     const save=newJourney();save.bosses=Object.fromEntries(Object.keys(base).filter(id=>id!=='nameless').slice(0,stage).map(id=>[id,true]));
-    const boss=encounterProfile(save,'boss',region);assert.equal(boss.hp,botHealth(hp),'boss health is boosted once');assert.equal(boss.phaseSpellIds.length,5);assert.equal(boss.spellIds.length,3);
+    const boss=encounterProfile(save,'boss',region);assert.equal(boss.hp,botHealth(hp),'boss health is boosted once');assert.equal(boss.phaseSpellIds.length,5);assert.equal(boss.spellIds.length,5);
     const early=['fire','water','lightning'].includes(region);
     for(const [kind,expected] of [['random',110+stage*15],['village-guard',early?155:240+stage*12],['guardian-guard',early?260:390+stage*15]])assert.equal(encounterProfile(save,kind,region).hp,botHealth(expected));
   }
 }
-console.log('PASS: rounded 10% extra health for practice, opening trio, random bots, both guard tiers and all ten guardians across progression stages; guardian health is not double-scaled and skill sets remain unchanged.');
+console.log('PASS: rounded 10% extra health for practice, opening trio, random bots, both guard tiers and all ten guardians across progression stages; guardian health is not double-scaled and human guardians know all five school spells.');

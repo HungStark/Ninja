@@ -6,7 +6,7 @@ import {systemLevel,encounterProfile,learnFromBook,gainExperience} from '../src/
 import {REGIONS} from '../src/adventure-world.js';
 import {createAdventureScene} from '../src/adventure-scene.js';
 import {planExpedition} from '../src/adventure-biomes.js';
-import {guardianPhase,signaturePoints,GUARDIAN_SIGNATURES} from '../src/guardian-phases.js';
+import {guardianPhaseHealth,GUARDIAN_ARTS} from '../src/guardian-arts.js';
 const read=s=>readJourney({getItem:()=>JSON.stringify(s)});
 assert.equal(SealGameCore.spells.find(s=>s.id==='lightning-lance').damage,22);
 for(const choice of STARTER_CHOICES){
@@ -37,7 +37,7 @@ for(const id of Object.keys(REGIONS)){
  }
  for(const g of villageGuards(id)){const encounter={kind:'village-guard',village:id,guardId:g.id,element:id};const before=s.progression.xp[id]||0;resolveBattle(s,encounter,true);assert.ok(s.progression.xp[id]>before||s.progression.xp[id]===2100);const cash=s.gold;resolveBattle(s,encounter,true);assert.equal(s.gold,cash);}
  world.load(id,s);assert.equal(world.guardsState().length,0);assert.deepEqual(read(s).story,s.story);
- const profile=encounterProfile(s,'boss',id);assert.ok(profile.hp>=360);assert.ok(profile.phases>=2);assert.equal(guardianPhase(profile.hp,profile.hp,profile.phases),1);assert.equal(guardianPhase(profile.hp*.5,profile.hp,profile.phases),2);if(profile.phases===3)assert.equal(guardianPhase(profile.hp*.2,profile.hp,3),3);
- assert.ok(signaturePoints(GUARDIAN_SIGNATURES[id].pattern,[0,1.72,7],profile.phases).length);
+ const profile=encounterProfile(s,'boss',id);assert.ok(profile.hp>=360);assert.equal(profile.phases,id==='dark'?3:2);assert.equal(guardianPhaseHealth(profile.hp,id).reduce((a,b)=>a+b),profile.hp);
+ assert.equal(GUARDIAN_ARTS[id].specials.length,2);
 }
 assert.ok(questCount>=100);console.log('PASS: all starter choices, opening order, simultaneous trio profiles, guardian/report, negotiated seals, treaty and dark gate, legacy saves, '+questCount+' NPC quests, persistent sentries, reachable new world interactions and 2/3 guardian phases.');

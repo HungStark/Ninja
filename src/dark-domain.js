@@ -56,7 +56,9 @@ export class DarkDomain {
     this.intro=new DarkDomainIntro(world,floor,sky,reducedMotion);
   }
   get usable(){return this.active&&!this.transition;}
+  sustain(owner='enemy'){this.permanent=true;this.owner=owner;this.transition=null;this.intro.reset();this.life=Infinity;this.switchEnvironment(true);}
   begin(owner,duration=30,position=[0,1.72,7],direction=[0,0,-1]) {
+    if(this.permanent)return true;
     if(this.transition)return false;
     this.owner=owner;this.duration=duration;
     this.intro.begin(position,direction,this.active);
@@ -76,7 +78,7 @@ export class DarkDomain {
   }
   advance(dt,time) {
     this.clock.value=time;
-    if(this.active){this.life=Math.max(0,this.life-dt);if(this.life<=1e-6&&!this.transition)this.transition={age:0,destination:'world',changed:false};}
+    if(this.active&&!this.permanent){this.life=Math.max(0,this.life-dt);if(this.life<=1e-6&&!this.transition)this.transition={age:0,destination:'world',changed:false};}
     let lid=0,phase='idle';
     if(this.transition) {
       const t=this.transition;t.age+=dt;
@@ -93,7 +95,7 @@ export class DarkDomain {
       }else if(t.age>=close+hold+open){this.transition=null;lid=0;phase='idle';}
     }
     this.blink=lid;this.blinkPhase=phase;this.overlay.style.setProperty('--lid',lid);this.overlay.classList.toggle('blinking',lid>0);
-    if(this.active)this.header.innerHTML='<i></i> HẮC LÃNH ĐỊA <span>／</span> ĐẦM LẦY MỰC ĐEN · '+Math.ceil(this.life)+' GIÂY';
+    if(this.active)this.header.innerHTML='<i></i> HẮC LÃNH ĐỊA <span>／</span> '+(this.permanent?'VĨNH CỬU':'ĐẦM LẦY MỰC ĐEN · '+Math.ceil(this.life)+' GIÂY');
   }
   mesh(parent,geometry,material,p,s) {
     const m=new T.Mesh(this.geometries[geometry],material);m.position.fromArray(p);m.scale.fromArray(s);parent.add(m);return m;
@@ -194,8 +196,8 @@ export class DarkDomain {
       if(this.cloneCount(owner)>=spell.maxClones){
         const dog=this.upgradable(owner)[0];return dog?this.upgradeClone(dog,spell):false;
       }
-      // Each side reserves its own three slots, including clones waiting to resurface.
-      const slots=[1,0,2].filter(slot=>!this.clones.some(c=>c.owner===owner&&c.rowSlot===slot));
+      // Reserve slots for the spell's cap, including clones waiting to resurface.
+      const slots=[1,0,2,...Array.from({length:Math.max(0,spell.maxClones-3)},(_,i)=>i+3)].filter(slot=>!this.clones.some(c=>c.owner===owner&&c.rowSlot===slot));
       const count=Math.min(spell.cloneCount,spell.maxClones-this.cloneCount(owner),slots.length);
       if(count<=0)return false;
       const forward=new T.Vector3(victim.pos[0]-pos[0],0,victim.pos[2]-pos[2]).normalize(),right=new T.Vector3(-forward.z,0,forward.x);
@@ -333,6 +335,6 @@ export class DarkDomain {
   }
   removeClone(c){c.root.removeFromParent();const i=this.clones.indexOf(c);if(i>=0)this.clones.splice(i,1);}
   clearClones(){for(const c of [...this.clones])this.removeClone(c);for(const g of this.projectiles.values())g.removeFromParent();this.projectiles.clear();for(const r of this.ripples)r.ring.removeFromParent();this.ripples=[];}
-  reset(){this.transition=null;this.life=0;this.blink=0;this.blinkPhase='idle';this.intro.reset();this.switchEnvironment(false);this.clearClones();this.updateSubmergeView(0,1.72);this.overlay.classList.remove('blinking');this.overlay.style.setProperty('--lid',0);}
-  state(){return {active:this.active,usable:this.usable,life:this.life,blink:this.blink||0,phase:this.blinkPhase||'idle',intro:this.intro.state(),environmentHidden:this.world.environment.every(o=>!o.visible),clones:this.clones.map(c=>({id:c.id,owner:c.owner,form:c.form,legs:c.limbs.length,damage:c.damage,rowSlot:c.rowSlot,mode:c.mode,position:[...c.p],home:[...c.home],age:c.age})),bindings:this.bindings.map(b=>({owner:b.owner,victim:b.victim?.owner||null,form:'elephant',phase:b.phase,position:[...b.p],elephantPosition:b.elephant.position.toArray(),life:b.life,age:b.age,fallTime:b.fallTime,duration:b.duration,impactDone:b.impactDone,sink:b.sink})),dives:this.dives.map(d=>({owner:d.owner,life:d.life,age:d.age,sink:d.sink})),depth:{player:this.depth('player'),enemy:this.depth('enemy')},projectiles:this.projectiles.size};}
+  reset(){this.permanent=false;this.transition=null;this.life=0;this.blink=0;this.blinkPhase='idle';this.intro.reset();this.switchEnvironment(false);this.clearClones();this.updateSubmergeView(0,1.72);this.overlay.classList.remove('blinking');this.overlay.style.setProperty('--lid',0);}
+  state(){return {active:this.active,permanent:!!this.permanent,usable:this.usable,life:this.life,blink:this.blink||0,phase:this.blinkPhase||'idle',intro:this.intro.state(),environmentHidden:this.world.environment.every(o=>!o.visible),clones:this.clones.map(c=>({id:c.id,owner:c.owner,form:c.form,legs:c.limbs.length,damage:c.damage,rowSlot:c.rowSlot,mode:c.mode,position:[...c.p],home:[...c.home],age:c.age})),bindings:this.bindings.map(b=>({owner:b.owner,victim:b.victim?.owner||null,form:'elephant',phase:b.phase,position:[...b.p],elephantPosition:b.elephant.position.toArray(),life:b.life,age:b.age,fallTime:b.fallTime,duration:b.duration,impactDone:b.impactDone,sink:b.sink})),dives:this.dives.map(d=>({owner:d.owner,life:d.life,age:d.age,sink:d.sink})),depth:{player:this.depth('player'),enemy:this.depth('enemy')},projectiles:this.projectiles.size};}
 }

@@ -1,34 +1,65 @@
-# G, máu bot và cơ chế trùm hiện tại
+﻿# Hộ vệ: dạng người, quái vật và hợp nhất
 
-G của người chơi giữ lướt 3 m trong 0,2 giây và thời gian giữ tăng lực 3 giây; hồi chiêu đổi về 12 giây từ lúc lướt. Mọi AI bỏ G, vẫn di chuyển trái/phải và phản ứng bằng bước né thường 0,2 m. Máu đối thủ tăng 10%, làm tròn số nguyên; áp dụng đúng một lần cho bot tập, bộ ba đầu game, ninja thường, cảnh vệ và trùm. Máu người chơi giữ nguyên.
+G của người chơi lướt 3 m trong 0,2 giây, giữ tăng lực 3 giây, hồi 12 giây từ lúc lướt. Mọi AI bỏ G nhưng vẫn bước né thường và di chuyển trái/phải. Máu bot đã tăng 10%; thay đổi hộ vệ này không nhân thêm máu lần nữa.
 
-Ví dụ: bot tập 200 → 220, ninja thường đầu game 110 → 121, mỗi ninja bộ ba 85 → 94.
+## Luồng vào trận
 
-## Trùm mạnh hơn ở đâu
+Từ phiêu lưu sang chiến đấu có màn hình VS: nhân vật chính cùng trang bị bên trái, toàn bộ đối thủ thực tế bên phải, kể cả bộ ba mở đầu. Hai bên trượt vào 0,65 giây, giữ đến khi tải xong rồi trượt ra 0,65 giây. Trận đấu và hồi chiêu chỉ chạy sau khi màn hình này đóng. Chân dung dựng từ mô hình thật trong game, hoạt động offline.
 
-- Khởi đầu có ba chiêu của hệ. Sang giai đoạn 2 mở cả năm chiêu; đây là cùng các chiêu người chơi học, cùng điều kiện và hồi chiêu, không phải bộ chiêu mới riêng.
-- Thủy, Hỏa, Lôi và Vô Danh có hai giai đoạn, chuyển khi máu còn 55%. Các trùm còn lại có ba giai đoạn, chuyển ở 68% và 32%.
-- Kết ấn mỗi 0,43 giây, nghỉ 2,1 giây giữa lượt. Sau khi chuyển giai đoạn, các khoảng này còn 85% (0,3655 giây và 1,785 giây).
-- Hồi mana thực tế 7/giây lúc đầu, 9/giây sau chuyển giai đoạn (5 cơ bản cộng thêm 2 hoặc 4).
-- Hệ số sát thương trùm Thủy/Hỏa/Lôi lần lượt là 0,75 và 0,85 ở hai giai đoạn. Các trùm khác là 0,95 / 1,05 / 1,15 tùy số giai đoạn. Đây là tỷ lệ so với sát thương gốc, không phải phần trăm tăng thêm trên gốc.
-- AI dùng các phối hợp theo hệ đã có: bỏng → Phóng hỏa; tĩnh điện → Điện giật; lốc → liên trảm; cầu kính/vòm → laser; lãnh địa → phân thân/voi; vườn → Mộc; gọi tuyết → Băng.
+## Các phase
 
-## Chiêu riêng đang có
+- Phase 1: người, đủ năm chiêu hệ gốc, kết ấn như bình thường, chi phí mana bằng 0. Vẫn tuân thủ hồi chiêu và điều kiện phối hợp của từng chiêu.
+- Phase 2: quái vật hộ vệ của chính làng đó. Bỏ toàn bộ chiêu hệ cũ, kết ấn và ném phi tiêu. Dùng trực tiếp đúng năm chiêu mới mô tả dưới đây.
+- Phase 3 chỉ có ở làng Ám: người kết ấn, phía sau có hình quái vật hộ vệ trong suốt. Người dùng chiêu Ám cường hóa; hào quang dùng độc lập năm chiêu quái vật, kể cả khi người bị khống chế. Sát thương chiêu hào quang bằng 60% chiêu quái vật tương ứng để bù việc hai bộ chiêu hoạt động song song.
 
-Chiêu riêng dùng chung cơ chế vùng sát thương mặt đất: đặt vòng sáng tại các điểm quanh vị trí người chơi lúc cảnh báo, rồi dựng cột đánh xuống. Vị trí đã đặt không bám theo người chơi; có thể di chuyển ra khỏi vòng. Tên, màu, sát thương và bố trí khác nhau, nhưng hiện chưa có cơ chế hoàn toàn riêng theo từng trùm.
+Mỗi phase có thanh máu riêng, phải đánh về 0 mới đổi dạng. Giữ ngân sách tổng máu đã có, chia 45% / 55% cho hai phase; Ám chia 30% / 35% / 35%, làm tròn và cộng phần dư vào phase cuối.
 
-| Trùm | Máu mới | Tên chiêu riêng | Bố trí |
-|---|---:|---|---|
-| Thủy | 572 | Thủy triều phân lưu | Hai bên người chơi |
-| Hỏa | 638 | Nứt nham thạch | Các điểm thành hàng |
-| Lôi | 682 | Lôi vũ truy kích | Tại vị trí người chơi |
-| Phong | 858 | Phong nhãn kép | Hai bên người chơi |
-| Thổ | 935 | Thạch trụ địa chấn | Tâm; thêm hai nhánh ở giai đoạn 3 |
-| Quang | 1078 | Nhật quang phán quyết | Các điểm thành hàng |
-| Băng | 1100 | Băng nứt liên hoàn | Tại vị trí người chơi; thêm điểm ở giai đoạn 3 |
-| Mộc | 1188 | Rễ cổ thụ săn đuổi | Tâm; thêm hai nhánh ở giai đoạn 3 |
-| Ám | 1760 | Nguyệt thực hư không | Hai bên người chơi |
+| Hộ vệ | Máu từng phase |
+|---|---|
+| Vô Danh | 178 / 218 |
+| Thủy | 257 / 315 |
+| Hỏa | 287 / 351 |
+| Lôi | 307 / 375 |
+| Phong | 386 / 472 |
+| Thổ | 421 / 514 |
+| Quang | 485 / 593 |
+| Băng | 495 / 605 |
+| Mộc | 535 / 653 |
+| Ám | 528 / 616 / 616 |
 
-Chiêu riêng bắt đầu từ giai đoạn 2. Cảnh báo 1,5 giây, lặp mỗi 8 giây. Ở giai đoạn 3: cảnh báo 1,25 giây, lặp mỗi 5,8 giây, tăng số điểm ở một số kiểu và nhân sát thương chiêu riêng 1,2. Đòn này không phản lại được; hệ số sát thương trùm và kháng vẫn áp dụng. Chiêu riêng đầu tiên sau chuyển giai đoạn chờ 1,8 giây trước khi đặt cảnh báo.
+Đổi dạng kéo dài 3,2 giây: camera tiến gần hộ vệ, các vòng năng lượng và chớp sáng bao quanh, mô hình đổi ở giây 1,35, sau đó camera trở lại. Hai bên không hành động và không nhận sát thương trong hoạt cảnh. Dọn các đòn, lãnh địa và bẫy còn lại của phase trước; giữ máu, mana, chuỗi ấn, hồi chiêu, tuổi vườn Mộc và lượng tuyết Băng của người chơi (các chiêu chuẩn bị dùng một lần vẫn tiếp tục qua các phase). Tuyết Táng kết thúc một phase sẽ tiêu thụ lượng tuyết đã tích; mưa tuyết tiếp tục tích lại từ 0 ở phase sau. Bộ ba mở đầu vẫn là trận ba ninja.
 
-Vô Danh có cấu hình trùm 396 máu và chiêu Vọng âm cổ thạch; trận giải cứu mở đầu thực tế dùng ba ninja 94 máu/người.
+## Ba chiêu chung của dạng quái vật
+
+1. **Thiên giáng chấn địa:** gồng 0,8 giây, nhảy theo đường vòng cung rồi dậm vào vị trí người chơi đã đánh dấu. Chạm đất ở giây 2, bán kính 3,5 m, sát thương gốc 38; rời vòng cảnh báo để né. Sau cú dậm hộ vệ trở lại vị trí ban đầu.
+2. **Hơi thở nguyên tố:** tụ cầu trước miệng 0,95 giây, nuốt cầu đến giây 1,3 rồi phun luồng năng lượng đến giây 4,6. Tia xoay đuổi người chơi với tốc độ hữu hạn 0,05 rad/giây, gây 18 sát thương gốc/giây theo nhiều lần chạm nhỏ; có thể né ngang và dùng vật chắn. Hình hạt theo hệ: nước, lửa, đá, điện, gió, quang, bóng tối, băng hoặc lá.
+3. **Giáp hộ vệ:** bao giáp năng lượng trong 6 giây, giảm 35% sát thương nhận vào; không cộng thêm thanh máu.
+
+Sau khoảng nghỉ đầu 2 giây, thứ tự là dậm → đặc trưng thứ nhất → hơi thở → giáp → đặc trưng thứ hai. Nghỉ 1,5 giây giữa đòn; hào quang phase 3 nghỉ 2,6 giây. Các vùng nguy hiểm có báo trước. Quái vật bị khống chế sẽ hủy đòn đang chuẩn bị; hào quang Ám không phụ thuộc khống chế của người.
+
+## Hai chiêu riêng của mỗi hệ
+
+| Hệ | Chiêu riêng 1 | Chiêu riêng 2 |
+|---|---|---|
+| Thủy | **Thủy trụ nghịch lưu:** ba cột nước trồi lần lượt, cách nhau 0,32 giây, 24 sát thương/cột. | **Hải triều phân lộ:** hai sóng nước đi vào từ hai bên, chừa đường ở giữa, 28 sát thương/lần trúng. |
+| Hỏa | **Hỏa sơn liên bạo:** ba cột nham bùng lần lượt, cách nhau 0,45 giây, 28 sát thương/cột. | **Vành đai tro nóng:** vùng vành khăn gây 13 sát thương/giây; tâm và ngoài vành an toàn. |
+| Lôi | **Lôi trụ liên hoàn:** bốn cột điện, cách nhau 0,24 giây, 22 sát thương/cột. | **Điện võng luân chuyển:** đường điện quét ngang, 15 sát thương/giây khi chạm. |
+| Phong | **Phong luân kẹp:** hai luồng gió khép từ hai bên vào, 25 sát thương/lần trúng. | **Mắt bão nghịch lưu:** tâm bão an toàn di chuyển ngang, người chơi phải bám theo; bên ngoài chịu 12 sát thương/giây. |
+| Thổ | **Địa trụ xung kích:** năm cột đá đánh lần lượt, cách nhau 0,28 giây, 23 sát thương/cột. | **Thạch trận khe hở:** ba vị trí, chỉ hai vị trí dựng đá; chọn khe không có dấu cảnh báo để né 30 sát thương. |
+| Quang | **Lăng kính hội tụ:** ba cột sáng đánh cùng lúc sau cảnh báo, 25 sát thương/cột. | **Nhật luân quét ngang:** một tia sáng quét ngang, 16 sát thương/giây khi chạm. |
+| Băng | **Băng trụ truy dấu:** ba lần ghi vị trí mới, cách nhau 0,65 giây; mỗi dấu chờ 1,2 giây rồi phóng trụ, 22 sát thương. | **Vành sương kết tinh:** vùng băng gây 10 sát thương/giây và giảm 35% tốc độ khi đứng trong vùng. |
+| Mộc | **Rễ cổ thụ săn đuổi:** bốn lần ghi vị trí mới, cách nhau 0,5 giây; rễ trồi sau cảnh báo 1,2 giây, 20 sát thương. | **Cổ mộc hồi sinh:** cây quấn quanh hộ vệ, hồi tổng 5% thanh máu phase trong 4 giây; gây đủ 8% máu phase sát thương trong lúc hồi để ngắt. |
+| Ám | **Nguyệt thực cấm vực:** vành bóng tối gây 15 sát thương/giây, tâm và ngoài vành an toàn. | **Bóng ma đoạn mệnh:** hai khối bóng tối khép từ hai bên, 28 sát thương/lần trúng. |
+| Vô Danh (dự phòng) | **Cổ thạch trồi dậy:** ba cột đá lần lượt, 24 sát thương/cột. | **Thạch trận khe hở:** hai vùng đá và một khe an toàn, 28 sát thương. |
+
+Các con số là sát thương gốc, sau đó áp dụng hệ số trùm, kháng và phòng thủ thông thường. Hệ số trùm Thủy/Hỏa/Lôi là 0,75 / 0,85 ở hai phase; các hộ vệ khác 0,95 / 1,05, riêng Ám thêm 1,15 ở phase 3.
+
+## Ám hợp nhất
+
+- Hắc lãnh địa luôn tồn tại đến kết thúc trận; thi triển lãnh địa khác không làm nó hết hạn.
+- Mọi chiêu Ám của người: không tốn mana, hồi chiêu còn 60%, sát thương gốc ×1,5. Không đổi chiêu của người chơi.
+- Ảnh phân thân: mỗi lần gọi hai bóng, tối đa bốn, chó 33 sát thương, bò 49,5.
+- Ảnh tập kích điều khiển toàn bộ bóng như bình thường.
+- Ảnh tượng: 135 sát thương gốc, voi rơi nhanh hơn (0,5 giây), vẫn có thể né.
+- Ảnh độn: kéo dài 4,5 giây.
+- Hào quang trong suốt vẫn nhảy dậm, phun năng lượng, tạo giáp và dùng hai chiêu Ám riêng trong lúc người kết ấn.

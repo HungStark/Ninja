@@ -41,7 +41,7 @@ assert.equal(signs.size,2,'reposition on both sides');
 ai.reset();p=[0,1.72,-24];for(let i=0;i<150;i++)p=ai.update(1/60,{position:p,constrain:q=>[0,q[1],q[2]]});assert.equal(p[0],0,'respect terrain and spell barriers');
 const types=new Set();
 for(const v of VILLAGES){
-  const profile=encounterAppearance({kind:'boss',village:v.id,name:v.name});types.add(profile.archetype);
+  const profile=encounterAppearance({kind:'boss',village:v.id,name:v.name,guardianForm:'beast'});types.add(profile.archetype);
   const model=createEncounterCreature(v.id),bounds=new T.Box3().setFromObject(model.root),size=bounds.getSize(new T.Vector3());
   assert.ok(size.y>2&&size.y<=4.401);assert.ok(Math.abs(bounds.min.y)<.001);assert.ok(size.x<=6.001&&size.z<=6.001);
   model.update(1,true,false,2);assert.ok(Number.isFinite(model.root.children[0].position.y));model.dispose();

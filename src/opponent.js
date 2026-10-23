@@ -13,10 +13,11 @@ export async function createOpponent(scene,spawnPosition,playerModel=false){
   const rigMaterials=new Map();rig.root.traverse(o=>{if(!o.isMesh||!['skin','nail','cloth','glove','trim'].includes(o.material?.name))return;const source=o.material;if(!rigMaterials.has(source))rigMaterials.set(source,source.clone());o.material=rigMaterials.get(source);});
   const cloth=new T.MeshStandardMaterial({color:'#33495f',roughness:.9,flatShading:true}),dark=new T.MeshStandardMaterial({color:'#22272c',roughness:.9,flatShading:true});
   const sleeves=[-1,1].map(side=>{const upper=new T.Mesh(new T.CylinderGeometry(.15,.17,1,8),cloth),lower=new T.Mesh(new T.CylinderGeometry(.10,.12,1,8),dark);upper.castShadow=lower.castShadow=true;group.add(upper,lower);return {side,upper,lower};});
-  let ninja=null,creature=null,appearance=null;
+  let ninja=null,creature=null,appearance=null,guardianAura=null;
   function setAppearance(encounter=null){
     const next=encounterAppearance(encounter);
     if(!appearance||next.id!==appearance.id||next.kind!==appearance.kind){
+      if(guardianAura){group.remove(guardianAura.root);guardianAura.dispose();guardianAura=null;}
       if(ninja){group.remove(ninja.root);ninja.dispose();ninja=null;}
       if(creature){group.remove(creature.root);creature.dispose();creature=null;}
       if(next.kind==='creature'){creature=createEncounterCreature(next.id);group.add(creature.root);}
@@ -25,6 +26,11 @@ export async function createOpponent(scene,spawnPosition,playerModel=false){
         for(const anchor of [...ninja.shoulderGuards,...ninja.bracers])ninja.root.add(anchor);
         cloth.color.set(ninja.profile.coat);
         for(const m of rigMaterials.values())m.color.set(m.name==='skin'?ninja.profile.skin:m.name==='cloth'?ninja.profile.coat:m.name==='trim'?ninja.profile.accent:m.name==='nail'?'#d1a18d':'#22272c');
+      }
+      if(encounter?.guardianForm==='avatar'){
+        guardianAura=createEncounterCreature(encounter.village);guardianAura.root.name='guardian-transparent-aura';guardianAura.root.position.set(0,.35,-.8);guardianAura.root.scale.multiplyScalar(1.3);
+        guardianAura.root.userData.opacity=.22;
+        guardianAura.root.traverse(o=>{if(o.isMesh){o.material.transparent=true;o.material.opacity=.22;o.material.depthWrite=false;o.material.color?.set('#b58aef');if(o.material.emissive)o.material.emissive.set('#9265df');o.renderOrder=3;}});group.add(guardianAura.root);
       }
     }
     appearance=next;group.userData.appearance={...next,model:ninja?.root.name||creature?.root.name||'guardian',ninja:ninja?{...ninja.root.userData.ninja}:null};group.userData.height=creature?.height||ninja?.height||3.01;
@@ -38,6 +44,7 @@ export async function createOpponent(scene,spawnPosition,playerModel=false){
     rig.update(dt,time,pose,ready,moving,casting?.8:0,reducedMotion);
     ninja?.update(reducedMotion?0:time,moving&&!reducedMotion,lateralVelocity?{x:lateralVelocity,z:0}:null,dt);
     creature?.update(time,moving,reducedMotion,lateralVelocity);
+    guardianAura?.update(time,false,reducedMotion,0);
     group.rotation.z=fighter.hp<=0?T.MathUtils.damp(group.rotation.z,-1.4,4,dt):Math.sin(hit*45)*hit*.15;group.updateMatrixWorld(true);
     if(ninja)for(let i=0;i<sleeves.length;i++){
       const s=sleeves[i],index=1-i,wrist=group.worldToLocal(rig.hands[i].wrapper.getWorldPosition(new T.Vector3())),shoulder=group.worldToLocal(ninja.arms[index].pivot.getWorldPosition(new T.Vector3())),elbow=shoulder.clone().add(new T.Vector3(-s.side*.08,-.4,.32));segment(s.upper,shoulder,elbow);segment(s.lower,elbow,wrist);
@@ -47,7 +54,7 @@ export async function createOpponent(scene,spawnPosition,playerModel=false){
     shield.visible=!['fire','water','lightning','dark'].includes(fighter.defenseElement)&&fighter.shieldTime>0&&(fighter.shield>0||fighter.reflect>0);shield.material.color.set(fighter.color);shield.rotation.y=time*.4;
   }
   setAppearance();
-  return {group,rig,update,shield,aura,get legs(){return ninja?.legs||[];},setInkViewport:(w,h)=>rig.setInkViewport(w,h),setAppearance};
+  return {group,rig,update,shield,aura,get guardianAura(){return guardianAura?.root;},get legs(){return ninja?.legs||[];},setInkViewport:(w,h)=>rig.setInkViewport(w,h),setAppearance};
 }
 
 // The exploration hero with the articulated hand-seal rig used by combat.
