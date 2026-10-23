@@ -1,4 +1,5 @@
 import {GUARDIAN_HEALTH} from './adventure-world.js';
+import {botHealth} from './enemy-balance.js';
 // Journey progression is independent for each element; all bonuses use base values.
 export const SYSTEMS=['fire','water','lightning','wind','earth','light','dark','wood','ice'];
 export const LEVEL_POINTS=[1,1,1,1,2,2,2,3,3,4];
@@ -69,5 +70,5 @@ export function encounterProfile(save,kind,region){
     return {element,hp,spellIds:ordered.slice(0,3),phaseSpellIds:ordered,phases:['water','fire','lightning','nameless'].includes(region)?2:3,damageMultiplier:['water','fire','lightning'].includes(region)?.75:.95,sealDelay:.43,restTime:2.1,weaponInterval:1.9};
   }
   const elite=kind==='guardian-guard',guard=kind==='village-guard'||elite,early=['fire','water','lightning'].includes(region),count=guard?(elite?(early?3:4):early?2:3):Math.min(3,1+Math.floor(stage/2));
-  return {element,hp:elite?(early?260:390+stage*15):guard?(early?155:240+stage*12):110+stage*15,spellIds:ordered.slice(0,count),damageMultiplier:elite?.85:guard?.65:.55,sealDelay:elite?.52:guard?.62:.75,restTime:elite?2.3:guard?2.9:3.8,weaponInterval:elite?1.8:guard?2.3:3.2};
+  return {element,hp:botHealth(elite?(early?260:390+stage*15):guard?(early?155:240+stage*12):110+stage*15),spellIds:ordered.slice(0,count),damageMultiplier:elite?.85:guard?.65:.55,sealDelay:elite?.52:guard?.62:.75,restTime:elite?2.3:guard?2.9:3.8,weaponInterval:elite?1.8:guard?2.3:3.2};
 }

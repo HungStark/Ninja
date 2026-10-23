@@ -54,7 +54,7 @@
     "test:armor": "node tests/armor-designs.mjs && node tests/shop-hero-browser.cjs",
     "test:equipment": "node tests/shuriken-equipment.mjs && node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs",
     "test:armguards": "node tests/armguards-core.mjs && node tests/armguards-browser.cjs",
-    "test:dash": "node tests/dash-boost.mjs && node tests/enemy-movement-core.mjs && node tests/dash-boost-browser.cjs",
+    "test:dash": "node tests/dash-boost.mjs && node tests/enemy-movement-core.mjs && node tests/enemy-balance-core.mjs && node tests/dash-boost-browser.cjs && node tests/enemy-balance-browser.cjs",
     "test:residents": "node tests/residents-core.mjs && node tests/residents-browser.cjs",
     "test:story": "node tests/journey-story-core.mjs && node tests/campaign-core.mjs && node tests/journey-story-browser.cjs && node tests/journey-encounters-browser.cjs",
     "test:ambush": "node tests/guard-ambush-core.mjs && node tests/guard-reinforcements-core.mjs && node tests/guard-ambush-browser.cjs",

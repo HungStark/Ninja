@@ -1,5 +1,6 @@
 // Authored places, people and terrain. Base coordinates expand per region below.
 import {landmarkResidents} from './adventure-residents.js';
+import {botHealth} from './enemy-balance.js';
 export const WORLD_LIMIT = 140;
 export const GATE_RADIUS = 62;
 export const ARRIVAL_RADIUS = 57;
@@ -7,7 +8,7 @@ export function regionMetrics(id){const scale=['water','fire','lightning','wind'
 
 // Legacy saved journeys used this starter. New journeys choose their art in journey-story.
 export const STARTER_SPELLS = Object.freeze(['water-barrier']);
-export const GUARDIAN_HEALTH={nameless:360,water:520,fire:580,lightning:620,earth:850,wind:780,light:980,ice:1000,wood:1080,dark:1600};
+export const GUARDIAN_HEALTH=Object.fromEntries(Object.entries({nameless:360,water:520,fire:580,lightning:620,earth:850,wind:780,light:980,ice:1000,wood:1080,dark:1600}).map(([id,hp])=>[id,botHealth(hp)]));
 
 export const REGIONS = {
   nameless: {

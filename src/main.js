@@ -1,3 +1,4 @@
+import {PRACTICE_BOT_HP} from './enemy-balance.js';
 import {gameAudio} from './game-audio.js';
 import {setupAudioSettings} from './audio-settings.js';
 import {createEncounterSquad} from './encounter-squad.js';
@@ -39,7 +40,7 @@ import {battleOpportunities,introductoryCooldowns,BALANCE_VERSION} from './battl
 import {createBattleMetrics,battleMetricsMarkup} from './battle-metrics.js';
 async function main() {
   const $ = id => document.getElementById(id), { keys, spells, elements, defaultLoadout, validateLoadout, GameRules, Fighter, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep } = globalThis.SealGameCore;
-  let rules = new GameRules(), player = new Fighter(), enemy = new Fighter(), aiRules = new GameRules();
+  let rules = new GameRules(), player = new Fighter(), enemy = new Fighter(PRACTICE_BOT_HP), aiRules = new GameRules();
   const testMode = new URLSearchParams(location.search).get("test") === "1";
   let testAIDisabled=false;
   let adventure=null, adventureVictory=false,touchControls=null;
@@ -1327,7 +1328,7 @@ async function main() {
     clearMeteorView();
     battlePlayerStats=adventure?.encounter?{...adventure.combatStats}:{maxHp:200,maxChakra:100,damageMultiplier:1};
     const cooldownOverrides=introductoryCooldowns(adventure?.state().save.learnedSpells,!!adventure?.encounter);
-    rules = new GameRules(loadout,{maxChakra:battlePlayerStats.maxChakra,cooldownOverrides}); player = new Fighter(battlePlayerStats.maxHp); enemy = new Fighter(adventure?.encounter?.hp||200);player.resistances={...(battlePlayerStats.resistances||{})};playerAvatar.setEquipment(adventure?.encounter?adventure.equipment:null);hands.setArmguard(adventure?.encounter?adventure.equipment.armguard:null);bossEnraged=false;aiWeaponTimer=4;
+    rules = new GameRules(loadout,{maxChakra:battlePlayerStats.maxChakra,cooldownOverrides}); player = new Fighter(battlePlayerStats.maxHp); enemy = new Fighter(adventure?.encounter?.hp||PRACTICE_BOT_HP);player.resistances={...(battlePlayerStats.resistances||{})};playerAvatar.setEquipment(adventure?.encounter?adventure.equipment:null);hands.setArmguard(adventure?.encounter?adventure.equipment.armguard:null);bossEnraged=false;aiWeaponTimer=4;
     if(adventure?.encounter){adventure.beginCombat();player.autoRestore=false;enemy.autoRestore=false;}
     darkDomain.reset();
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
@@ -1364,7 +1365,7 @@ async function main() {
     if (next) round++;
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
     $('changeLoadout').hidden=false;$('changeLoadout').disabled=false;$('changeLoadout').style.display='';started = false; paused = false; won = false; moveTargetX = 0; moveDirection = 0; aiSpell = null; enemyPose = -1; releaseAimLock();
-    shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; fields.length = 0; effects.reset(); hands.clearEffects(); player = new Fighter(); enemy = new Fighter(); activePose = -1;
+    shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; fields.length = 0; effects.reset(); hands.clearEffects(); player = new Fighter(); enemy = new Fighter(PRACTICE_BOT_HP); activePose = -1;
     bossEnraged=false;opponent.group.scale.setScalar(1);opponent.setAppearance(null);enemyMovement.reset();enemyMoving=false;
     opponent.group.rotation.set(0, 0, 0); camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 };
     document.body.classList.remove('playing', 'paused'); ['pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden')); $('startScreen').classList.remove('hidden'); loadoutMessage = ''; renderLoadout();

@@ -2,11 +2,12 @@ import {HIDDEN_GUARD_COUNT,GUARDIAN_GUARD_COUNT} from './guard-placement.js';
 import {REGIONS,regionMetrics} from './adventure-world.js';
 import {SKILL_LEVELS,spellElement,gainExperience,addBooks} from './progression.js';
 import {QUEST_ITEM_MODELS} from './quest-items.js';
+import {botHealth} from './enemy-balance.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
 export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa liên đạn',element:'fire'},{id:'water-barrier',name:'Thủy bộc cầu',element:'water'},{id:'lightning-lance',name:'Lôi thương',element:'lightning'}];
-export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:85,spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
+export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:botHealth(85),spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
 export const FIRST_VILLAGES=['water','fire','lightning'];
 const STAGES=['mother','chief','guardian','report','infiltrate'];
 export function newStory(){return {revision:1,stage:'mother',starter:null,guardianRestored:false,peaceSeals:[],defeatedGuards:[],sidequests:{},trackedQuest:null};}

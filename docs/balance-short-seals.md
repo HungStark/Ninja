@@ -3,7 +3,7 @@
 Bản thử `tiered-cooldowns-v2` giữ chuỗi ấn ngắn, giảm sức mạnh đòn cơ bản và tạo khoảng hồi rõ hơn cho các chiêu mạnh.
 
 - Thuộc tính chung: mỗi lần nâng Sinh lực thêm 5 máu; mỗi lần nâng Sức mạnh thêm 1,5% sát thương gốc. Mana thêm 2/điểm. Các bản lưu giữ số điểm đã phân bổ và tính lại theo mức mới.
-- G: giữ trạng thái tăng lực tối đa 3 giây; cú lướt sau đó dài 3 m trong 0,2 giây, hồi 5 giây tính từ khi lướt. Người chơi và bot dùng chung thông số; bước né thường giữ 0,2 m.
+- G: giữ trạng thái tăng lực tối đa 3 giây; cú lướt sau đó dài 3 m trong 0,2 giây, hồi 12 giây tính từ khi lướt. Bot không dùng G; chỉ di chuyển và né thường 0,2 m, máu tăng khoảng 10% để bù lại.
 - Hồi mana vẫn là 5/giây. Sáu đòn cơ bản trong bảng dưới giảm cả sát thương và mana; phần lớn hồi 4 giây. Thủy bộc cầu hồi 5 giây để bốn vụ nổ hoàn tất trước lần tiếp theo.
 - Chiêu mạnh hồi 20–24 giây; đại chiêu hồi 30–45 giây tùy sát thương, khống chế và khả năng chi phối trận. Sát thương các chiêu mạnh giữ nguyên.
 - Phòng thủ, khống chế và kích hoạt combo dùng hồi riêng theo vai trò, không bị ép chung theo hạng. Chuẩn bị phân thân hồi 2 giây; Độc Hoa cần vườn và là vùng sát thương kéo dài nên giữ hồi 6 giây.
