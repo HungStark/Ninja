@@ -4,7 +4,7 @@ export function setupAndroidControls({canvas,getState,seal,cast,step,boost,look,
   if(!androidInterface())return null;
   if(!document.querySelector('link[href$="android.css"]')){const css=document.createElement('link');css.rel='stylesheet';css.href='android.css';document.head.append(css);}
   document.body.classList.add('android-ui');
-  const root=document.createElement('div');root.id='androidControls';root.innerHTML=`<div id="androidCombatControls"><nav class="android-seals android-seals-left" aria-label="Kết ấn tay trái">${[...'qweras'].map(k=>`<button data-touch-seal="${k}" aria-label="Kết ấn ${k.toUpperCase()}">${k.toUpperCase()}</button>`).join('')}</nav><nav class="android-seals android-seals-right" aria-label="Kết ấn tay phải">${[...'dfzxcv'].map(k=>`<button data-touch-seal="${k}" aria-label="Kết ấn ${k.toUpperCase()}">${k.toUpperCase()}</button>`).join('')}</nav><button id="androidSettings" class="android-action" aria-label="Tạm dừng và cài đặt">⚙</button><button id="androidStepLeft" class="android-action android-step" aria-label="Né hoặc lướt sang trái">‹</button><button id="androidStepRight" class="android-action android-step" aria-label="Né hoặc lướt sang phải">›</button><button id="androidClearSeals" aria-label="Xóa chuỗi kết ấn">⌫</button><details id="androidAmmo"><summary>Phi tiêu <span id="androidAmmoCurrent"></span></summary><div>${SHURIKEN_TYPES.map((s,i)=>`<button data-touch-ammo="${s.id}" style="--ammo:${s.color}"><b>${i+1}</b><span>${s.name.replace('Phi tiêu ','')}</span><small>0</small></button>`).join('')}</div></details></div><div id="androidExploreControls" hidden><div id="androidJoystick" aria-label="Giữ và kéo để di chuyển"><span class="android-sprint-hint">↑ Kéo lên để chạy</span><i></i></div><div class="android-explore-actions"><button data-mobile-key="e">E<small>Tương tác</small></button><button data-mobile-key=" ">↑<small>Nhảy</small></button><button data-mobile-key="c">C<small>Tu luyện</small></button></div></div><div id="androidRotateNotice">↻<span>Xoay ngang điện thoại để chơi</span></div>`;
+  const root=document.createElement('div');root.id='androidControls';root.innerHTML=`<div id="androidCombatControls"><nav class="android-seals android-seals-left" aria-label="Kết ấn tay trái">${[...'qweras'].map(k=>`<button data-touch-seal="${k}" aria-label="Kết ấn ${k.toUpperCase()}">${k.toUpperCase()}</button>`).join('')}</nav><nav class="android-seals android-seals-right" aria-label="Kết ấn tay phải">${[...'dfzxcv'].map(k=>`<button data-touch-seal="${k}" aria-label="Kết ấn ${k.toUpperCase()}">${k.toUpperCase()}</button>`).join('')}</nav><button id="androidSettings" class="android-action" aria-label="Tạm dừng và cài đặt">⚙</button><button id="androidStepLeft" class="android-action android-step" aria-label="Né hoặc lướt sang trái">‹</button><button id="androidStepRight" class="android-action android-step" aria-label="Né hoặc lướt sang phải">›</button><button id="androidClearSeals" aria-label="Xóa chuỗi kết ấn">⌫</button><details id="androidAmmo"><summary>Phi tiêu <span id="androidAmmoCurrent"></span></summary><div>${SHURIKEN_TYPES.map((s,i)=>`<button data-touch-ammo="${s.id}" style="--ammo:${s.color}"><b>${i+1}</b><span>${s.name.replace('Phi tiêu ','')}</span><small>0</small></button>`).join('')}</div></details></div><div id="androidExploreControls" hidden><div id="androidJoystick" aria-label="Giữ và kéo để di chuyển"><span class="android-sprint-hint">↑ Kéo lên để chạy</span><i></i></div><button id="androidSprintLock" hidden aria-label="Thả tay tại đây để khóa chạy nhanh" aria-pressed="false"><b>⇈</b><small>Chạy nhanh</small></button><div class="android-explore-actions"><button data-mobile-key="e">E<small>Tương tác</small></button><button data-mobile-key=" ">↑<small>Nhảy</small></button><button data-mobile-key="c">C<small>Tu luyện</small></button></div></div><div id="androidRotateNotice">↻<span>Xoay ngang điện thoại để chơi</span></div>`;
   document.body.append(root);const combat=root.querySelector('#androidCombatControls'),explore=root.querySelector('#androidExploreControls'),ammo=root.querySelector('#androidAmmo');
   const feedback=document.createElement('div');feedback.className='android-explore-messages';
   for(const id of ['journeyToast','waypointHint','journeyTravel'])feedback.append(document.getElementById(id));
@@ -28,7 +28,8 @@ export function setupAndroidControls({canvas,getState,seal,cast,step,boost,look,
   }
   window.addEventListener('resize',()=>{hudSampleAt=-Infinity;});document.getElementById('campaignToggle').addEventListener('click',()=>{hudSampleAt=-Infinity;});
   const emit=(key,down)=>{const code=key===' '?'Space':key==='backspace'?'Backspace':'Key'+key.toUpperCase();window.dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{key,code,bubbles:true,cancelable:true}));};
-  const cancelSprint=()=>{sprintArmed=false;sprint(false);root.querySelector('#androidJoystick').classList.remove('sprint-armed','sprint-locked');};
+  const sprintButton=root.querySelector('#androidSprintLock');
+  const cancelSprint=()=>{sprintArmed=false;sprint(false);root.querySelector('#androidJoystick').classList.remove('sprint-armed','sprint-locked');sprintButton.hidden=true;sprintButton.classList.remove('sprint-armed');sprintButton.setAttribute('aria-pressed','false');sprintButton.querySelector('small').textContent='Chạy nhanh';};
   const release=()=>{cancelSprint();for(const key of held)emit(key,false);held.clear();drag=null;joystick=null;root.querySelector('#androidJoystick i').style.transform='translate(0,0)';};
   const live=()=>{const s=getState();return s.started&&!s.paused&&!s.won;};
   function tap(button,action){button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(!live())return;button.classList.add('pressed');button.setPointerCapture(e.pointerId);action();});for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>button.classList.remove('pressed'));}
@@ -43,22 +44,28 @@ export function setupAndroidControls({canvas,getState,seal,cast,step,boost,look,
   const end=e=>{
     if(drag?.id===e.pointerId)drag=null;
     if(joystick!==e.pointerId)return;
+    if(e.type==='pointerup')movePad(e);
     joystick=null;
-    if(e.type==='pointerup'&&sprintArmed){sprint(true,true);pad.classList.add('sprint-locked');}
+    if(e.type==='pointerup'&&sprintArmed){sprint(true,true);pad.classList.add('sprint-locked');sprintButton.hidden=false;sprintButton.setAttribute('aria-pressed','true');sprintButton.querySelector('small').textContent='Đang chạy';}
     else cancelSprint();
     for(const key of held)emit(key,false);held.clear();knob.style.transform='translate(0,0)';
   };
   window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end);canvas.addEventListener('lostpointercapture',end);
-  root.querySelectorAll('[data-mobile-key]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();if(getState().phase!=='explore')return;release();emit(b.dataset.mobileKey,true);emit(b.dataset.mobileKey,false);}));
+  root.querySelectorAll('[data-mobile-key]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();if(getState().phase!=='explore')return;if(b.dataset.mobileKey!==' ')release();emit(b.dataset.mobileKey,true);emit(b.dataset.mobileKey,false);}));
   function movePad(e){
     const r=pad.getBoundingClientRect(),rawX=(e.clientX-r.left-r.width/2)/(r.width*.35),rawY=(e.clientY-r.top-r.height/2)/(r.height*.35),x=Math.max(-1,Math.min(1,rawX)),y=Math.max(-1,Math.min(1,rawY)),wanted=new Set();
-    sprintArmed=rawY<-1.5&&Math.abs(rawX)<.75;sprint(sprintArmed);pad.classList.toggle('sprint-armed',sprintArmed);
+    const above=e.clientY<r.top&&Math.abs(e.clientX-r.left-r.width/2)<r.width*.6;
+    sprintButton.hidden=!above;
+    const target=sprintButton.getBoundingClientRect();
+    sprintArmed=above&&e.clientX>=target.left&&e.clientX<=target.right&&e.clientY>=target.top&&e.clientY<=target.bottom;
+    sprintButton.classList.toggle('sprint-armed',sprintArmed);pad.classList.toggle('sprint-armed',sprintArmed);
     if(x<-.27)wanted.add('a');if(x>.27)wanted.add('d');if(y<-.27)wanted.add('w');if(y>.27)wanted.add('s');
     for(const key of [...held])if(!wanted.has(key)){emit(key,false);held.delete(key);}
     for(const key of wanted)if(!held.has(key)){emit(key,true);held.add(key);}
     // Keydown may reset the keyboard sprint state, so apply the touch state last.
     sprint(sprintArmed);knob.style.transform=`translate(${x*r.width*.24}px,${y*r.height*.24}px)`;
   }
+  sprintButton.addEventListener('pointerdown',e=>{e.preventDefault();if(joystick===null&&getState().phase==='explore')release();});
   pad.addEventListener('pointerdown',e=>{if(getState().phase!=='explore')return;e.preventDefault();release();joystick=e.pointerId;pad.setPointerCapture(e.pointerId);movePad(e);});
   pad.addEventListener('pointermove',e=>{if(joystick===e.pointerId)movePad(e);});pad.addEventListener('lostpointercapture',end);
   window.addEventListener('blur',release);document.addEventListener('visibilitychange',()=>{if(document.hidden)release();});
