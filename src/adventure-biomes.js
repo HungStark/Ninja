@@ -1,3 +1,4 @@
+import {gameAudio} from './game-audio.js';
 import * as T from 'three';
 import {REGIONS,riverAt,waterSector,waterwayAt,regionMetrics} from './adventure-world.js';
 import {buildHouse} from './adventure-landmarks.js';
@@ -90,8 +91,8 @@ export function buildBiome(c,routes){
 export function createStorm(scene){
   const positions=new Float32Array(900*6),geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.BufferAttribute(positions,3));const material=new T.LineBasicMaterial({color:'#a8c4dd',transparent:true,opacity:.35,depthWrite:false}),rain=new T.LineSegments(geometry,material);rain.frustumCulled=false;rain.name='lightning-village-rain';scene.add(rain);const flash=new T.DirectionalLight('#dceaff',0);flash.position.set(40,90,-30);scene.add(flash);
   const boltGeometry=new T.BufferGeometry(),points=[];for(let k=0;k<12;k++)points.push(new T.Vector3(40+Math.sin(k*3)*3,85-k*6,-35+Math.cos(k)*2));boltGeometry.setFromPoints(points);const bolt=new T.Line(boltGeometry,new T.LineBasicMaterial({color:'#e6e9ff'}));scene.add(bolt);
-  let time=0,strikes=0,thunderAt=-1,lastStrike=-10,enabled=false,audio=null;
-  const unlock=()=>{if(!audio)try{audio=new (globalThis.AudioContext||globalThis.webkitAudioContext)();}catch{}audio?.resume?.().catch(()=>{});};
-  const thunder=()=>{if(!audio||audio.state!=='running')return;const duration=2.2,buffer=audio.createBuffer(1,audio.sampleRate*duration,audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.exp(-i/(audio.sampleRate*.7));const noise=audio.createBufferSource(),low=audio.createBiquadFilter(),gain=audio.createGain();low.type='lowpass';low.frequency.value=140;gain.gain.value=.16;noise.buffer=buffer;noise.connect(low);low.connect(gain);gain.connect(audio.destination);noise.start();};
+  let time=0,strikes=0,thunderAt=-1,lastStrike=-10,enabled=false;
+  const unlock=()=>gameAudio.unlock();
+  const thunder=()=>gameAudio.ambient('thunder');
   return {unlock,state:()=>({time,raining:enabled&&time%95<47,strikes,flash:flash.intensity}),reset(){time=0;strikes=0;lastStrike=-10;thunderAt=-1;},update(dt,active,hero){enabled=active;if(active)time+=dt;const wet=active&&time%95<47;rain.visible=wet;flash.intensity=0;bolt.visible=false;if(wet){const cycle=time%95;if(cycle>9&&Math.floor(cycle/11)>Math.floor((cycle-dt)/11)){lastStrike=time;strikes++;thunderAt=time+1.1;}const age=time-lastStrike;if(age>=0&&age<.32){flash.intensity=age<.07||age>.14&&age<.21?3.5:.3;bolt.visible=flash.intensity>1;}if(thunderAt>0&&time>=thunderAt){thunder();thunderAt=-1;}for(let k=0;k<900;k++){const x=hero.x+Math.sin(k*32.7)*24,z=hero.z+Math.cos(k*17.1)*24,y=hero.y+((k*.73-time*24)%25+25)%25;positions.set([x,y,z,x-.15,y-.9,z+.07],k*6);}geometry.attributes.position.needsUpdate=true;}}};
 }

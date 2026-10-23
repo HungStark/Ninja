@@ -69,7 +69,9 @@
     "test:mobile-layout": "node tools/build-android.mjs && node tests/mobile-layout.cjs",
     "test:mobile-combat": "node tools/build-android.mjs && node tests/mobile-combat-update.cjs",
     "test:balance": "node tools/build-android.mjs && node tests/balance-core.mjs && node tests/balance-browser.cjs && node tests/balance-effects-browser.cjs",
-    "test:attribute-balance": "node tools/build-android.mjs && node tests/progression-core.mjs && node tests/attribute-balance-browser.cjs"
+    "test:attribute-balance": "node tools/build-android.mjs && node tests/progression-core.mjs && node tests/attribute-balance-browser.cjs",
+    "test:audio": "node tools/build-android.mjs && node tests/audio-browser.cjs",
+    "test:quest-refresh": "node tests/quest-refresh-core.mjs && node tests/interaction-position.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

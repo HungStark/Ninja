@@ -86,10 +86,13 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onResume() {
         super.onResume();
-        if (game != null) game.onResume();
+        if (game != null) {
+            game.onResume();
+            game.evaluateJavascript("window.dispatchEvent(new Event('pageshow'));", null);
+        }
     }
     @Override public void onBackPressed() {
-        game.evaluateJavascript("(()=>{const api=window.__AN_HOA__,s=api?.adventure?.();if(!api||(!api.state().started&&(!s||s.phase==='home')))return false;window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true}));return true;})()",
+        game.evaluateJavascript("(()=>{if(document.getElementById('audioSettings')?.hidden===false){document.getElementById('closeAudioSettings').click();return true;}const api=window.__AN_HOA__,s=api?.adventure?.();if(!api||(!api.state().started&&(!s||s.phase==='home')))return false;window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true}));return true;})()",
                 handled -> { if ("false".equals(handled)) finish(); });
     }
     @Override protected void onDestroy() {

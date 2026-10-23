@@ -20,6 +20,8 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),path
     await page.keyboard.down('d');await page.evaluate(()=>__AN_HOA__.advance(.025));await page.keyboard.up('d');
     const before=await state();await page.evaluate(([kind,id])=>__AN_HOA__.explore.interact(kind,id),[kind,id]);return before;
   }
+  const timings={};
+  const action=async label=>{timings[label]=await page.evaluate(label=>{const button=[...document.querySelectorAll('#dialogActions button')].find(b=>b.textContent.includes(label));if(!button)throw Error('Missing action: '+label);const started=performance.now();button.click();return Number((performance.now()-started).toFixed(2));},label);};
   function unchanged(before,after){assert.deepEqual(after.position,before.position);assert.equal(after.height,before.height);assert.equal(after.camera.yaw,before.camera.yaw);}
   try{
     await page.goto(url);await page.waitForFunction(()=>document.body.dataset.ready==='true');
@@ -28,7 +30,8 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),path
     s=newJourney();promiseMother(s);before=await fixture(s,'npc');if(await page.locator('#dialogSkip').isVisible())await page.locator('#dialogSkip').click();await page.locator('#dialogActions button').filter({hasText:'Học Thủy bộc cầu'}).click();unchanged(before,await state());
     s=newJourney();const q=villageSidequests('nameless').find(q=>q.type==='retrieve');acceptSidequest(s,q);before=await fixture(s,'sidequest-target',q.id);unchanged(before,await state());assert.equal((await state()).save.story.sidequests[q.id],2);
     await page.evaluate(()=>__AN_HOA__.advance(.5));unchanged(before,await state());
-    s=(await state()).save;before=await fixture(s,'lore',q.giver);if(await page.locator('#dialogSkip').isVisible())await page.locator('#dialogSkip').click();await page.locator('#dialogActions button').filter({hasText:'Nhận thưởng việc riêng'}).click();await page.locator('#dialogActions button').filter({hasText:'Nhận thưởng'}).click();unchanged(before,await state());assert.equal((await state()).save.story.sidequests[q.id],3);
+    s=(await state()).save;before=await fixture(s,'lore',q.giver);if(await page.locator('#dialogSkip').isVisible())await page.locator('#dialogSkip').click();await page.locator('#dialogActions button').filter({hasText:'Nhận thưởng việc riêng'}).click();await action('Nhận thưởng');unchanged(before,await state());assert.equal((await state()).save.story.sidequests[q.id],3);
+    s=newJourney();before=await fixture(s,'lore',q.giver);if(await page.locator('#dialogSkip').isVisible())await page.locator('#dialogSkip').click();await page.locator('#dialogActions button').filter({hasText:'Việc riêng ·'}).click();await action('Nhận việc');unchanged(before,await state());assert.equal((await state()).save.story.sidequests[q.id],1);console.log('Quest action handlers (ms): '+JSON.stringify(timings));
     assert.deepEqual(errors,[]);console.log('PASS: story refresh preserves standing/airborne physics, mother promise, starter learning, item collection and reward keep exact position, height and heading.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

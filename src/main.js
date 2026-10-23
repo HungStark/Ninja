@@ -1,3 +1,5 @@
+import {gameAudio} from './game-audio.js';
+import {setupAudioSettings} from './audio-settings.js';
 import {createEncounterSquad} from './encounter-squad.js';
 import {createGuardianPhases} from './guardian-phases.js';
 import {createEnemyMovement} from './enemy-movement.js';
@@ -96,11 +98,10 @@ async function main() {
   }
   const range = (a, b) => a + (b - a) * rand();
   let activePose = -1, poseAge = 99, animationTime = 0, started = false, paused = false, won = false, round = 1, selected = 0, score = 0;
-  let camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }, lastTime = 0, recoil = 0, hitTimer = 0, flashTimer = 0, messageTime = 0, muted = false, audio = null;
+  let camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }, lastTime = 0, recoil = 0, hitTimer = 0, flashTimer = 0, messageTime = 0;
   let moveDirection = 0, moveTargetX = 0, touchPoint = null;
   const sidestepDistance = STEP_DISTANCE, sidestepDuration = STEP_DURATION;
   const sidestepSpeed = sidestepDistance / sidestepDuration;
-  let spellVoice = null;
   const dragonFormation = 1.1, dragonUncoil = .32;
   let dragonView = null;
   const meteorSkyTime = 1.4, meteorReturnTime = .4;
@@ -308,45 +309,13 @@ async function main() {
     document.querySelectorAll('.seal').forEach(el => { el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
     document.querySelectorAll('[data-spell]').forEach((el, i) => { el.classList.toggle('selected', i === selected);const remaining=rules.remaining(rules.spells[i].id);updateSpellAvailability(el,rules.spells[i],remaining,rules.chakra);el.setAttribute('aria-pressed',String(i===selected));el.classList.toggle('on-cooldown',remaining>0);el.classList.toggle('nature-locked',!natureArts.canCast('player',rules.spells[i]));el.title=!natureArts.canCast('player',rules.spells[i])?(rules.spells[i].oncePerMatch?'Đã dùng một lần trong trận':rules.spells[i].requiresGarden?'Cần gieo vườn bằng chiêu 6 ấn và chờ cây trồi lên':rules.spells[i].snowCost?'Cần gọi mưa tuyết và tích đủ '+rules.spells[i].snowCost+' tuyết':'Cần tích đủ 90 tuyết'):''; el.classList.toggle('domain-locked',!!rules.spells[i].requiresDomain&&!darkDomain.usable); el.classList.toggle('combo-locked',!!rules.spells[i].requiresAirborne&&!windArts.canCombo('player')); el.classList.toggle('crater-locked',!!rules.spells[i].requiresCrater&&!earthArts.crater('player')); el.title=rules.spells[i].name+(el.title?' · '+el.title:'')+(rules.chakra<rules.spells[i].cost?' · Không đủ mana':'');el.querySelectorAll('kbd').forEach((k, j) => k.classList.toggle('done', i === selected && seq[j] === k.dataset.seq)); });
   }
-  function initAudio() {
-    if (audio) return;
-    try {
-      audio = new (window.AudioContext || window.webkitAudioContext)();
-    } catch {
-      muted = true;
-    }
-  }
-  function tone(freq = 260, duration = 0.08, type = "sine", volume = 0.06) {
-    if (muted || !audio) return;
-    const o = audio.createOscillator(), g = audio.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, audio.currentTime);
-    o.frequency.exponentialRampToValueAtTime(freq * 0.65, audio.currentTime + duration);
-    g.gain.setValueAtTime(volume, audio.currentTime);
-    g.gain.exponentialRampToValueAtTime(1e-4, audio.currentTime + duration);
-    o.connect(g).connect(audio.destination);
-    o.start();
-    o.stop(audio.currentTime + duration);
-  }
-  function fireSound() {
-    if (muted || !audio) return;
-    const size = audio.sampleRate * 0.65, buffer = audio.createBuffer(1, size, audio.sampleRate), data = buffer.getChannelData(0);
-    for (let i = 0; i < size; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / size);
-    const src = audio.createBufferSource(), filter = audio.createBiquadFilter(), gain = audio.createGain();
-    src.buffer = buffer;
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(1500, audio.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(180, audio.currentTime + 0.6);
-    gain.gain.value = 0.26;
-    src.connect(filter).connect(gain).connect(audio.destination);
-    src.start();
-  }
+  function tone(freq=260,duration=.08,type='sine',volume=.06){gameAudio.tone(freq,duration,type,volume);}
   function seal(key) {
     if (!started || paused || won || darkDomain.transition || player.controlTime > 0) return;
     const result = rules.seal(key); activePose = keys.indexOf(key); hands.seal(activePose); poseAge = 0;
     battleMetrics.seal(result.valid,rules.sequence.length);
     $('currentSeal').textContent = key.toUpperCase() + ' / Ấn ' + String(activePose + 1).padStart(2, '0') + ' · ' + names[activePose];
-    tone(290 + activePose * 28, .09, 'triangle');
+    gameAudio.seal(activePose,result.valid,!!result.ready);
     if (!result.valid) announce('Sai chuỗi. Chỉ dùng các chiêu đã mang vào trận.', true);
     else if (result.ready) {
       if((result.ready.requiresBurn&&!playerCastContext().burnStacks)||(result.ready.requiresStatic&&!playerCastContext().staticStacks)){
@@ -354,7 +323,7 @@ async function main() {
       }
       const extendable = rules.spells.some(s => s.sequence.length > rules.sequence.length && s.sequence.slice(0, rules.sequence.length).join('') === rules.sequence.join(''));
       announce(result.ready.snowCost&&!natureArts.canCast('player',result.ready)?'Cần gọi mưa tuyết và tích đủ '+result.ready.snowCost+' tuyết để thi triển.':result.ready.requiresGarden&&!natureArts.wood.ready('player')?'Cần gieo vườn bằng chiêu 6 ấn và chờ cây trồi lên.':result.ready.oncePerMatch&&!natureArts.canCast('player',result.ready)?'Chiêu này đã dùng một lần trong trận.':result.ready.requiresSnowFull&&!natureArts.snowReady('player')?'Cần tích đủ 90 tuyết để dùng Tuyết Táng.':result.ready.requiresCrater&&!earthArts.crater('player') ? 'Cần tạo hố bằng Địa Bộc Thiên Tinh trước.' : result.ready.requiresDomain&&!darkDomain.usable ? 'Cần mở Hắc lãnh địa trước khi dùng '+result.ready.name+'.' : result.ready.name + ' đủ ' + result.ready.sequence.length + ' ấn: SPACE thi triển' + (extendable ? ', hoặc kết tiếp để dùng chiêu mạnh hơn.' : '.'));
-      tone(670, .23);
+
     } else {
       const candidate = rules.spells.find(s => s.sequence.slice(0, rules.sequence.length).join('') === rules.sequence.join(''));
       announce('Ấn ' + rules.sequence.length + ' / ' + (candidate?.sequence.length || rules.spells[selected].sequence.length) + ' — tiếp tục kết ấn');
@@ -380,6 +349,7 @@ async function main() {
     return true;
   }
   function launch(spell, owner, pos, dir) {
+    gameAudio.cast(spell,owner!=='player');
     if(!natureArts.canCast(owner,spell))return false;
     spell=natureArts.empower(owner,spell);
     if(spell.style==='waterbubbles'){
@@ -551,6 +521,7 @@ async function main() {
     }
   }
   function launchShuriken(owner,weapon,pos,dir){
+    gameAudio.shuriken(owner!=='player');
     const infused=weapon,target=volleyTarget(owner,pos,dir),side=vnorm([-dir[2],0,dir[0]]),p=vadd(vadd(pos,vmul(dir,.7)),vmul(side,.15));p[1]-=.12;
     shots.push({owner,element:'weapon',shurikenType:weapon.shurikenType||'iron',energy:!!weapon.energy,waterInfused:!!infused.waterInfused,style:'shuriken',phase:'flying',p,old:[...p],v:vmul(vnorm(vsub(target,p)),infused.speed),size:infused.size,damage:infused.damage,color:weapon.color||'#707983',life:4,age:0,flightAge:0,trail:0,reflected:false});
     return infused;
@@ -583,39 +554,21 @@ async function main() {
       const result=rules.throwShuriken();if(!result.ok)return;
       if(adventure?.inBattle){const item=adventure.takeShuriken();result.weapon={...result.weapon,damage:item.damage,color:item.color,shurikenType:item.id,energy:!!item.energy};}
       const weapon=launchShuriken('player',result.weapon,playerPos(),aim());
-      activePose=-1;poseAge=0;recoil=.08;hands.cast();playerAvatar.rig.cast();tone(720,.035,'triangle',.018);announce('Phi tiêu · '+weapon.damage+' sát thương · không tốn mana');updateUI();return;
+      activePose=-1;poseAge=0;recoil=.08;hands.cast();playerAvatar.rig.cast();announce('Phi tiêu · '+weapon.damage+' sát thương · không tốn mana');updateUI();return;
     }
     const result = rules.cast(playerCastContext());
     if (!result.ok) { announce({ burn:'Cần gây bỏng lên đối thủ trước.',static:'Cần tích tĩnh điện lên đối thủ trước.', spellCooldown:'Chiêu này đang hồi · còn '+(result.remaining||0).toFixed(1)+' giây.',snowCost:'Cần gọi mưa tuyết bằng chiêu 6 ấn và tích ít nhất 3 tuyết để thi triển.',garden:'Cần gieo hạt bằng chiêu 6 ấn và chờ cây trồi lên trước.',once:'Chiêu 6 ấn này chỉ dùng một lần mỗi trận.',snow:'Cần gọi tuyết và tích đủ 90 tuyết trước khi dùng Tuyết Táng.', crater: 'Cần hố Địa Bộc Thiên Tinh của bạn đã hình thành trước khi tạo chông.', sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.',airborne:'Cần địch đang bị lốc của bạn hất tung và chưa nối liên trảm.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Bên bạn đã đủ 3 bò bóng, không còn chó để nâng cấp.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Mana chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
     const spell = result.spell;
     battleMetrics.cast(spell);lastPlayerSpell=spell;
-    activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); playerAvatar.rig.cast(); fireSound();
+    activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); playerAvatar.rig.cast();
     const upgrading=spell.style==='shadowclone'&&darkDomain.cloneCount('player')>=spell.maxClones;
     launch(spell, 'player', playerPos(), aim()); announce(upgrading?'Nâng thành bò bóng · 33 sát thương!':spell.name + '!');
     speakSpell(spell);
     battleMetrics.observeWalls(walls);
     updateUI();
   }
-  function speakSpell(spell) {
-    stopSpellVoice();
-    if (!muted && window.speechSynthesis && window.SpeechSynthesisUtterance) {
-      try {
-        const utterance = new SpeechSynthesisUtterance(spell.name + '!');
-        utterance.lang = 'vi-VN'; utterance.rate = .95; utterance.pitch = .85; utterance.volume = 1;
-        const voice = window.speechSynthesis.getVoices().find(v => /^vi(?:-|$)/i.test(v.lang));
-        if (voice) utterance.voice = voice;
-        spellVoice = utterance;
-        utterance.onend = utterance.onerror = () => { if (spellVoice === utterance) spellVoice = null; };
-        window.speechSynthesis.cancel(); window.speechSynthesis.resume(); window.speechSynthesis.speak(utterance);
-      } catch { stopSpellVoice(); }
-    }
-  }
-  function stopSpellVoice() {
-    if (!spellVoice) return;
-    spellVoice.onend = spellVoice.onerror = null;
-    spellVoice = null;
-    try { window.speechSynthesis.cancel(); } catch {}
-  }
+  function speakSpell(spell){gameAudio.speakSpell(spell);}
+  function stopSpellVoice(){gameAudio.stopVoice();}
   function particle(p, v, size = .06, life = .7, color = '#ff9756', source = null) {
     if (particles.length >= 650) return;
     particles.push({ p: [...p], v: [...v], size, life, max: life, color: rgb(color), source });
@@ -637,6 +590,7 @@ async function main() {
     clearMeteorView();
     cameraImpacts.reset();
     setWorldFov(baseFov);
+    gameAudio.result(victory);
     won = true; dashBoost.cancelDash();dashAura.clear();enemyDashAura.clear();moveTargetX = camera.p[0]; moveDirection = 0; enemyPose = -1; releaseAimLock();
     salvos.length = 0;
     score = victory ? 1 : 0; $('score').textContent = String(score).padStart(2, '0');
@@ -661,6 +615,7 @@ async function main() {
     if(adventure?.inBattle&&shot.owner==='player'&&result.damage>0)adventure.awardCombatExperience(result.damage*.5,victim?.id||shot.victimId);
     shot.hitResult=result;
     if(result.immune)return true;
+    if(shot.style!=='poisontick')gameAudio.impact(shot.element,result.damage,!result.damage);
     fighter.applyElementHit(shot.element,result,shot.style);
     if(shot.style==='boat'&&result.damage>0){fighter.boatControlTime=Math.max(fighter.boatControlTime,shot.controlDuration||1);interruptActor(shot.owner==='player'?'enemy':'player');}
     if(shot.style==='poisontick'){
@@ -785,6 +740,7 @@ async function main() {
     return step.travelTime;
   }
   function wallImpact(wall,point,result,shot){
+    gameAudio.impact(wall.element,0,true);
     if(wall.owner==='player')battleMetrics.block(result.absorbed);
     burst(point,shot.style==='shuriken'?4:15,shot.style==='shuriken'?.45:1.6,shot.style==='shuriken'?'#bdc9d7':wall.element==='ice'?'#b8efff':wall.element==='water'?'#50baff':'#ffc45e');
     if(shot.style!=='shuriken'){if(wall.element==='earth')earthArts.burst(point,1);else if(wall.element==='wind')windArts.cut(point);else if(!['water','ice'].includes(wall.element))effects.arts.blast(point,'orb');}
@@ -989,7 +945,7 @@ async function main() {
       aiRules.clear(); aiStep = 0; aiCycle++;
     }
     if (aiStep < aiSpell.sequence.length) {
-      const key = aiSpell.sequence[aiStep++]; aiRules.seal(key); enemyPose = keys.indexOf(key); opponent.rig.seal();
+      const key = aiSpell.sequence[aiStep++]; aiRules.seal(key); gameAudio.seal(keys.indexOf(key),true,false,true); enemyPose = keys.indexOf(key); opponent.rig.seal();
       aiTimer = adventure?.inBattle?adventure.encounter.sealDelay*(bossEnraged ? .85 : 1):.42; renderEnemySeals($('enemyAction'),aiRules.sequence);
     } else {
       const result = darkDomain.transition ? {ok:false} : aiRules.cast({burnStacks:player.burns.length,staticStacks:player.staticStacks,woodGarden:natureArts.wood.ready('enemy'),snowFull:natureArts.snowReady('enemy'),snowAmount:natureArts.snowAmount('enemy'),earthCrater:!!earthArts.crater('enemy'),windAirborne:windArts.canCombo('enemy'),darkDomain:darkDomain.usable,shadowClones:darkDomain.commandable('enemy').length,shadowCloneCount:darkDomain.cloneCount('enemy'),shadowUpgrades:darkDomain.upgradable('enemy').length});
@@ -1005,6 +961,7 @@ async function main() {
     for(const f of [player,enemy])if(f.defenseElement==='dark'){f.shield=0;f.shieldTime=0;f.reflect=0;}
   }
   function tick(dt) {
+    gameAudio.setScene(adventure?.phase==='duel'?'duel':adventure?.village||'nameless',paused?'pause':won?'result':adventure?.phase||'home');
     if(adventure?.activeView){adventure.update(dt);return;}
     const running = started && !paused && !won;
     if (!paused) animationTime += dt;
@@ -1343,7 +1300,7 @@ async function main() {
   function sidestep(direction) {
     if (!started||paused||won||player.controlTime > 0) return;
     if(dashBoost.state().dashing>0)return;
-    if(dashBoost.consume()){moveTargetX=clamp(camera.p[0]+direction*DASH_DISTANCE,-6,6);dashAura.clear();updateUI();return;}
+    if(dashBoost.consume()){gameAudio.dash();moveTargetX=clamp(camera.p[0]+direction*DASH_DISTANCE,-6,6);dashAura.clear();updateUI();return;}
     moveTargetX = clamp(moveTargetX + direction * sidestepDistance, -6, 6);
   }
   function armDash(){
@@ -1391,10 +1348,10 @@ async function main() {
     $('score').textContent = '00'; $('roundText').textContent = 'Trận đấu ' + String(round).padStart(2, '0'); $('currentSeal').textContent = 'Sẵn sàng kết ấn';
     document.body.classList.add('playing'); document.body.classList.remove('paused');
     ['startScreen', 'pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden'));
-    initAudio(); audio?.resume(); renderGuide(); announce(androidInterface()?'Giữ và kéo giữa màn hình để ngắm. Chạm các phím để kết ấn.':'Lia chuột để ngắm. Bấm trái né trái, bấm phải né phải.'); updateUI(); tick(0); requestAimLock(event);
+    gameAudio.unlock(); renderGuide(); announce(androidInterface()?'Giữ và kéo giữa màn hình để ngắm. Chạm các phím để kết ấn.':'Lia chuột để ngắm. Bấm trái né trái, bấm phải né phải.'); updateUI(); tick(0); requestAimLock(event);
   }
-  function pause() { if (!started || won) return;showBattleStatistics();$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;dashBoost.cancelDash(); if (spellVoice) { try { window.speechSynthesis.pause(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
-  function resume(event) { paused = false; if (spellVoice) { try { window.speechSynthesis.resume(); } catch {} } moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
+  function pause() { if (!started || won) return;showBattleStatistics();$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;dashBoost.cancelDash(); gameAudio.pauseVoice(true); moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
+  function resume(event) { paused = false; gameAudio.pauseVoice(false); moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
     saveBattleStatistics('left');
     squad.reset();guardianPhases.reset();squadHud.hidden=true;
@@ -1412,7 +1369,7 @@ async function main() {
     opponent.group.rotation.set(0, 0, 0); camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 };
     document.body.classList.remove('playing', 'paused'); ['pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden')); $('startScreen').classList.remove('hidden'); loadoutMessage = ''; renderLoadout();
   }
-  function toggleSound() { muted = !muted; if (muted) stopSpellVoice(); $('soundButton').textContent = muted ? '♫̸' : '♪'; $('soundButton').setAttribute('aria-pressed', String(muted)); }
+  function toggleSound(){gameAudio.configure({muted:!gameAudio.settings().muted});}
   function nextBattle(){if(adventure?.inBattle){const victory=adventureVictory;prepare();adventure.finishBattle(victory);}else prepare(true);}
   $('cycleAmmo').onclick=()=>{if(started&&!paused&&!won&&adventure?.inBattle){adventure.cycleShuriken();updateUI();}};
   $('startButton').onclick = start; $('resumeButton').onclick = resume; $('resetButton').onclick = e => { started = false; start(e); }; $('changeLoadout').onclick = () => {if(adventure?.retreatLocked){announce('Không thể rút lui khi chưa có dấu ấn hòa bình.',true);return;}if(adventure?.inBattle){prepare();adventure.finishBattle(false);}else prepare();}; $('nextButton').onclick = nextBattle; $('castButton').onclick = cast; $('soundButton').onclick = toggleSound;
@@ -1478,6 +1435,8 @@ async function main() {
     launch(spell, 'enemy', pos, dir);
   };
   if (testMode) window.__AN_HOA__.advance = seconds => { for (let t = 0; t < seconds; t += 1 / 60) tick(Math.min(1 / 60, seconds - t)); render(); };
+  setupAudioSettings(gameAudio,{onOpen:()=>{const running=started&&!paused&&!won&&!adventure.activeView;if(running)pause();return running;},onClose:wasRunning=>{if(wasRunning)resume();}});
+  if(testMode)window.__AN_HOA__.audio=gameAudio;
   setupScrollOpening();
   renderLoadout(); renderGuide(); updateUI(); $('loading').classList.add('hidden'); document.body.dataset.ready = 'true'; tick(.016); render(); if (!testMode) requestAnimationFrame(frame);
 }
