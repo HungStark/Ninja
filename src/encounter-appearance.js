@@ -1,3 +1,4 @@
+import {GUARDIAN_FORMS} from './guardian-beasts.js';
 import * as T from 'three';
 import {village} from './adventure-data.js';
 import {REGIONS} from './adventure-world.js';
@@ -7,7 +8,7 @@ import {toon} from './materials.js';
 export function encounterAppearance(encounter){
   if(!encounter)return {kind:'duel',id:'duel',village:'nameless',coat:'#33495f',hair:'#182b3d'};
   const id=encounter.kind==='random'&&encounter.element?encounter.element:encounter.village,v=village(id);
-  if(encounter.kind==='boss'&&encounter.guardianForm==='beast')return {kind:'creature',id,archetype:['water','fire'].includes(id)?'dragon':id==='lightning'?'bird':['wind','ice'].includes(id)?'beast':id==='dark'?'wraith':'golem',name:encounter.name,guardianForm:'beast'};
+  if(encounter.kind==='boss'&&encounter.guardianForm==='beast')return {kind:'creature',id,archetype:GUARDIAN_FORMS[id].shape,name:encounter.name,guardianForm:'beast'};
   if(encounter.kind==='boss')return {kind:'ninja',id:'guardian-'+id+'-'+(encounter.guardianForm||'human'),village:id,coat:v.color,hair:'#252833',name:encounter.name,guardianForm:encounter.guardianForm||'human'};
   return {kind:'ninja',id:encounter.kind+'-'+id,village:id,coat:v.color,hair:encounter.kind==='quest'&&id==='ice'?'#d0dfdf':encounter.kind==='quest'&&id==='light'?'#d4c59e':'#252833',name:encounter.name};
 }
@@ -26,7 +27,7 @@ export function createEncounterCreature(id){
   const bounds=new T.Box3().setFromObject(body),size=bounds.getSize(new T.Vector3());
   const scale=Math.min(4.4/size.y,6/size.x,6/size.z);root.scale.setScalar(scale);body.position.y=-bounds.min.y;
   const height=size.y*scale,baseY=body.position.y;
-  return {root,height,update(time,moving=false,reducedMotion=false,velocity=0){
+  return {root,height,form:GUARDIAN_FORMS[id],update(time,moving=false,reducedMotion=false,velocity=0){
     body.position.y=baseY+(reducedMotion?0:Math.sin(time*(moving?9:2))*(moving?.07:.025)/scale);
     body.rotation.z=reducedMotion?0:-velocity*.012;
     for(const a of animated){if(a.kind==='halo')a.mesh.rotation.z=time*.2;if(a.kind==='pulse')a.mesh.scale.setScalar(1+Math.sin(time*4)*.08);}

@@ -1,3 +1,4 @@
+import {GUARDIAN_FORMS} from './guardian-beasts.js';
 // Authored places, people and terrain. Base coordinates expand per region below.
 import {landmarkResidents} from './adventure-residents.js';
 import {botHealth} from './enemy-balance.js';
@@ -8,7 +9,7 @@ export function regionMetrics(id){const scale=['water','fire','lightning','wind'
 
 // Legacy saved journeys used this starter. New journeys choose their art in journey-story.
 export const STARTER_SPELLS = Object.freeze(['water-barrier']);
-export const GUARDIAN_HEALTH=Object.fromEntries(Object.entries({nameless:360,water:520,fire:580,lightning:620,earth:850,wind:780,light:980,ice:1000,wood:1080,dark:1600}).map(([id,hp])=>[id,botHealth(hp)]));
+export const GUARDIAN_HEALTH=Object.fromEntries(Object.entries({nameless:360,water:440,fire:550,lightning:660,earth:770,wind:880,light:990,ice:1100,wood:1210,dark:1650}).map(([id,hp])=>[id,botHealth(hp)]));
 
 export const REGIONS = {
   nameless: {
@@ -42,7 +43,7 @@ export const REGIONS = {
       {id:'fire-dan',name:'Y nữ Đan',role:'Người hái hồng liên',kind:'healer',x:23,z:21,dialogue:'Hồng liên vẫn mọc ở nơi nóng nhất. Khi mỏi chân, cứ tìm ta dưới những cây phong.'},
       {id:'fire-xich',name:'Xích Vân',role:'Ẩn sư hỏa long',kind:'mentor',x:-26,z:-25,dialogue:'Hãy quan sát nhịp búa ở Phố Lò Rèn và sự tĩnh lặng trong Vườn Phong Tro. Lửa phải có cả sức mạnh lẫn nhẫn nại.'}
     ],
-    boss:{id:'fire-ashdragon',name:'Hỏa Long Tro Tàn',title:'Chúa tể lòng núi',x:36,z:-43,hp:1900,rewardGold:210,rewardXp:280,story:'Con rồng bọc vảy bazan trở mình dưới Hồng Liên. Mỗi hơi thở của nó làm những đường nham thạch trên thân sáng rực.'},
+    boss:{id:'fire-ashdragon',name:'Cửu Viêm Hồ',title:'Chúa tể lòng núi',x:36,z:-43,hp:1900,rewardGold:210,rewardXp:280,story:'Con rồng bọc vảy bazan trở mình dưới Hồng Liên. Mỗi hơi thở của nó làm những đường nham thạch trên thân sáng rực.'},
     mentor:{npcId:'fire-xich',spellId:'fire-lance',clue:'Khám phá Phố Lò Rèn và Vườn Phong Tro. Xích Vân đợi ở Cổng Đá Bazan.',zoneIds:['forge','maple'],lesson:'Đừng ép lửa thành một viên đạn. Hãy cho nó sống, uốn mình và tìm đường như rồng. Con đã sẵn sàng học Rồng lửa.'},
     houses:[[-19,12,4,3],[-34,10,4,4],[-37,23,4,3],[-23,26,3,3],[17,15,3,3],[33,20,4,3],[-25,-15,4,3],[-39,-20,3,3],[18,-25,4,3],[27,-43,3,3],[11,28,3,3],[39,30,3,3]]
   },
@@ -59,7 +60,7 @@ export const REGIONS = {
       {id:'water-ha',name:'Cô Hà',role:'Thầy thuốc chợ nổi',kind:'healer',x:23,z:17,dialogue:'Nước biết nâng đỡ. Dân chợ nổi vẫn góp thuốc cho khách qua đường, dù thủy tặc lấy mất thuyền lớn.'},
       {id:'water-luu',name:'Lưu Thủy',role:'Lão lái đò',kind:'mentor',x:-25,z:-27,dialogue:'Muốn điều khiển dòng nước, trước hết hãy nhìn cách thuyền đi qua Chợ Nổi và cách lá sen nằm yên trên Tĩnh Thủy.'}
     ],
-    boss:{id:'water-leviathan',name:'Hải Xà Đắm Thuyền',title:'Bạo chúa thủy lộ',x:43,z:-36,hp:1950,rewardGold:220,rewardXp:290,story:'Hải xà cuộn quanh mỏ neo của chiến thuyền cổ. Vảy xanh và chiếc mào như buồm rách hiện lên qua màn sương nước.'},
+    boss:{id:'water-leviathan',name:'Thủy Long',title:'Bạo chúa thủy lộ',x:43,z:-36,hp:1950,rewardGold:220,rewardXp:290,story:'Hải xà cuộn quanh mỏ neo của chiến thuyền cổ. Vảy xanh và chiếc mào như buồm rách hiện lên qua màn sương nước.'},
     mentor:{npcId:'water-luu',spellId:'water-volley',clue:'Ghé Chợ Nổi Bạch Liên và Đầm Sen Tĩnh Thủy, rồi tìm Lưu Thủy dưới Thác Lưu Ly.',zoneIds:['floating-market','lotus'],lesson:'Dòng nước có thể mang cả một con thuyền, chỉ cần con hiểu trọng tâm của nó. Nhận lấy Ném thuyền, và nhớ bảo vệ những chuyến đò bình yên.'},
     houses:[[17,15,4,3],[33,16,4,3],[25,29,4,3],[39,24,3,3],[-20,15,3,3],[-35,19,4,3],[-28,32,3,3],[-21,-21,4,3],[-37,-25,3,3],[25,-22,4,3],[38,-18,4,3],[12,-15,3,3]]
   },
@@ -76,7 +77,7 @@ export const REGIONS = {
       {id:'lightning-lam',name:'Y sư Lam',role:'Người chữa bỏng sét',kind:'healer',x:-23,z:17,dialogue:'Đừng đứng sát tinh thể khi trời động. Ánh sáng đẹp nhất ở đây cũng là thứ cần được kính trọng.'},
       {id:'lightning-chan',name:'Chấn Dực',role:'Người gọi lôi điểu',kind:'mentor',x:-25,z:-26,dialogue:'Ở Trạm Tiếp Lôi, điện có đường đi. Trong Rừng Tử Tinh, nó có nhịp đập. Hiểu cả hai, con sẽ nghe tiếng chim trong sấm.'}
     ],
-    boss:{id:'lightning-stormroc',name:'Lôi Bằng Thiên Kiếp',title:'Hung điểu trên biển mây',x:32,z:-46,hp:2050,rewardGold:230,rewardXp:310,story:'Đôi cánh tinh thể của Lôi Bằng che kín tháp dẫn sét. Nó đã nhận cả cơn giông vào thân và không còn phân biệt người với kẻ thù.'},
+    boss:{id:'lightning-stormroc',name:'Lôi Thần Lang',title:'Hung điểu trên biển mây',x:32,z:-46,hp:2050,rewardGold:230,rewardXp:310,story:'Đôi cánh tinh thể của Lôi Bằng che kín tháp dẫn sét. Nó đã nhận cả cơn giông vào thân và không còn phân biệt người với kẻ thù.'},
     mentor:{npcId:'lightning-chan',spellId:'lightning-volley',clue:'Tới Phố Trạm Tiếp Lôi và Rừng Tử Tinh, rồi về Đài Thiên Văn gặp Chấn Dực.',zoneIds:['relay','crystals'],lesson:'Cho dòng điện một khung xương bằng ý niệm, đôi cánh bằng hơi thở. Lôi điểu sẽ theo ánh nhìn của con.'},
     houses:[[-18,13,3,4],[-33,13,3,4],[-30,28,3,3],[18,16,3,3],[36,19,4,3],[29,32,3,3],[-23,-19,3,4],[-38,-24,3,3],[20,-27,3,4],[37,-30,3,3],[10,29,3,3]]
   },
@@ -178,7 +179,7 @@ export const REGIONS = {
       {id:'dark-yen',name:'Cô Yên',role:'Người trông hồ trăng',kind:'healer',x:25,z:19,dialogue:'Nếu lạc đường, hãy đếm những chiếc đèn tím. Ta luôn để một ngọn bên hồ cho người đi muộn.'},
       {id:'dark-mac',name:'Mặc Nguyệt',role:'Hiền sư bóng đêm',kind:'mentor',x:-25,z:-25,dialogue:'Bước qua phố đèn, ngồi yên bên hồ trăng. Khi không còn xem bóng mình là kẻ thù, con sẽ biết cách nhờ nó giúp đỡ.'}
     ],
-    boss:{id:'dark-eclipse',name:'Nguyệt Ảnh Vô Diện',title:'Bạo chúa đêm nguyệt thực',x:35,z:-46,hp:2450,rewardGold:290,rewardXp:380,story:'Chiếc mặt nạ rỗng trôi trên áo choàng bóng tối. Sau lưng Vô Diện, một vầng trăng đen nuốt ánh đèn của cả thung lũng.'},
+    boss:{id:'dark-eclipse',name:'U Minh Lang',title:'Bạo chúa đêm nguyệt thực',x:35,z:-46,hp:2450,rewardGold:290,rewardXp:380,story:'Chiếc mặt nạ rỗng trôi trên áo choàng bóng tối. Sau lưng Vô Diện, một vầng trăng đen nuốt ánh đèn của cả thung lũng.'},
     mentor:{npcId:'dark-mac',spellId:'dark-lance',clue:'Dạo Phố Đèn Lồng Tím và Hồ Trăng Không Đáy, sau đó gặp Mặc Nguyệt tại Vườn Bia Vọng Hồn.',zoneIds:['lantern-street','mirror-pool'],lesson:'Phân thân không chỉ là chiếc bóng đứng cạnh con. Hãy để nó nhận ý định của con và tìm đường tới mục tiêu. Nhận lấy Ảnh tập kích.'},
     houses:[[-18,15,3,4],[-36,16,4,3],[-28,32,3,3],[18,16,3,4],[36,18,4,3],[28,32,3,3],[-23,-19,3,4],[-38,-24,3,3],[19,-25,3,4],[38,-28,3,3],[-10,31,3,3],[10,31,3,3]]
   }
@@ -206,14 +207,16 @@ for(const [id,region] of Object.entries(REGIONS)){
 }
 // The great beasts are the leaders' summoned guardians, rather than anonymous encounters.
 const leaders={
-  water:{name:'Thủy Ảnh Hải Châu',title:'Thủ lĩnh Làng Thủy',story:'Hải Châu thử thách người mang thủy thuật và gọi Hải Xà Đắm Thuyền làm hộ vệ. Thắng cuộc đấu này, bạn sẽ nhận lời cam kết đầu tiên cho hòa ước.'},
-  fire:{name:'Hỏa Ảnh Xích Nham',title:'Thủ lĩnh Làng Hỏa',story:'Xích Nham cùng Hỏa Long Tro Tàn bảo vệ danh dự Hỏa làng. Chỉ khi vượt qua cuộc thử sức, bạn mới thuyết phục được ông trở về Vô Danh bàn việc hòa bình.'},
-  lightning:{name:'Lôi Ảnh Chấn Thiên',title:'Thủ lĩnh Làng Lôi',story:'Chấn Thiên đứng bên Lôi Bằng Thiên Kiếp trên đỉnh giông. Chiến thắng là lời chứng cho ý chí liên minh của bạn trước hội đồng Lôi làng.'},
-  dark:{name:'Ám Ảnh Vô Nguyệt',title:'Thủ lĩnh Làng Ám · Kẻ chủ mưu',story:'Vô Nguyệt đứng sau những vụ phá ấn và chia rẽ các làng. Nguyệt Ảnh Vô Diện là hộ vệ cuối cùng của hắn. Mang hòa ước đã trao khắp năm miền tới đây để khép lại âm mưu.'}
+  water:{name:'Thủy Ảnh Hải Châu',title:'Thủ lĩnh Làng Thủy',story:'Hải Châu thử thách người mang thủy thuật và gọi Thủy Long làm hộ vệ. Thắng cuộc đấu này, bạn sẽ nhận lời cam kết đầu tiên cho hòa ước.'},
+  fire:{name:'Hỏa Ảnh Xích Nham',title:'Thủ lĩnh Làng Hỏa',story:'Xích Nham cùng Cửu Viêm Hồ bảo vệ danh dự Hỏa làng. Chỉ khi vượt qua cuộc thử sức, bạn mới thuyết phục được ông trở về Vô Danh bàn việc hòa bình.'},
+  lightning:{name:'Lôi Ảnh Chấn Thiên',title:'Thủ lĩnh Làng Lôi',story:'Chấn Thiên đứng bên Lôi Thần Lang trên đỉnh giông. Chiến thắng là lời chứng cho ý chí liên minh của bạn trước hội đồng Lôi làng.'},
+  dark:{name:'Ám Ảnh Vô Nguyệt',title:'Thủ lĩnh Làng Ám · Kẻ chủ mưu',story:'Vô Nguyệt đứng sau những vụ phá ấn và chia rẽ các làng. U Minh Lang là hộ vệ cuối cùng của hắn. Mang hòa ước đã trao khắp năm miền tới đây để khép lại âm mưu.'}
 };
 for(const [id,leader] of Object.entries(leaders)){
   const boss=REGIONS[id].boss;boss.guardian=boss.name;Object.assign(boss,leader);
 }
+const guardianLore={nameless:'Linh thú lông trắng có khuôn mặt đen trống và vòng đá lơ lửng. Lõi ấn bị phá khiến nó gục xuống, chờ được hồi sinh.',earth:'Sơn Quy mang mai đá nhiều tầng cùng một cây cổ thụ trên lưng. Bốn chân đá giữ vững núi non trước mọi cuộc xâm nhập.',wind:'Phong Ưng dang đôi cánh xanh ngọc và trắng giữa tầng mây; những dải đuôi dài cuốn gió quanh vách núi.',wood:'Thanh Lộc mang sừng phân nhánh như cây rừng, bộ lông trắng xanh và những dây lá sống quấn quanh mình.',ice:'Băng Hổ phủ bộ lông trắng với vằn xanh, các tinh thể băng dựng dọc lưng và đôi chân mạnh giữ miền tuyết.',light:'Kim Ưng dang cánh trắng vàng dưới vòng hào quang, hộ vệ ánh sáng của miền bình minh.'};
+for(const [id,form] of Object.entries(GUARDIAN_FORMS)){const boss=REGIONS[id].boss;boss.guardian=form.name;if(!leaders[id]){boss.name=form.name;boss.story=guardianLore[id]+' Chiến thắng để nhận sách bí thuật; cần đủ cấp hệ để học.';}}
 const hill=(x,z,cx,cz,width,height)=>height*Math.exp(-((x-cx)**2+(z-cz)**2)/(width*width));
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
 

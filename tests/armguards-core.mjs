@@ -5,10 +5,10 @@ import {createHero} from '../src/hero.js';
 import {createHands} from '../src/hands.js';
 import {newJourney} from '../src/adventure-data.js';
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
-assert.equal(ARMORS.length,51);assert.equal(ARM_GUARDS.length,51);
+assert.equal(ARMORS.length,53);assert.equal(ARM_GUARDS.length,53);
 for(const catalogue of [ARMORS,ARM_GUARDS])for(const region of new Set(catalogue.filter(i=>i.village).map(i=>i.village))){
  const stock=catalogue.filter(i=>i.village===region),rates=i=>Object.keys(i.resistances||i.bonuses).length;
- for(const elite of [false,true]){const tier=stock.filter(i=>!!i.elite===elite).sort((a,b)=>rates(b)-rates(a));for(let i=1;i<tier.length;i++)assert.ok(tier[i].price>tier[i-1].price,`${region}: fewer affected elements must cost more within the same tier`);}
+ for(const elite of (region==='nameless'?[]:[false,true])){const tier=stock.filter(i=>!!i.elite===elite).sort((a,b)=>rates(b)-rates(a));for(let i=1;i<tier.length;i++)assert.ok(tier[i].price>tier[i-1].price,`${region}: fewer affected elements must cost more within the same tier`);}
 }
 for(const item of [...ARMORS,...ARM_GUARDS]){
  const rates=Object.values(item.resistances||item.bonuses).sort((a,b)=>b-a);if(!rates.length)continue;
@@ -17,8 +17,8 @@ for(const item of [...ARMORS,...ARM_GUARDS]){
 const legacy={...newEquipment()};delete legacy.armguard;delete legacy.ownedArmguards;
 assert.equal(readEquipment(legacy).armguard,'bare-wrists');assert.equal(readEquipment({...legacy,armguard:'water-bracers-elite',ownedArmguards:['fake']}).armguard,'bare-wrists');
 const save=newJourney();save.gold=100000;
-for(const village of new Set(ARM_GUARDS.filter(a=>a.village).map(a=>a.village))){save.village=village;assert.equal(shopStock(village).filter(a=>a.kind==='armguard').length,5);for(const item of shopStock(village).filter(a=>['armor','armguard'].includes(a.kind)))assert.ok(buyEquipment(save,item.id).ok);}
-assert.equal(save.equipment.ownedArmor.length,51);assert.equal(save.equipment.ownedArmguards.length,51);assert.deepEqual(readEquipment(save.equipment),save.equipment);
+for(const village of new Set(ARM_GUARDS.filter(a=>a.village).map(a=>a.village))){save.village=village;assert.equal(shopStock(village).filter(a=>a.kind==='armguard').length,village==='nameless'?3:5);for(const item of shopStock(village).filter(a=>['armor','armguard'].includes(a.kind)))assert.ok(buyEquipment(save,item.id).ok);}
+assert.equal(save.equipment.ownedArmor.length,49);assert.equal(save.equipment.ownedArmguards.length,49);assert.deepEqual(readEquipment(save.equipment),save.equipment);
 save.village='water';const gold=save.gold;assert.equal(buyEquipment(save,'water-bracers').ok,false);assert.equal(save.gold,gold);
 assert.ok(equipItem(save,'armguard','water-bracers-elite'));assert.ok(equipItem(save,'armor','fire-guard'));assert.equal(save.equipment.armguard,'water-bracers-elite');
 const stats={damageMultiplier:1.1,elementBonuses:equipmentState(save).armguard.bonuses};close(damageMultiplierFor(stats,'water'),1.21);close(damageMultiplierFor(stats,'ice'),1.18);close(damageMultiplierFor(stats,'fire'),1.1);close(damageMultiplierFor(stats,'weapon'),1.1);

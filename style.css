@@ -334,3 +334,5 @@ body.guardian-transform #enemyNameplates,body.guardian-transform #crosshair{visi
 body.guardian-transform #enemyNameplates{display:none!important}.versus-portraits figcaption{bottom:22%;background:#200f25e6}.versus-portraits[data-count='3'] figure{width:45%;flex-shrink:0;margin:0 -5%}
 
 .versus-portraits figure img{max-width:560px}.versus-mark{pointer-events:none}@media(max-height:300px){.versus-side h2{bottom:9%;padding:7px 4px;font-size:15px}.versus-portraits figcaption{font-size:9px;bottom:25%}.versus-status{font-size:9px;letter-spacing:1px}}
+
+.potion-button{width:100%;padding:6px 4px;margin-top:6px;color:#e5e7c5;background:#365752;border:1px solid #a2c4a1;border-radius:4px;pointer-events:auto;font-size:11px}.potion-button:disabled{opacity:.45}

@@ -15,7 +15,7 @@ export function traversalDefinitions(id){
   }
   if(id==='fire')return [{id:'red-cliff',name:'Bậc đá Vách Tro Hồng',kind:'stairs',from:[88,-70],to:[88,-87],top:36,speed:4}];
   if(id==='earth')return [];
-  if(id==='wood')return [{id:'heart-tree',name:'Cầu thang lên nhà cổ thụ',kind:'stairs',from:[9,3],to:[9,3],rise:17,speed:4.2,spiral:{x:5,z:0,radius:5,angle:Math.atan2(4,3),turns:2},platform:{id:'heart-tree',x:5,z:0,width:12,depth:12}}];
+  if(id==='wood')return [{id:'heart-tree',name:'Cầu thang lên nhà cổ thụ',kind:'stairs',from:[18,14],to:[10,3],rise:17,speed:4.2,platform:{id:'heart-tree',x:5,z:0,width:12,depth:12}}];
   if(id==='wind')return REGIONS.wind.zones.filter(z=>z.platform).map((z,i)=>({id:z.platform,name:`Thang dây · ${z.name}`,kind:'ladder',from:[z.x,z.z+4.4],to:[z.x,z.z+4.4],rise:20+i*3,platform:{id:z.platform,x:z.x,z:z.z,width:10,depth:10}}));
   return [];
 }

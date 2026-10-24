@@ -1,3 +1,4 @@
+import {buildGuardianBeast} from './guardian-beasts.js';
 import * as T from 'three';
 import {buildThatchedRuin,buildWarCemetery} from './adventure-ruins.js';
 import {buildVolcano} from './adventure-volcano.js';
@@ -188,46 +189,5 @@ export function buildDistrict(c,zone,index){
 }
 
 export function buildBoss(c,boss){
-  const {id,v,group,box,cyl,mesh,M,animated}=c,g=group(boss.x,boss.z),body=new T.Group();g.add(body);
-  const dark=M(id==='ice'?'#90bdcd':id==='earth'?'#9d7c58':id==='wood'?'#665b42':id==='light'?'#cabd88':id==='water'?'#3f7c8a':'#454250'),accent=M(v.color,.75),bone=M('#ddd0ab');
-  // Every guardian has a creature silhouette and a visible heart. None reuse
-  // the small ninja rig used by roaming encounters.
-  if(id==='dark'){
-    const cloak=mesh(new T.ConeGeometry(5.5,12,9,1,true),dark,body,0,6,0);cloak.scale.z=.6;
-    const mask=mesh(new T.SphereGeometry(2.2,10,7),bone,body,0,12,0);mask.scale.set(1,1.3,.45);
-    for(const s of [-1,1]){box(body,M('#352c46'),s*.75,12.2,1.9,.3,.65,.1);const arm=mesh(new T.ConeGeometry(1.6,8,6),dark,body,s*4.6,7,0);arm.rotation.z=s*.8;}
-    const eclipse=mesh(new T.TorusGeometry(6,.5,6,40),accent,body,0,12,-3);animated.push({kind:'halo',mesh:eclipse});
-  }else if(id==='lightning'){
-    const torso=mesh(new T.IcosahedronGeometry(3.4,1),dark,body,0,6,0);torso.scale.set(1,1,1.6);
-    mesh(new T.IcosahedronGeometry(1.8),dark,body,0,9,2.8);const beak=mesh(new T.ConeGeometry(.7,2.7,5),bone,body,0,8.7,4.6);beak.rotation.x=Math.PI/2;
-    for(const s of [-1,1]){for(let k=0;k<5;k++){const feather=mesh(new T.OctahedronGeometry(1.4),k%2?accent:dark,body,s*(3.3+k*1.3),7-k*.6,-k*.4);feather.scale.set(.8,4-k*.25,.3);feather.rotation.z=-s*(.9+k*.08);}cyl(body,bone,s*1.5,2.2,1,.26,4.4,6);box(body,bone,s*1.5,.35,2,1.5,.5,2.7);}
-    for(let k=0;k<3;k++)mesh(new T.ConeGeometry(.35,2.4,4),accent,body,-.8+k*.8,11,2.2).rotation.x=-.3;
-  }else if(id==='wind'||id==='ice'){
-    const torso=mesh(new T.IcosahedronGeometry(3.8,1),dark,body,0,4.2,-1);torso.scale.set(1.1,.9,1.7);
-    for(const s of [-1,1])for(const zz of [-4,2]){cyl(body,dark,s*2.2,1.8,zz,.8,3.6,7);box(body,bone,s*2.2,.5,zz+.4,1.7,.8,2.3);}
-    const head=mesh(new T.IcosahedronGeometry(2.7,1),id==='ice'?M('#e4edeb'):bone,body,0,6,4);head.scale.set(1.1,1,1.4);
-    for(const s of [-1,1]){mesh(new T.ConeGeometry(.6,3.5,5),accent,body,s*1.7,9,3.6).rotation.z=-s*.3;box(body,accent,s*1,6.5,6.4,.5,.3,.12);}
-    for(let k=0;k<7;k++){const a=k*Math.PI*2/7;const mane=mesh(new T.OctahedronGeometry(1.7),id==='ice'?accent:bone,body,Math.sin(a)*3.2,5.5+Math.cos(a)*3,2);mane.scale.y=1.7;mane.rotation.z=-a;}
-  }else if(['water','fire'].includes(id)){
-    for(let k=0;k<9;k++){const a=k*.5,seg=mesh(new T.IcosahedronGeometry(2.5-k*.15,1),k%3===0?accent:dark,body,Math.sin(a)*4,2+k*.7,-k*1.3);seg.scale.set(1,.85,1.3);}
-    const head=mesh(new T.IcosahedronGeometry(3.2,1),dark,body,0,6.4,2);head.scale.set(1.15,.8,1.4);
-    for(const s of [-1,1]){mesh(new T.ConeGeometry(.6,3.3,5),bone,body,s*2,9,1).rotation.z=-s*.5;mesh(new T.SphereGeometry(.37,8,5),accent,body,s*1.6,6.9,4.3);const wing=mesh(new T.ConeGeometry(1,1,3),id==='water'?dark:accent,body,s*5.2,6.2,-2);wing.scale.set(5,7,.35);wing.rotation.z=-s*.9;if(id==='water')wing.rotation.x=1;}
-    box(body,bone,0,5.1,5,3.6,.35,.8);
-  }else if(id==='wood'||id==='nameless'){
-    const torso=mesh(new T.IcosahedronGeometry(3.8,1),dark,body,0,5.5,0);torso.scale.y=1.4;
-    for(const s of [-1,1]){const leg=cyl(body,dark,s*2,2,0,1,4,6);const arm=cyl(body,dark,s*4.3,5.5,.5,1.1,6,7);arm.rotation.z=s*.3;for(let k=0;k<3;k++){const antler=cyl(body,bone,s*(1+k*.55),10+k*.5,0,.18,3-k*.4,5);antler.rotation.z=s*(.4+k*.3);}}
-    const head=mesh(new T.DodecahedronGeometry(2.1),dark,body,0,9,0);head.scale.z=.75;
-    for(const s of [-1,1])box(body,accent,s*.8,9.3,1.55,.55,.25,.12);
-    if(id==='wood')for(let k=0;k<5;k++)mesh(new T.IcosahedronGeometry(2.6),M(v.tree),body,Math.sin(k*2)*3,10+Math.cos(k)*2,-1.5);
-  }else{
-    const torso=mesh(new T.IcosahedronGeometry(4,1),dark,body,0,5.5,0);torso.scale.set(1.2,1.2,.7);
-    for(const s of [-1,1]){box(body,dark,s*2.2,1.9,0,2.2,3.8,2.5);const arm=mesh(new T.DodecahedronGeometry(2),dark,body,s*5,5.2,0);arm.scale.y=1.8;const shoulder=mesh(new T.OctahedronGeometry(2.3),accent,body,s*4.3,8,0);shoulder.scale.y=1.5;}
-    mesh(new T.DodecahedronGeometry(2.1),dark,body,0,10,0);box(body,accent,0,10.2,1.8,2,.35,.15);
-    for(let k=0;k<5;k++){const crown=mesh(new T.ConeGeometry(.5,3+k%2,5),bone,body,-2+k,12,0);crown.rotation.z=(k-2)*-.15;}
-    if(id==='light'){const halo=mesh(new T.TorusGeometry(4,.25,6,32),accent,body,0,11,-2);animated.push({kind:'halo',mesh:halo});}
-    if(id==='lightning'){const halo=mesh(new T.TorusGeometry(5,.22,6,32),accent,body,0,7,-2);halo.rotation.x=.7;animated.push({kind:'halo',mesh:halo});}
-  }
-  const heart=mesh(new T.OctahedronGeometry(.9),accent,body,0,5.8,3);animated.push({kind:'boss',mesh:body,base:0},{kind:'pulse',mesh:heart});
-  const arena=mesh(new T.RingGeometry(7.9,8.1,64),M(v.color,.25),g,0,.08,0);arena.rotation.x=-Math.PI/2;
-  return {root:g,body};
+ const g=c.group(boss.x,boss.z),body=buildGuardianBeast(c);body.scale.setScalar(1.9);g.add(body);c.animated.push({kind:'boss',mesh:body,base:0});const arena=c.mesh(new T.RingGeometry(8.5,8.65,64),c.M(c.v.color,.25),g,0,.08,0);arena.rotation.x=-Math.PI/2;return {root:g,body};
 }

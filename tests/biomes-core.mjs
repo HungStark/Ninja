@@ -25,7 +25,7 @@ load('wood');{
  for(let k=0;k<1600&&world.riding;k++){world.advanceTraversal(1/60,1);world.update(1/60,false);}assert.equal(world.riding,false);
  const path=findPath(route.to,[5,3],world.navigationBlocked(route.platform.id));assert.ok(path.length,'stair landing opens onto the wraparound deck');
  const safe=world.safeSave(),save=newJourney();save.village='wood';Object.assign(save,safe);world.load('wood',save);assert.equal(world.surface,'heart-tree');assert.ok(Math.abs(world.hero.root.position.y-route.toY)<.05,'upper tree-house save restores its floor');
- assert.equal(world.canHeroMove(5,0),false,'tree trunk remains solid');assert.equal(world.canHeroMove(10,5),false,'open stair notch has no invisible floor');
+ assert.equal(world.canHeroMove(5,0),false,'tree trunk remains solid');assert.equal(world.canHeroMove(10,5),true,'stair landing fills the former notch with a real floor');
 }
 load('lightning');world.update(12,false);assert.equal(world.weatherState().raining,true);assert.ok(world.weatherState().strikes>0);world.update(45,false);assert.equal(world.weatherState().raining,false);world.update(40,false);assert.equal(world.weatherState().raining,true);
 const old=newJourney();delete old.worldRevision;old.village='water';old.position=[60,-50];const migrated=readJourney({getItem:()=>JSON.stringify(old)});assert.deepEqual(migrated.position,[120,-100]);assert.equal(migrated.worldRevision,2);migrated.position=[132,-124];assert.deepEqual(readJourney({getItem:()=>JSON.stringify(migrated)}).position,[132,-124]);

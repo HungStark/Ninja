@@ -1,3 +1,4 @@
+import {SPIRIT_ORES} from './spirit-mines.js';
 import * as T from 'three';
 import {REGIONS} from './adventure-world.js';
 
@@ -13,7 +14,7 @@ export function readInterior(raw,village){const room=INTERIORS[raw?.id];if(!room
 
 // Only this room is built after the outdoor scene has been disposed.
 export function buildInterior(c,room){
-  const {land,box,cyl,mesh,M,physics}=c,root=new T.Group();root.name='interior-'+room.id;land.add(root);const wood=room.id==='wood-arena',b=room.bounds,center=(b.minZ+b.maxZ)/2,depth=b.maxZ-b.minZ;
+  const oreNodes=new Map();const {land,box,cyl,mesh,M,physics}=c,root=new T.Group();root.name='interior-'+room.id;land.add(root);const wood=room.id==='wood-arena',b=room.bounds,center=(b.minZ+b.maxZ)/2,depth=b.maxZ-b.minZ;
   const solid=(o,name)=>c.solidMesh(o,{name,stepable:false});
   const stone=M(wood?'#68553e':'#5c5b50'),trim=M(wood?'#493a2d':'#373f3d'),warm=M('#e2bd73',.4);
   const floor=box(root,M(wood?'#99815c':'#777361'),0,-.18,center,b.x*2,.36,depth);floor.name='interior-floor';physics.addBox({name:'interior-floor',x:0,z:center,w:b.x*2,d:depth,bottom:-.36,top:0});
@@ -36,6 +37,9 @@ export function buildInterior(c,room){
     for(const z of [-20,0,20]){const light=new T.PointLight('#ffdc9e',9,35,1.5);light.position.set(0,8,z);root.add(light);cyl(root,warm,0,8,z,.5,.65,8);}
     box(root,trim,0,2.3,30.65,4.6,4.6,.08);box(root,M('#e6d2a0',.35),0,4.9,30.5,5,.3,.3);
   }else{
+    for(const [x,z,d] of [[-7,-17,10],[-7,-32,10],[-7,-48,12],[7,-18,9],[7,-35,12],[7,-52,10]]){solid(box(root,M('#555b50'),x,4.5,z,2,9,d),'mine-partition');for(let k=0;k<3;k++){const rock=mesh(new T.DodecahedronGeometry(1),stone,root,x,2+k*2.5,z+(k-1)*d*.22);rock.scale.set(1.35,1.5,1.7);}}
+    for(const [x,z] of [[-13,-25],[14,-26],[-14,-39],[14,-44]]){for(const side of [-1,1])box(root,M('#64513a'),x+side*2,2.7,z,.28,5.4,.28);box(root,M('#85704c'),x,5.4,z,4.5,.35,.4);for(const zz of [-1,1])box(root,M('#4c4b40'),x,.04,z+zz*.6,7,.07,.07);}
+    for(const ore of SPIRIT_ORES){const node=new T.Group();node.name=ore.id;node.userData.dynamic=true;node.position.set(ore.x,0,ore.z);root.add(node);for(let k=0;k<6;k++){const a=k*2.4,m=mesh(new T.OctahedronGeometry(.55),M(k%2?'#70c9b5':'#afd9b0',.5),node,Math.sin(a)*.65,.55+(k%3)*.35,Math.cos(a)*.5);m.scale.set(.65,1.5,.8);}oreNodes.set(ore.id,node);fixtures.push({kind:'spirit-ore',id:ore.id,x:ore.x,z:ore.z,y:0,label:'Mỏ linh thạch · 0/5'});}
     for(let i=0;i<24;i++){const side=i%2?1:-1,z=-12-Math.floor(i/2)*3.8,x=side*(17+(i%3)*1.1),h=2+i%4;
       solid(mesh(new T.ConeGeometry(1.1,h,7),stone,root,x,h/2,z),'cave-stalagmite');const top=mesh(new T.ConeGeometry(.8,2.5+i%3,7),trim,root,x,10,z);top.rotation.z=Math.PI;
     }
@@ -45,5 +49,5 @@ export function buildInterior(c,room){
     fixtures.push(...room.zones.map(id=>{const z=REGIONS.earth.zones.find(z=>z.id===id);return {kind:'landmark',id,x:z.x,z:z.z,y:0,label:z.name};}));
     box(root,new T.MeshBasicMaterial({color:'#070a0b'}),0,2.5,b.maxZ-.05,5,5,.08);
   }
-  return {fixtures,root};
+  return {fixtures,root,oreNodes};
 }

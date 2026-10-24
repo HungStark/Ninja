@@ -1,3 +1,5 @@
+import {newFlask,readFlask,refillFlask} from './healing-flask.js';
+import {readMines} from './spirit-mines.js';
 import {readInterior,INTERIORS} from './adventure-interiors.js';
 import {combatExperienceRewards} from './combat-experience.js';
 import {villageEventObjective,villageEventComplete,advanceVillageEvent} from './village-events.js';
@@ -93,7 +95,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
-  return {version:1,worldRevision:2,interior:null,surface:null,elevation:null,expeditions:{},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+  return {version:1,worldRevision:2,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -137,7 +139,7 @@ export function readJourney(storage) {
     clean.progression=readProgression(s.progression,clean.learnedSpells);
     if(s.story?.revision===1&&s.progression&&!Object.hasOwn(s.progression.xp||{},'water'))delete clean.progression.xp.water;
     clean.learnedSpells=clean.learnedSpells.filter(id=>canLearn(clean.progression,id));
-    clean.story=readStory(s.story,clean);
+    clean.story=readStory(s.story,clean);clean.flask=readFlask(s.flask,!!clean.story.starter);clean.mines=readMines(s.mines);
     for(const key of ['gold','xp','wins'])clean[key]=Number.isSafeInteger(s[key])&&s[key]>=0?s[key]:0;
     return clean;
   }catch{return null;}
@@ -194,7 +196,7 @@ export function resolveBattle(save,encounter,victory) {
     }
   }
   else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;for(const reward of combatExperienceRewards(encounter,encounter.kind==='quest'?65:45))gainExperience(save.progression,reward.element,reward.xp);if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
-  else{save.interior=null;save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
+  else{refillFlask(save);save.interior=null;save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
   return save;
 }
 

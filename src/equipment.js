@@ -37,6 +37,7 @@ export const ARMOR_DESIGNS={
 const elements=['water','fire','lightning','earth','wind','light','ice','wood','dark'];
 function gearVariants(v,legacy){
   const keys=Object.keys(legacy),primary=keys[0],pair=keys.slice(0,2),triad=[...new Set([...keys,...elements])].slice(0,3),rates=(ids,values)=>Object.fromEntries(ids.map((id,i)=>[id,values[i]]));
+  if(v==='nameless')return [{suffix:'guard',intro:true,label:' Hỏa – Thủy',price:100,rates:{fire:.05,water:.05}},{suffix:'water-lightning',intro:true,label:' Thủy – Lôi',price:100,rates:{water:.05,lightning:.05}},{suffix:'lightning-fire',intro:true,label:' Lôi – Hỏa',price:100,rates:{lightning:.05,fire:.05}},{suffix:'guard-focus',label:' chuyên hệ',price:160,rates:{water:.08}},{suffix:'elite',label:' tinh anh',price:390,elite:true,rates:{water:.11,fire:.08}},{suffix:'elite-focus',label:' tinh anh chuyên hệ',price:430,elite:true,rates:{water:.14}},{suffix:'elite-triad',label:' tinh anh tam hệ',price:350,elite:true,rates:{water:.08,fire:.08,lightning:.08}}];
   return [
     {suffix:'guard',label:'',price:140,rates:rates(pair,[.05,.05])},
     {suffix:'guard-focus',label:' chuyên hệ',price:160,rates:{[primary]:.08}},
@@ -45,8 +46,8 @@ function gearVariants(v,legacy){
     {suffix:'elite-triad',label:' tinh anh tam hệ',price:350,elite:true,rates:rates(triad,[.08,.08,.08])}
   ];
 }
-export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#29252c',style:'wrap',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-'+g.suffix,village:v,name:'Giáp '+name+g.label,description:ARMOR_DESIGNS[v],price:g.price,color,style,elite:!!g.elite,resistances:g.rates})))];
-export const ARM_GUARDS=[{id:'bare-wrists',name:'Băng tay lữ hành',price:0,color:'#403640',style:'wrap',bonuses:{},gloves:false},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-bracers'+(g.suffix==='guard'?'':g.suffix==='guard-focus'?'-focus':'-'+g.suffix),village:v,name:'Giáp tay '+name+g.label,description:g.elite?'Giáp tay kèm găng phủ bàn tay, khớp ngón vẫn linh hoạt.':'Giáp cổ tay và cẳng tay, để hở các ngón kết ấn.',price:g.price-40,color,style,elite:!!g.elite,bonuses:g.rates,gloves:!!g.elite})))];
+export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#29252c',style:'wrap',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-'+g.suffix,village:v,name:'Giáp '+name+g.label,description:ARMOR_DESIGNS[v],price:g.price,color,style,intro:!!g.intro,elite:!!g.elite,resistances:g.rates})))];
+export const ARM_GUARDS=[{id:'bare-wrists',name:'Băng tay lữ hành',price:0,color:'#403640',style:'wrap',bonuses:{},gloves:false},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-bracers'+(g.suffix==='guard'?'':g.suffix==='guard-focus'?'-focus':'-'+g.suffix),village:v,name:'Giáp tay '+name+g.label,description:g.elite?'Giáp tay kèm găng phủ bàn tay, khớp ngón vẫn linh hoạt.':'Giáp cổ tay và cẳng tay, để hở các ngón kết ấn.',price:g.price-40,color,style,intro:!!g.intro,elite:!!g.elite,bonuses:g.rates,gloves:!!g.elite})))];
 export const armorById=id=>ARMORS.find(a=>a.id===id);
 export const armguardById=id=>ARM_GUARDS.find(a=>a.id===id);
 export const bagById=id=>BAGS.find(b=>b.id===id);
@@ -70,7 +71,7 @@ export function cycleShuriken(save){const e=save.equipment,available=SHURIKEN_TY
 export const ammoCount=equipment=>Object.values(equipment.ammo).reduce((a,b)=>a+b,0);
 export function equipmentState(save){const e=save.equipment;return {hero:{...save.hero},armor:armorById(e.armor),armguard:armguardById(e.armguard)||ARM_GUARDS[0],bag:bagById(e.bag),shuriken:shurikenById(e.shuriken),ammo:{...e.ammo},count:ammoCount(e),available:e.ammo[e.shuriken]||0};}
 export function damageMultiplierFor(stats,element){return (stats.damageMultiplier||1)+(element==='weapon'?0:stats.elementBonuses?.[element]||0);}
-export function shopStock(village){return [...SHURIKEN_TYPES.map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village).map(a=>({...a,kind:'armor'})),...ARM_GUARDS.filter(a=>a.village===village).map(a=>({...a,kind:'armguard'})),...BAGS.filter(b=>b.price>0).map(b=>({...b,kind:'bag'}))];}
+export function shopStock(village){return [...SHURIKEN_TYPES.filter(s=>village!=='nameless'||s.id!=='chakra').map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village&&(village!=='nameless'||a.intro)).map(a=>({...a,kind:'armor'})),...ARM_GUARDS.filter(a=>a.village===village&&(village!=='nameless'||a.intro)).map(a=>({...a,kind:'armguard'})),...BAGS.filter(b=>b.price>0&&(village!=='nameless'||b.capacity<=20)).map(b=>({...b,kind:'bag'}))];}
 export function buyEquipment(save,id){
   const item=shopStock(save.village).find(item=>item.id===id),e=save.equipment;if(!item)return {ok:false,reason:'Món hàng không bán tại cửa hàng này.'};
   if(item.kind==='armor'&&e.ownedArmor.includes(id)||item.kind==='armguard'&&e.ownedArmguards.includes(id)||item.kind==='bag'&&e.ownedBags.includes(id))return {ok:false,reason:'Bạn đã sở hữu món này.'};

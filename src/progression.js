@@ -1,4 +1,4 @@
-import {GUARDIAN_HEALTH} from './adventure-world.js';
+import {campaignStrength} from './campaign-difficulty.js';
 import {botHealth} from './enemy-balance.js';
 // Journey progression is independent for each element; all bonuses use base values.
 export const SYSTEMS=['fire','water','lightning','wind','earth','light','dark','wood','ice'];
@@ -63,12 +63,7 @@ export function teachAvailable(save,element){
 }
 // Explicit arsenals and encounter strength; opening trio is authored separately.
 export function encounterProfile(save,kind,region){
-  const element=regionElement(region),stage=Object.keys(save.bosses).filter(id=>id!=='nameless').length;
-  const ordered=Object.keys(SKILL_LEVELS[element]).sort((a,b)=>requiredLevel(a)-requiredLevel(b));
-  if(kind==='boss'){
-    const hp=GUARDIAN_HEALTH[region];
-    return {element,hp,spellIds:ordered,phaseSpellIds:ordered,phases:region==='dark'?3:2,damageMultiplier:['water','fire','lightning'].includes(region)?.75:.95,sealDelay:.43,restTime:2.1,weaponInterval:1.9};
-  }
-  const elite=kind==='guardian-guard',guard=kind==='village-guard'||elite,early=['fire','water','lightning'].includes(region),count=guard?(elite?(early?3:4):early?2:3):Math.min(3,1+Math.floor(stage/2));
-  return {element,hp:botHealth(elite?(early?260:390+stage*15):guard?(early?155:240+stage*12):110+stage*15),spellIds:ordered.slice(0,count),damageMultiplier:elite?.85:guard?.65:.55,sealDelay:elite?.52:guard?.62:.75,restTime:elite?2.3:guard?2.9:3.8,weaponInterval:elite?1.8:guard?2.3:3.2};
+ const element=regionElement(region),strength=campaignStrength(save,region,kind),ordered=Object.keys(SKILL_LEVELS[element]).sort((a,b)=>requiredLevel(a)-requiredLevel(b));
+ const elite=kind==='guardian-guard',guard=kind==='village-guard'||elite,count=kind==='boss'?5:Math.min(5,elite?2+Math.floor(strength.rank/3):guard?1+Math.floor(strength.rank/3):1+Math.floor(strength.rank/3));
+ return {element,...strength,hp:botHealth(strength.hp),spellIds:ordered.slice(0,count),...(kind==='boss'?{phaseSpellIds:ordered,phases:region==='dark'?3:2}:{})};
 }

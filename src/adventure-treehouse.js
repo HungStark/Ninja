@@ -1,3 +1,4 @@
+import {buildTreeStairway} from './tree-stairway.js';
 import * as T from 'three';
 
 export function buildTreeHouse(c,route){
@@ -34,13 +35,7 @@ export function buildTreeHouse(c,route){
   box(root,edge,hx,y+1.26,hz+d/2+.04,.95,2.52,.08);for(const side of [-1,1])box(root,wood,hx+side*.53,y+1.32,hz+d/2+.1,.12,2.7,.16);box(root,wood,hx,y+2.7,hz+d/2+.1,1.2,.14,.17);
   for(const sx of [-1,1]){box(root,wood,hx+sx*1.25,y+1.9,hz+d/2+.06,.7,.9,.1);box(root,M('#e8c887',.35),hx+sx*1.25,y+1.9,hz+d/2+.12,.53,.7,.04);box(root,wood,hx+sx*1.25,y+1.9,hz+d/2+.15,.05,.73,.04);}
   const cottageParts=root.children.slice(cottageStart),cottage=new T.Group();cottage.name='tree-house-cottage';cottage.position.set(hx,y,hz);cottage.scale.y=1.45;cottage.userData.doorHeight=2.52*1.45;root.add(cottage);for(const part of cottageParts){part.position.sub(new T.Vector3(hx,y,hz));cottage.add(part);}
-  // Two complete turns of wooden stairs, with actual treads and handrails.
-  const count=60;let last=[null,null];
-  for(let j=0;j<=count;j++){const t=j/count,a=route.spiral.angle+t*route.spiral.turns*Math.PI*2,x=p.x+Math.sin(a)*5,z=p.z+Math.cos(a)*5,h=route.fromY+(y-route.fromY)*t;
-    const tread=box(root,planks[j%3],x,h-.1+(j===0?.015:0),z,2.05,.2,1.19);tread.rotation.y=a-Math.PI/2;
-    if(j%3===0)beam([p.x+Math.sin(a)*2.5,h-1.1,p.z+Math.cos(a)*2.5],[x,h-.24,z],.12);
-    for(let side=0;side<2;side++){if(side===0&&j>=count-4)continue;const r=side===0?4.02:5.98,point=new T.Vector3(p.x+Math.sin(a)*r,h+1.25,p.z+Math.cos(a)*r);if(j%2===0)c.solidMesh(cyl(root,wood,point.x,h+.57,point.z,.065,1.35,5),{name:'tree-stair-post'});if(last[side])c.solidMesh(beam(last[side].toArray(),point.toArray(),.045),{name:'tree-stair-railing'});last[side]=point;}
-  }
+  buildTreeStairway(c,route,root);
   for(const [x,z] of [[p.x-5.7,p.z+5.7],[p.x+2.3,p.z+5.7],[p.x+5.7,p.z-5.7],[hx-1.35,hz+1.95]]){cyl(root,edge,x,y+1.6,z,.065,3.2,6);c.solidMesh(box(root,M('#ead28f',.8),x,y+3.08,z,.26,.44,.26),{name:'tree-house-lantern',stepable:false});for(const s of [-1,1])box(root,wood,x+s*.17,y+3.08,z,.035,.52,.32);c.solidMesh(box(root,wood,x,y+3.36,z,.42,.1,.42),{name:'tree-house-lantern-cap',stepable:false});const light=new T.PointLight('#ffd294',1.1,8,2);light.position.set(x,y+3.05,z);root.add(light);}
   for(let k=0;k<22;k++){const a=k*2.4,x=p.x+2.6+Math.sin(a)*.35,z=p.z-1+Math.cos(a)*.4,leaf=mesh(new T.IcosahedronGeometry(.3,0),M(k%2?'#416d3f':'#557a43'),root,x,y+2.9-k*.17,z);leaf.scale.set(1.3,.65,.8);leaf.userData.noCollision=true;}
   return root;
