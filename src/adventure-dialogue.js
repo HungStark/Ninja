@@ -3,6 +3,8 @@ import {villagerAppearance} from './villager-appearance.js';
 import {villagerPortrait} from './villager-portrait.js';
 import {heroPortrait} from './hero-portrait.js';
 import {armorById} from './equipment.js';
+import {HA_LY,currentVillageEvent} from './village-events.js';
+import {ninjaProfile} from './ninja.js';
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 export function speakerPortrait(speaker){
@@ -13,8 +15,12 @@ export function speakerPortrait(speaker){
 }
 
 export function dialogueCast(item,save,region,biome){
-  if(!item||!['npc','lore','healer','mentor','expedition-giver','envoy','treaty','boss','quest','shop','intro-guardian','village-guard'].includes(item.kind))return null;
+  if(!item||!['npc','lore','healer','mentor','expedition-giver','envoy','treaty','boss','quest','shop','intro-guardian','village-guard','village-event','companion','story-witness'].includes(item.kind))return null;
   const hero={name:save.hero.name,role:'Người giữ ấn',coat:save.hero.coat,hair:save.hero.hair,armor:armorById(save.equipment?.armor),id:'hero'};
+  if(['village-event','companion','story-witness'].includes(item.kind)){
+    const girl=item.kind!=='village-event'||biome.id==='fire',e=currentVillageEvent(save),appearance=girl?ninjaProfile(HA_LY):villagerAppearance(biome.id,{id:'story-guide-'+biome.id,kind:'lore'});
+    return {hero,npc:{id:girl?HA_LY.id:'story-guide-'+biome.id,name:girl?HA_LY.name:e?.speaker||'Người làm chứng',role:girl?(save.story.companion.recruited?HA_LY.role:'Nữ ninja Làng Hỏa · Đang bị thương'):'Câu chuyện của '+biome.name,appearance,coat:appearance.coat,hair:appearance.hair}};
+  }
   const n=region.npcs.find(n=>n.id===(item.kind==='expedition-giver'?'fire-khoi':item.id)),index=region.npcs.indexOf(n);
   const npc=n?{name:n.name,role:n.role,coat:n.kind==='mentor'?biome.color:n.kind==='healer'?'#d0d9c0':'#8a7962',hair:index%2?'#ddd0b5':'#3c4243',elder:n.kind==='mentor',id:n.id}:{name:item.kind==='npc'?'Trưởng làng':item.kind==='envoy'?'Đại diện '+biome.name:item.kind==='boss'?region.boss.name:item.kind==='quest'?item.label:'Đại diện các làng',role:biome.name,coat:item.kind==='npc'?'#77725c':biome.color,hair:item.kind==='npc'?'#b2b9a9':'#30333c',elder:item.kind==='npc',id:item.kind};
   if(n||['npc','envoy','treaty'].includes(item.kind)){const appearance=villagerAppearance(biome.id,n||{kind:item.kind==='npc'?'chief':'envoy'});Object.assign(npc,{appearance,coat:appearance.coat,hair:appearance.hair,elder:appearance.age==='elder'});}
@@ -23,6 +29,7 @@ export function dialogueCast(item,save,region,biome){
 
 export function conversationLines(item,save,cast,body){
   const {hero,npc}=cast,line=(speaker,text)=>({speaker,text});
+  if(['village-event','companion','story-witness'].includes(item.kind))return [line(npc,body),line(hero,item.kind==='companion'?'Chúng ta cùng đi tiếp. Có bạn đồng hành, con đường này đã khác trước rồi.':'Tôi sẽ giúp. Hãy cùng làm rõ chuyện này trước khi có thêm ai gặp nạn.')];
   if(item.id==='nameless-resident-war-cemetery'&&save.story?.stage==='mother')return [line(hero,'Mẹ, con nhớ cha và em. Con muốn làm điều gì đó để cuộc chiến này chấm dứt.'),line(npc,body),line(hero,'Con hứa sẽ đem lại hòa bình cho thế giới này. Con sẽ trở về bên mẹ.')];
   if(item.kind==='npc')return [line(hero,save.quests[save.village]===2?'Tôi đã giải quyết xong việc được giao và trở về báo tin.':'Trưởng làng, có điều gì tôi có thể giúp không?'),line(npc,body)];
   if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire>=2?'Tôi đã trở lại. Những bông Hồng Liên này có giúp được người bị thương không?':'Tôi nghe nói có người cần thuốc chữa thương. Tôi có thể giúp gì?'),line(npc,body)];

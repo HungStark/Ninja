@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import {newJourney,readJourney,resolveBattle,findPath} from '../src/adventure-data.js';
+import {createAdventureScene} from '../src/adventure-scene.js';
+import {INTERIORS,enterInterior,leaveInterior,readInterior} from '../src/adventure-interiors.js';
+import {planExpedition} from '../src/adventure-biomes.js';
+import {createAdminSession} from '../src/adventure-access.js';
+globalThis.innerWidth=915;globalThis.innerHeight=412;
+const world=createAdventureScene();
+for(const [id,room] of Object.entries(INTERIORS)){
+  const save=newJourney();save.village=room.village;save.story.stage='infiltrate';save.story.villageEvents.fire=4;save.story.companion.recruited=true;save.position=[0,7];world.load(save.village,save);
+  const portal=world.interactives.find(i=>i.kind==='interior-enter');assert.equal(portal.id,id);assert.ok(!world.interior);assert.ok(!world.interactives.some(i=>i.platform==='earth-cave'));assert.ok(!world.routes.some(r=>r.kind==='cave'));
+  assert.ok(planExpedition(save.position,[portal.x,portal.z],{id:save.village,targetSurface:portal.platform,routes:world.routes,walk:(a,b,key)=>findPath(a,b,world.navigationBlocked(key))}),id+' exterior entrance is reachable');
+  if(id==='earth-cave')assert.ok(world.blocked(0,-14),'opaque mouth cannot be walked through');
+  const standing={position:[portal.x,portal.z],surface:portal.platform||null,elevation:portal.y};assert.ok(enterInterior(save,id,standing));assert.equal(enterInterior(save,id,standing),false);world.load(save.village,save);assert.equal(world.interior.id,id);assert.equal(world.surface,null);assert.equal(world.routes.length,0);assert.equal(world.gates.length,0);assert.equal(world.guardsState().length,0);assert.equal(world.boss,null);assert.equal(world.scene.getObjectByName('vegetation-crowns'),undefined,'outside vegetation is unloaded');assert.equal(world.storyState().event,null);assert.equal(world.storyState().recruited,true);
+  for(const i of world.interactives.filter(i=>i.kind!=='companion')){assert.ok(!world.blocked(i.x,i.z),id+' free '+i.id);assert.ok(findPath(room.spawn,[i.x,i.z],world.blocked).length,id+' path to '+i.id);}
+  assert.ok(world.blocked(room.bounds.x+1,room.center[1]));assert.ok(world.blocked(0,room.bounds.maxZ+1));for(let i=0;i<60;i++)world.update(1/60,false);assert.ok(Math.abs(world.hero.root.position.y)<.05,'interior has its own flat floor');
+  const restored=readJourney({getItem:()=>JSON.stringify(save)});assert.deepEqual(restored.interior,save.interior);world.load(restored.village,restored);assert.equal(world.interior.id,id);world.syncVillageEvents(restored);assert.equal(world.storyState().event,null,'refresh never spawns outside chapter inside a room');
+  assert.ok(leaveInterior(save));assert.deepEqual(save.position,standing.position);assert.equal(save.surface,standing.surface);assert.equal(save.elevation,standing.elevation);world.load(save.village,save);assert.equal(world.interior,null);assert.ok(Math.hypot(world.hero.root.position.x-portal.x,world.hero.root.position.z-portal.z)<.1,'exit returns to the entrance');assert.equal(world.surface,standing.surface);
+}
+const legacy=newJourney();legacy.village='earth';legacy.surface='earth-cave';legacy.position=[11,-40];legacy.elevation=-12;const migrated=readJourney({getItem:()=>JSON.stringify(legacy)});assert.equal(migrated.interior.id,'earth-cave');assert.equal(migrated.elevation,0);assert.equal(migrated.surface,null);assert.deepEqual(migrated.position,[11,-40]);assert.ok(leaveInterior(migrated));assert.deepEqual(migrated.position,INTERIORS['earth-cave'].exterior);
+assert.equal(readInterior({id:'wood-arena'},'earth'),null);assert.deepEqual(readInterior({id:'earth-cave',returnPosition:[NaN,5]},'earth').returnPosition,INTERIORS['earth-cave'].exterior);
+const normal=newJourney();normal.village='wood';const snapshot=structuredClone(normal),session=createAdminSession(),draft=session.enter(normal);enterInterior(draft,'wood-arena',{position:[1,2.25],surface:'heart-tree',elevation:17});assert.deepEqual(normal,snapshot);assert.deepEqual(session.leave(),snapshot);
+const friendly=structuredClone(draft);friendly.gold=50;const before=structuredClone(friendly);resolveBattle(friendly,{kind:'arena',village:'fire'},false);assert.deepEqual(friendly,before,'losing a friendly match keeps room, position and progress');resolveBattle(friendly,{kind:'arena',village:'fire'},true);assert.equal(friendly.gold,50);assert.deepEqual(friendly.interior,before.interior);assert.deepEqual(friendly.bosses,before.bosses);
+console.log('PASS: reachable opaque cave entrance and elevated house door, independent room scene/floors/collision, all room interactions reachable, no outdoor guards/scenery/events, companion persistence, exact exit and reload, old cave migration, admin isolation and friendly-match results.');

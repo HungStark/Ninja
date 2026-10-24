@@ -1,4 +1,5 @@
 import * as T from "three";
+import {buildInterior,INTERIORS} from "./adventure-interiors.js";
 import { toon, canvasTexture, windyDepth, glowTexture, windTime } from "./materials.js";
 import { inkMaterial, addInkOutline } from './ink-outline.js';
 import { createTerrainGrid, TerrainSurface } from './terrain-surface.js';
@@ -250,5 +251,12 @@ export function createWorld() {
   for(const subject of subjects)outlines.push(addInkOutline(subject,subject.material.userData.wind?leafInk:ink));
   const setInkViewport=(width,height)=>[ink,leafInk].forEach(m=>m.uniforms.viewport.value.set(width,height));
   const terrain=new TerrainSurface(terrainMeshes,[grass],terrainProps);
-  return { scene, sky, sun, fill, grass, opponentSpawn, plantReferenceHeight, update, environment, outlines, setInkViewport, terrain };
+  const outdoor=[...environment],defaultFog=scene.fog,defaultBackground=scene.background;let arena=null,arenaActive=false;
+  function setArena(active){
+    if(active&&!arena){const materials=new Map(),M=(color,glow=0)=>{const key=color+glow;if(!materials.has(key))materials.set(key,new T.MeshStandardMaterial({color,roughness:.9,emissive:color,emissiveIntensity:glow*.25}));return materials.get(key);},roomMesh=(g,m,p,x=0,y=0,z=0)=>{const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;p.add(o);return o;};
+      arena=buildInterior({land:scene,M,mesh:roomMesh,box:(p,m,x,y,z,w,h,d)=>roomMesh(new T.BoxGeometry(w,h,d),m,p,x,y,z),cyl:(p,m,x,y,z,r,h,n)=>roomMesh(new T.CylinderGeometry(r,r,h,n),m,p,x,y,z),solidMesh:o=>o,physics:{addBox:()=>{}}},INTERIORS['wood-arena']).root;arena.add(new T.HemisphereLight('#e8d8b1','#5d594c',1.2));environment.push(arena);
+    }
+    arenaActive=!!active;for(const object of outdoor)if(!object.isLight)object.visible=!active;if(arena)arena.visible=!!active;scene.fog=active?new T.Fog('#26322d',35,95):defaultFog;scene.background=active?new T.Color('#26322d'):defaultBackground;
+  }
+  return {get arenaActive(){return arenaActive;},setArena, scene, sky, sun, fill, grass, opponentSpawn, plantReferenceHeight, update, environment, outlines, setInkViewport, terrain };
 }

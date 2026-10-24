@@ -7,6 +7,8 @@ import {REGIONS} from '../src/adventure-world.js';
 import {createAdventureScene} from '../src/adventure-scene.js';
 import {planExpedition} from '../src/adventure-biomes.js';
 import {guardianPhaseHealth,GUARDIAN_ARTS} from '../src/guardian-arts.js';
+import {currentVillageEvent,advanceVillageEvent} from '../src/village-events.js';
+function finishChapter(s,id){let e;while(e=currentVillageEvent(s,id))assert.ok(advanceVillageEvent(s,id,e.step,{victory:!!e.battle}).ok);}
 const read=s=>readJourney({getItem:()=>JSON.stringify(s)});
 assert.equal(SealGameCore.spells.find(s=>s.id==='lightning-lance').damage,22);
 for(const choice of STARTER_CHOICES){
@@ -15,9 +17,9 @@ for(const choice of STARTER_CHOICES){
  resolveBattle(s,{kind:'intro-trio',village:'nameless'},false);assert.equal(s.story.stage,'guardian');resolveBattle(s,{kind:'intro-trio',village:'nameless'},true);assert.equal(s.story.stage,'report');assert.equal(s.story.guardianRestored,true);const cash=s.gold;resolveBattle(s,{kind:'intro-trio',village:'nameless'},true);assert.equal(s.gold,cash);assert.deepEqual(s.learnedSpells,[choice.id]);
  const earnedXp={...s.progression.xp};assert.equal(reportGuardian(s),true);assert.equal(s.gold,cash+100);assert.deepEqual(s.progression.xp,earnedXp);assert.deepEqual(new Set(s.learnedSpells),new Set(STARTER_CHOICES.map(c=>c.id)));assert.deepEqual(read(s).learnedSpells,s.learnedSpells);
  assert.equal(reportGuardian(s),false);assert.equal(s.gold,cash+100);assert.equal(s.learnedSpells.length,3);assert.deepEqual(s.progression.xp,earnedXp);
- for(const id of ['fire','lightning','water']){assert.equal(canTravel(s,id).allowed,true);s.village=id;resolveBattle(s,{kind:'boss',village:id},true);assert.ok(!s.story.peaceSeals.includes(id));assert.equal(campaignObjective(s).targetKind,'npc');assert.equal(negotiatePeace(s,id),true);assert.equal(negotiatePeace(s,id),false);}
+ for(const id of ['fire','lightning','water']){assert.equal(canTravel(s,id).allowed,true);s.village=id;finishChapter(s,id);resolveBattle(s,{kind:'boss',village:id},true);assert.ok(!s.story.peaceSeals.includes(id));assert.equal(campaignObjective(s).targetKind,'npc');assert.equal(negotiatePeace(s,id),true);assert.equal(negotiatePeace(s,id),false);}
  s.village='nameless';assert.equal(canSignTreaty(s),true);assert.equal(signTreaty(s),true);
- for(const id of CAMPAIGN_REGIONS){s.village=id;assert.ok(deliverTreaty(s,id));resolveBattle(s,{kind:'boss',village:id},true);assert.ok(negotiatePeace(s,id));}
+ for(const id of CAMPAIGN_REGIONS){s.village=id;assert.ok(deliverTreaty(s,id));finishChapter(s,id);resolveBattle(s,{kind:'boss',village:id},true);assert.ok(negotiatePeace(s,id));}
  assert.equal(canTravel(s,'dark').allowed,true);assert.deepEqual(read(s).story,s.story);
 }
 // A saved report also unlocks missing systems without resetting existing experience.

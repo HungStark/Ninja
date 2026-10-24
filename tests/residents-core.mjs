@@ -9,14 +9,14 @@ import {dialogueCast,conversationLines} from '../src/adventure-dialogue.js';
 import {village} from '../src/adventure-data.js';
 globalThis.innerWidth=1440;globalThis.innerHeight=960;
 const world=createAdventureScene(),jobs=new Set();let count=0;
-for(const [id,r] of Object.entries(REGIONS)){
- const save=newJourney();save.village=id;world.load(id,save);const residents=world.residentsState();assert.equal(residents.length,r.zones.length);
+for(const [id,r,interior] of [...Object.entries(REGIONS),['earth',REGIONS.earth,'earth-cave']]){
+ const save=newJourney();save.village=id;if(interior){save.interior={id:interior,returnPosition:[0,-11.2],returnSurface:null,returnElevation:null};save.position=[0,-14];}world.load(id,save);const residents=world.residentsState();assert.equal(residents.length,r.zones.filter(z=>interior?z.platform==='earth-cave':z.platform!=='earth-cave').length);
  assert.equal(new Set(r.npcs.map(p=>p.id)).size,r.npcs.length);
  for(const entry of residents){
   const person=r.npcs.find(p=>p.id===entry.id),interactive=world.interactives.find(p=>p.id===entry.id),profile=villagerAppearance(id,person),zone=r.zones.find(z=>z.id===person.landmark),[x,y,z]=entry.position;
-  assert.ok(person.name&&person.role&&person.dialogue);assert.deepEqual([interactive.x,interactive.y,interactive.z],[x,y,z]);assert.equal(world.navigationBlocked(person.platform)(x,z),false,`${entry.id}: resident must stand on accessible ground`);
+  assert.ok(person.name&&person.role&&person.dialogue);assert.deepEqual([interactive.x,interactive.y,interactive.z],[x,y,z]);assert.equal(world.navigationBlocked(interior?null:person.platform)(x,z),false,`${entry.id}: resident must stand on accessible ground`);
   if(id==='water')assert.equal(isDeepWater(x,z),false,`${entry.id}: cannot sink in the river`);
-  const route=person.platform?world.routes.find(r=>r.platform?.id===person.platform):null,start=route?route.to:[zone.x,zone.z];assert.ok(findPath(start,[x,z],world.navigationBlocked(person.platform)).length||Math.hypot(start[0]-x,start[1]-z)<2,`${entry.id}: landmark has an approach`);
+  const route=person.platform&&!interior?world.routes.find(r=>r.platform?.id===person.platform):null,start=route?route.to:[zone.x,zone.z];assert.ok(findPath(start,[x,z],world.navigationBlocked(interior?null:person.platform)).length||Math.hypot(start[0]-x,start[1]-z)<2,`${entry.id}: landmark has an approach`);
   if(route)assert.ok(Math.abs(y-route.toY)<.2);if(person.elevation!==undefined)assert.equal(y,person.elevation);
   const model=createVillager(profile);jobs.add(profile.job);let triangles=0,draws=0;model.root.traverse(o=>{if(o.isMesh){triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;draws++;}});assert.ok(triangles<4000);assert.ok(draws<90);
   model.update(.2,false);const pose=model.arms.map(a=>a.rotation.x),face=model.head.rotation.y;model.update(1.1,false);assert.ok(model.arms.some((a,i)=>Math.abs(a.rotation.x-pose[i])>.0001)||Math.abs(model.head.rotation.y-face)>.0001,entry.id+' has a live activity');model.root.updateMatrixWorld(true);model.root.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite)));

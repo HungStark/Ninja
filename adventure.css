@@ -135,3 +135,7 @@ body[data-journey=checkpoint] #startScreen,body[data-journey=admin] #startScreen
 #adminIndicator{position:fixed;top:78px;right:18px;z-index:20;min-height:36px;padding:7px 12px;border:1px solid #e3ba7599;border-radius:4px;background:#594127eb;color:#ffe2a2;font-size:11px}#adminIndicator[hidden]{display:none}
 #adminTools[hidden],#checkpointScreen[hidden],#adminScreen[hidden]{display:none!important}
 @media(max-height:420px){.access-card{max-height:calc(100dvh - 16px)}.access-card .atlas-heading{padding:10px 15px}.access-card h2{font-size:21px;margin:4px 0}.access-body{padding:12px 15px}.access-body>p{font-size:12px}#adminIndicator{top:57px;right:12px;font-size:10px;min-height:30px}}
+
+.journal-story ol{padding-left:1.5em;line-height:1.7}.journal-story li.done{opacity:.6}.journal-story li.current{color:#f2d99d;font-weight:600}
+
+.journey-map-transition{position:fixed;inset:0;z-index:180;display:grid;place-items:center;background:#10191c;color:#efd9a5;font:600 clamp(16px,3vw,24px) serif;pointer-events:auto}.journey-map-transition[hidden]{display:none}

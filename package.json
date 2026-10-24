@@ -72,7 +72,9 @@
     "test:attribute-balance": "node tools/build-android.mjs && node tests/progression-core.mjs && node tests/attribute-balance-browser.cjs",
     "test:audio": "node tools/build-android.mjs && node tests/audio-browser.cjs",
     "test:quest-refresh": "node tests/quest-refresh-core.mjs && node tests/interaction-position.cjs",
-    "test:access": "node tests/adventure-access-core.mjs && node tools/build-android.mjs && node tests/adventure-access-browser.cjs"
+    "test:access": "node tests/adventure-access-core.mjs && node tools/build-android.mjs && node tests/adventure-access-browser.cjs",
+    "test:village-events": "node tests/village-events-core.mjs && node tools/build-android.mjs && node tests/village-events-browser.cjs",
+    "test:interiors": "node tests/interiors-core.mjs && node tools/build-android.mjs && node tests/interiors-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

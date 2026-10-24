@@ -1,6 +1,7 @@
 import {QUESTS,village,canTravel} from './adventure-data.js';
 import {ALL_ADVENTURE_SPELLS,REGIONS} from './adventure-world.js';
 import {INTRO_SQUAD,villageGuards,villageSidequests} from './journey-story.js';
+import {villageEventEncounter} from './village-events.js';
 
 export function checkpointAccess(save,target,admin=false){
   if(admin)return {allowed:!!village(target),reason:''};
@@ -28,5 +29,6 @@ export function adminOpponents(id){
     ...villageSidequests(id).filter(q=>q.type==='combat').map(q=>({id:q.id,kind:'sidequest',name:q.targetName,details:{questId:q.id}}))
   ];
   if(id==='nameless')list.push({id:'intro-trio',kind:'intro-trio',name:'Bộ ba ninja Hỏa · Thủy · Lôi'},...INTRO_SQUAD.map((n,i)=>({id:'intro-'+i,kind:'random',name:n.name,details:{...n}})));
+  const storyEnemy=villageEventEncounter(id);if(storyEnemy)list.push({id:'story-battle',kind:'village-event',name:storyEnemy.name,details:storyEnemy});
   return list;
 }

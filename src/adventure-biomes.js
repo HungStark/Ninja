@@ -14,7 +14,7 @@ export function traversalDefinitions(id){
     return routes;
   }
   if(id==='fire')return [{id:'red-cliff',name:'Bậc đá Vách Tro Hồng',kind:'stairs',from:[88,-70],to:[88,-87],top:36,speed:4}];
-  if(id==='earth')return [{id:'earth-cave',name:'Lối xuống Đại Hang',kind:'cave',from:[0,-12],to:[0,-20],top:-12,platform:{id:'earth-cave',x:0,z:-32,width:42,depth:50,ellipse:true}}];
+  if(id==='earth')return [];
   if(id==='wood')return [{id:'heart-tree',name:'Cầu thang lên nhà cổ thụ',kind:'stairs',from:[9,3],to:[9,3],rise:17,speed:4.2,spiral:{x:5,z:0,radius:5,angle:Math.atan2(4,3),turns:2},platform:{id:'heart-tree',x:5,z:0,width:12,depth:12}}];
   if(id==='wind')return REGIONS.wind.zones.filter(z=>z.platform).map((z,i)=>({id:z.platform,name:`Thang dây · ${z.name}`,kind:'ladder',from:[z.x,z.z+4.4],to:[z.x,z.z+4.4],rise:20+i*3,platform:{id:z.platform,x:z.x,z:z.z,width:10,depth:10}}));
   return [];
@@ -45,23 +45,8 @@ export function buildBiome(c,routes){
       const rock=M('#6c5650'),rope=M('#a89974');
       for(let k=0;k<30;k++){const t=k/29,x=r.from[0]+(r.to[0]-r.from[0])*t,y=r.fromY+(r.toY-r.fromY)*t,z=r.from[1]+(r.to[1]-r.from[1])*t;for(const side of [-1,1]){const grip=mesh(new T.DodecahedronGeometry(.42,0),rock,land,x+side*.65,y,z+.2);grip.scale.set(1.1,.5,.8);grip.userData.noCollision=true;}if(k%5===0)cyl(land,rope,x,y,z+.4,.065,1.5,5);}
       for(let k=0;k<9;k++){const a=k*2.4,p=mesh(new T.OctahedronGeometry(.28),M('#e09861',.3),land,88+Math.sin(a)*3,36.5,-96+Math.cos(a)*3);p.scale.y=.5;}
-    }else if(r.kind==='cave'){
-      const stone=M('#6f6557'),dark=M('#383d39'),g=new T.Group();g.name='great-earth-cave';land.add(g);
-      const arch=mesh(new T.TorusGeometry(5,1.1,6,18,Math.PI),stone,g,0,r.fromY+1,-14);for(const side of [-1,1])box(g,stone,side*5,r.fromY+1,-14,2,4,5);
-      for(const side of [-1,1])box(g,dark,side*4.7,-5,-17,.5,14,6);box(g,dark,0,2,-17,10,.5,6);
-      const floor=mesh(new T.CircleGeometry(1,64),M('#77705b'),g,0,-12.04,-32);floor.rotation.x=-Math.PI/2;floor.scale.set(21,25,1);
-      const shell=mesh(new T.SphereGeometry(1,32,16,0,Math.PI*2,0,Math.PI/2),new T.MeshStandardMaterial({color:'#645f52',roughness:1,side:T.BackSide}),g,0,-12,-32);shell.scale.set(21,11,25);
-      const caveLight=new T.PointLight('#d3b67a',4,48,1);caveLight.position.set(0,-7,-32);g.add(caveLight);
-      r.platform.obstacles=[];
-      for(let k=0;k<22;k++){const a=k*2.4,rr=6+k%7,x=Math.sin(a)*rr,z=-32+Math.cos(a)*rr,h=1.5+k%4;mesh(new T.ConeGeometry(.45,h,6),stone,g,x,-12+h/2,z);mesh(new T.ConeGeometry(.4,h+1,6),stone,g,x,-2-h/2,z).rotation.z=Math.PI;r.platform.obstacles.push({x,z,r:.7});}
-      for(let k=0;k<8;k++){const a=k*.8,crystal=mesh(new T.OctahedronGeometry(.8),M('#b5c5a4',.25),g,Math.sin(a)*14,-10.8,-32+Math.cos(a)*17);crystal.scale.y=1.8;}
-      const pool=mesh(new T.CircleGeometry(4,32),M('#5c8885',.1),g,-10,-11.97,-39);pool.rotation.x=-Math.PI/2;
-      const poolLight=new T.PointLight('#83b8a2',2.3,25,1);poolLight.position.set(-10,-8,-39);g.add(poolLight);
-      for(let k=0;k<26;k++){const a=k*Math.PI*2/26,rock=mesh(new T.DodecahedronGeometry(2.1+k%3*.35,0),M(k%2?'#777261':'#696854'),g,Math.sin(a)*19,-9.8,-32+Math.cos(a)*23);rock.scale.set(1,1.4,1);}
-      for(const [x,z,h] of [[-6,-32,8],[6,-27,9],[-2,-41,8]]){cyl(g,stone,x,-12+h/2,z,1.1,h,7);const cap=mesh(new T.ConeGeometry(2.1,2.8,7),stone,g,x,-12+h,z);cap.rotation.z=Math.PI;r.platform.obstacles.push({x,z,r:1.7});}
-      for(const x of [2.7,4.1])box(g,M('#6c6250'),x,-11.95,-32,.08,.07,15);box(g,M('#6b5740'),3.4,-11.4,-35,1.6,1,2.2);for(const side of [-1,1])cyl(g,M('#48473c'),3.4+side*.85,-11.9,-35,.25,.15,8).rotation.z=Math.PI/2;
     }else{
-      if(id==='wood'){buildTreeHouse(c,r);continue;}
+      if(id==='wood'){buildTreeHouse(c,r);fixtures.push({kind:'interior-enter',id:'wood-arena',x:1,z:2.25,y:r.toY,platform:'heart-tree',label:'Vào Võ Đường Cửu Làng'});continue;}
       const {platform:p}=r,y=r.toY;
       const local={...c,id:id==='wood'?'wood':'wind',heightAt:null,obstacle:()=>{},group:(x,z)=>{const g=new T.Group();g.position.set(x,y,z);land.add(g);return g;}};
       const house=buildHouse(local,p.x,p.z,4.2,3.4,1);house.name='balloon-house';
@@ -78,7 +63,15 @@ export function buildBiome(c,routes){
     for(let k=0;k<22;k++){const z=-118+k*11,w=riverAt(id,z),side=k%2?1:-1,x=w.x+side*(w.width+2),y=heightAt(x,z);const g=new T.Group();g.name='fishing-shed';g.position.set(x,y,z);land.add(g);for(const sx of [-1,1])cyl(g,M('#625b48'),sx*2,1.45,0,.1,4.1,6);box(g,M('#bba87c'),0,3.5,0,5,.16,3);for(let j=0;j<7;j++)beam(g,M('#817f66'),new T.Vector3(-2+j*.65,.4,.1),new T.Vector3(-2+j*.65,2.4,.1),.025);for(let j=0;j<6;j++){const fish=mesh(new T.OctahedronGeometry(.23),M('#a2bbb7'),g,-1.7+j*.62,1.3+Math.sin(j)*.2,.2);fish.scale.set(.5,1.4,.4);}for(let j=0;j<3;j++)cyl(g,M('#877457'),j*.8-1,.3,1.1,.38,.6,8);}
   }
   if(id==='ice'){const sea=box(land,M('#9ec9d6'),0,-.64,116,280,.1,56);sea.name='polar-frozen-sea';for(let k=0;k<28;k++){const x=-127+k*9.3,z=94+(k%4)*11,ice=mesh(new T.DodecahedronGeometry(2.5+k%3),M(k%2?'#cde2e7':'#a9cfdb'),land,x,.5,z);ice.scale.set(1,1+k%3*.6,1.5);} }
-  if(id==='earth')for(let k=0;k<50;k++){const a=k*2.4,r=28+(k%7)*14,x=Math.sin(a)*r,z=Math.cos(a)*r;if(c.clearCorridor(x,z,4))continue;const rock=mesh(new T.DodecahedronGeometry(2+k%3,0),M(k%2?'#9b7e5e':'#83735c'),land,x,heightAt(x,z)+1,z);rock.scale.set(1,1.1+k%3*.35,1);c.obstacle(x,z,4,4);}
+  if(id==='earth'){
+    const g=new T.Group();g.name='earth-cave-sealed-entrance';land.add(g);const y=heightAt(0,-14),stone=M('#716755');
+    mesh(new T.TorusGeometry(4,1.1,7,20,Math.PI),stone,g,0,y+.8,-14);
+    for(const side of [-1,1])box(g,stone,side*4,y+1,-15,2.4,4.8,5);
+    const door=box(g,new T.MeshBasicMaterial({color:'#030404'}),0,y+1.8,-14.05,7.5,5.4,.25);door.name='opaque-cave-door';
+    box(g,stone,0,y+1,-19,9,5,5);
+    fixtures.push({kind:'interior-enter',id:'earth-cave',x:0,z:-11.2,y:heightAt(0,-11.2),label:'Vào Đại Hang Địa Tâm'});
+  }
+  if(id==='earth')for(let k=0;k<50;k++){const a=k*2.4,r=28+(k%7)*14,x=Math.sin(a)*r,z=Math.cos(a)*r;if(c.clearCorridor(x,z,4)||Math.hypot(x,z+14)<14)continue;const rock=mesh(new T.DodecahedronGeometry(2+k%3,0),M(k%2?'#9b7e5e':'#83735c'),land,x,heightAt(x,z)+1,z);rock.scale.set(1,1.1+k%3*.35,1);c.obstacle(x,z,4,4);}
   if(id==='nameless'){
     for(const [x,z] of [[-10,16],[13,-15],[-34,-11],[35,29],[-41,35],[24,-45]]){const y=heightAt(x,z),rim=mesh(new T.TorusGeometry(2.4,.22,5,24),M('#615c4a'),land,x,y+.05,z);rim.rotation.x=Math.PI/2;const scar=mesh(new T.CircleGeometry(2.3,20),M('#494a3e'),land,x,y+.03,z);scar.rotation.x=-Math.PI/2;for(let k=0;k<6;k++){const a=k*2.4,chip=mesh(new T.DodecahedronGeometry(.4),M('#797766'),land,x+Math.sin(a)*3,y+.25,z+Math.cos(a)*3);chip.scale.y=.5;}}
     for(const [x,z] of [[-15,9],[14,16],[-28,-15],[26,-32]]){const y=heightAt(x,z);for(let k=0;k<5;k++){const pole=box(land,M('#42443b'),x+k*.6,y+.8,z,.16,1.6,.15);pole.rotation.z=(k-2)*.11;}box(land,M('#49483b'),x+1.2,y+.9,z,3,.1,.1);for(const side of [-1,0,1]){const banner=box(land,M(side<0?'#58737a':side===0?'#786783':'#874f42'),x+side*2,y+1.8,z,.8,1.2,.04);banner.rotation.z=side*.2;}}

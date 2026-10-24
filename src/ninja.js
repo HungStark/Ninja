@@ -4,9 +4,9 @@ import {villagerAppearance} from './villager-appearance.js';
 
 export function ninjaProfile(look){
   const village=look.village||'nameless',seed=Array.from(look.id||'duel').reduce((s,c)=>(s*31+c.charCodeAt(0))>>>0,13),base=villagerAppearance(village,{kind:'ninja',id:look.id||'duel'});
-  return {...base,id:look.id||'duel',job:'ninja',age:'adult',female:false,beard:null,hat:null,fur:false,shawl:false,
-    coat:look.coat||'#33495f',hair:look.hair||'#252833',hairStyle:seed%3===0?'ponytail':'short',
-    height:2.96+(seed%4)*.065,width:.94+(seed%3)*.06,hood:look.kind==='ninja'&&look.id.startsWith('random-')&&seed%3!==0,variant:seed%6};
+  return {...base,id:look.id||'duel',job:'ninja',age:'adult',female:look.female===true,beard:null,hat:null,fur:false,shawl:false,
+    coat:look.coat||'#33495f',hair:look.hair||'#252833',hairStyle:look.female?'ponytail':seed%3===0?'ponytail':'short',
+    height:look.female?2.9:2.96+(seed%4)*.065,width:look.female?.85:.94+(seed%3)*.06,hood:!look.female&&look.kind==='ninja'&&look.id.startsWith('random-')&&seed%3!==0,variant:seed%6};
 }
 
 // The same adult NPC body, face and materials are used in exploration and combat.

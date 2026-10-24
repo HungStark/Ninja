@@ -1,4 +1,6 @@
+import {readInterior,INTERIORS} from './adventure-interiors.js';
 import {combatExperienceRewards} from './combat-experience.js';
+import {villageEventObjective,villageEventComplete,advanceVillageEvent} from './village-events.js';
 import {newStory,readStory,HOME,openingObjective,FIRST_VILLAGES,completeSidequestTarget,villageSidequests,INTRO_SQUAD} from './journey-story.js';
 import {newEquipment,readEquipment} from './equipment.js';
 import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS,regionMetrics} from './adventure-world.js';
@@ -70,10 +72,11 @@ export function deliverTreaty(save,id) {
 }
 export function campaignObjective(save) {
   const opening=openingObjective(save);if(opening)return opening;
+  const local=villageEventObjective(save);if(local&&(FIRST_VILLAGES.includes(save.village)||save.village==='dark'||treatyDelivered(save,save.village)||save.bosses[save.village]))return local;
   const stage=campaignStage(save);
   const lesson=id=>({title:`Học thuật tại ${village(id).name}`,description:REGIONS[id].mentor.clue,targetVillage:id,targetKind:'mentor'});
   const challenge=id=>({title:`Đối mặt ${REGIONS[id].boss.name}`,description:`Tìm ${REGIONS[id].boss.title} tại ${REGIONS[id].zones[3].name}. Chiến thắng để nhận bí thuật và tiếp tục hành trình.`,targetVillage:id,targetKind:'boss'});
-  const infiltrate=id=>save.bosses[id]?{title:'Thương lượng dấu ấn hòa bình',description:'Hộ vệ đã bị khuất phục. Gặp trưởng '+village(id).name+' để đối thoại và nhận dấu ấn hòa bình.',targetVillage:id,targetKind:'npc'}:{title:'Khuất phục hộ vệ '+village(id).name,description:'Thâm nhập làng, đánh bại cảnh vệ trên đường và đối mặt '+REGIONS[id].boss.name+'. Có thể tìm cao nhân và giúp cư dân để chuẩn bị.',targetVillage:id,targetKind:'boss'};
+  const infiltrate=id=>!save.bosses[id]&&!villageEventComplete(save,id)?villageEventObjective(save,id):save.bosses[id]?{title:'Thương lượng dấu ấn hòa bình',description:'Hộ vệ đã bị khuất phục. Gặp trưởng '+village(id).name+' để đối thoại và nhận dấu ấn hòa bình.',targetVillage:id,targetKind:'npc'}:{title:'Khuất phục hộ vệ '+village(id).name,description:'Thâm nhập làng, đánh bại cảnh vệ trên đường và đối mặt '+REGIONS[id].boss.name+'. Có thể tìm cao nhân và giúp cư dân để chuẩn bị.',targetVillage:id,targetKind:'boss'};
   if(stage==='water'||stage==='fire-lightning'){
     const id=FIRST_VILLAGES.includes(save.village)&&!save.story.peaceSeals.includes(save.village)?save.village:FIRST_VILLAGES.find(id=>!save.story.peaceSeals.includes(id));return infiltrate(id);
   }
@@ -90,7 +93,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
-  return {version:1,worldRevision:2,surface:null,elevation:null,expeditions:{},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+  return {version:1,worldRevision:2,interior:null,surface:null,elevation:null,expeditions:{},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -106,6 +109,11 @@ export function readJourney(storage) {
     clean.elevation=s.worldRevision===2&&Number.isFinite(s.elevation)&&s.elevation>=-100&&s.elevation<=200?s.elevation:null;
     clean.expeditions={};if([1,2,3].includes(s.expeditions?.fire))clean.expeditions.fire=s.expeditions.fire;
     clean.surface=(s.village==='wind'&&['sky-west','sky-east','sky-north'].includes(s.surface)||s.village==='earth'&&s.surface==='earth-cave'||s.village==='wood'&&s.surface==='heart-tree')?s.surface:null;
+    clean.interior=readInterior(s.interior,s.village);
+    if(clean.interior){clean.surface=null;clean.elevation=0;}
+    else if(s.village==='earth'&&s.surface==='earth-cave'){
+      clean.interior={id:'earth-cave',returnPosition:[...INTERIORS['earth-cave'].exterior],returnSurface:null,returnElevation:null};clean.surface=null;clean.elevation=0;
+    }
     for(const key of ['visited','activated'])clean[key]=[...new Set(['nameless',...(Array.isArray(s[key])?s[key].filter(id=>village(id)):[])])];
     clean.activated=[...new Set([...clean.activated,s.checkpoint])];
     for(const v of VILLAGES){
@@ -163,7 +171,11 @@ export function completeLesson(save,id) {
 }
 export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
 export function resolveBattle(save,encounter,victory) {
-  if(victory&&encounter.kind==='intro-trio'){
+  if(encounter.kind==='arena'){if(victory)save.wins++;return save;}
+  if(victory&&encounter.kind==='village-event'){
+    if(advanceVillageEvent(save,encounter.village,encounter.eventStep,{victory:true}).ok)save.wins++;
+  }
+  else if(victory&&encounter.kind==='intro-trio'){
     if(save.story.stage==='guardian'){save.story.stage='report';save.story.guardianRestored=true;save.bosses.nameless=true;save.gold+=120;save.xp+=140;save.wins++;for(const reward of combatExperienceRewards({...encounter,squad:encounter.squad||INTRO_SQUAD},120))gainExperience(save.progression,reward.element,reward.xp);}
   }
   else if(victory&&encounter.kind==='village-guard'){
@@ -182,7 +194,7 @@ export function resolveBattle(save,encounter,victory) {
     }
   }
   else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;for(const reward of combatExperienceRewards(encounter,encounter.kind==='quest'?65:45))gainExperience(save.progression,reward.element,reward.xp);if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
-  else{save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
+  else{save.interior=null;save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
   return save;
 }
 

@@ -1,6 +1,6 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs/promises');
 (async()=>{
-  const {newJourney}=await import('../src/adventure-data.js'),{promiseMother,chooseStarter}=await import('../src/journey-story.js');const save=newJourney();promiseMother(save);chooseStarter(save,'water-barrier');save.village='water';save.story.stage='infiltrate';save.position=[0,7];
+  const {newJourney}=await import('../src/adventure-data.js'),{promiseMother,chooseStarter}=await import('../src/journey-story.js');const save=newJourney();promiseMother(save);chooseStarter(save,'water-barrier');save.village='water';save.story.villageEvents.water=4;save.story.stage='infiltrate';save.position=[0,7];
   const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});await fs.mkdir('test-results/guardian-phases',{recursive:true});
   try{for(const [name,width,height,file,touch] of [['small',480,270,'android-apk/www/index.html',true],['desktop',1440,900,'index.html',false]]){
     const page=await browser.newPage({viewport:{width,height},hasTouch:touch}),errors=[];page.on('pageerror',e=>errors.push(e.stack));await page.addInitScript(save=>localStorage.setItem('anhoa-adventure-v1',JSON.stringify(save)),save);

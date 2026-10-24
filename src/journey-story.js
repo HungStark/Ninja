@@ -3,6 +3,7 @@ import {REGIONS,regionMetrics} from './adventure-world.js';
 import {SKILL_LEVELS,spellElement,gainExperience,addBooks} from './progression.js';
 import {QUEST_ITEM_MODELS} from './quest-items.js';
 import {botHealth} from './enemy-balance.js';
+import {VILLAGE_EVENTS} from './village-events.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
@@ -10,7 +11,7 @@ export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa liên đạn',elemen
 export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:botHealth(85),spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
 export const FIRST_VILLAGES=['water','fire','lightning'];
 const STAGES=['mother','chief','guardian','report','infiltrate'];
-export function newStory(){return {revision:1,stage:'mother',starter:null,guardianRestored:false,peaceSeals:[],defeatedGuards:[],sidequests:{},trackedQuest:null};}
+export function newStory(){return {revision:1,stage:'mother',starter:null,guardianRestored:false,peaceSeals:[],defeatedGuards:[],sidequests:{},trackedQuest:null,villageEvents:{},companion:{recruited:false}};}
 export function readStory(raw,save){
   const s=newStory();
   if(raw?.revision!==1){
@@ -26,7 +27,9 @@ export function readStory(raw,save){
   s.defeatedGuards=[...new Set(Array.isArray(raw.defeatedGuards)?raw.defeatedGuards.filter(id=>validGuards.has(id)):[])];
   const validQuests=new Set(Object.keys(REGIONS).flatMap(id=>villageSidequests(id).map(q=>q.id)));
   for(const [id,status] of Object.entries(raw.sidequests||{}))if(validQuests.has(id)&&[1,2,3].includes(status))s.sidequests[id]=status;
-  s.trackedQuest=validQuests.has(raw.trackedQuest)?raw.trackedQuest:null;return s;
+  s.trackedQuest=validQuests.has(raw.trackedQuest)?raw.trackedQuest:null;
+  for(const [id,step] of Object.entries(raw.villageEvents||{}))if(VILLAGE_EVENTS[id]&&Number.isInteger(step)&&step>=0&&step<=VILLAGE_EVENTS[id].stages.length)s.villageEvents[id]=step;
+  s.companion.recruited=s.villageEvents.fire===VILLAGE_EVENTS.fire.stages.length;return s;
 }
 export function promiseMother(save){if(save.story.stage!=='mother')return false;save.story.stage='chief';return true;}
 export function chooseStarter(save,id){
