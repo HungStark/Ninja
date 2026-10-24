@@ -90,7 +90,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
-  return {version:1,worldRevision:2,surface:null,elevation:null,expeditions:{},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:100000,xp:0,wins:0};
+  return {version:1,worldRevision:2,surface:null,elevation:null,expeditions:{},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {

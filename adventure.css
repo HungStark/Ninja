@@ -125,3 +125,13 @@ details.system-card{padding:0;min-width:0;border-radius:4px;align-self:start}
 .journal-group[data-journal-group="quests-2"]{border-color:#e4c98577;background:#40543b55}.journal-group[data-journal-group="quests-2"]>summary>span,.journal-group[data-journal-group="quests-2"]>summary>strong{color:#f3db9f}.journal-group[data-journal-group="quests-3"]>summary{opacity:.6}
 .journal-group-tools{display:flex;justify-content:flex-end;gap:8px}.journal-group-tools button{min-height:44px;padding:8px 12px;border:1px solid #b3c2a840;border-radius:3px;background:#223e3f;color:#ddc797;font-size:11px;cursor:pointer}
 @media(max-width:620px){.system-card>summary{font-size:11px;padding:10px;gap:8px}.system-card>summary b{font-size:12px}.journal-group>summary{padding:10px;font-size:12px;gap:8px}.journal-group>summary>strong{font-size:10px;max-width:42%}.journal-group-content{padding:9px}}
+/* Respawn travel and disposable admin tools share a fixed header and scrolling body. */
+.access-card{width:min(650px,100%);max-height:94dvh;display:flex;flex-direction:column;background:#1c3339;border:1px solid #c6bb9566;border-radius:5px;box-shadow:0 20px 80px #0006;min-height:0}
+body[data-journey=checkpoint] #startScreen,body[data-journey=admin] #startScreen{display:none!important}
+.access-card .atlas-heading{flex:none;gap:14px}.access-card h2{font-size:26px}.access-card .journey-close{flex:none;min-width:44px;min-height:44px}
+.access-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:18px 24px;color:#d3d6c1}
+.access-body>p{line-height:1.7;margin:0 0 14px;font-size:13px}.access-list{display:grid;gap:8px;margin:14px 0}.access-list button{min-height:44px;text-align:left;margin:0;padding:12px 14px;line-height:1.45;white-space:normal}.access-list button:disabled{opacity:.5;cursor:default}
+.access-select{display:grid;gap:7px;font-size:12px;margin-top:16px}.access-select select{width:100%;min-height:44px;color:#e7ddbb;background:#142c33;border:1px solid #c6bb9555;border-radius:4px;padding:8px 12px;font:inherit}
+#adminIndicator{position:fixed;top:78px;right:18px;z-index:20;min-height:36px;padding:7px 12px;border:1px solid #e3ba7599;border-radius:4px;background:#594127eb;color:#ffe2a2;font-size:11px}#adminIndicator[hidden]{display:none}
+#adminTools[hidden],#checkpointScreen[hidden],#adminScreen[hidden]{display:none!important}
+@media(max-height:420px){.access-card{max-height:calc(100dvh - 16px)}.access-card .atlas-heading{padding:10px 15px}.access-card h2{font-size:21px;margin:4px 0}.access-body{padding:12px 15px}.access-body>p{font-size:12px}#adminIndicator{top:57px;right:12px;font-size:10px;min-height:30px}}

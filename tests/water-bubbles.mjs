@@ -6,7 +6,7 @@ import {sweepTsunami} from '../src/tsunami.js';
 import {newJourney,readJourney} from '../src/adventure-data.js';
 import {damageMultiplierFor} from '../src/equipment.js';
 const {Fighter,spells,intersectsWave}=SealGameCore,spell=spells.find(s=>s.id==='water-barrier');
-assert.equal(newJourney().gold,100000);const saved={...newJourney(),gold:1234};assert.equal(readJourney({getItem:()=>JSON.stringify(saved)}).gold,1234);
+assert.equal(newJourney().gold,0);const saved={...newJourney(),gold:1234};assert.equal(readJourney({getItem:()=>JSON.stringify(saved)}).gold,1234);
 assert.equal(spell.count,4);assert.equal(spell.duration,4);assert.equal(spell.detonationInterval,1);assert.equal(spell.cooldown,5);assert.equal(spell.baseDamage,7.5);assert.equal(spell.damage,7.5);assert.equal(spell.chargedRadius,undefined);
 const scene=new T.Scene(),arts=new WaterBubbles(scene);let actors;
 function setup(){arts.reset();actors=[{owner:'player',pos:[0,1.72,7],fighter:new Fighter()},{owner:'enemy',pos:[0,1.72,0],fighter:new Fighter()}];for(const a of actors)a.fighter.autoRestore=false;}
