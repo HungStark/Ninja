@@ -80,7 +80,8 @@
     "test:guardian-skills": "node tests/guardian-phases-core.mjs && node tests/guardian-ally-arts-core.mjs && node tests/skill-sources-core.mjs && node tests/progression-core.mjs && node tests/character-voice.mjs && node tests/speech-output.mjs && node tools/build-android.mjs && node tests/skill-lesson-browser.cjs && node tests/guardian-phases-browser.cjs && node tests/peace-and-ally-browser.cjs && node tests/offline-speech-browser.cjs",
     "test:enemy-seal-speed": "node tests/enemy-seal-speed-core.mjs && node tests/peace-and-ally-core.mjs && node tools/build-android.mjs && node tests/enemy-seal-speed-browser.cjs && node tests/interiors-browser.cjs",
     "test:guardian-motion": "node tests/guardian-motion-core.mjs && node tests/guardian-ally-arts-core.mjs && node tests/guardian-phases-core.mjs && node tests/guardian-motion-browser.cjs",
-    "test:hold-and-clones": "node tests/shadow-summon-balance.mjs && node tests/shadow-charge-core.mjs && node tools/build-android.mjs && node tests/hold-and-clones-browser.cjs && node tests/shadow-summons-visual-browser.cjs"
+    "test:hold-and-clones": "node tests/shadow-summon-balance.mjs && node tests/shadow-charge-core.mjs && node tools/build-android.mjs && node tests/hold-and-clones-browser.cjs && node tests/shadow-summons-visual-browser.cjs",
+    "test:journey-home": "node tools/build-vercel.mjs && node tests/journey-home-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"
