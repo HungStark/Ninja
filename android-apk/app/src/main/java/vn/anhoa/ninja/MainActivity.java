@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 
 public final class MainActivity extends Activity {
     private WebView game;
+    private GameSpeech speech;
     private static final String GAME_URL = "https://appassets.androidplatform.net/assets/index.html";
 
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -29,7 +30,10 @@ public final class MainActivity extends Activity {
             attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             getWindow().setAttributes(attributes);
         }
+        setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
         game = new WebView(this);
+        speech = new GameSpeech(this, game);
+        game.addJavascriptInterface(speech, "AnHoaSpeech");
         game.setBackgroundColor(Color.rgb(19, 40, 49));
         WebSettings settings = game.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -51,8 +55,11 @@ public final class MainActivity extends Activity {
                 return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found",
                         java.util.Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
             }
+            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { speech.stop(); }
+            @Override public void onPageFinished(WebView view, String url) { speech.pageReady(); }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return !request.getUrl().toString().startsWith(GAME_URL);
+                android.net.Uri url = request.getUrl();
+                return !("https".equals(url.getScheme()) && "appassets.androidplatform.net".equals(url.getHost()) && "/assets/index.html".equals(url.getPath()));
             }
         });
         setContentView(game);
@@ -80,6 +87,7 @@ public final class MainActivity extends Activity {
         if (hasFocus) immerse();
     }
     @Override protected void onPause() {
+        if (speech != null) speech.background();
         game.evaluateJavascript("window.dispatchEvent(new Event('pagehide'));window.dispatchEvent(new Event('blur'));", null);
         game.onPause();
         super.onPause();
@@ -88,6 +96,7 @@ public final class MainActivity extends Activity {
         super.onResume();
         if (game != null) {
             game.onResume();
+            if (speech != null) speech.foreground();
             game.evaluateJavascript("window.dispatchEvent(new Event('pageshow'));", null);
         }
     }
@@ -96,7 +105,8 @@ public final class MainActivity extends Activity {
                 handled -> { if ("false".equals(handled)) finish(); });
     }
     @Override protected void onDestroy() {
-        if (game != null) game.destroy();
+        if (speech != null) speech.close();
+        if (game != null) { game.removeJavascriptInterface("AnHoaSpeech"); game.destroy(); }
         super.onDestroy();
     }
 }

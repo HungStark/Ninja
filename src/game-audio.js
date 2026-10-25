@@ -1,3 +1,4 @@
+import {createSpeechOutput} from './speech-output.js';
 // Original procedural score and effects: no downloads or third-party recordings.
 export const AUDIO_STORAGE_KEY='anhoa-audio-v1';
 export const VILLAGE_MUSIC={
@@ -15,13 +16,14 @@ export const VILLAGE_MUSIC={
 };
 const defaults={muted:false,music:.45,effects:.75,voice:.7,readDialogue:true};
 const clamp=v=>Math.max(0,Math.min(1,Number(v)||0)),frequency=midi=>440*2**((midi-69)/12);
-export function createGameAudio({storage,contextFactory}={}){
-  let settings={...defaults};try{const raw=JSON.parse((storage||globalThis.localStorage)?.getItem(AUDIO_STORAGE_KEY)||'null');if(raw){for(const key of ['music','effects','voice'])if(Number.isFinite(raw[key]))settings[key]=clamp(raw[key]);for(const key of ['muted','readDialogue'])if(typeof raw[key]==='boolean')settings[key]=raw[key];}}catch{}
+export function createGameAudio({storage,contextFactory,android=!!(globalThis.AnHoaSpeech||globalThis.document?.documentElement?.dataset.android==='true')}={}){
+  const platformDefaults=android?{...defaults,music:.75,voice:.9}:defaults,musicBoost=android?2:1;
+  let settings={...platformDefaults};try{const raw=JSON.parse((storage||globalThis.localStorage)?.getItem(AUDIO_STORAGE_KEY)||'null');if(raw){for(const key of ['music','effects','voice'])if(Number.isFinite(raw[key]))settings[key]=clamp(raw[key]);for(const key of ['muted','readDialogue'])if(typeof raw[key]==='boolean')settings[key]=raw[key];}}catch{}
   let ctx=null,master,music,effects,voice,analyser,noiseBuffer,timer=null,theme='nameless',mode='home',musicBus=null,step=0,nextNote=0,dialogue=null,utterance=null,hidden=false,settingsOpen=false,destroyed=false;
   const active=new Set(),lastEffects=new Map(),listeners=new Set(),stats={notes:0,seals:0,casts:0,impacts:0,dialogueLines:0,syllables:0,shuriken:0,dashes:0};
   const notify=()=>listeners.forEach(fn=>fn({...settings}));
   const ramp=(param,value,duration=.15)=>{if(!ctx||!param)return;param.cancelScheduledValues(ctx.currentTime);param.setTargetAtTime(value,ctx.currentTime,duration/3);};
-  const apply=()=>{if(!ctx)return;ramp(master.gain,settings.muted||hidden?0:.72);ramp(music.gain,settings.music*(dialogue?.32:settingsOpen||mode==='pause'?.42:mode==='dialog'?.55:1));ramp(effects.gain,settings.effects);ramp(voice.gain,settings.voice);};
+  const apply=()=>{if(!ctx)return;ramp(master.gain,settings.muted||hidden?0:.72);ramp(music.gain,settings.music*musicBoost*(dialogue?.24:settingsOpen||mode==='pause'?.42:mode==='dialog'?.55:1));ramp(effects.gain,settings.effects);ramp(voice.gain,settings.voice);};
   function release(node,nodes){active.delete(node);for(const n of nodes)try{n.disconnect();}catch{}}
   function note(bus,hz,time,duration,volume,wave='sine',endHz=hz,attack=.012){
     if(!ctx||active.size>=80||!Number.isFinite(hz)||hz<=0||duration<=0)return;
@@ -69,16 +71,12 @@ export function createGameAudio({storage,contextFactory}={}){
     try{if(ctx.state==='suspended')await ctx.resume();}catch{return false;}schedule();return true;
   }
   function canEffect(key,interval=.045){if(!ctx||ctx.state!=='running'||settings.muted||hidden||settings.effects<=0)return false;const old=lastEffects.get(key)??-Infinity;if(ctx.currentTime-old<interval)return false;lastEffects.set(key,ctx.currentTime);return true;}
-  function stopSpeech(){if(utterance){try{globalThis.speechSynthesis?.cancel();}catch{}utterance=null;}}
+  const speech=createSpeechOutput({getOutput:()=>ctx?{context:ctx,destination:voice}:null,onEnd:()=>{utterance=null;dialogue=null;apply();},onError:()=>{utterance=null;if(dialogue){dialogue.remaining=dialogue.fallbackRemaining;dialogue.next=ctx?.currentTime||0;}apply();},onStatus:()=>notify()});
+  function stopSpeech(){utterance=null;speech.stop();}
   function stopDialogue(){dialogue=null;stopSpeech();apply();}
-  function speak(text,speaker={}){
-    stopSpeech();if(!settings.readDialogue||settings.voice<=0||settings.muted||hidden||!globalThis.speechSynthesis||!globalThis.SpeechSynthesisUtterance)return false;
-    try{const voices=globalThis.speechSynthesis.getVoices(),v=voices.find(v=>v.localService&&/^vi(?:-|$)/i.test(v.lang))||voices.find(v=>/^vi(?:-|$)/i.test(v.lang));if(!v)return false;
-      const u=new SpeechSynthesisUtterance(text);u.voice=v;u.lang='vi-VN';u.rate=speaker.elder?.9:1.02;u.pitch=speaker.id==='hero'?1.05:speaker.elder?.82:.95;u.volume=settings.voice;utterance=u;
-      u.onend=()=>{if(utterance===u){utterance=null;dialogue=null;apply();}};
-      u.onerror=()=>{if(utterance===u){utterance=null;if(dialogue){dialogue.remaining=dialogue.fallbackRemaining;dialogue.next=ctx?.currentTime||0;}apply();}};
-      globalThis.speechSynthesis.resume();globalThis.speechSynthesis.speak(u);apply();return true;
-    }catch{utterance=null;return false;}
+  function speak(text,speaker={},preview=false){
+    stopSpeech();if((!preview&&!settings.readDialogue)||settings.voice<=0||settings.muted||hidden)return false;
+    utterance={};const accepted=speech.speak(text,{rate:speaker.elder?.9:1.02,pitch:speaker.id==='hero'?1.05:speaker.elder?.82:.95,volume:settings.voice});if(!accepted)utterance=null;return accepted;
   }
   const api={
     unlock,
@@ -115,10 +113,14 @@ export function createGameAudio({storage,contextFactory}={}){
     stopDialogue,
     speakSpell(spell){speak(spell.name+'!',{id:'hero'});},
     stopVoice:stopSpeech,
-    pauseVoice(paused){try{if(paused)globalThis.speechSynthesis?.pause();else globalThis.speechSynthesis?.resume();}catch{}},
+    pauseVoice(paused){if(paused)speech.pause();else speech.resume();},
+    speechStatus:()=>speech.status(),
+    installVoice:()=>speech.install(),
+    openVoiceSettings:()=>speech.openSettings(),
+    previewVoice(){stopDialogue();dialogue={remaining:0,fallbackRemaining:0,next:0,pitch:220};const ok=speak('Xin chào. Tôi sẽ cùng bạn mang hòa bình trở về các làng.',{id:'hero'},true);if(!ok)dialogue=null;apply();return ok;},
     visibility(value){hidden=value;stopDialogue();apply();if(ctx){if(value)ctx.suspend().catch(()=>{});else unlock();}},
-    state(){let rms=0;if(analyser){const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);rms=Math.sqrt(values.reduce((n,x)=>n+x*x,0)/values.length);}return {supported:!!(globalThis.AudioContext||globalThis.webkitAudioContext||contextFactory),context:ctx?.state||'locked',theme,track:VILLAGE_MUSIC[theme].name,mode,settings:{...settings},activeVoices:active.size,musicStep:step,hidden,rms,stats:{...stats},speaking:!!utterance,dialogue:!!dialogue};},
-    destroy(){destroyed=true;clearInterval(timer);stopDialogue();for(const source of active)try{source.stop();}catch{}active.clear();ctx?.close().catch(()=>{});listeners.clear();}
+    state(){let rms=0;if(analyser){const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);rms=Math.sqrt(values.reduce((n,x)=>n+x*x,0)/values.length);}return {supported:!!(globalThis.AudioContext||globalThis.webkitAudioContext||contextFactory),context:ctx?.state||'locked',theme,track:VILLAGE_MUSIC[theme].name,mode,settings:{...settings},activeVoices:active.size,musicStep:step,hidden,rms,stats:{...stats},musicBoost,musicGain:music?.gain.value||0,speech:speech.status(),speaking:!!utterance,dialogue:!!dialogue};},
+    destroy(){destroyed=true;clearInterval(timer);stopDialogue();speech.destroy();for(const source of active)try{source.stop();}catch{}active.clear();ctx?.close().catch(()=>{});listeners.clear();}
   };return api;
 }
 export const gameAudio=createGameAudio();

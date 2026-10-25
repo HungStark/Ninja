@@ -70,7 +70,7 @@
     "test:mobile-combat": "node tools/build-android.mjs && node tests/mobile-combat-update.cjs",
     "test:balance": "node tools/build-android.mjs && node tests/balance-core.mjs && node tests/balance-browser.cjs && node tests/balance-effects-browser.cjs",
     "test:attribute-balance": "node tools/build-android.mjs && node tests/progression-core.mjs && node tests/attribute-balance-browser.cjs",
-    "test:audio": "node tools/build-android.mjs && node tests/audio-browser.cjs",
+    "test:audio": "node tools/build-android.mjs && node tests/speech-output.mjs && node tests/offline-speech-browser.cjs && node tests/audio-browser.cjs",
     "test:quest-refresh": "node tests/quest-refresh-core.mjs && node tests/interaction-position.cjs",
     "test:access": "node tests/adventure-access-core.mjs && node tools/build-android.mjs && node tests/adventure-access-browser.cjs",
     "test:village-events": "node tests/village-events-core.mjs && node tools/build-android.mjs && node tests/village-events-browser.cjs",

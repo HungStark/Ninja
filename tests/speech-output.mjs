@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {createSpeechOutput} from '../src/speech-output.js';
+const env=new EventTarget(),calls=[];let nativeState='ready',request,callbacks,ended=0,errors=0;
+env.AnHoaSpeech={getStatus:()=>JSON.stringify({state:nativeState}),stop:()=>calls.push('stop'),pause:()=>calls.push('pause'),resume:()=>calls.push('resume'),speak:(...args)=>{request=args;calls.push('speak');}};
+const fake=opts=>{callbacks=opts;return {speak:(...args)=>calls.push(['bundled',...args]),stop:()=>{},pause:()=>calls.push('bundled-pause'),resume:()=>calls.push('bundled-resume'),destroy:()=>{}};};
+const output=createSpeechOutput({environment:env,getOutput:()=>({}),bundledFactory:fake,onEnd:()=>ended++,onError:()=>errors++});
+const event=(type,id)=>env.dispatchEvent(new CustomEvent('anhoa:native-speech',{detail:{type,id}}));
+output.speak('Xin chào',{rate:.9,pitch:.8,volume:.6});assert.equal(request[0],'Xin chào');assert.deepEqual(request.slice(2),[.9,.8,.6]);const old=request[1];
+output.speak('Câu mới');const next=request[1];event('done',old);assert.ok(output.speaking);assert.equal(ended,0);
+event('error',next);assert.equal(output.status().backend,'bundled');assert.equal(calls.at(-1)[0],'bundled');assert.equal(calls.at(-1)[1],'Câu mới');
+event('done',next);assert.equal(ended,0);output.pause();assert.equal(calls.at(-1),'bundled-pause');output.resume();assert.equal(calls.at(-1),'bundled-resume');callbacks.onEnd();assert.equal(ended,1);
+nativeState='missing-voice';output.speak('Đọc không cần giọng hệ thống');assert.equal(calls.at(-1)[0],'bundled');callbacks.onError('Không phát được giọng Việt cài sẵn.');assert.equal(output.status().state,'unavailable');output.speak('Thử lại');assert.equal(output.status().state,'ready');output.stop();event('start',next);assert.equal(output.speaking,false);assert.equal(errors,0);output.destroy();
+console.log('PASS: native Vietnamese bridge selection, volume/rate/pitch, stale callbacks, automatic offline fallback, pause/resume, cancellation.');

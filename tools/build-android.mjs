@@ -11,3 +11,7 @@ html=html.replace('<html lang="vi">','<html lang="vi" data-android="true">').rep
 await fs.writeFile(path.join(out,'index.html'),html);
 await fs.copyFile(path.join(root,'android-apk/ui/android.css'),path.join(out,'android.css'));
 console.log('Prepared offline Android assets: android-apk/www/');
+
+// AAPT transparently expands .gz assets; use .tgz and remove old generated names.
+for(const name of ['source.tar.gz','wrapper-source.tar.gz'])await fs.unlink(path.join(out,'vendor/espeak-ng',name)).catch(e=>{if(e.code!=='ENOENT')throw e;});
+await fs.cp(path.join(root,'vendor/espeak-ng'),path.join(out,'vendor/espeak-ng'),{recursive:true});

@@ -1,5 +1,13 @@
 # Third-party notices
 
+Vietnamese offline speech uses eSpeak-NG, distributed as a separate worker
+with @echogarden/espeak-ng-emscripten 0.3.5 (GPL-3.0). Copyright eSpeak-NG
+and Echogarden contributors. Full license, source archives, build instructions
+and upstream notices are included in vendor/espeak-ng/ in every APK and static
+distribution. See vendor/espeak-ng/README.md and package/COPYING there.
+The original engine JS and data are unmodified.
+
+
 The offline browser bundle includes Three.js and its addons under the MIT License.
 
 The MIT License
