@@ -64,6 +64,11 @@ export function createNinja(look){
     arms.forEach((a,i)=>{a.pivot.rotation.x=Math.sin(stride+i*Math.PI)*weight*z*.24;a.pivot.rotation.z=-Math.sin(stride+i*Math.PI)*weight*x*.13;});
     body.rotation.z=-x*weight*.035;body.rotation.x=z*weight*.025;scarf.rotation.x=Math.sin(time*2)*.025-weight*.08;
   }
+  function combatPose(attack=0,block=0,bounce=0){
+    body.rotation.x=.12+attack*.16-block*.12;body.rotation.y=-attack*.28;body.position.y=-.1+Math.abs(bounce)*.35;
+    arms.forEach((a,i)=>{a.pivot.rotation.x=i===1?-.75-attack*.95-block*.45:-.85-block*.7;a.pivot.rotation.z=(i===0?-1:1)*(.22+block*.2);base.forearms[i].rotation.x=i===1?-.8+attack*.7-block*.25:-1.05-block*.25;});
+    legs[0].pivot.rotation.x=-.22-attack*.2;legs[1].pivot.rotation.x=.25+attack*.18;legs[0].pivot.rotation.z=.11;legs[1].pivot.rotation.z=-.11;head.rotation.y=attack*.15;
+  }
   function dispose(){const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
-  return {root,profile,height:profile.height,cloth:base.cloth,hair:base.hair,arms,legs,shoulderGuards,bracers,update,dispose};
+  return {root,profile,height:profile.height,cloth:base.cloth,hair:base.hair,arms,legs,shoulderGuards,bracers,update,combatPose,dispose};
 }

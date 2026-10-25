@@ -1,3 +1,4 @@
+const finishDialogue=require('./dialogue-flow.cjs');
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs/promises');
 (async()=>{
   const {newJourney}=await import('../src/adventure-data.js'),{createAdventureScene}=await import('../src/adventure-scene.js'),{promiseMother}=await import('../src/journey-story.js');
@@ -27,7 +28,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),path
         const r=long.parts.dialogBody,start={x:r.x+r.width*.5,y:r.y+r.height*.75,id:1};await touch('touchStart',[start]);for(let i=1;i<=8;i++)await touch('touchMove',[{...start,y:start.y-Math.min(100,r.height*.55)*i/8}]);await touch('touchEnd');assert.ok(await page.locator('#dialogBody').evaluate(el=>el.scrollTop>5),'only the content receives the native swipe');const scrolled=await layout();assert.equal(scrolled.cardScroll,0);assert.equal(scrolled.modalScroll,0);assert.deepEqual(scrolled.parts.dialogActions,long.parts.dialogActions);assert.ok(scrolled.buttons.every(b=>b.hit));
         await page.screenshot({path:out+'/'+fixture.kind+'-'+width+(safe?'-safe':'')+'.png'});
       }
-      await page.locator('#dialogActions button').first().tap();assert.equal(await page.evaluate(()=>__AN_HOA__.adventure().phase),'explore','choice stays usable after scrolling');
+      await finishDialogue(page);await page.locator('#dialogActions button').first().tap();assert.equal(await page.evaluate(()=>__AN_HOA__.adventure().phase),'explore','choice stays usable after scrolling');
     }
     checkpoint='ordinary menu';await page.locator('#journeyMenu').tap();await page.evaluate(()=>__AN_HOA__.advance(.01));const menu=await layout();assert.ok(menu.buttons.every(b=>b.hit));assert.equal(await page.locator('#dialogConversationControls').isVisible(),false);await page.locator('#dialogActions button').first().tap();assert.equal(await page.evaluate(()=>__AN_HOA__.adventure().phase),'explore');assert.deepEqual(errors,[]);
     console.log('PASS: fixed mobile dialogue frame, long text scrolls independently, every choice/next/skip remains visible and usable, three/four-choice conversations, ordinary menus and safe areas at 480–915px.');

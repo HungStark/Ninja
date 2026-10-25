@@ -82,6 +82,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
   }
   const api={
     unlock,
+    get speaking(){return !!utterance;},
     settings:()=>({...settings}),
     subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);},
     configure(change){if(['male','female'].includes(change.heroVoice)){settings.heroVoice=change.heroVoice;stopDialogue();}for(const key of ['music','effects','voice'])if(Number.isFinite(change[key]))settings[key]=clamp(change[key]);for(const key of ['muted','readDialogue'])if(typeof change[key]==='boolean')settings[key]=change[key];if(settings.muted||settings.voice===0||change.readDialogue===false)stopDialogue();apply();if(!settings.muted)unlock();try{(storage||globalThis.localStorage)?.setItem(AUDIO_STORAGE_KEY,JSON.stringify(settings));}catch{}notify();},
