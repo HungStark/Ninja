@@ -8,7 +8,7 @@ import {VILLAGE_EVENTS} from './village-events.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
-export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa liên đạn',element:'fire'},{id:'water-barrier',name:'Thủy bộc cầu',element:'water'},{id:'lightning-lance',name:'Lôi thương',element:'lightning'}];
+export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa Vũ Liên Châu',element:'fire'},{id:'water-barrier',name:'Thủy Bộc Phá Không',element:'water'},{id:'lightning-lance',name:'Lôi Đình Nhất Kích',element:'lightning'}];
 export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:botHealth(85),spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
 export const FIRST_VILLAGES=['water','fire','lightning'];
 const STAGES=['mother','chief','guardian','report','infiltrate'];

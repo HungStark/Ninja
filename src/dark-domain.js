@@ -98,7 +98,7 @@ export class DarkDomain {
       }else if(t.age>=close+hold+open){this.transition=null;lid=0;phase='idle';}
     }
     this.blink=lid;this.blinkPhase=phase;this.overlay.style.setProperty('--lid',lid);this.overlay.classList.toggle('blinking',lid>0);
-    if(this.active)this.header.innerHTML='<i></i> HẮC LÃNH ĐỊA <span>／</span> '+(this.permanent?'VĨNH CỬU':'ĐẦM LẦY MỰC ĐEN · '+Math.ceil(this.life)+' GIÂY');
+    if(this.active)this.header.innerHTML='<i></i> U MINH LĨNH VỰC <span>／</span> '+(this.permanent?'VĨNH CỬU':'ĐẦM LẦY MỰC ĐEN · '+Math.ceil(this.life)+' GIÂY');
   }
   mesh(parent,geometry,material,p,s) {
     const m=new T.Mesh(this.geometries[geometry],material);m.position.fromArray(p);m.scale.fromArray(s);parent.add(m);return m;
@@ -250,7 +250,7 @@ export class DarkDomain {
     c.waveCarry={wave,target:[c.p[0]+wave.normal[0]*ahead,0,c.p[2]+wave.normal[2]*ahead]};
     c.mode='carried';c.age=0;c.body.visible=true;c.body.position.y=0;this.splash(c.p);
   }
-  updateClones(dt,time,fighters,strike,crush) {
+  updateClones(dt,time,fighters,strike,crush,intercept=()=>false) {
     for(const c of [...this.clones]) {
       if(!this.clones.includes(c))continue;
       c.age+=dt;const opponent=fighters.find(f=>f.owner!==c.owner);
@@ -282,7 +282,8 @@ export class DarkDomain {
       const moving=c.mode==='charging',destination=moving?c.target:opponent.pos;
       const delta=[destination[0]-c.p[0],destination[2]-c.p[2]],dist=Math.hypot(...delta);
       if(moving){
-        const speed=c.form==='bull'?SHADOW_CHARGE.bullSpeed:SHADOW_CHARGE.dogSpeed,travel=Math.min(dist,dt*speed);if(dist>.001){c.p[0]+=delta[0]/dist*travel;c.p[2]+=delta[1]/dist*travel;}
+        const previous=[c.p[0],c.hitHeight,c.p[2]],speed=c.form==='bull'?SHADOW_CHARGE.bullSpeed:SHADOW_CHARGE.dogSpeed,travel=Math.min(dist,dt*speed);if(dist>.001){c.p[0]+=delta[0]/dist*travel;c.p[2]+=delta[1]/dist*travel;}
+        if(intercept({owner:c.owner,old:previous,p:[c.p[0],c.hitHeight,c.p[2]],size:c.hitRadius})){this.destroyClone(c);continue;}
         if(distance(c.p,destination)<.15){
           if(distance(c.p,opponent.pos)<1.35&&opponent.fighter.invulnerableTime<=0)strike(c,[opponent.pos[0],1.5,opponent.pos[2]]);
           this.destroyClone(c);continue;
@@ -295,7 +296,7 @@ export class DarkDomain {
       c.tail.rotation.z=this.reducedMotion?0:Math.sin(moving?gait:time*4+c.id)*(moving?.3:.14);
       for(const l of c.limbs){const wave=Math.sin(gait+(l.front>0?0:Math.PI*.72)+(l.side<0?.25:0));l.leg.rotation.x=animate?wave*(c.form==='bull'?.9:1.1):0;l.lower.rotation.x=animate?.25+Math.max(0,-wave)*.95:0;}
     }
-    this.updateDomainArts(dt,fighters,crush);
+    this.updateDomainArts(dt,fighters,crush,intercept);
   }
   // Only a summon's own attack consumes it; incoming damage never does.
   destroyClone(c){
@@ -303,14 +304,16 @@ export class DarkDomain {
     if(this.active){c.mode='respawning';c.age=0;c.p=[...c.home];c.root.position.fromArray(c.p);c.body.visible=false;}
     else this.removeClone(c);
   }
-  updateDomainArts(dt,fighters,crush){
+  updateDomainArts(dt,fighters,crush,intercept=()=>false){
     for(const b of [...this.bindings]){
+      const old=[b.p[0],b.elephant.position.y+1.75,b.p[2]];
+      if(!b.impactDone&&intercept({owner:b.owner,old,p:[b.p[0],13-11.3*clamp((b.age+dt)/b.fallTime)**2+1.75,b.p[2]],size:1.5})){this.releaseBinding(b);continue;}
       b.age+=dt;b.life=Math.max(0,b.fallTime+b.duration-b.age);
       const fall=clamp(b.age/b.fallTime);
       if(!b.impactDone&&b.age+1e-6>=b.fallTime){
         b.impactDone=true;const live=fighters.find(f=>f.owner===b.targetOwner);
         if(live&&distance(b.p,live.pos)<1.5&&live.fighter.invulnerableTime<=0){
-          b.victim=live;live.fighter.darkControlTime=b.duration;
+          if(this.usable){b.victim=live;live.fighter.darkControlTime=b.duration;}
           const result=live.fighter.receive(b.damage,true,true,'dark');crush?.(b,live,result);
         }
         b.phase=b.victim?'pressing':'missed';this.splash(b.p);
@@ -333,6 +336,7 @@ export class DarkDomain {
     for(const r of [...this.recoveries]){r.age+=dt;if(r.age>=.35)this.recoveries.splice(this.recoveries.indexOf(r),1);}
   }
   depth(owner){return Math.min(0,...this.bindings.filter(b=>b.victim?.owner===owner).map(b=>b.sink),...this.dives.filter(d=>d.owner===owner).map(d=>d.sink),...this.recoveries.filter(r=>r.owner===owner).map(r=>r.sink*(1-ease(r.age/.35))));}
+  viewDepth(owner){return this.depth(owner);}
   diveDepth(owner){return Math.min(0,...this.dives.filter(d=>d.owner===owner).map(d=>d.sink),...this.recoveries.filter(r=>r.owner===owner&&r.kind==='dive').map(r=>r.sink*(1-ease(r.age/.35))));}
   updateSubmergeView(depth,eyeHeight){
     this.submerge.value=clamp(-depth/3);

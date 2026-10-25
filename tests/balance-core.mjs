@@ -23,7 +23,7 @@ for(const el of elements){
 }
 for(const id of ['wind-orb','earth-orb','light-orb']){assert.equal(s(id).sequence.length,2);assert.equal(s(id).cooldown,4);}
 for(const id of ['fire-volley','lightning-lance']){assert.equal(s(id).sequence.length,2);assert.equal(s(id).cooldown,4);}
-for(const [id,life,cost,cd,hp] of [['fire-reflect',9,28,13,120],['water-reflect',8,26,12,95],['wind-barrier',9,26,13,110],['earth-barrier',10,30,14,180],['ice-barrier',8,24,12,120],['wood-barrier',8,24,13,90]]){
+for(const [id,life,cost,cd,hp] of [['fire-reflect',9,28,13,120],['water-reflect',8,26,12,95],['wind-barrier',9,26,13,110],['earth-barrier',10,30,14,130],['ice-barrier',8,24,12,120],['wood-barrier',8,24,13,90]]){
   assert.equal(s(id).sequence.length,3);assert.equal(s(id).duration,life);assert.equal(s(id).cost,cost);assert.equal(s(id).cooldown,cd);assert.equal(s(id).shield,hp);assert.ok(cd>life+(id==='wood-barrier'?2:0));
 }
 assert.equal(s('light-reflect').sequence.length,3);assert.equal(s('light-reflect').cost,22);assert.equal(s('light-reflect').duration,2.5);

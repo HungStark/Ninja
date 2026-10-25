@@ -27,7 +27,7 @@ export const REGIONS = {
       {id:'nameless-trac',name:'Lão Trác',role:'Ẩn sĩ giữ cầu',kind:'mentor',x:-27,z:-23,dialogue:'Đừng vội rút vũ khí. Hãy nghe gió ở ruộng bậc thang và trên đồi chuông, rồi trở về kể ta nghe.'}
     ],
     boss:{id:'nameless-bellwarden',name:'Hộ Vệ Chuông Vỡ',title:'Cự nhân canh thung lũng',x:25,z:-46,hp:1500,rewardGold:150,rewardXp:210,story:'Bộ giáp đá của người giữ đình bị lời nguyền đánh thức. Tiếng chuông vỡ gọi nó lang thang trên đồi mỗi hoàng hôn.'},
-    mentor:{npcId:'nameless-trac',spellId:'wind-barrier',clue:'Lắng nghe Ruộng Bậc Thang và Đồi Chuông Gió, rồi trở về Cầu Đá Vọng Âm.',zoneIds:['terraces','bell-shrine'],lesson:'Gió mạnh không chỉ để chém. Hãy xếp những luồng gió thành một bức tường bảo vệ người phía sau. Ta truyền cho con Phong bích.'},
+    mentor:{npcId:'nameless-trac',spellId:'wind-barrier',clue:'Lắng nghe Ruộng Bậc Thang và Đồi Chuông Gió, rồi trở về Cầu Đá Vọng Âm.',zoneIds:['terraces','bell-shrine'],lesson:'Gió mạnh không chỉ để chém. Hãy xếp những luồng gió thành một bức tường bảo vệ người phía sau. Ta truyền cho con Phong Thuẫn Thiên Thành.'},
     houses:[[-14,14,4,3],[-21,9,3.5,3],[13,14,3.5,3],[20,11,4,3],[31,25,3.5,3],[-36,20,4,3],[-23,-16,3.5,3],[-37,-19,3.5,3],[20,-29,4,3],[31,-31,3,3]]
   },
   fire: {
@@ -44,7 +44,7 @@ export const REGIONS = {
       {id:'fire-xich',name:'Xích Vân',role:'Ẩn sư hỏa long',kind:'mentor',x:-26,z:-25,dialogue:'Hãy quan sát nhịp búa ở Phố Lò Rèn và sự tĩnh lặng trong Vườn Phong Tro. Lửa phải có cả sức mạnh lẫn nhẫn nại.'}
     ],
     boss:{id:'fire-ashdragon',name:'Cửu Viêm Hồ',title:'Chúa tể lòng núi',x:36,z:-43,hp:1900,rewardGold:210,rewardXp:280,story:'Con rồng bọc vảy bazan trở mình dưới Hồng Liên. Mỗi hơi thở của nó làm những đường nham thạch trên thân sáng rực.'},
-    mentor:{npcId:'fire-xich',spellId:'fire-lance',clue:'Khám phá Phố Lò Rèn và Vườn Phong Tro. Xích Vân đợi ở Cổng Đá Bazan.',zoneIds:['forge','maple'],lesson:'Đừng ép lửa thành một viên đạn. Hãy cho nó sống, uốn mình và tìm đường như rồng. Con đã sẵn sàng học Rồng lửa.'},
+    mentor:{npcId:'fire-xich',spellId:'fire-lance',clue:'Khám phá Phố Lò Rèn và Vườn Phong Tro. Xích Vân đợi ở Cổng Đá Bazan.',zoneIds:['forge','maple'],lesson:'Đừng ép lửa thành một viên đạn. Hãy cho nó sống, uốn mình và tìm đường như rồng. Con đã sẵn sàng học Hỏa Long Cuồng Vũ.'},
     houses:[[-19,12,4,3],[-34,10,4,4],[-37,23,4,3],[-23,26,3,3],[17,15,3,3],[33,20,4,3],[-25,-15,4,3],[-39,-20,3,3],[18,-25,4,3],[27,-43,3,3],[11,28,3,3],[39,30,3,3]]
   },
   water: {
@@ -61,7 +61,7 @@ export const REGIONS = {
       {id:'water-luu',name:'Lưu Thủy',role:'Lão lái đò',kind:'mentor',x:-25,z:-27,dialogue:'Muốn điều khiển dòng nước, trước hết hãy nhìn cách thuyền đi qua Chợ Nổi và cách lá sen nằm yên trên Tĩnh Thủy.'}
     ],
     boss:{id:'water-leviathan',name:'Thủy Long',title:'Bạo chúa thủy lộ',x:43,z:-36,hp:1950,rewardGold:220,rewardXp:290,story:'Hải xà cuộn quanh mỏ neo của chiến thuyền cổ. Vảy xanh và chiếc mào như buồm rách hiện lên qua màn sương nước.'},
-    mentor:{npcId:'water-luu',spellId:'water-volley',clue:'Ghé Chợ Nổi Bạch Liên và Đầm Sen Tĩnh Thủy, rồi tìm Lưu Thủy dưới Thác Lưu Ly.',zoneIds:['floating-market','lotus'],lesson:'Dòng nước có thể mang cả một con thuyền, chỉ cần con hiểu trọng tâm của nó. Nhận lấy Ném thuyền, và nhớ bảo vệ những chuyến đò bình yên.'},
+    mentor:{npcId:'water-luu',spellId:'water-volley',clue:'Ghé Chợ Nổi Bạch Liên và Đầm Sen Tĩnh Thủy, rồi tìm Lưu Thủy dưới Thác Lưu Ly.',zoneIds:['floating-market','lotus'],lesson:'Dòng nước có thể mang cả một con thuyền, chỉ cần con hiểu trọng tâm của nó. Nhận lấy Thiên Chu Trấn Hải, và nhớ bảo vệ những chuyến đò bình yên.'},
     houses:[[17,15,4,3],[33,16,4,3],[25,29,4,3],[39,24,3,3],[-20,15,3,3],[-35,19,4,3],[-28,32,3,3],[-21,-21,4,3],[-37,-25,3,3],[25,-22,4,3],[38,-18,4,3],[12,-15,3,3]]
   },
   lightning: {
@@ -78,7 +78,7 @@ export const REGIONS = {
       {id:'lightning-chan',name:'Chấn Dực',role:'Người gọi lôi điểu',kind:'mentor',x:-25,z:-26,dialogue:'Ở Trạm Tiếp Lôi, điện có đường đi. Trong Rừng Tử Tinh, nó có nhịp đập. Hiểu cả hai, con sẽ nghe tiếng chim trong sấm.'}
     ],
     boss:{id:'lightning-stormroc',name:'Lôi Thần Lang',title:'Hung điểu trên biển mây',x:32,z:-46,hp:2050,rewardGold:230,rewardXp:310,story:'Đôi cánh tinh thể của Lôi Bằng che kín tháp dẫn sét. Nó đã nhận cả cơn giông vào thân và không còn phân biệt người với kẻ thù.'},
-    mentor:{npcId:'lightning-chan',spellId:'lightning-volley',clue:'Tới Phố Trạm Tiếp Lôi và Rừng Tử Tinh, rồi về Đài Thiên Văn gặp Chấn Dực.',zoneIds:['relay','crystals'],lesson:'Cho dòng điện một khung xương bằng ý niệm, đôi cánh bằng hơi thở. Lôi điểu sẽ theo ánh nhìn của con.'},
+    mentor:{npcId:'lightning-chan',spellId:'lightning-volley',clue:'Tới Phố Trạm Tiếp Lôi và Rừng Tử Tinh, rồi về Đài Thiên Văn gặp Chấn Dực.',zoneIds:['relay','crystals'],lesson:'Cho dòng điện một khung xương bằng ý niệm, đôi cánh bằng hơi thở. Lôi Điểu Phá Thiên sẽ theo ánh nhìn của con.'},
     houses:[[-18,13,3,4],[-33,13,3,4],[-30,28,3,3],[18,16,3,3],[36,19,4,3],[29,32,3,3],[-23,-19,3,4],[-38,-24,3,3],[20,-27,3,4],[37,-30,3,3],[10,29,3,3]]
   },
   earth: {
@@ -95,7 +95,7 @@ export const REGIONS = {
       {id:'earth-nham',name:'Nham Tẩu',role:'Ẩn sư dưới Thiên Môn',kind:'mentor',x:-27,z:-24,dialogue:'Xem đất đỏ hóa thành gốm, rồi xem những lớp đá lộ ra trong mỏ. Núi có tuổi và có ký ức.'}
     ],
     boss:{id:'earth-colossus',name:'Thạch Vương Cổ Thành',title:'Cự tượng thức tỉnh dưới cát',x:39,z:-41,hp:2300,rewardGold:250,rewardXp:330,story:'Thạch Vương mang cả một cổng thành trên vai. Các khớp đá sa thạch chuyển động theo nhịp của phong ấn đã bị phá.'},
-    mentor:{npcId:'earth-nham',spellId:'earth-volley',clue:'Quan sát Xóm Gốm Đất Đỏ và Mỏ Hoàng Thạch; Nham Tẩu chờ dưới Thiên Môn Sa Thạch.',zoneIds:['potters','quarry'],lesson:'Đừng chỉ dựng một tảng đá. Hãy gọi những lớp đất cùng chuyển động như nhịp sóng. Con đã lĩnh hội Sơn Hà Đảo Chuyển.'},
+    mentor:{npcId:'earth-nham',spellId:'earth-volley',clue:'Quan sát Xóm Gốm Đất Đỏ và Mỏ Hoàng Thạch; Nham Tẩu chờ dưới Thiên Môn Sa Thạch.',zoneIds:['potters','quarry'],lesson:'Đừng chỉ dựng một tảng đá. Hãy gọi những lớp đất cùng chuyển động như nhịp sóng. Con đã lĩnh hội Sơn Hà Nghịch Chuyển.'},
     houses:[[-19,15,4,4],[-36,14,4,3],[-30,29,4,3],[19,16,4,3],[37,19,4,4],[29,32,3,3],[-24,-17,4,3],[-40,-20,4,3],[21,-23,4,3],[37,-23,3,3],[-11,29,3,3],[12,31,3,3]]
   },
   wind: {
@@ -112,7 +112,7 @@ export const REGIONS = {
       {id:'wind-thanh',name:'Thanh Tiêu',role:'Du sĩ của trời xanh',kind:'mentor',x:-25,z:-26,dialogue:'Hãy xem gió làm quay guồng, rồi xem nó nâng diều. Cùng một luồng khí có thể xoay đất trời mà vẫn giữ một sợi dây mỏng.'}
     ],
     boss:{id:'wind-tempest',name:'Phong Thú Bạch Nha',title:'Chúa tể đồng hoang',x:35,z:-45,hp:1950,rewardGold:220,rewardXp:300,story:'Bờm trắng của Phong Thú xoáy thành những vòng mây. Tiếng gầm của nó đã thổi tắt tất cả guồng gió trên sống đồi.'},
-    mentor:{npcId:'wind-thanh',spellId:'wind-volley',clue:'Đi qua Đồi Bảy Guồng Gió và Đồng Diều Lục Sắc, sau đó tìm Thanh Tiêu giữa Phế Tích Thiên Không.',zoneIds:['windmills','kite-meadow'],lesson:'Hãy gom gió thành một vòng tròn, để lực quay tự lớn lên. Ta tặng con Phong lốc, cùng lời nhắc luôn chừa một khoảng trời cho người khác.'},
+    mentor:{npcId:'wind-thanh',spellId:'wind-volley',clue:'Đi qua Đồi Bảy Guồng Gió và Đồng Diều Lục Sắc, sau đó tìm Thanh Tiêu giữa Phế Tích Thiên Không.',zoneIds:['windmills','kite-meadow'],lesson:'Hãy gom gió thành một vòng tròn, để lực quay tự lớn lên. Ta tặng con Cuồng Phong Toàn Vũ, cùng lời nhắc luôn chừa một khoảng trời cho người khác.'},
     houses:[[-18,16,3,3],[-36,17,4,3],[-29,33,3,3],[18,17,3,3],[36,19,4,3],[27,33,3,3],[-23,-20,3,3],[-38,-25,3,3],[20,-25,3,3],[37,-28,3,3],[11,31,3,3]]
   },
   light: {
@@ -129,7 +129,7 @@ export const REGIONS = {
       {id:'light-khai',name:'Khai Quang',role:'Thầy chế tác lăng kính',kind:'mentor',x:-26,z:-25,dialogue:'Nhìn ánh nắng trong Vườn Lăng Kính, rồi đọc bóng trên Quảng Trường Nhật Luân. Con sẽ hiểu ánh sáng cũng có hình dáng.'}
     ],
     boss:{id:'light-seraph',name:'Kim Giáp Nhật Thần',title:'Hộ thần bị ánh sáng thiêu đốt',x:35,z:-45,hp:2150,rewardGold:250,rewardXp:330,story:'Giáp vàng và những cánh quạt mặt trời bao quanh vị hộ thần. Chiếc gương vỡ trong ngực khiến ánh sáng của nó không còn sưởi ấm.'},
-    mentor:{npcId:'light-khai',spellId:'light-barrier',clue:'Khám phá Vườn Lăng Kính và Quảng Trường Nhật Luân rồi gặp Khai Quang bên Cầu Kính Bình Minh.',zoneIds:['prism-garden','sun-plaza'],lesson:'Một khối kính không ngăn ánh sáng; nó giúp ánh sáng bộc lộ sức mạnh. Con hãy giữ lấy Cầu thủy tinh này.'},
+    mentor:{npcId:'light-khai',spellId:'light-barrier',clue:'Khám phá Vườn Lăng Kính và Quảng Trường Nhật Luân rồi gặp Khai Quang bên Cầu Kính Bình Minh.',zoneIds:['prism-garden','sun-plaza'],lesson:'Một khối kính không ngăn ánh sáng; nó giúp ánh sáng bộc lộ sức mạnh. Con hãy giữ lấy Huyễn Quang Tinh Cầu này.'},
     houses:[[-18,15,4,3],[-35,16,4,3],[-27,32,4,3],[18,16,4,3],[35,18,4,3],[28,33,4,3],[-24,-18,4,3],[-39,-22,4,3],[19,-25,4,3],[37,-27,4,3],[10,30,3,3]]
   },
   ice: {
@@ -146,7 +146,7 @@ export const REGIONS = {
       {id:'ice-tuyet',name:'Tuyết Tâm',role:'Ẩn sĩ Ngân Tinh',kind:'mentor',x:-25,z:-26,dialogue:'Học cách giữ hơi ấm ở Xóm Lửa Hồng, rồi học sự tĩnh lặng ở Hồ Gương Băng. Tâm không run thì tuyết mới nghe lời.'}
     ],
     boss:{id:'ice-frostking',name:'Băng Vương Tuyết Hống',title:'Cổ thú của sông băng',x:34,z:-46,hp:2250,rewardGold:260,rewardXp:340,story:'Tuyết Hống mang sừng pha lê và bờm băng cao bằng mái nhà. Nó bảo vệ giấc ngủ của sông băng bằng những cơn bão trắng.'},
-    mentor:{npcId:'ice-tuyet',spellId:'ice-lance',clue:'Tới Xóm Lửa Hồng và Hồ Gương Băng, rồi trở lại Hang Ngân Tinh gặp Tuyết Tâm.',zoneIds:['hearth','frozen-lake'],lesson:'Con đã gọi được tuyết. Giờ hãy gom nó thành một tinh thể, khóa bước chân đối thủ để không phải làm họ tổn thương. Đây là Băng Phược.'},
+    mentor:{npcId:'ice-tuyet',spellId:'ice-lance',clue:'Tới Xóm Lửa Hồng và Hồ Gương Băng, rồi trở lại Hang Ngân Tinh gặp Tuyết Tâm.',zoneIds:['hearth','frozen-lake'],lesson:'Con đã gọi được tuyết. Giờ hãy gom nó thành một tinh thể, khóa bước chân đối thủ để không phải làm họ tổn thương. Đây là Hàn Băng Phong Tỏa.'},
     houses:[[-18,15,4,3],[-35,15,4,3],[-28,31,4,3],[18,15,4,3],[36,18,4,3],[28,31,3,3],[-23,-19,4,3],[-37,-24,4,3],[20,-25,4,3],[37,-29,3,3],[-11,31,3,3]]
   },
   wood: {
@@ -163,7 +163,7 @@ export const REGIONS = {
       {id:'wood-truc',name:'Trúc Ẩn',role:'Hiền sư rừng xanh',kind:'mentor',x:-25,z:-25,dialogue:'Hãy theo rễ qua xóm, rồi xem cách người làng chăm từng cây thuốc. Sự sống không nghe lệnh; nó đáp lại lòng kiên nhẫn.'}
     ],
     boss:{id:'wood-rootwarden',name:'Cổ Mộc Thủ Hộ',title:'Linh thú rễ ngàn năm',x:35,z:-46,hp:2350,rewardGold:270,rewardXp:350,story:'Rễ cây quấn thành đôi tay khổng lồ, nấm phát sáng mọc dọc lớp giáp vỏ. Linh thú nổi giận khi kẻ săn ấn rút cạn sinh lực của rừng.'},
-    mentor:{npcId:'wood-truc',spellId:'wood-lance',clue:'Khám phá Xóm Rễ Cây và Vườn Dược Linh Chi. Trúc Ẩn chờ trong Biển Trúc Thanh Âm.',zoneIds:['root-quarter','herb-garden'],lesson:'Vườn Sinh Mệnh đã bén rễ trong con. Hãy nhờ dây leo giữ đối thủ lại, đừng bẻ gãy cành vì nóng giận. Ta chỉ con Dây Leo Trói Buộc.'},
+    mentor:{npcId:'wood-truc',spellId:'wood-lance',clue:'Khám phá Xóm Rễ Cây và Vườn Dược Linh Chi. Trúc Ẩn chờ trong Biển Trúc Thanh Âm.',zoneIds:['root-quarter','herb-garden'],lesson:'Vạn Mộc Sinh Giới đã bén rễ trong con. Hãy nhờ dây leo giữ đối thủ lại, đừng bẻ gãy cành vì nóng giận. Ta chỉ con Vạn Đằng Phược Ấn.'},
     houses:[[-18,15,3,3],[-36,16,4,3],[-28,32,3,3],[18,16,3,3],[36,18,4,3],[29,32,3,3],[-23,-19,3,3],[-38,-23,3,3],[19,-25,3,3],[38,-28,3,3],[-11,31,3,3],[11,31,3,3]]
   },
   dark: {
@@ -180,7 +180,7 @@ export const REGIONS = {
       {id:'dark-mac',name:'Mặc Nguyệt',role:'Hiền sư bóng đêm',kind:'mentor',x:-25,z:-25,dialogue:'Bước qua phố đèn, ngồi yên bên hồ trăng. Khi không còn xem bóng mình là kẻ thù, con sẽ biết cách nhờ nó giúp đỡ.'}
     ],
     boss:{id:'dark-eclipse',name:'U Minh Lang',title:'Bạo chúa đêm nguyệt thực',x:35,z:-46,hp:2450,rewardGold:290,rewardXp:380,story:'Chiếc mặt nạ rỗng trôi trên áo choàng bóng tối. Sau lưng Vô Diện, một vầng trăng đen nuốt ánh đèn của cả thung lũng.'},
-    mentor:{npcId:'dark-mac',spellId:'dark-lance',clue:'Dạo Phố Đèn Lồng Tím và Hồ Trăng Không Đáy, sau đó gặp Mặc Nguyệt tại Vườn Bia Vọng Hồn.',zoneIds:['lantern-street','mirror-pool'],lesson:'Phân thân không chỉ là chiếc bóng đứng cạnh con. Hãy để nó nhận ý định của con và tìm đường tới mục tiêu. Nhận lấy Ảnh tập kích.'},
+    mentor:{npcId:'dark-mac',spellId:'dark-lance',clue:'Dạo Phố Đèn Lồng Tím và Hồ Trăng Không Đáy, sau đó gặp Mặc Nguyệt tại Vườn Bia Vọng Hồn.',zoneIds:['lantern-street','mirror-pool'],lesson:'Phân thân không chỉ là chiếc bóng đứng cạnh con. Hãy để nó nhận ý định của con và tìm đường tới mục tiêu. Nhận lấy U Ảnh Tuyệt Sát.'},
     houses:[[-18,15,3,4],[-36,16,4,3],[-28,32,3,3],[18,16,3,4],[36,18,4,3],[28,32,3,3],[-23,-19,3,4],[-38,-24,3,3],[19,-25,3,4],[38,-28,3,3],[-10,31,3,3],[10,31,3,3]]
   }
 };

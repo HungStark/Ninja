@@ -49,15 +49,14 @@ export class LightArts {
     return {model,panels,geometries,rim};
   }
   domeReady(o){return o.kind!=='dome'||o.age+1e-6>=o.buildTime;}
-  constrainMovement(owner,start,end){
-    let result=[...end];
-    for(const o of this.optics){if(o.kind!=='dome'||o.life<=0||!o.trapped.has(owner))continue;
-      // The ground rim seals the enclosure while the roof panels descend.
-      const bodyHeight=Math.max(1.72,Math.min(2,result[1]-o.center[1])),inner=o.radius*Math.cos(Math.PI/16)-.35,limit=Math.sqrt(Math.max(0,inner*inner-bodyHeight*bodyHeight));
-      const dx=result[0]-o.center[0],dz=result[2]-o.center[2],distance=Math.hypot(dx,dz);if(distance>limit){result[0]=o.center[0]+dx/distance*limit;result[2]=o.center[2]+dz/distance*limit;}
-    }
-    return result;
+  domeContact(o,pos){
+    const bottom=pos[1]-1.72,top=pos[1]+.28,y=Math.max(bottom,Math.min(top,o.center[1]));
+    const x=pos[0]-o.center[0],z=pos[2]-o.center[2],near=Math.hypot(x,y-o.center[1],z),far=Math.hypot(x,Math.max(Math.abs(bottom-o.center[1]),Math.abs(top-o.center[1])),z);
+    return {inside:top>=o.center[1]&&near<=o.radius+.4,touching:far+.4>=o.radius};
   }
+  slowAt(owner,pos){let factor=1;for(const o of this.optics)if(o.kind==='dome'&&o.owner!==owner&&o.life>0){const contact=this.domeContact(o,pos);if(contact.inside)factor=Math.min(factor,contact.touching?.25:.5);}return factor;}
+  blocksDash(owner,pos){return this.slowAt(owner,pos)<1;}
+  constrainMovement(owner,start,end){return [...end];}
   model(parent,kind,radius=.8){
     const g=new T.Group();parent.add(g);
     if(kind==='sphere'){
@@ -119,7 +118,7 @@ export class LightArts {
     const point=add(start,mul(dir,t)),local=new T.Vector3(...sub(point,o.center));local.applyQuaternion(o.root.quaternion.clone().invert());
     return Math.abs(local.x)<=1.1+padding&&Math.abs(local.y)<=1.4+padding?{o,point,t}:null;
   }
-  trace(owner,start,direction,walls=[],range=55,baseDamage=null){
+  trace(owner,start,direction,walls=[],range=55,baseDamage=null,intercept){
     const path=[],seen=new Set(),rayRange=range;let pos=[...start],dir=unit(direction),power=1,amplification=1,spectrum=0,rayOwner=owner;
     for(let step=0;step<10&&range>EPS;step++){
       let event=null,end=add(pos,mul(dir,range));
@@ -130,8 +129,10 @@ export class LightArts {
         if(hit&&(!event||hit.t<event.t))event=hit;
       }
       if(event)end=event.point;
-      path.push({owner:rayOwner,start:[...pos],end:[...end],dir:[...dir],multiplier:power,spectrum,event:event?.o?.kind||(event?.wall?'wall':event?.terrain?'terrain':null),optic:event?.o,wall:event?.wall});
-      if(!event||event.terrain)break;
+      const approach={owner:rayOwner,element:'light',style:'lightray',old:pos,p:[...end],size:.07,damage:(baseDamage||0)*power};
+      if(intercept?.(approach)){end=[...approach.p];event={snow:true,point:end,t:dist(pos,end)};}
+      path.push({owner:rayOwner,start:[...pos],end:[...end],dir:[...dir],multiplier:power,spectrum,event:event?.o?.kind||(event?.snow?'snow':event?.wall?'wall':event?.terrain?'terrain':null),optic:event?.o,wall:event?.wall});
+      if(!event||event.terrain||event.snow)break;
       range-=event.t;
       if(event.wall){
         if(baseDamage===null)break;
@@ -163,9 +164,9 @@ export class LightArts {
     return path;
   }
   resolve(p,actors,walls,damage,intercept){
-    p.path=this.trace(p.owner,p.pos,p.dir,walls,p.spell.range,p.spell.damage);const hitOwners=new Set();
+    p.path=this.trace(p.owner,p.pos,p.dir,walls,p.spell.range,p.spell.damage,intercept);const hitOwners=new Set();
     for(const leg of p.path){
-      const victim=actors.find(a=>a.owner!==leg.owner);intercept?.({owner:leg.owner,element:'light',style:p.spell.style,old:leg.start,p:leg.end,size:.07,damage:p.spell.damage*leg.multiplier});
+      const victim=actors.find(a=>a.owner!==leg.owner);
       if(victim&&!hitOwners.has(leg.owner)){const along=dot(sub(victim.pos,leg.start),leg.dir),reach=dist(leg.start,leg.end);
         if(along>=0&&along<=reach&&dist(add(leg.start,mul(leg.dir,along)),victim.pos)<=.67){this.hit(leg.owner,p.spell,leg.multiplier,leg.dir,victim.pos,damage);hitOwners.add(leg.owner);}}
       if(leg.wall)this.flash(leg.end,.3);
@@ -198,7 +199,7 @@ export class LightArts {
       if(o.kind==='dome')for(const actor of actors)if(actor.owner!==o.owner&&Math.hypot(actor.pos[0]-o.center[0],actor.pos[2]-o.center[2])<o.radius-.5)o.trapped.add(actor.owner);
       if(o.kind==='dome')for(const ray of o.rays){ray.age+=step;const total=Math.floor(ray.age+1e-6);
         while(ray.ticks<total){ray.ticks++;const victim=actors.find(a=>a.owner!==o.owner);
-          if(victim&&victim.pos[1]>=o.center[1]&&dist(victim.pos,o.center)<=o.radius+.4)this.hit(o.owner,o.spell,ray.power,[0,0,-1],victim.pos,damage);}}
+          if(victim&&this.domeContact(o,victim.pos).inside)this.hit(o.owner,o.spell,ray.power,[0,0,-1],victim.pos,damage);}}
       if(o.life<=1e-6)this.remove(this.optics,o);
     }
     for(const p of [...this.pulses]){p.age+=dt;if(!p.ticks&&p.age+1e-6>=p.spell.chargeTime){p.ticks=1;this.resolve(p,actors,walls,damage,intercept);}if(p.age>=p.spell.chargeTime+.32)this.remove(this.pulses,p);}
@@ -247,7 +248,7 @@ export class LightArts {
       a.floor.scale.setScalar(shot.blastRadius*(1+Math.max(0,shot.age-shot.impactTime)*.4));
       for(const rung of a.stairs){rung.visible=shot.age>=shot.strikeTime&&rung.position.y>=bottom;rung.rotation.z=time*.3;}}
   }
-  status(owner){return this.optics.filter(o=>o.owner===owner).map(o=>`${{sphere:'Cầu thủy tinh',mirror:'Quang kính',dome:!this.domeReady(o)?'Vòm đang ghép gương':o.rays.length?`Vòm · ${o.rays.length} laser · ${o.rays.reduce((sum,r)=>sum+o.spell.damage*r.power,0)} sát thương/s`:'Vòm chờ laser'}[o.kind]} ${(!this.domeReady(o)?o.buildTime-o.age:o.life).toFixed(1)}s${o.kind==='mirror'?' · '+Math.ceil(o.hp)+' bền':''}`).join(' · ');}
+  status(owner){return this.optics.filter(o=>o.owner===owner).map(o=>`${{sphere:'Huyễn Quang Tinh Cầu',mirror:'Thiên Kính Phản Quang',dome:!this.domeReady(o)?'Vòm đang ghép gương':o.rays.length?`Vòm · ${o.rays.length} laser · ${o.rays.reduce((sum,r)=>sum+o.spell.damage*r.power,0)} sát thương/s`:'Vòm chờ laser'}[o.kind]} ${(!this.domeReady(o)?o.buildTime-o.age:o.life).toFixed(1)}s${o.kind==='mirror'?' · '+Math.ceil(o.hp)+' bền':''}`).join(' · ');}
   serialize(path){return path.map(({owner,start,end,multiplier,spectrum,event})=>({owner,start:[...start],end:[...end],multiplier,spectrum,event}));}
   state(){const optic=o=>({id:o.id,owner:o.owner,kind:o.kind,hp:o.hp??null,life:o.life,age:o.age,phase:this.domeReady(o)?'active':'assembling',buildTime:o.buildTime,panels:o.assembly?.panels.length||0,landedPanels:o.assembly?.panels.filter(p=>o.age>=p.delay+p.fallTime).length||0,trapped:[...o.trapped],center:[...o.center],normal:[...o.normal],radius:o.radius,reflections:o.reflections,rays:o.rays.map(r=>({age:r.age,ticks:r.ticks,power:r.power,spectrum:r.spectrum,path:this.serialize(r.path)}))});
     return {spheres:this.optics.filter(o=>o.kind==='sphere').map(optic),domes:this.optics.filter(o=>o.kind==='dome').map(optic),mirrors:this.optics.filter(o=>o.kind==='mirror').map(optic),pulses:this.pulses.map(p=>({owner:p.owner,age:p.age,ticks:p.ticks,path:this.serialize(p.path)})),jacobs:[...this.jacobs.keys()].map(s=>({owner:s.owner,target:[...s.target],phase:s.phase,age:s.age})),reflections:this.reflections,lastPath:this.lastPaths,preview:null};}

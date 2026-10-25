@@ -201,7 +201,7 @@ export class EarthArts {
   }
   burst(pos,scale=1){const root=this.group();root.position.fromArray(pos);const rocks=[];for(let i=0;i<12;i++){const a=i*2.399,mesh=this.mesh(root,'rock',i%2?this.rock:this.light,[0,0,0],[.06*scale,.06*scale,.06*scale]);rocks.push({mesh,v:[Math.cos(a)*scale*2,(1+i%3)*scale,Math.sin(a)*scale*2]});}this.bursts.push({root,age:0,rocks});}
   remove(e,walls=[]){if(!this.effects.includes(e))return;for(const child of [...this.effects])if(child.crater===e)this.remove(child,walls);if(e.capture)e.capture.fighter.earthControlTime=0;e.root.removeFromParent();for(const m of e.materials)m.dispose();for(const g of e.geometries)g.dispose();e.patch?.geometry.dispose();this.effects=this.effects.filter(x=>x!==e);for(let i=walls.length-1;i>=0;i--)if(walls[i].earthEffect===e)walls.splice(i,1);this.revision++;}
-  advance(dt,actors,walls,damage,setPosition=()=>{},event=()=>{},blast=()=>{}){
+  advance(dt,actors,walls,damage,setPosition=()=>{},event=()=>{},blast=()=>{},intercept=()=>false){
     if(dt<=0)return;
     if(this.effects.length)this.revision++;
     for(const e of [...this.effects]){
@@ -209,7 +209,8 @@ export class EarthArts {
       const old=e.age;e.age+=Math.min(dt,e.life);e.life=Math.max(0,e.life-dt);const victim=actors.find(a=>a.owner!==e.owner);
       if(e.kind==='spikes'){
         if(e.eruptedAt===undefined){
-          const from=e.travel;e.travel=Math.min(e.spell.range,e.travel+e.spell.speed*dt);e.headPosition=add(e.origin,mul(e.axis,e.travel));
+          const from=e.travel,old=[...e.headPosition];e.travel=Math.min(e.spell.range,e.travel+e.spell.speed*dt);e.headPosition=add(e.origin,mul(e.axis,e.travel));
+          if(intercept({owner:e.owner,old,p:[...e.headPosition],size:.45})){this.remove(e,walls);continue;}
           if(victim){
             const delta=sub(victim.pos,e.origin),along=delta[0]*e.axis[0]+delta[2]*e.axis[2],nearest=clamp(along,from,e.travel),point=add(e.origin,mul(e.axis,nearest));
             if(distance(victim.pos,point)<1.2){

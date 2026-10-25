@@ -72,6 +72,17 @@ export class NatureArts {
     }
     return null;
   }
+  intercept(shot){
+    const start=shot.old||shot.p,end=shot.p;if(!start||!end)return false;
+    const delta=sub(end,start),a=delta.reduce((n,v)=>n+v*v,0);let first=null;
+    for(const b of this.balls){
+      if(b.owner===shot.owner||!['rolling','carrying'].includes(b.phase))continue;
+      const radius=b.spell.radius+(shot.style==='tsunami'?(shot.width||0)/2:shot.size||0),offset=sub(start,b.p),c=offset.reduce((n,v)=>n+v*v,0)-radius*radius;
+      let t=0;if(c>0){if(a<1e-12)continue;const projection=offset.reduce((n,v,i)=>n+v*delta[i],0),disc=projection*projection-a*c;if(disc<0)continue;t=(-projection-Math.sqrt(disc))/a;if(t<0||t>1)continue;}
+      if(!first||t<first.t)first={t,point:add(start,mul(delta,t))};
+    }
+    if(!first)return false;shot.p=first.point;shot.life=0;shot.consumedByDefense=true;return true;
+  }
   freeze(owner,actor,duration){
     actor.fighter.iceControlTime=Math.max(actor.fighter.iceControlTime||0,duration);
     let b=this.bindings.find(b=>b.owner===actor.owner);if(!b){const root=this.group();for(let i=0;i<8;i++){const a=i*Math.PI/4;this.mesh(root,'cone',this.ice,[Math.cos(a)*.65,1.25,Math.sin(a)*.65],[.32,2.7,.32]);}b={owner:actor.owner,root,fighter:actor.fighter};this.bindings.push(b);}return b;
@@ -121,7 +132,7 @@ export class NatureArts {
     for(const [shot,root] of this.shots)if(!shots.includes(shot)){this.iceSupport.dispose(root);this.shots.delete(shot);}
     for(const shot of shots.filter(s=>s.element==='wood'||s.element==='ice')){const root=this.shots.get(shot)||this.shotModel(shot);if(shot.style==='icebind'){this.iceSupport.updateBind(root,shot,this.time,reducedMotion);continue;}root.visible=shot.phase!=='blooming';root.position.fromArray(shot.p);root.scale.setScalar(shot.size);root.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(...unit(shot.v)));if(shot.style==='bambooleaf'&&!reducedMotion)root.rotateY(shot.age*9);}
   }
-  status(owner){const t=this.tree(owner),s=this.weather(owner),fog=this.fogs.find(f=>f.owner===owner),nut=this.wood.walnuts.find(w=>w.owner===owner),poison=this.wood.poisoned(owner);return [t?`Vườn ${Math.round(this.growth(owner)*100)}% · Mộc ×${this.multiplier(owner).toFixed(2)}${this.wood.ready(owner)?'':' · hạt đang nảy mầm'}`:'',nut?nut.added?`Óc chó ${Math.ceil(nut.wall.hp)} · ${nut.wall.life.toFixed(1)}s`:'Óc chó đang rơi và hóa lớn':'',poison?'Trúng độc':'',s?s.consumed?(this.balls.some(b=>b.owner===owner&&b.phase==='gathering')?'Đang gom tuyết':'Đã gom tuyết'):`Tuyết ${Math.min(90,s.amount).toFixed(1)}/90 tuyết${this.snowReady(owner)?' · Z X: Tuyết Táng':''}`:'',fog?`Huyễn Sương ${fog.life.toFixed(1)}s`:''].filter(Boolean).join(' · ');}
+  status(owner){const t=this.tree(owner),s=this.weather(owner),fog=this.fogs.find(f=>f.owner===owner),nut=this.wood.walnuts.find(w=>w.owner===owner),poison=this.wood.poisoned(owner);return [t?`Vườn ${Math.round(this.growth(owner)*100)}% · Mộc ×${this.multiplier(owner).toFixed(2)}${this.wood.ready(owner)?'':' · hạt đang nảy mầm'}`:'',nut?nut.added?`Óc chó ${Math.ceil(nut.wall.hp)} · ${nut.wall.life.toFixed(1)}s`:'Óc chó đang rơi và hóa lớn':'',poison?'Trúng độc':'',s?s.consumed?(this.balls.some(b=>b.owner===owner&&b.phase==='gathering')?'Đang gom tuyết':'Đã gom tuyết'):`Tuyết ${Math.min(90,s.amount).toFixed(1)}/90 tuyết${this.snowReady(owner)?' · Z X: Tuyết táng':''}`:'',fog?`Huyễn Sương Vô Ảnh ${fog.life.toFixed(1)}s`:''].filter(Boolean).join(' · ');}
   state(){return {wood:this.wood.state(),trees:this.trees.map(t=>({owner:t.owner,age:t.age,growth:this.growth(t.owner),multiplier:this.multiplier(t.owner),position:[...t.p]})),snow:this.snow.map(s=>({owner:s.owner,age:s.age,amount:this.snowAmount(s.owner),remaining:Math.max(0,s.spell.snowTime-this.snowAmount(s.owner)),ready:this.snowReady(s.owner),consumed:s.consumed,density:clamp(this.snowAmount(s.owner)/s.spell.snowTime)})),iceWalls:this.iceWalls.map(e=>({owner:e.owner,age:e.age,rise:ease(e.age/e.formation),panels:e.root.userData.wall.panels.length,position:[...e.wall.p],height:e.wall.height,hp:e.wall.hp,life:e.wall.life})),iceGather:[...this.shots].filter(([s])=>s.style==='icebind'&&s.phase==='blooming').map(([s,r])=>({owner:s.owner,progress:clamp(s.releaseAge/s.releaseAt),flakes:r.userData.bind.flakes.count,crystalScale:r.userData.bind.core.scale.x})),fogs:this.fogs.map(f=>({owner:f.owner,life:f.life,position:[...f.p],coverPosition:f.cover.position.toArray(),insideView:f.owner==='player',decoyVisible:f.decoy.visible,cloudCount:f.clouds.count})),balls:this.balls.map(b=>({owner:b.owner,victim:b.victim,phase:b.phase,position:[...b.p],age:b.age,gatherTime:b.gatherTime,gatherProgress:clamp(b.age/b.gatherTime),gatherChunks:b.phase==='gathering'?b.chunks.filter(c=>c.m.visible).length:0,carryAge:b.carryAge,radius:b.spell.radius})),bindings:this.bindings.map(b=>b.owner),hidden:{player:this.hidden('player'),enemy:this.hidden('enemy')},snowVisible:this.environment.visible};}
   resetForPhase(walls=[]){
     // Once-per-match preparations belong to the whole encounter, not one HP bar.

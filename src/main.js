@@ -151,7 +151,7 @@ async function main() {
     camera3d.position.fromArray(playerPos()).lerp(close,weight);const normal=new T.Quaternion().setFromEuler(new T.Euler(camera.pitch,camera.yaw,0,'YXZ')),look=new T.Object3D();look.position.copy(camera3d.position);look.lookAt(target);look.rotateY(Math.PI);camera3d.quaternion.copy(normal).slerp(look.quaternion,weight);setWorldFov(baseFov-12*weight);handsPass.enabled=false;
     opponent.group.scale.setScalar(1+Math.sin(clamp(tr.age/3.2,0,1)*Math.PI)*.1);
   }
-  function guardianImpact(shot,pos){if(shot.blockable&&crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot)))return;impact(shot,pos);}
+  function guardianImpact(shot,pos){if(shot.blockable&&snowBlocks(shot))return;if(shot.blockable&&crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot)))return;impact(shot,pos);}
 
   const squad=createEncounterSquad(scene,{GameRules,Fighter,keys,random:rand,getPlayer:playerPos,getShots:()=>shots,
     launch:(member,spell,pos,dir)=>{const before=shots.length;launch(spell,'enemy',pos,dir);for(const shot of shots.slice(before)){shot.sourceId=member.id;shot.damageScale=member.profile.damageMultiplier;}},
@@ -247,7 +247,7 @@ async function main() {
     const activationStats={waterbubbles:'4 bong bóng · nổ lần lượt mỗi giây · 7,5 sát thương gốc/quả · nhận hệ số tăng sát thương · hồi '+spell.cooldown+' giây',ignite:'Bỏng 1–5 tầng → 10 / 20 / 30 / 45 / 60 sát thương',discharge:'Tĩnh điện 1–3 → choáng 0,5 / 1 / 2s → từ tính 3 / 5 / 7s'};
     if (!preparation) return carriedSpellMarkup(spell,i,selected);
     const taken = loadout.includes(spell.id), kind = activationStats[spell.style] ? (spell.style==='waterbubbles'?'BẪY':'KÍCH HOẠT') : spell.oncePerMatch?'KHỞI TẠO':spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = activationStats[spell.style] || (spell.oncePerMatch?'Không gây sát thương · 1 lần mỗi trận':spell.element==='wood'?({flowerpoison:'Khói tím 6 giây · vùng 2–5 m · 5–15 sát thương/giây trong vùng',vinebind:'18–54 sát thương · trói 2–6 giây',bamboostab:'Lá tre bay tới điểm ngắm · 1–3 đợt, tổng 75–225 sát thương',walnutwall:'Quả rơi và hóa lớn · chắn phía trước, 8–10 giây'})[spell.style]:spell.style==='snowball'?'Đủ 90 tuyết · tự tìm địch · kết liễu':spell.style==='icewall'?'Tường băng trồi lên · 120 độ bền · 8 giây':spell.style==='icefog'?'Sương phủ người · nhìn xuyên từ bên trong · ảo ảnh lệch vị trí':spell.style==='icebind'?'Gom tuyết rồi bắn · đóng băng 1,5 giây':spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 26 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 30 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'180 độ bền · tường cong 10 giây · chặn đường',earthgravity:'80 khi giam + 100 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 26 / 45,5 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'Gương rơi ghép vòm · 3 ô né · 10 giây · laser cộng dồn',lightmirror:'2,5 giây · 120 độ bền · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 160 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · mở khóa voi bóng và lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 22, nâng thành bò 33':spell.style==='shadowcommand'?'Chó 22 / bò 33 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · '+spell.duration+' giây · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : ''));
+    const stats = activationStats[spell.style] || (spell.oncePerMatch?'Không gây sát thương · 1 lần mỗi trận':spell.element==='wood'?({flowerpoison:'Khói tím 6 giây · vùng 2–5 m · 5–15 sát thương/giây trong vùng',vinebind:'18–54 sát thương · trói 2–6 giây',bamboostab:'Lá tre bay tới điểm ngắm · 1–3 đợt, tổng 75–225 sát thương',walnutwall:'Quả rơi và hóa lớn · chắn phía trước, 8–10 giây'})[spell.style]:spell.style==='snowball'?'Đủ 90 tuyết · tự tìm địch · kết liễu':spell.style==='icewall'?'Tường băng trồi lên · 120 độ bền · 8 giây':spell.style==='icefog'?'Sương phủ người · nhìn xuyên từ bên trong · ảo ảnh lệch vị trí':spell.style==='icebind'?'Gom tuyết rồi bắn · đóng băng 1,5 giây':spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 26 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 20 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'130 độ bền · tường cong 10 giây · chặn đường',earthgravity:'60 khi giam + 75 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 26 / 45,5 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'Vòm 10 giây · khóa G · tốc độ 50%, chạm vòm 25% · laser cộng dồn',lightmirror:'2,5 giây · 120 độ bền · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 150 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · voi nhấn chìm và mở khóa lặn' : spell.style==='shadowclone'?'Tối đa 3 bóng · chó 22, nâng thành bò 33':spell.style==='shadowcommand'?'Chó 22 / bò 33 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · trong lãnh địa nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · '+spell.duration+' giây · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : ''));
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spellImage(spell) + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · ' + spell.cost + ' MANA · HỒI CHIÊU ' + spell.cooldown + 's' + (spell.snowCost ? ' · ' + spell.snowCost + ' TUYẾT' : '') + '</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -355,10 +355,10 @@ async function main() {
     if (!result.valid) announce('Sai chuỗi. Chỉ dùng các chiêu đã mang vào trận.', true);
     else if (result.ready) {
       if((result.ready.requiresBurn&&!playerCastContext().burnStacks)||(result.ready.requiresStatic&&!playerCastContext().staticStacks)){
-        announce(result.ready.requiresBurn?'Cần gây bỏng lên đối thủ trước khi dùng Phóng hỏa.':'Cần tích tĩnh điện lên đối thủ trước khi dùng Điện giật.',true);updateUI();return;
+        announce(result.ready.requiresBurn?'Cần gây bỏng lên đối thủ trước khi dùng Liệt Diễm Bùng Phát.':'Cần tích tĩnh điện lên đối thủ trước khi dùng Lôi Mạch Tê Liệt.',true);updateUI();return;
       }
       const extendable = rules.spells.some(s => s.sequence.length > rules.sequence.length && s.sequence.slice(0, rules.sequence.length).join('') === rules.sequence.join(''));
-      announce(result.ready.snowCost&&!natureArts.canCast('player',result.ready)?'Cần gọi mưa tuyết và tích đủ '+result.ready.snowCost+' tuyết để thi triển.':result.ready.requiresGarden&&!natureArts.wood.ready('player')?'Cần gieo vườn bằng chiêu 6 ấn và chờ cây trồi lên.':result.ready.oncePerMatch&&!natureArts.canCast('player',result.ready)?'Chiêu này đã dùng một lần trong trận.':result.ready.requiresSnowFull&&!natureArts.snowReady('player')?'Cần tích đủ 90 tuyết để dùng Tuyết Táng.':result.ready.requiresCrater&&!earthArts.crater('player') ? 'Cần tạo hố bằng Địa Bộc Thiên Tinh trước.' : result.ready.requiresDomain&&!darkDomain.usable ? 'Cần mở Hắc lãnh địa trước khi dùng '+result.ready.name+'.' : result.ready.name + ' đủ ' + result.ready.sequence.length + ' ấn: SPACE thi triển' + (extendable ? ', hoặc kết tiếp để dùng chiêu mạnh hơn.' : '.'));
+      announce(result.ready.snowCost&&!natureArts.canCast('player',result.ready)?'Cần gọi mưa tuyết và tích đủ '+result.ready.snowCost+' tuyết để thi triển.':result.ready.requiresGarden&&!natureArts.wood.ready('player')?'Cần gieo vườn bằng chiêu 6 ấn và chờ cây trồi lên.':result.ready.oncePerMatch&&!natureArts.canCast('player',result.ready)?'Chiêu này đã dùng một lần trong trận.':result.ready.requiresSnowFull&&!natureArts.snowReady('player')?'Cần tích đủ 90 tuyết để dùng Tuyết táng.':result.ready.requiresCrater&&!earthArts.crater('player') ? 'Cần tạo hố bằng Địa Bộc Thiên Tinh trước.' : result.ready.requiresDomain&&!darkDomain.usable ? 'Cần mở U Minh Lĩnh Vực trước khi dùng '+result.ready.name+'.' : result.ready.name + ' đủ ' + result.ready.sequence.length + ' ấn: SPACE thi triển' + (extendable ? ', hoặc kết tiếp để dùng chiêu mạnh hơn.' : '.'));
 
     } else {
       const candidate = rules.spells.find(s => s.sequence.slice(0, rules.sequence.length).join('') === rules.sequence.join(''));
@@ -381,7 +381,7 @@ async function main() {
   function reflectWind(shot){
     if(!windArts.redirect(shot,windActors()))return false;
     if(dragonView?.shot===shot)clearDragonView();if(meteorView?.shot===shot)clearMeteorView();if(waveView?.shot===shot)clearWaveView();
-    if(shot.owner==='player'){announce('Tiên linh gió đã thổi chiêu ngược lại!');cameraImpacts.trigger('reflect',.65);}
+    if(shot.owner==='player'){announce('Phong Linh Triệu Hoán đã thổi chiêu ngược lại!');cameraImpacts.trigger('reflect',.65);}
     return true;
   }
   function launch(spell, owner, pos, dir) {
@@ -390,7 +390,7 @@ async function main() {
     spell=natureArts.empower(owner,spell);
     if(spell.style==='waterbubbles'){
       waterBubbles.cast(owner,spell,owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:natureArts.perceivedPosition(owner,windActors()));
-      if(owner==='player')announce('Thủy bộc cầu · 4 bong bóng nổ lần lượt ở giây 1, 2, 3, 4.');
+      if(owner==='player')announce('Thủy Bộc Phá Không · 4 bong bóng nổ lần lượt ở giây 1, 2, 3, 4.');
       return true;
     }
     if(['ignite','discharge'].includes(spell.style)){
@@ -402,7 +402,7 @@ async function main() {
         const discharge=victim.discharge();if(!discharge)return false;
         if(!actor||actor.id==='primary')interruptActor(owner==='player'?'enemy':'player');
         effects.lightningArts.blast(target,.45+discharge.stacks*.22);
-        if(owner==='player')announce('Điện giật · choáng '+discharge.stun+'s, từ tính '+discharge.magnetic+'s');
+        if(owner==='player')announce('Lôi Mạch Tê Liệt · choáng '+discharge.stun+'s, từ tính '+discharge.magnetic+'s');
       }
       return true;
     }
@@ -594,7 +594,7 @@ async function main() {
       activePose=-1;poseAge=0;recoil=.08;hands.cast();playerAvatar.rig.cast();announce('Phi tiêu · '+weapon.damage+' sát thương · không tốn mana');updateUI();return;
     }
     const result = rules.cast(playerCastContext());
-    if (!result.ok) { announce({ burn:'Cần gây bỏng lên đối thủ trước.',static:'Cần tích tĩnh điện lên đối thủ trước.', spellCooldown:'Chiêu này đang hồi · còn '+(result.remaining||0).toFixed(1)+' giây.',snowCost:'Cần gọi mưa tuyết bằng chiêu 6 ấn và tích ít nhất 3 tuyết để thi triển.',garden:'Cần gieo hạt bằng chiêu 6 ấn và chờ cây trồi lên trước.',once:'Chiêu 6 ấn này chỉ dùng một lần mỗi trận.',snow:'Cần gọi tuyết và tích đủ 90 tuyết trước khi dùng Tuyết Táng.', crater: 'Cần hố Địa Bộc Thiên Tinh của bạn đã hình thành trước khi tạo chông.', sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.',airborne:'Cần địch đang bị lốc của bạn hất tung và chưa nối liên trảm.', domain:'Cần mở Hắc lãnh địa trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Bên bạn đã đủ 3 bò bóng, không còn chó để nâng cấp.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Mana chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
+    if (!result.ok) { announce({ burn:'Cần gây bỏng lên đối thủ trước.',static:'Cần tích tĩnh điện lên đối thủ trước.', spellCooldown:'Chiêu này đang hồi · còn '+(result.remaining||0).toFixed(1)+' giây.',snowCost:'Cần gọi mưa tuyết bằng chiêu 6 ấn và tích đủ ' + (rules.ready()?.snowCost||0) + ' tuyết để thi triển.',garden:'Cần gieo hạt bằng chiêu 6 ấn và chờ cây trồi lên trước.',once:'Chiêu 6 ấn này chỉ dùng một lần mỗi trận.',snow:'Cần gọi tuyết và tích đủ 90 tuyết trước khi dùng Tuyết táng.', crater: 'Cần hố Địa Bộc Thiên Tinh của bạn đã hình thành trước khi tạo chông.', sequence: 'Kết đủ chuỗi ấn của một chiêu đã mang theo.',airborne:'Cần địch đang bị lốc của bạn hất tung và chưa nối liên trảm.', domain:'Cần mở U Minh Lĩnh Vực trước khi dùng chiêu này.',clones:'Cần tạo phân thân trước khi ra lệnh tấn công.',cloneLimit:'Bên bạn đã đủ 3 bò bóng, không còn chó để nâng cấp.', cooldown: 'Chờ một nhịp để thi triển tiếp.', chakra: 'Mana chưa đủ — chờ hồi phục.' }[result.reason], true); tone(130, .1); return; }
     const spell = result.spell;
     battleMetrics.cast(spell);lastPlayerSpell=spell;
     activePose = -1; poseAge = 0; recoil = .22; flashTimer = .12; hands.cast(); playerAvatar.rig.cast();
@@ -688,14 +688,14 @@ async function main() {
       fighter.controlTime = shot.controlDuration;
       if (shot.owner === 'player') {
         aiRules.clear(); aiSpell = null; aiStep = 0; enemyPose = -1;
-        $('enemyAction').textContent = 'Thủy ngục · bị giam 3 giây';
+        $('enemyAction').textContent = 'Huyền Thủy Lao Lung · bị giam 3 giây';
       } else {
          activePose = -1; hands.clearEffects(); moveTargetX = camera.p[0]; moveDirection = 0;
       }
     }
     if(shot.style==='icebind'){
       const victimOwner=shot.owner==='enemy'?'player':'enemy';natureArts.freeze(shot.owner,{owner:victimOwner,fighter},shot.controlDuration||1.5);
-      if(victimOwner==='player'){hands.clearEffects();activePose=-1;moveTargetX=camera.p[0];moveDirection=0;announce('Băng Phược · bị đóng băng 1,5 giây!',true);}
+      if(victimOwner==='player'){hands.clearEffects();activePose=-1;moveTargetX=camera.p[0];moveDirection=0;announce('Hàn Băng Phong Tỏa · bị đóng băng 1,5 giây!',true);}
       else{aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;}
     }
     if(shot.style==='vinehit'){
@@ -710,8 +710,8 @@ async function main() {
         if(aiRules.spells.some(s=>s.style==='aircombo')){aiRules.clear();aiSpell=null;aiStep=0;aiTimer=.12;}
       }
       else{
-        aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;$('enemyAction').textContent='Phong lốc · hất tung 2 giây';
-        if(rules.spells.some(s=>s.style==='aircombo'))announce('Địch bị hất tung · R A E rồi SPACE để nối Phong liên trảm!');
+        aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;$('enemyAction').textContent='Cuồng Phong Toàn Vũ · hất tung 2 giây';
+        if(rules.spells.some(s=>s.style==='aircombo'))announce('Địch bị hất tung · R A E rồi SPACE để nối Phong Nhận Loạn Vũ!');
       }
     }
     if (cleanVolleyHit) {
@@ -733,12 +733,12 @@ async function main() {
     if(activeBoss()&&victim.owner==='enemy')guardianPhases.onDamage(result.damage);
     if(adventure?.inBattle&&binding.owner==='player'&&result.damage>0)adventure.awardCombatExperience(result.damage*.5,victim.id||'primary');
     if(victim.owner==='enemy'){
-      aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;enemyHit=.3;hitTimer=.14;
-      $('enemyAction').textContent='Ảnh tượng · bị nhấn chìm 2 giây';tone(80,.15,'triangle',.06);
+      if(binding.victim){aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;}enemyHit=.3;hitTimer=.14;
+      $('enemyAction').textContent=binding.victim?'U Ảnh Huyễn Tượng · bị nhấn chìm 2 giây':'Trúng voi bóng';tone(80,.15,'triangle',.06);
     }else{
-      activePose=-1;hands.clearEffects();moveTargetX=camera.p[0];moveDirection=0;
+      if(binding.victim){activePose=-1;hands.clearEffects();moveTargetX=camera.p[0];moveDirection=0;clearEarthView();clearWindView();clearDragonView();clearMeteorView();clearWaveView();}
       flashTimer=.8;recoil=.3;$('flash').style.background='#e54955';
-      cameraImpacts.trigger('hit',1.5,[0,-.4,.7]);announce('Voi bóng nhấn chìm bạn · khóa thao tác 2 giây!',true);
+      cameraImpacts.trigger('hit',1.5,[0,-.4,.7]);announce(binding.victim?'Voi bóng nhấn chìm bạn · khóa thao tác 2 giây!':'Trúng voi bóng!',true);
     }
     if(result.restored)announce(victim.owner==='enemy'?'Đối thủ đã hồi đầy sinh lực!':'Bạn đã hồi đầy sinh lực!');
   }
@@ -756,6 +756,7 @@ async function main() {
   function thunderImpact(shot) {
     gameAudio.cue(shot.style==='thunder'?'thunder-strike':'light-chime');
     const pos=shot.target;
+    if(snowBlocks({...shot,old:shot.cloudPoint,p:[...pos]}))return;
     if(shot.style==='jacob')lightArts.flash([pos[0],1.72,pos[2]],2);
     else effects.lightningArts.blast(pos,shot.blastRadius);
     cameraImpacts.trigger('thunderHit',clamp(1-vlen(vsub(pos,camera.p))/65,.2,1));tone(45,.45,'sawtooth',.085);
@@ -787,6 +788,7 @@ async function main() {
     if(shot.style!=='shuriken'){if(wall.element==='earth')earthArts.burst(point,1);else if(wall.element==='wind')windArts.cut(point);else if(!['water','ice'].includes(wall.element))effects.arts.blast(point,'orb');}
     if(wall.owner==='player'){announce(result.broken?'Lớp chắn đã vỡ!'+(result.remaining>0?' Đòn đánh còn '+Math.round(result.remaining*10)/10+' sát thương.':''):'Lớp chắn đã chặn đòn!');cameraImpacts.trigger('block',.8);}
   }
+  function snowBlocks(shot){return natureArts.intercept(shot);}
   function updateShots(dt) {
     aimMagneticShots(shots,windActors());
     for(let i=fields.length-1;i>=0;i--){fields[i].life-=dt;fields[i].age+=dt;if(fields[i].life<=1e-6)fields.splice(i,1);}
@@ -794,8 +796,9 @@ async function main() {
     // Let the continuous forward gust catch swept projectiles before walls or waves resolve them.
     const reflectedByGuard=new Set();
     if(dt>0)for(const shot of shots){
-      if(shot.phase==='blooming')continue;
+      if(shot.phase==='blooming'||shot.consumedByDefense)continue;
       const start=[...shot.p],velocity=[...shot.v],step=projectileMotionStep(shot,dt,fields,projectileTimeStep);shot.old=[...start];shot.p=vadd(start,vmul(shot.v,step.travelTime));
+      if((!shot.phase||shot.phase==='flying')&&!['meteor','thunder','jacob'].includes(shot.style)&&snowBlocks(shot)){shot.p=start;continue;}
       if(lightArts.redirect(shot,windActors(),walls)){
         commitMotion(shot,step,dt,start,velocity);reflectedByGuard.add(shot);
         if(dragonView?.shot===shot)clearDragonView();if(meteorView?.shot===shot)clearMeteorView();if(waveView?.shot===shot)clearWaveView();
@@ -803,12 +806,12 @@ async function main() {
       else shot.p=start;
     }
     const swept = new Set();
-    for (const wave of shots.filter(s => s.style === 'tsunami' && s.phase === 'flying'&&!reflectedByGuard.has(s))) {
+    for (const wave of shots.filter(s => s.style === 'tsunami' && s.phase === 'flying'&&!s.consumedByDefense&&!reflectedByGuard.has(s))) {
       if (swept.has(wave)) continue;
       const end = vadd(wave.p, vmul(wave.v, travelStep(wave,dt)));
       sweepTsunami(wave,wave.p,end,{actors:windActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,intersectsWave});
       for (const other of shots) {
-        if (other === wave || swept.has(other)) continue;
+        if (other === wave || other.consumedByDefense || swept.has(other)) continue;
         const otherEnd = ['forming', 'staged', 'emerging', 'gathering','blooming'].includes(other.phase) ? other.p : vadd(other.p, vmul(other.v, travelStep(other,dt)));
         if (intersectsWave(other.p, otherEnd, wave.p, end, wave.normal, wave.width, wave.height, other.size, wave.depth)) {
           swept.add(other); wave.carried.push({ color: other.color, style: other.style, owner: other.owner, element: other.element });
@@ -850,6 +853,7 @@ async function main() {
         const travelDt=travelStep(shot,flightDt,true);
         shot.motionSpeed=dt>0?vlen(shot.v)*travelDt/dt:0;
         shot.p = vadd(shot.p, vmul(shot.v, travelDt)); shot.age += flightDt; shot.life -= flightDt; shot.flightAge += travelDt;
+        if(snowBlocks(shot)){shots.splice(i,1);continue;}
         sweepTsunami(shot,shot.old,shot.p,{actors:windActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,intersectsWave});
         const target = shot.owner === 'enemy' ? playerPos() : enemyPos();
         if (!shot.hitTarget && intersectsWave(target, target, shot.old, shot.p, shot.normal, shot.width, shot.height, .54, shot.depth)) {
@@ -871,6 +875,7 @@ async function main() {
         }
         shot.flightAge = Math.min(shot.travelTime, shot.flightAge + travelStep(shot,flightDt,true)); shot.age += flightDt;
         shot.p = vadd(shot.origin, vmul(shot.v, shot.flightAge));
+        if(snowBlocks(shot)){shots.splice(i,1);continue;}
         if(crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot))){shots.splice(i,1);continue;}
         if (shot.flightAge + 1e-6 >= shot.travelTime) {
           burst(shot.target, 36, 3, shot.color);
@@ -889,6 +894,7 @@ async function main() {
         shot.phase = shot.age < shot.skyTime ? 'sky' : shot.age + 1e-6 < prelude ? 'returning' : 'falling';
         if(shot.phase==='falling'&&!shot.fallSound){shot.fallSound=true;gameAudio.cue('meteor-fall');}
         shot.p = vadd(shot.skyStart, vmul(shot.v, shot.travelAge));
+        if(snowBlocks(shot)){shots.splice(i,1);continue;}
         emitShotTrail(shot, dt);
         if (shot.travelAge + 1e-6 >= shot.totalTime) { shot.p = [...shot.target]; meteorImpact(shot); shots.splice(i, 1); }
         if (won) break;
@@ -916,6 +922,7 @@ async function main() {
       shot.life -= flightDt; shot.age += flightDt;
       if (shot.phase === 'flying') shot.flightAge += flightDt;
       emitShotTrail(shot, flightDt);
+      if(snowBlocks(shot)){shots.splice(i,1);continue;}
       const groundHit=earthArts.intersectTerrain(shot.old,shot.p,Math.min(.15,shot.size||.04));
       if(groundHit){if(shot.style==='shuriken')burst(groundHit,4,.4,'#bdc9d7');else earthArts.burst(groundHit,.8);shots.splice(i,1);continue;}
       if(crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot))){shots.splice(i,1);continue;}
@@ -946,7 +953,7 @@ async function main() {
   function updateAI(dt) {
     enemyMoving=false;
     if(testAIDisabled||(activeBoss()&&guardianPhases.phase===2))return;
-    const old=enemyPos(),next=enemyMovement.update(dt,{position:old,shots,beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(adventure.encounter.village),casting:!!aiSpell,blocked:enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2]),constrain:goal=>lightArts.constrainMovement('enemy',old,earthArts.move(old,goal))});
+    const old=enemyPos(),next=enemyMovement.update(dt,{position:old,shots,beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(adventure.encounter.village),casting:!!aiSpell,blocked:enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2])*lightArts.slowAt('enemy',old),constrain:goal=>lightArts.constrainMovement('enemy',old,earthArts.move(old,goal))});
     opponent.group.position.x=next[0];enemyMoving=Math.abs(next[0]-old[0])>.0001;
     aiRules.tick(dt); aiCastAge += dt;aiWeaponTimer=Math.max(0,aiWeaponTimer-dt);
     const boss=activeBoss();
@@ -1022,32 +1029,33 @@ async function main() {
       player.tick(dt); enemy.tick(dt);
       const prepared=rules.ready();battleMetrics.advance(dt,{controlled:player.controlTime>0,cooldown:!!prepared&&(rules.remaining(prepared.id)>0||rules.cooldown>0),chakra:!!prepared&&rules.chakra<prepared.cost});
       windArts.advance(dt,windActors(),impact);
-      earthArts.advance(dt,windActors(),walls,impact,setEarthActorPosition,earthEvent);
+      earthArts.advance(dt,windActors(),walls,impact,setEarthActorPosition,earthEvent,undefined,snowBlocks);
       const wasSnowReady=natureArts.snowReady('player');
       const natureWinner=natureArts.advance(dt,windActors(),(owner,p)=>{if(owner==='player'){camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact);
-      if(!wasSnowReady&&natureArts.snowReady('player'))announce('Đã tích đủ 90 tuyết · Z X rồi SPACE để dùng Tuyết Táng!');
+      if(!wasSnowReady&&natureArts.snowReady('player'))announce('Đã tích đủ 90 tuyết · Z X rồi SPACE để dùng Tuyết táng!');
       if(natureWinner){(natureWinner==='player'?enemy:player).hp=0;if(natureWinner==='player'&&checkGuardianDefeat())return;finish(natureWinner==='player');return;}
       const heldDirection=heldStepDirection();
       if(dt>1e-8&&heldDirection&&Math.abs(moveTargetX-camera.p[0])<=.001&&Math.abs(clamp(camera.p[0]+heldDirection*sidestepDistance,-6,6)-camera.p[0])>.001) sidestep(heldDirection);
       const remaining = moveTargetX - camera.p[0];
+      if(lightArts.blocksDash('player',playerPos()))dashBoost.cancelDash();
       const dash=dashBoost.state(),isDashing=dash.dashing>0;
       moveDirection = player.controlTime <= 0 && Math.abs(remaining) > .001 ? Math.sign(remaining) : 0;
       if(player.controlTime>0||natureArts.buried('player')){dashBoost.cancelDash();moveTargetX=camera.p[0];moveDirection=0;}
-      const travel=isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):sidestepSpeed*dt*earthArts.slowAt(camera.p[0],camera.p[2])*guardianPhases.slowAt(playerPos());
+      const travel=isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):sidestepSpeed*dt*earthArts.slowAt(camera.p[0],camera.p[2])*guardianPhases.slowAt(playerPos())*lightArts.slowAt('player',playerPos());
       const goal=[camera.p[0]+moveDirection*Math.min(Math.abs(remaining),travel),playerPos()[1],camera.p[2]];
       if(!natureArts.buried('player'))camera.p[0]=lightArts.constrainMovement('player',playerPos(),earthArts.move(playerPos(),goal))[0];
       dashBoost.tick(dt);
       if(isDashing&&dashBoost.state().dashing===0){moveTargetX=camera.p[0];moveDirection=0;}
       dashAura.update(dt,[camera.p[0],earthFloor('player',camera.p[0],camera.p[2])+darkDomain.depth('player'),camera.p[2]],dashBoost.state().ready>0,reducedMotion);
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
-      lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;});
+      lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;},snowBlocks);
       if(checkGuardianDefeat()){updateUI();return;}
       const guardianBase=guardianAnchor?[guardianAnchor.x,guardianAnchor.y+(opponent.group.userData.height||4)*.55,guardianAnchor.z]:enemyPos();
       guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0,mouthPosition:p=>opponent.guardianMouth(p)});
       updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);guardianAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),(actor,amount)=>{const r=actor.fighter.receive(amount,true,false,'wind');if(r.damage>0){enemyHit=.25;hitTimer=.1;}return r.damage;},!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);battleMetrics.observeWalls(walls);
       enemyDashAura.update(dt,[opponent.group.position.x,earthFloor('enemy',opponent.group.position.x,opponent.group.position.z),opponent.group.position.z],enemy.hp>0&&enemyMovement.state().dashBoost.dashing>0,reducedMotion);
       if(!won)darkDomain.updateClones(dt,animationTime,[{owner:'player',pos:camera.p,fighter:player},{owner:'enemy',pos:enemyPos(),fighter:enemy}],
-        (clone,pos)=>impact({owner:clone.owner,element:'dark',style:'shadowstrike',damage:clone.damage,v:vnorm(vsub(pos,clone.p)),unreflectable:true},pos),shadowCrushImpact);
+        (clone,pos)=>impact({owner:clone.owner,element:'dark',style:'shadowstrike',damage:clone.damage,v:vnorm(vsub(pos,clone.p)),unreflectable:true},pos),shadowCrushImpact,snowBlocks);
       if(checkGuardianDefeat()){updateUI();return;}
       if(adventure?.inBattle&&!won&&(player.hp<=0||allEnemiesDefeated())){finish(player.hp>0);return;}
       messageTime -= dt;
@@ -1079,15 +1087,15 @@ async function main() {
     const playerWall = walls.find(w => w.owner === 'player' && w.hp > 0 && !['earth','wood'].includes(w.element)), shieldLabel = player.shieldTime > 0 && (player.shield || player.reflect) ? 'Khiên ' + player.shield + (player.reflect ? ' · phản đòn' : '') : '';
     const playerSpirit=windArts.spirits.find(s=>s.owner==='player'),enemySpirit=windArts.spirits.find(s=>s.owner==='enemy');
     const playerField=fields.find(f=>f.owner==='player'),enemyField=fields.find(f=>f.owner==='enemy');
-    $('shieldStatus').textContent = [elementalStatus(player),natureArts.status('player'),earthArts.status('player'),lightArts.status('player'),player.controlTime > 0 ? player.controlSource+' ' + player.controlTime.toFixed(1) + 's' : '',player.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='player')?'Ảnh độn':'Miễn nhiễm')+' · miễn nhiễm '+player.invulnerableTime.toFixed(1)+'s':'', shieldLabel,playerSpirit?'Tiên linh '+Math.max(0,playerSpirit.life-(playerSpirit.age<playerSpirit.formation?playerSpirit.formation-playerSpirit.age:0)).toFixed(1)+'s':'',playerField?'Lôi trận '+playerField.life.toFixed(1)+'s':'', playerWall ? (playerWall.element === 'ice' ? 'Băng Bích ' : playerWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường ') + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
+    $('shieldStatus').textContent = [elementalStatus(player),natureArts.status('player'),earthArts.status('player'),lightArts.status('player'),player.controlTime > 0 ? player.controlSource+' ' + player.controlTime.toFixed(1) + 's' : '',player.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='player')?'U Ảnh Thuấn Di':'Miễn nhiễm')+' · miễn nhiễm '+player.invulnerableTime.toFixed(1)+'s':'', shieldLabel,playerSpirit?'Tiên linh '+Math.max(0,playerSpirit.life-(playerSpirit.age<playerSpirit.formation?playerSpirit.formation-playerSpirit.age:0)).toFixed(1)+'s':'',playerField?'Lôi Đình Kết Giới '+playerField.life.toFixed(1)+'s':'', playerWall ? (playerWall.element === 'ice' ? 'Huyền Băng Thiên Bích ' : playerWall.element === 'water' ? 'Huyền Thủy Hộ Thuẫn ' : 'Tường ') + playerWall.hp + ' · ' + playerWall.life.toFixed(1) + 's' : ''].filter(Boolean).join(' · ') || 'Chưa có khiên';
     $('enemyHP').style.width = enemy.hp / enemy.maxHp * 100 + '%'; $('enemyHealth').textContent = Math.ceil(enemy.hp) + ' / ' + enemy.maxHp;
     const enemyWall = walls.find(w => w.owner === 'enemy' && w.hp > 0 && !['earth','wood'].includes(w.element));
-    $('enemyChakra').textContent = activeBoss()?(guardianPhases.phase===2?'THI TRIỂN TRỰC TIẾP':'MANA VÔ HẠN'):Math.floor(aiRules.chakra) + ' MANA'; $('enemyShield').textContent = [elementalStatus(enemy,false),enemy.controlTime>0?enemy.controlSource+' '+enemy.controlTime.toFixed(1)+'s':'',natureArts.status('enemy'),earthArts.status('enemy'),lightArts.status('enemy'),enemy.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='enemy')?'Ảnh độn':'Miễn nhiễm')+' '+enemy.invulnerableTime.toFixed(1)+'s':'',enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '',enemySpirit?'Tiên linh '+Math.max(0,enemySpirit.life-(enemySpirit.age<enemySpirit.formation?enemySpirit.formation-enemySpirit.age:0)).toFixed(1)+'s':'',enemyField?'Lôi trận '+enemyField.life.toFixed(1)+'s':'', enemyWall ? (enemyWall.element === 'ice'?'Băng Bích ':enemyWall.element === 'wind'?'Tường gió ':enemyWall.element === 'water' ? 'Thủy thuẫn ' : 'Tường lửa ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
+    $('enemyChakra').textContent = activeBoss()?(guardianPhases.phase===2?'THI TRIỂN TRỰC TIẾP':'MANA VÔ HẠN'):Math.floor(aiRules.chakra) + ' MANA'; $('enemyShield').textContent = [elementalStatus(enemy,false),enemy.controlTime>0?enemy.controlSource+' '+enemy.controlTime.toFixed(1)+'s':'',natureArts.status('enemy'),earthArts.status('enemy'),lightArts.status('enemy'),enemy.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='enemy')?'U Ảnh Thuấn Di':'Miễn nhiễm')+' '+enemy.invulnerableTime.toFixed(1)+'s':'',enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '',enemySpirit?'Tiên linh '+Math.max(0,enemySpirit.life-(enemySpirit.age<enemySpirit.formation?enemySpirit.formation-enemySpirit.age:0)).toFixed(1)+'s':'',enemyField?'Lôi Đình Kết Giới '+enemyField.life.toFixed(1)+'s':'', enemyWall ? (enemyWall.element === 'ice'?'Huyền Băng Thiên Bích ':enemyWall.element === 'wind'?'Tường gió ':enemyWall.element === 'water' ? 'Huyền Thủy Hộ Thuẫn ' : 'Hỏa Bích Thiên Thành ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
     if(activeBoss()&&guardianPhases.phase===2)$('enemyAction').textContent=guardianPhases.state().signature||'Quan sát · chuẩn bị thi triển';
     if(activeBoss()&&guardianPhases.state().armor>0)$('enemyShield').textContent+=' · Giáp hộ vệ −35% sát thương · '+guardianPhases.state().armor.toFixed(1)+'s';
     const boost=dashBoost.state();
     $('moveHint').textContent = boost.ready>0?'TĂNG LỰC '+boost.ready.toFixed(1)+'s · CLICK TRÁI / PHẢI ĐỂ LƯỚT 3 M':moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'GIỮ TRÁI / PHẢI ĐỂ DI CHUYỂN LIÊN TỤC';
-    $('dashBoostButton').disabled=cinematicActive()||!started||paused||won||player.controlTime>0||boost.ready>0||boost.cooldown>0;
+    $('dashBoostButton').disabled=cinematicActive()||!started||paused||won||player.controlTime>0||lightArts.blocksDash('player',playerPos())||boost.ready>0||boost.cooldown>0;
     $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':'Tăng lực · lướt 3 m';
     $('flash').style.opacity = flashTimer * .32; $('hitMarker').style.opacity = hitTimer > 0 ? 1 : 0;
     const targetEntity=aimedEnemy(),delta = vsub(adventure?.encounter?.squad?targetEntity.pos:natureArts.perceivedPosition('player',windActors()), playerPos()), d = aim(), onTarget = vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7;
@@ -1096,7 +1104,7 @@ async function main() {
     playerShield.visible = !['fire', 'water', 'lightning', 'dark','wood','ice'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45+earthFloor('player',camera.p[0],camera.p[2]), camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
     document.body.classList.toggle('dragon-active', started && !won && (!!dragonView || shots.some(s => s.owner === 'player' && s.phase === 'forming')));
     camera3d.position.fromArray(playerPos()); camera3d.rotation.set(camera.pitch, camera.yaw, 0, 'YXZ');
-    const diveDepth=darkDomain.diveDepth('player');
+    const diveDepth=darkDomain.viewDepth('player');
     if(diveDepth<0){
       camera3d.position.y+=diveDepth;
       // Preserve the aimed point outside the ink while the eyes descend beneath its surface.
@@ -1134,7 +1142,7 @@ async function main() {
     hands.lightFinger.visible=started&&!won&&!paused&&rules.ready()?.style==='lightray';
     const readyLightStyle=running?rules.ready()?.style:null;
     if(readyLightStyle==='lightray'&&lightArts.optics.some(o=>o.owner==='player'&&o.kind==='dome'&&!o.rays.length))$('message').textContent='Bắn laser vào mái vòm để tia nảy và gây sát thương mỗi giây';
-    const opticalHint={lightsphere:'SPACE tạo cầu thủy tinh trước mặt · 8 giây · laser xuyên qua thành 7 sắc',lightdome:'SPACE gọi gương rơi ghép vòm · đủ 3 ô né · chặn thoát · vòm kín 10 giây',lightmirror:'SPACE tạo gương trước mặt · phản đòn phía trước trong 2,5 giây'}[readyLightStyle];
+    const opticalHint={lightsphere:'SPACE tạo cầu thủy tinh trước mặt · 8 giây · laser xuyên qua thành 7 sắc',lightdome:'SPACE gọi gương rơi ghép vòm · đủ đi ra tự do · khóa G · tốc độ 50%, chạm vòm 25% · 10 giây',lightmirror:'SPACE tạo gương trước mặt · phản đòn phía trước trong 2,5 giây'}[readyLightStyle];
     if(opticalHint)$('message').textContent=opticalHint;
   }
   function render() {
@@ -1177,7 +1185,7 @@ async function main() {
   }
   function clearEarthView(){earthView=null;handsPass.enabled=!dragonView&&!meteorView&&!windView;}
   function beginEarthView(art){
-    if(usesWindCamera()||player.invulnerableTime>0||darkDomain.diveDepth('player')<0)return;
+    if(usesWindCamera()||player.invulnerableTime>0||darkDomain.viewDepth('player')<0)return;
     earthView={art,phase:'sky',from:camera3d.quaternion.clone()};handsPass.enabled=false;
   }
   function updateEarthView(dt){
@@ -1234,7 +1242,7 @@ async function main() {
     document.body.classList.remove('dragon-camera', 'dragon-active');
   }
   function beginDragonView(shot) {
-    if(usesWindCamera()||player.invulnerableTime>0||darkDomain.diveDepth('player')<0)return;
+    if(usesWindCamera()||player.invulnerableTime>0||darkDomain.viewDepth('player')<0)return;
     clearWindView();
     clearWaveView();
     clearMeteorView();
@@ -1249,7 +1257,7 @@ async function main() {
     document.body.classList.remove('meteor-camera');
   }
   function beginMeteorView(shot) {
-    if(usesWindCamera()||player.invulnerableTime>0||darkDomain.diveDepth('player')<0)return;
+    if(usesWindCamera()||player.invulnerableTime>0||darkDomain.viewDepth('player')<0)return;
     clearWindView();
     clearDragonView();
     cameraImpacts.reset(); setWorldFov(baseFov);
@@ -1263,7 +1271,7 @@ async function main() {
   }
   function clearWaveView() { waveView = null; }
   function beginWaveView(shot) {
-    if(usesWindCamera()||player.invulnerableTime>0||darkDomain.diveDepth('player')<0)return;
+    if(usesWindCamera()||player.invulnerableTime>0||darkDomain.viewDepth('player')<0)return;
     clearWindView();
     clearDragonView(); clearMeteorView(); cameraImpacts.reset();
     waveView = { shot, phase: 'feet', from: new T.Quaternion().setFromEuler(new T.Euler(camera.pitch, camera.yaw, 0, 'YXZ')) };
@@ -1358,7 +1366,7 @@ async function main() {
   function sidestep(direction) {if(cinematicActive())return;
     if (!started||paused||won||player.controlTime > 0) return;
     if(dashBoost.state().dashing>0)return;
-    if(dashBoost.consume()){gameAudio.dash();moveTargetX=clamp(camera.p[0]+direction*DASH_DISTANCE,-6,6);dashAura.clear();updateUI();return;}
+    if(!lightArts.blocksDash('player',playerPos())&&dashBoost.consume()){gameAudio.dash();moveTargetX=clamp(camera.p[0]+direction*DASH_DISTANCE,-6,6);dashAura.clear();updateUI();return;}
     moveTargetX = clamp(moveTargetX + direction * sidestepDistance, -6, 6);
   }
   function holdStep(direction,source){
@@ -1369,7 +1377,7 @@ async function main() {
   function releaseStep(source){heldStepSources.delete(source);}
   function armDash(){if(cinematicActive())return;
     if(!started||paused||won)return;
-    if(dashBoost.arm(player.controlTime>0||natureArts.buried('player'))){
+    if(dashBoost.arm(player.controlTime>0||natureArts.buried('player')||lightArts.blocksDash('player',playerPos()))){
       dashAura.update(0,[camera.p[0],earthFloor('player',camera.p[0],camera.p[2])+darkDomain.depth('player'),camera.p[2]],true,reducedMotion);
       announce(androidInterface()?'Tăng lực · chạm nút né trong 3 giây để lướt 3 m.':'Tăng lực · trong 3 giây, click trái / phải để lướt 3 m.');updateUI();
     }
