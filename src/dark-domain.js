@@ -5,6 +5,7 @@ import { DarkDomainIntro } from './dark-domain-intro.js';
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
 const distance=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
+export const SHADOW_CHARGE={windup:.3,dogSpeed:26,bullSpeed:24};
 
 export class DarkDomain {
   constructor(world,reducedMotion=false) {
@@ -44,12 +45,14 @@ export class DarkDomain {
       dummy.scale.set(1.2+(i%5)*.9,.7+(i%4)*.45,1);dummy.updateMatrix();pools.setMatrixAt(i,dummy.matrix);
     }pools.instanceMatrix.needsUpdate=true;this.group.add(pools);
     this.cloneMaterial=vfxToon('#38232f', { emissive:'#701822', emissiveIntensity:.24 });
+    this.summonMaterial=vfxToon('#f4f0e8',{emissive:'#fff5e5',emissiveIntensity:.16});
+    this.accentMaterial=vfxToon('#c92338',{emissive:'#e62b3e',emissiveIntensity:.2});
     this.faceMaterial=vfxToon('#130e1e');
     this.eyeMaterial=new T.MeshBasicMaterial({color:'#c2a1ef'});
     this.dogEyeMaterial=new T.MeshBasicMaterial({color:'#ef686e',toneMapped:false});
-    this.hornMaterial=vfxToon('#8b6a72',{emissive:'#481b23',emissiveIntensity:.14});
-    this.elephantMaterial=vfxToon('#5b4c61',{emissive:'#472734',emissiveIntensity:.2});
-    this.tuskMaterial=vfxToon('#c4a6a8',{emissive:'#b09aa3',emissiveIntensity:.35});
+    this.hornMaterial=vfxToon('#ba2035',{emissive:'#da2439',emissiveIntensity:.18});
+    this.elephantMaterial=vfxToon('#f4f0e8',{emissive:'#fff5e5',emissiveIntensity:.16});
+    this.tuskMaterial=vfxToon('#fff7df',{emissive:'#fff2d5',emissiveIntensity:.2});
     this.ringMaterial=new T.MeshBasicMaterial({color:'#71638a',transparent:true,opacity:.35,depthWrite:false});
     this.geometries={sphere:new T.SphereGeometry(1,14,10),cylinder:new T.CylinderGeometry(1,1,1,10),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,12),pool:new T.CircleGeometry(1,32),ring:new T.TorusGeometry(1,.018,5,48)};
     this.cloneGroup=new T.Group();this.cloneGroup.name='ShadowSummons';this.scene.add(this.cloneGroup);
@@ -100,54 +103,63 @@ export class DarkDomain {
   mesh(parent,geometry,material,p,s) {
     const m=new T.Mesh(this.geometries[geometry],material);m.position.fromArray(p);m.scale.fromArray(s);parent.add(m);return m;
   }
+  summonMarks(body,kind){
+    const bull=kind==='bull',elephant=kind==='elephant';
+    const stripe=(p,s,tilt=0)=>{const m=this.mesh(body,'box',this.accentMaterial,p,s);m.name='summon-red-mark';m.rotation.z=tilt;};
+    if(elephant){stripe([0,2.46,1.54],[.12,.48,.055]);for(const side of [-1,1])for(const z of [-.6,0,.6])stripe([side*.93,1.8,z],[.055,.5,.14],side*.2);return;}
+    stripe(bull?[0,1.49,1.23]:[0,1.14,.85],bull?[.1,.3,.055]:[.055,.22,.035]);
+    for(const side of [-1,1])for(const z of (bull?[-.55,-.05,.45]:[-.4,-.05,.3]))stripe([side*(bull?.55:.3),bull?1.1:.73,z],bull?[.04,.38,.13]:[.03,.22,.075],side*.3);
+  }
   makeClone(owner,p,target,spell,rowSlot) {
     const root=new T.Group(),body=new T.Group();root.add(body);this.cloneGroup.add(root);
     // A compact canine body with an elongated chest, muzzle, pointed ears and four legs.
-    this.mesh(body,'sphere',this.cloneMaterial,[0,.66,-.06],[.29,.31,.63]);
-    this.mesh(body,'sphere',this.cloneMaterial,[0,.72,.34],[.31,.36,.30]);
-    this.mesh(body,'sphere',this.cloneMaterial,[0,.86,.48],[.22,.30,.24]);
-    this.mesh(body,'sphere',this.cloneMaterial,[0,1.02,.61],[.25,.23,.28]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,.66,-.06],[.29,.31,.63]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,.72,.34],[.31,.36,.30]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,.86,.48],[.22,.30,.24]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,1.02,.61],[.25,.23,.28]);
     this.mesh(body,'sphere',this.faceMaterial,[0,.94,.85],[.18,.13,.25]);
-    this.mesh(body,'sphere',this.cloneMaterial,[0,.98,1.06],[.11,.075,.06]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,.98,1.06],[.11,.075,.06]);
     for(const side of [-1,1]){
-      const ear=this.mesh(body,'cone',this.cloneMaterial,[side*.17,1.29,.55],[.13,.35,.12]);ear.rotation.z=side*-.18;
+      const ear=this.mesh(body,'cone',this.summonMaterial,[side*.17,1.29,.55],[.13,.35,.12]);ear.rotation.z=side*-.18;
       this.mesh(body,'cone',this.faceMaterial,[side*.17,1.30,.60],[.07,.23,.035]).rotation.z=side*-.18;
       this.mesh(body,'sphere',this.dogEyeMaterial,[side*.18,1.07,.79],[.055,.033,.035]);
     }
     const tail=new T.Group();tail.position.set(0,.71,-.62);body.add(tail);
-    this.mesh(tail,'cone',this.cloneMaterial,[0,.18,-.15],[.12,.47,.12]).rotation.x=-.65;
-    this.mesh(tail,'cone',this.cloneMaterial,[0,.39,-.22],[.085,.34,.085]).rotation.x=.38;
+    this.mesh(tail,'cone',this.summonMaterial,[0,.18,-.15],[.12,.47,.12]).rotation.x=-.65;
+    this.mesh(tail,'cone',this.summonMaterial,[0,.39,-.22],[.085,.34,.085]).rotation.x=.38;
     const limbs=[];
     for(const side of [-1,1])for(const front of [-1,1]) {
       const leg=new T.Group();leg.position.set(side*.22,.58,front*.36);body.add(leg);
-      this.mesh(leg,'sphere',this.cloneMaterial,[0,-.10,0],[.12,.23,.15]);
+      this.mesh(leg,'sphere',this.summonMaterial,[0,-.10,0],[.12,.23,.15]);
       const lower=new T.Group();lower.position.set(0,-.28,front<0?-.035:0);leg.add(lower);
-      this.mesh(lower,'cylinder',this.cloneMaterial,[0,-.11,0],[.065,.24,.065]);
+      this.mesh(lower,'cylinder',this.summonMaterial,[0,-.11,0],[.065,.24,.065]);
       this.mesh(lower,'sphere',this.faceMaterial,[0,-.23,.045],[.105,.09,.16]);
-      limbs.push({phase:side*front,leg,lower});
+      limbs.push({phase:side*front,front,side,leg,lower});
     }
+    this.summonMarks(body,'dog');
     const pool=this.mesh(root,'pool',this.faceMaterial,[0,.06,0],[.8,.8,1]);pool.rotation.x=-Math.PI/2;
     const ring=this.mesh(root,'ring',this.ringMaterial,[0,.09,0],[.7,.7,.7]);ring.rotation.x=-Math.PI/2;
     const clone={id:++this.serial,owner,rowSlot,form:'dog',riseDepth:1.5,hitHeight:.72,hitRadius:.6,mode:'rising',p:[p[0],0,p[2]],home:[p[0],0,p[2]],target:[...target],age:0,damage:spell.damage,root,body,limbs,tail,pool,ring};
     root.position.fromArray(clone.p);body.position.y=-1.5;
     this.clones.push(clone);this.splash(p);return clone;
   }
-  commandable(owner){return this.clones.filter(c=>c.owner===owner&&!['respawning','carried'].includes(c.mode));}
+  commandable(owner){return this.clones.filter(c=>c.owner===owner&&!['respawning','carried','windup'].includes(c.mode));}
   cloneCount(owner){return this.clones.filter(c=>c.owner===owner).length;}
   upgradable(owner){return this.clones.filter(c=>c.owner===owner&&c.form==='dog');}
-  canSummon(owner,max=3){return this.cloneCount(owner)<max||this.upgradable(owner).length>0;}
+  canSummon(owner,max=4){return this.cloneCount(owner)<max||this.upgradable(owner).length>0;}
   makeElephant(parent){
     const body=new T.Group();parent.add(body);
     this.mesh(body,'sphere',this.elephantMaterial,[0,1.75,-.12],[.95,.76,1.20]);
     this.mesh(body,'sphere',this.elephantMaterial,[0,2.13,.92],[.72,.68,.75]);
     for(const side of [-1,1]){
       this.mesh(body,'sphere',this.elephantMaterial,[side*.86,2.12,.71],[.65,.81,.22]).rotation.z=side*.14;
-      this.mesh(body,'sphere',this.faceMaterial,[side*.94,2.13,.86],[.42,.57,.09]);
+      this.mesh(body,'sphere',this.accentMaterial,[side*.94,2.13,.86],[.42,.57,.09]).name='summon-red-mark';
       this.mesh(body,'sphere',this.dogEyeMaterial,[side*.40,2.28,1.53],[.09,.05,.045]);
       this.mesh(body,'cone',this.tuskMaterial,[side*.36,1.78,1.78],[.11,.77,.11]).rotation.x=Math.PI/2;
       for(const front of [-1,1]){
         this.mesh(body,'cylinder',this.elephantMaterial,[side*.58,.77,front*.72],[.29,1.40,.29]);
         this.mesh(body,'sphere',this.faceMaterial,[side*.58,.12,front*.72],[.34,.16,.36]);
+        this.mesh(body,'cylinder',this.accentMaterial,[side*.58,.38,front*.72],[.3,.12,.3]).name='summon-red-mark';
       }
     }
     const curve=new T.CatmullRomCurve3([new T.Vector3(0,2.05,1.50),new T.Vector3(0,1.69,1.87),new T.Vector3(0,1.00,2.01),new T.Vector3(0,.81,2.25),new T.Vector3(0,1.07,2.38)]),up=new T.Vector3(0,1,0);
@@ -155,37 +167,39 @@ export class DarkDomain {
       const a=curve.getPoint(i/9),z=curve.getPoint((i+1)/9),delta=z.clone().sub(a),radius=.22-i*.012;
       const m=this.mesh(body,'cylinder',this.elephantMaterial,a.clone().add(z).multiplyScalar(.5).toArray(),[radius,delta.length()+.035,radius]);m.quaternion.setFromUnitVectors(up,delta.normalize());
       this.mesh(body,'sphere',this.elephantMaterial,z.toArray(),[radius,radius,radius]);
+      if(i%3===0){const band=this.mesh(body,'cylinder',this.accentMaterial,z.toArray(),[radius*1.05,.1,radius*1.05]);band.name='summon-red-mark';band.quaternion.setFromUnitVectors(up,delta);}
     }
     this.mesh(body,'cylinder',this.elephantMaterial,[0,1.08,-1.24],[.055,.80,.055]).rotation.x=.14;
-    return body;
+    this.summonMarks(body,'elephant');return body;
   }
   upgradeClone(c,spell){
     const body=c.body;body.clear();
-    this.mesh(body,'sphere',this.cloneMaterial,[0,.99,-.13],[.55,.49,.86]);
-    this.mesh(body,'sphere',this.cloneMaterial,[0,1.06,.43],[.60,.55,.44]);
-    this.mesh(body,'sphere',this.cloneMaterial,[0,1.25,.73],[.40,.44,.36]);
-    this.mesh(body,'sphere',this.cloneMaterial,[0,1.27,.96],[.43,.36,.37]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,.99,-.13],[.55,.49,.86]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,1.06,.43],[.60,.55,.44]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,1.25,.73],[.40,.44,.36]);
+    this.mesh(body,'sphere',this.summonMaterial,[0,1.27,.96],[.43,.36,.37]);
     this.mesh(body,'sphere',this.faceMaterial,[0,1.15,1.21],[.33,.22,.22]);
     for(const side of [-1,1]){
       this.mesh(body,'sphere',this.faceMaterial,[side*.14,1.20,1.40],[.055,.035,.025]);
       this.mesh(body,'sphere',this.dogEyeMaterial,[side*.29,1.40,1.20],[.065,.04,.035]);
-      this.mesh(body,'sphere',this.cloneMaterial,[side*.48,1.45,.81],[.23,.085,.13]).rotation.z=side*.2;
+      this.mesh(body,'sphere',this.summonMaterial,[side*.48,1.45,.81],[.23,.085,.13]).rotation.z=side*.2;
       this.mesh(body,'cone',this.hornMaterial,[side*.43,1.69,.87],[.10,.45,.10]).rotation.z=-side*.85;
       this.mesh(body,'cone',this.hornMaterial,[side*.61,1.87,.87],[.065,.34,.065]).rotation.z=side*.22;
     }
     const tail=new T.Group();tail.position.set(0,1.04,-.93);body.add(tail);
-    this.mesh(tail,'cylinder',this.cloneMaterial,[0,-.25,-.03],[.045,.50,.045]).rotation.x=.12;
+    this.mesh(tail,'cylinder',this.summonMaterial,[0,-.25,-.03],[.045,.50,.045]).rotation.x=.12;
     this.mesh(tail,'sphere',this.faceMaterial,[0,-.51,-.06],[.09,.14,.10]);
     const limbs=[];
     for(const side of [-1,1])for(const front of [-1,1]){
       const leg=new T.Group();leg.position.set(side*.38,.86,front*.54);body.add(leg);
-      this.mesh(leg,'sphere',this.cloneMaterial,[0,-.17,0],[.19,.29,.19]);
+      this.mesh(leg,'sphere',this.summonMaterial,[0,-.17,0],[.19,.29,.19]);
       const lower=new T.Group();lower.position.y=-.38;leg.add(lower);
-      this.mesh(lower,'cylinder',this.cloneMaterial,[0,-.16,0],[.10,.33,.10]);
+      this.mesh(lower,'cylinder',this.summonMaterial,[0,-.16,0],[.10,.33,.10]);
       this.mesh(lower,'box',this.faceMaterial,[0,-.36,.02],[.25,.17,.33]);
-      limbs.push({phase:side*front,leg,lower});
+      limbs.push({phase:side*front,front,side,leg,lower});
     }
-    c.form='bull';c.damage=spell.damage*spell.upgradeMultiplier;c.limbs=limbs;c.tail=tail;
+    this.summonMarks(body,'bull');
+    c.form='bull';c.damage=spell.upgradeDamage;c.limbs=limbs;c.tail=tail;
     c.riseDepth=2.2;c.hitHeight=1.06;c.hitRadius=.85;c.pool.scale.set(1.15,1.15,1);
     if(c.mode==='rising')c.body.position.y=-c.riseDepth*(1-ease(c.age/.45));
     this.splash(c.p);return true;
@@ -209,7 +223,7 @@ export class DarkDomain {
       }
     }else if(spell.style==='shadowcommand'){
       const clones=this.commandable(owner);if(!clones.length)return false;
-      for(const c of clones){c.target=[target[0],0,target[2]];c.mode='charging';c.age=0;c.body.position.y=0;}
+      for(const c of clones){c.target=[target[0],0,target[2]];c.mode='windup';c.age=0;c.body.position.y=0;}
       this.splash(target);
     }else if(spell.style==='shadowbind'){
       for(const b of [...this.bindings])if(b.owner===owner)this.releaseBinding(b);
@@ -242,6 +256,7 @@ export class DarkDomain {
       c.age+=dt;const opponent=fighters.find(f=>f.owner!==c.owner);
       if(!opponent)continue;
       if(c.mode==='carried'){
+        c.body.position.z=0;c.body.rotation.x=0;
         const {wave,target}=c.waveCarry,dx=target[0]-c.p[0],dz=target[2]-c.p[2],dist=Math.hypot(dx,dz);
         const step=Math.min(dist,(wave.motionSpeed??Math.hypot(...wave.v)*(wave.slowFactor??1))*dt);
         if(dist>.001){c.p[0]+=dx/dist*step;c.p[2]+=dz/dist*step;}
@@ -255,21 +270,30 @@ export class DarkDomain {
         else continue;
       }
       if(c.mode==='rising'&&c.age>=.45){c.mode='idle';c.age=0;}
+      if(c.mode==='windup'){
+        const q=ease(c.age/SHADOW_CHARGE.windup),dx=c.target[0]-c.p[0],dz=c.target[2]-c.p[2];c.root.rotation.y=Math.atan2(dx,dz);
+        if(c.age<SHADOW_CHARGE.windup){
+          c.body.position.set(0,this.reducedMotion?0:-.17*q,this.reducedMotion?0:-.16*q);c.body.rotation.x=this.reducedMotion?0:.16*q;
+          for(const l of c.limbs){l.leg.rotation.x=this.reducedMotion?0:(l.front>0?-.35:.65)*q;l.lower.rotation.x=this.reducedMotion?0:.8*q;}
+          continue;
+        }
+        c.mode='charging';c.age=0;c.body.position.z=0;
+      }
       const moving=c.mode==='charging',destination=moving?c.target:opponent.pos;
       const delta=[destination[0]-c.p[0],destination[2]-c.p[2]],dist=Math.hypot(...delta);
       if(moving){
-        const travel=Math.min(dist,dt*17);if(dist>.001){c.p[0]+=delta[0]/dist*travel;c.p[2]+=delta[1]/dist*travel;}
+        const speed=c.form==='bull'?SHADOW_CHARGE.bullSpeed:SHADOW_CHARGE.dogSpeed,travel=Math.min(dist,dt*speed);if(dist>.001){c.p[0]+=delta[0]/dist*travel;c.p[2]+=delta[1]/dist*travel;}
         if(distance(c.p,destination)<.15){
           if(distance(c.p,opponent.pos)<1.35&&opponent.fighter.invulnerableTime<=0)strike(c,[opponent.pos[0],1.5,opponent.pos[2]]);
           this.destroyClone(c);continue;
         }
       }
       c.root.position.fromArray(c.p);c.root.rotation.y=Math.atan2(delta[0],delta[1]);
-      const gait=c.age*(c.form==='bull'?12:16);
-      c.body.position.y=c.mode==='rising'?-c.riseDepth*(1-ease(c.age/.45)):moving?Math.abs(Math.sin(gait))*.055:0;
-      c.body.rotation.z=Math.sin(time*3+c.id)*.018;c.ring.scale.setScalar(.75+Math.sin(time*2+c.id)*.06);
-      c.tail.rotation.z=Math.sin(time*4+c.id)*.14;
-      for(const l of c.limbs){const run=moving?Math.sin(gait)*l.phase*(c.form==='bull'?.45:.6):0;l.leg.rotation.x=run;l.lower.rotation.x=moving?Math.max(0,-run)*.7:0;}
+      const gait=c.age*(c.form==='bull'?22:28),animate=moving&&!this.reducedMotion;
+      c.body.position.y=c.mode==='rising'?-c.riseDepth*(1-ease(c.age/.45)):animate?.1+Math.abs(Math.sin(gait))*.16:0;
+      c.body.rotation.x=animate?.12+Math.sin(gait)*.045:0;c.body.rotation.z=animate?Math.sin(gait)*.025:0;c.ring.scale.setScalar(.75+Math.sin(time*2+c.id)*.06);
+      c.tail.rotation.z=this.reducedMotion?0:Math.sin(moving?gait:time*4+c.id)*(moving?.3:.14);
+      for(const l of c.limbs){const wave=Math.sin(gait+(l.front>0?0:Math.PI*.72)+(l.side<0?.25:0));l.leg.rotation.x=animate?wave*(c.form==='bull'?.9:1.1):0;l.lower.rotation.x=animate?.25+Math.max(0,-wave)*.95:0;}
     }
     this.updateDomainArts(dt,fighters,crush);
   }

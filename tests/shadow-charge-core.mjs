@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import * as T from 'three';
+import '../game-core.js';
+import {DarkDomain,SHADOW_CHARGE} from '../src/dark-domain.js';
+const element={innerHTML:'',style:{setProperty(){}},classList:{toggle(){},remove(){}}};globalThis.document={getElementById:()=>element,querySelector:()=>element,body:element};
+const scene=new T.Scene(),domain=new DarkDomain({scene,environment:[]}),spells=SealGameCore.spells,spell=spells.find(s=>s.id==='dark-orb'),order=spells.find(s=>s.id==='dark-lance');
+const p=[0,1.72,7],target=[0,1.72,-13],fighters=[{owner:'player',pos:p,fighter:{invulnerableTime:0}},{owner:'enemy',pos:[...target],fighter:{invulnerableTime:0}}];let hits=[];
+function cast(s=spell){return domain.cast(s,'player',p,[0,0,-1],target,{},fighters[1]);}
+function step(seconds){for(let t=0;t<seconds-1e-8;t+=1/120)domain.updateClones(Math.min(1/120,seconds-t),t,fighters,c=>hits.push(c.damage));}
+assert.ok(cast());assert.equal(domain.clones.length,2);step(.6);const homes=domain.clones.map(c=>[...c.p]);assert.ok(cast(order));step(.2);assert.ok(domain.clones.every(c=>c.mode==='windup'&&c.body.position.y<0));assert.deepEqual(domain.clones.map(c=>c.p),homes);step(.12);assert.ok(domain.clones.every(c=>c.mode==='charging'));const start=[...domain.clones[0].p];step(.1);assert.ok(Math.abs(Math.hypot(domain.clones[0].p[0]-start[0],domain.clones[0].p[2]-start[2])-SHADOW_CHARGE.dogSpeed*.1)<1e-6);assert.ok(domain.clones.some(c=>c.limbs.some(l=>Math.abs(l.leg.rotation.x)>.5)));step(2);assert.deepEqual(hits,[20,20]);assert.equal(domain.clones.length,0);
+domain.reset();hits=[];cast();domain.removeClone(domain.clones[0]);assert.equal(domain.cloneCount('player'),1);cast();assert.equal(domain.cloneCount('player'),3);cast();assert.equal(domain.cloneCount('player'),4,'last cast fills only the remaining slot');assert.equal(new Set(domain.clones.map(c=>c.rowSlot)).size,4);for(let i=0;i<4;i++)assert.ok(cast());assert.equal(cast(),false);assert.ok(domain.clones.every(c=>c.form==='bull'&&c.damage===30&&c.body.getObjectsByProperty('name','summon-red-mark').length>=7));
+step(.6);cast(order);step(.2);assert.ok(domain.clones.every(c=>c.mode==='windup'));step(.12);const bullStart=[...domain.clones[0].p];step(.1);assert.ok(Math.abs(Math.hypot(domain.clones[0].p[0]-bullStart[0],domain.clones[0].p[2]-bullStart[2])-SHADOW_CHARGE.bullSpeed*.1)<1e-6);step(2);assert.equal(hits.reduce((a,b)=>a+b,0),120);
+domain.reset();hits=[];cast();step(.6);cast(order);fighters[1].pos[0]=6;step(2);assert.equal(hits.length,0,'run heads to the ordered point and may be dodged');assert.equal(domain.cloneCount('player'),0);
+assert.equal(domain.summonMaterial.color.getHexString(),'f4f0e8');assert.equal(domain.accentMaterial.color.getHexString(),'c92338');assert.equal(domain.elephantMaterial.color.getHexString(),'f4f0e8');const elephant=domain.makeElephant(scene);assert.ok(elephant.getObjectsByProperty('name','summon-red-mark').length>=10);
+console.log('PASS: real summon cap/partial fill, 0.3s stationary windup, 26m/s dog and 24m/s bull gallop, fixed-point dodge and exact20/30 damage, white/red dog/bull/elephant geometry.');

@@ -58,7 +58,7 @@ Các con số là sát thương gốc, sau đó áp dụng hệ số trùm, khá
 
 - Hắc lãnh địa luôn tồn tại đến kết thúc trận; thi triển lãnh địa khác không làm nó hết hạn.
 - Mọi chiêu Ám của người: không tốn mana, hồi chiêu còn 60%, sát thương gốc ×1,5. Không đổi chiêu của người chơi.
-- Ảnh phân thân: mỗi lần gọi hai bóng, tối đa bốn, chó 33 sát thương, bò 49,5.
+- Ảnh phân thân: mỗi lần gọi hai bóng, tối đa bốn, chó 30 sát thương, bò 45.
 - Ảnh tập kích điều khiển toàn bộ bóng như bình thường.
 - Ảnh tượng: 135 sát thương gốc, voi rơi nhanh hơn (0,5 giây), vẫn có thể né.
 - Ảnh độn: kéo dài 4,5 giây.

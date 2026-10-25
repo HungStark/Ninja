@@ -28,7 +28,7 @@ for(const [id,life,cost,cd,hp] of [['fire-reflect',9,28,13,120],['water-reflect'
 }
 assert.equal(s('light-reflect').sequence.length,3);assert.equal(s('light-reflect').cost,22);assert.equal(s('light-reflect').duration,2.5);
 for(const id of ['wood-reflect','ice-reflect']){assert.equal(s(id).sequence.length,6);assert.equal(s(id).oncePerMatch,true);}
-assert.equal(s('water-tsunami').damage,79);assert.equal(s('dark-orb').damage,22);assert.equal(s('dark-orb').damage*s('dark-orb').upgradeMultiplier,33);assert.equal(s('lightning-lance').damage,22);assert.equal(s('ice-lance').controlDuration,1.5);
+assert.equal(s('water-tsunami').damage,79);assert.equal(s('dark-orb').damage,20);assert.equal(s('dark-orb').upgradeDamage,30);assert.equal(s('lightning-lance').damage,22);assert.equal(s('ice-lance').controlDuration,1.5);
 for(const id of ['wind-reflect','ice-volley','lightning-reflect'])assert.equal(s(id).duration,5);assert.equal(s('dark-reflect').duration,3);
 for(const id of ['fire-volley','water-barrier','lightning-lance']){
   const r=new GameRules([id],{cooldownOverrides:introductoryCooldowns([id],true)});s(id).sequence.forEach(k=>r.seal(k));assert.equal(r.cast().spell.cooldown,4);assert.equal(r.remaining(id),4);assert.ok(s(id).cooldown>=4);
