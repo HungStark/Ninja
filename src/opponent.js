@@ -54,7 +54,7 @@ export async function createOpponent(scene,spawnPosition,playerModel=false){
     shield.visible=!['fire','water','lightning','dark'].includes(fighter.defenseElement)&&fighter.shieldTime>0&&(fighter.shield>0||fighter.reflect>0);shield.material.color.set(fighter.color);shield.rotation.y=time*.4;
   }
   setAppearance();
-  return {group,rig,update,shield,aura,get guardianAura(){return guardianAura?.root;},get legs(){return ninja?.legs||[];},setInkViewport:(w,h)=>rig.setInkViewport(w,h),setAppearance};
+  return {group,rig,update,shield,aura,guardianMouth:p=>(creature||guardianAura)?.mouthPosition(p).toArray(),setGuardianArtPose:p=>{creature?.setArtPose(p);guardianAura?.setArtPose(p);},get guardianAura(){return guardianAura?.root;},get legs(){return ninja?.legs||[];},setInkViewport:(w,h)=>rig.setInkViewport(w,h),setAppearance};
 }
 
 // The exploration hero with the articulated hand-seal rig used by combat.

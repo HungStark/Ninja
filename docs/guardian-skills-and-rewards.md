@@ -1,6 +1,6 @@
 # Linh thú, kỳ ngộ và giọng nhân vật — 25/10/2026
 
-Linh thú đồng minh Vô Danh dùng chung bộ chiêu cơ bản với cả 10 linh thú: tích tụ 1,3 giây rồi bắn pháo; đánh dấu vùng đỏ, gồng 1 giây rồi nhảy bổ và gây sát thương khi tiếp đất; lá chắn bao quanh cơ thể trong 6 giây. Vùng đỏ cố định tại vị trí ban đầu để đối thủ có thể né. Vô Danh vẫn chia sẻ thêm 24 khiên với người chơi.
+Hộ vệ Vô Danh chỉ dùng pháo năng lượng và nhảy dậm, không tạo khiên cho bản thân hay người chơi. Linh thú tích tụ quả cầu trước miệng 1,5 giây, rụt đầu rồi phóng luồng năng lượng. Cú nhảy báo vùng đỏ và gồng 1 giây, bay chéo lên trong 0,45 giây rồi dậm xuống trong 0,16 giây, để lại vết nứt nhẹ. Các linh thú khác vẫn có chiêu giáp hộ vệ.
 
 Kỳ ngộ được xếp vào Nhiệm vụ trong làng và theo đủ trạng thái chưa nhận / đang làm / trở về nhận thưởng / đã hoàn thành. Mỗi kỳ ngộ chỉ trao chiêu được giới thiệu; chưa đủ cấp thì giữ sách của chính chiêu đó. Không dạy cả hệ khi quay lại cao nhân. Nhiệm vụ cư dân đổi sách đã sở hữu thành 100 xu, không thay bằng sách của nhiệm vụ khác.
 

@@ -13,11 +13,11 @@ Trong trận ba ninja Hỏa, Thủy và Lôi ở quê nhà, Vô Danh Thú dùng 
 
 Hộ vệ tự hỗ trợ bằng:
 
-- **Hư quang:** đạn linh lực gây 22 sát thương, khoảng 4,5 giây/lần.
-- **Chấn địa:** gây 12 sát thương lên mỗi đối thủ còn sống, khoảng 10 giây/lần.
-- **Vòng hộ mệnh:** bảo đảm ít nhất 24 lá chắn trong 5 giây, khoảng 12 giây/lần.
+- **Pháo năng lượng:** tích tụ quả cầu 1,5 giây, rụt đầu rồi phóng luồng năng lượng gây sát thương liên tục.
+- **Nhảy dậm:** báo vùng đỏ, gồng 1 giây, nhảy chéo lên rồi dậm nhanh xuống; gây 12 sát thương trong vùng và để lại vết nứt nhẹ.
+- Hộ vệ Vô Danh không dùng chiêu tạo khiên.
 
-Đòn đánh thật sự trừ máu và lá chắn thật sự đỡ đòn. Hộ vệ không cần người chơi kết ấn hay trả mana. Đồng minh chỉ xuất hiện trong trận mở đầu; thời gian và đòn đánh dừng khi tạm dừng hoặc đang chạy màn VS. Rời trận, thua, thắng hoặc bắt đầu trận khác đều dọn trạng thái đồng minh.
+Đòn đánh thật sự trừ máu. Hộ vệ không cần người chơi kết ấn hay trả mana. Đồng minh chỉ xuất hiện trong trận mở đầu; thời gian và đòn đánh dừng khi tạm dừng hoặc đang chạy màn VS. Rời trận, thua, thắng hoặc bắt đầu trận khác đều dọn trạng thái đồng minh.
 
 ## Báo chiến thắng và ký kết
 

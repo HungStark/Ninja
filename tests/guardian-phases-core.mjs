@@ -14,16 +14,16 @@ for(const village of Object.keys(GUARDIAN_ARTS)){
   const total=1001,parts=guardianPhaseHealth(total,village),f=new Fighter(total);g.reset({village,element:village,hp:total},f);assert.equal(parts.reduce((a,b)=>a+b),total);assert.equal(parts.length,village==='dark'?3:2);assert.equal(f.hp,parts[0]);
   f.hp=1;assert.equal(g.beginTransition(f),false,'must deplete whole HP bar');next(f);assert.equal(g.form,'beast');assert.equal(f.hp,parts[1]);
   hits=[];g.trigger(0,p,b,f);step(.9,f);assert.equal(g.offset.y,0,'full one-second windup before takeoff');const warning=scene.children[0].children.find(m=>m.geometry.type==='CircleGeometry');assert.equal(warning.material.color.getHexString(),'ff2626');assert.equal(hits.length,0);step(1.1,f,[5,1.72,7]);assert.equal(hits.length,0,'all villages can dodge the snapshotted warning');
-  for(const index of [0,1,2,3,4]){hits=[];assert.ok(g.trigger(index,p,b,f));step(6,f);assert.ok(scene.children[0].children.every(m=>m.matrix.elements.every(Number.isFinite)));}
-  assert.equal(new Set(g.state().history.map(a=>a.name)).size,5,village+' five different direct arts');
+  for(const index of (village==='nameless'?[0,1,2,4]:[0,1,2,3,4])){hits=[];assert.ok(g.trigger(index,p,b,f));step(6,f);assert.ok(scene.children[0].children.every(m=>m.matrix.elements.every(Number.isFinite)));}
+  assert.equal(new Set(g.state().history.map(a=>a.name)).size,village==='nameless'?4:5,village+' distinct direct arts');
   if(village==='dark'){next(f);assert.equal(g.form,'avatar');assert.equal(f.hp,parts[2]);}
   f.hp=0;assert.equal(g.beginTransition(f),false,'last phase ends encounter');g.reset();assert.equal(scene.children[0].children.length,0,'reset removes every visual');
 }
 function beast(village='water'){const f=new Fighter(1000);g.reset({village,element:village,hp:1000},f);next(f);hits=[];return f;}
 let f=beast();g.trigger(0,p,b,f);step(1.4,f);assert.ok(g.offset.y>5);step(.65,f,[5,1.72,7]);assert.equal(hits.length,0,'slam snapshots a position and can be dodged');
 f=beast();g.trigger(0,p,b,f);step(2.1,f);assert.equal(hits.length,1);assert.equal(hits[0].shot.damage,38);
-f=beast();g.trigger(2,p,b,f);step(1.25,f);assert.equal(hits.length,0,'beam charges and swallows orb before firing');step(1,f);assert.ok(hits.length>=5,'beam applies multiple small ticks');assert.ok(hits.every(h=>h.shot.blockable&&h.shot.damage<3));
-f=beast();g.trigger(2,p,b,f);step(1.31,f);hits=[];step(.5,f,[3,1.72,7]);assert.equal(hits.length,0,'a 3 m dash can outrun the tracking beam');
+f=beast();g.trigger(2,p,b,f);step(1.49,f);assert.equal(hits.length,0,'orb charges for 1.5 seconds');step(.28,f);assert.equal(hits.length,0,'head recoils before firing');step(.9,f);assert.ok(hits.length>=5,'beam applies multiple small ticks');assert.ok(hits.every(h=>h.shot.blockable&&h.shot.damage<3));
+f=beast();g.trigger(2,p,b,f);step(1.8,f);hits=[];step(.5,f,[3,1.72,7]);assert.equal(hits.length,0,'a 3 m dash can outrun the tracking beam');
 f=beast();g.trigger(3,p,b,f);step(.1,f);assert.equal(g.damageMultiplier(),.65);step(6,f);assert.equal(g.damageMultiplier(),1,'armor expires');
 f=beast('wood');f.hp=200;g.trigger(4,p,b,f);step(1,f);assert.ok(f.hp>200&&f.hp<210);g.onDamage(f.maxHp*.08);const before=f.hp;step(1,f);assert.equal(f.hp,before,'healing interrupts on enough incoming damage');
 f=beast('ice');g.trigger(4,p,b,f);step(1.8,f);assert.equal(g.slowAt(p),.65);assert.equal(g.slowAt([6,1.72,7]),1);step(.1,f,p,{controlled:true});assert.equal(g.state().action,null,'control cancels monster action');

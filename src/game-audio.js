@@ -1,5 +1,6 @@
 import {createSpeechOutput} from './speech-output.js';
 import {characterVoice} from './character-voice.js';
+import {spellCastCue,spellImpactCue} from './spell-audio-cues.js';
 // Original procedural score and effects: no downloads or third-party recordings.
 export const AUDIO_STORAGE_KEY='anhoa-audio-v1';
 export const VILLAGE_MUSIC={
@@ -21,7 +22,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
   const platformDefaults=android?{...defaults,music:.75,voice:.9}:defaults,musicBoost=android?2:1;
   let settings={...platformDefaults};try{const raw=JSON.parse((storage||globalThis.localStorage)?.getItem(AUDIO_STORAGE_KEY)||'null');if(raw){for(const key of ['music','effects','voice'])if(Number.isFinite(raw[key]))settings[key]=clamp(raw[key]);for(const key of ['muted','readDialogue'])if(typeof raw[key]==='boolean')settings[key]=raw[key];if(['male','female'].includes(raw.heroVoice))settings.heroVoice=raw.heroVoice;}}catch{}
   let ctx=null,master,music,effects,voice,analyser,noiseBuffer,timer=null,theme='nameless',mode='home',musicBus=null,step=0,nextNote=0,dialogue=null,utterance=null,hidden=false,settingsOpen=false,destroyed=false;
-  const active=new Set(),lastEffects=new Map(),listeners=new Set(),stats={notes:0,seals:0,casts:0,impacts:0,dialogueLines:0,syllables:0,shuriken:0,dashes:0};
+  const active=new Set(),lastEffects=new Map(),listeners=new Set(),stats={notes:0,seals:0,casts:0,impacts:0,dialogueLines:0,syllables:0,shuriken:0,dashes:0,cues:{}};
   const notify=()=>listeners.forEach(fn=>fn({...settings}));
   const ramp=(param,value,duration=.15)=>{if(!ctx||!param)return;param.cancelScheduledValues(ctx.currentTime);param.setTargetAtTime(value,ctx.currentTime,duration/3);};
   const apply=()=>{if(!ctx)return;ramp(master.gain,settings.muted||hidden?0:.72);ramp(music.gain,settings.music*musicBoost*(dialogue?.24:settingsOpen||mode==='pause'?.42:mode==='dialog'?.55:1));ramp(effects.gain,settings.effects);ramp(voice.gain,settings.voice);};
@@ -87,8 +88,30 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
     setScene(village,phase){const next=VILLAGE_MUSIC[village]?village:'nameless';if(theme===next&&mode===phase)return;const changed=theme!==next||(['combat','duel'].includes(mode)!==['combat','duel'].includes(phase));theme=next;mode=phase;if(changed)resetMusic();apply();},
     settingsOpen(open){settingsOpen=open;apply();},
     tone(hz=260,duration=.08,wave='sine',volume=.06){if(canEffect('tone',.018))note(effects,hz,ctx.currentTime,duration,volume,wave,hz*.65);},
+    cue(type,intensity=1){
+      if(!type||!canEffect('cue-'+type,.09))return;stats.cues[type]=(stats.cues[type]||0)+1;const t=ctx.currentTime,power=Math.max(.05,Math.min(1,intensity));
+      const fx=(hz,dur,volume,wave='sine',end=hz,delay=0)=>note(effects,hz,t+delay,dur,volume*power,wave,end);
+      const hiss=(dur,volume,cutoff,type='lowpass',end=cutoff,delay=0)=>noise(effects,t+delay,dur,volume*power,cutoff,type,end);
+      if(type==='energy-charge'){for(let i=0;i<9;i++)fx(110+i*55,.3,.025+i*.006,'triangle',150+i*80,i*.15);hiss(1.5,.12,250,'bandpass',2400);}
+      else if(type==='energy-fire'){hiss(1.25,.3,3800,'bandpass',1100);fx(65,1.2,.19,'sawtooth',37);fx(230,.45,.065,'triangle',70);}
+      else if(type==='dragon-roar'||type==='guardian-roar'){for(let i=0;i<5;i++){fx(76+i*23,.75,.045,'sawtooth',38+i*13,i*.035);hiss(.25,.06,260+i*110,'bandpass',120,i*.1);}hiss(.85,.15,560,'lowpass',90);}
+      else if(type==='meteor-fall'){hiss(1.15,.3,4200,'bandpass',450);fx(650,1.1,.09,'sawtooth',45);}
+      else if(type==='meteor-summon'){hiss(.8,.14,170,'lowpass',600);fx(48,.8,.1,'sine',85);}
+      else if(type==='explosion'){hiss(.85,.34,4200,'lowpass',90);fx(85,1,.24,'sine',24);hiss(.6,.13,240,'lowpass',60,.15);}
+      else if(type==='thunder-strike'){hiss(.1,.38,7000,'highpass',1100);hiss(2,.24,380,'lowpass',50,.08);fx(62,1.6,.17,'triangle',25,.03);hiss(.8,.1,160,'lowpass',55,.65);}
+      else if(type==='static-charge'||type==='lightning-crack'){for(let i=0;i<4;i++){hiss(.05,.13,5200,'highpass',1700,i*.07);fx(1800-i*230,.1,.035,'sawtooth',140,i*.06);}if(type==='static-charge')fx(110,.8,.06,'sawtooth',330);}
+      else if(type==='wind-howl'||type==='wind-cut'){const length=type==='wind-howl'?1.1:.3;hiss(length,.24,650,'bandpass',3400);fx(720,length,.035,'sine',1600);fx(950,length,.018,'sine',430);}
+      else if(type==='rock-shift'||type==='stone-impact'){hiss(type==='stone-impact'?.7:1,.26,650,'lowpass',65);fx(type==='stone-impact'?90:60,.7,.18,'triangle',26);for(let i=0;i<6;i++)hiss(.07,.07,1300-i*130,'bandpass',140,i*.065);}
+      else if(type==='water-surge'||type==='water-splash'){hiss(type==='water-surge'?1:.35,.24,1200,'bandpass',290);for(let i=0;i<5;i++)fx(420+i*95,.12,.03,'sine',170+i*40,i*.045);}
+      else if(type==='wood-creak'||type==='wood-snap'){fx(160,.55,.07,'sawtooth',65);for(let i=0;i<4;i++)hiss(.06,.1,1500-i*270,'bandpass',250,i*.065);}
+      else if(type==='ice-crack'){hiss(.09,.14,5200,'highpass',1600);for(let i=0;i<5;i++)fx(1200+i*530,.3,.025,'sine',1100+i*390,i*.025);}
+      else if(type==='light-chime'){for(let i=0;i<4;i++)fx(660*2**(i/3),.6,.035,'sine',690*2**(i/3),i*.04);}
+      else if(type==='shadow-rumble'||type==='shadow-hit'){fx(58,.7,.15,'sine',27);hiss(.55,.14,350,'lowpass',65);}
+      else if(type==='flame-burst'){hiss(.35,.2,2400,'lowpass',160);fx(95,.3,.09,'triangle',38);}
+    },
     seal(index,valid=true,ready=false,enemy=false){if(!canEffect(enemy?'enemy-seal':'seal',.035))return;stats.seals++;const t=ctx.currentTime,hz=valid?330*2**((index%12)/12):145,level=enemy?.28:1;noise(effects,t,.045,.11*level,1600,'bandpass');note(effects,hz,t,.12,.065*level,'triangle',hz*1.08);if(ready){note(effects,660,t+.04,.24,.055*level);note(effects,990,t+.09,.3,.03*level);}},
     cast(spell,enemy=false){if(!canEffect('cast-'+spell.element,.055))return;stats.casts++;const t=ctx.currentTime,level=enemy?.65:1,heavy=['S','SS'].includes(spell.rank),length=heavy?1.05:.45,power=heavy?1.25:1;
+      api.cue(spellCastCue(spell),level);
       const fx=(hz,dur,volume,wave='sine',end=hz,delay=0)=>note(effects,hz,t+delay,dur,volume*level*power,wave,end);
       const hiss=(dur,volume,cutoff,type='lowpass',end=cutoff,delay=0)=>noise(effects,t+delay,dur,volume*level*power,cutoff,type,end);
       switch(spell.element){
@@ -104,7 +127,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
       }
       if(['firewall','waterwall','windwall','earthwall','icewall','walnutwall','lightmirror'].includes(spell.style))fx(190,.45,.07,'sine',430);
     },
-    impact(element='weapon',damage=0,blocked=false){if(!canEffect('impact-'+element,.075))return;stats.impacts++;const t=ctx.currentTime,large=damage>=70;noise(effects,t,large?.45:.13,blocked?.12:large?.26:.16,element==='ice'||element==='lightning'?3800:element==='earth'?260:1400);note(effects,blocked?740:large?80:130,t,large?.55:.15,blocked?.06:.12,'triangle',blocked?510:35);},
+    impact(element='weapon',damage=0,blocked=false,style=null){if(!canEffect('impact-'+element,.075))return;stats.impacts++;if(!blocked)api.cue(spellImpactCue({element,style}),damage>=70?1:.55);const t=ctx.currentTime,large=damage>=70;noise(effects,t,large?.45:.13,blocked?.12:large?.26:.16,element==='ice'||element==='lightning'?3800:element==='earth'?260:1400);note(effects,blocked?740:large?80:130,t,large?.55:.15,blocked?.06:.12,'triangle',blocked?510:35);},
     shuriken(enemy=false){if(canEffect('shuriken',.09)){stats.shuriken++;noise(effects,ctx.currentTime,.13,enemy?.07:.13,3800,'bandpass',1000);note(effects,1600,ctx.currentTime,.08,enemy?.012:.025,'sine',700);}},
     dash(){if(canEffect('dash',.1)){stats.dashes++;noise(effects,ctx.currentTime,.24,.2,500,'bandpass',3500);}},
     ambient(type){if(!canEffect('ambient-'+type,type==='thunder'?2:.1))return;const t=ctx.currentTime;if(type==='thunder'){noise(effects,t,2.2,.2,180,'lowpass',50);note(effects,55,t,1.8,.09,'sine',28);}else noise(effects,t,.14,.11,900,'lowpass',140);},
