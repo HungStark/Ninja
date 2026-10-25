@@ -1035,7 +1035,8 @@ async function main() {
       poseAge += dt; if (poseAge > 2.8 && !rules.sequence.length) activePose = -1;
       lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;});
       if(checkGuardianDefeat()){updateUI();return;}
-      guardianPhases.update(dt,enemy,playerPos(),enemyPos(),guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0});
+      const guardianBase=guardianAnchor?[guardianAnchor.x,guardianAnchor.y+(opponent.group.userData.height||4)*.55,guardianAnchor.z]:enemyPos();
+      guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0});
       updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);guardianAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),(actor,amount)=>{const r=actor.fighter.receive(amount,true,false,'wind');if(r.damage>0){enemyHit=.25;hitTimer=.1;}return r.damage;},!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);battleMetrics.observeWalls(walls);
       enemyDashAura.update(dt,[opponent.group.position.x,earthFloor('enemy',opponent.group.position.x,opponent.group.position.z),opponent.group.position.z],enemy.hp>0&&enemyMovement.state().dashBoost.dashing>0,reducedMotion);
       if(!won)darkDomain.updateClones(dt,animationTime,[{owner:'player',pos:camera.p,fighter:player},{owner:'enemy',pos:enemyPos(),fighter:enemy}],

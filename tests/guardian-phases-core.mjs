@@ -13,6 +13,7 @@ function next(f){f.hp=0;assert.equal(g.beginTransition(f),true);g.advanceTransit
 for(const village of Object.keys(GUARDIAN_ARTS)){
   const total=1001,parts=guardianPhaseHealth(total,village),f=new Fighter(total);g.reset({village,element:village,hp:total},f);assert.equal(parts.reduce((a,b)=>a+b),total);assert.equal(parts.length,village==='dark'?3:2);assert.equal(f.hp,parts[0]);
   f.hp=1;assert.equal(g.beginTransition(f),false,'must deplete whole HP bar');next(f);assert.equal(g.form,'beast');assert.equal(f.hp,parts[1]);
+  hits=[];g.trigger(0,p,b,f);step(.9,f);assert.equal(g.offset.y,0,'full one-second windup before takeoff');const warning=scene.children[0].children.find(m=>m.geometry.type==='CircleGeometry');assert.equal(warning.material.color.getHexString(),'ff2626');assert.equal(hits.length,0);step(1.1,f,[5,1.72,7]);assert.equal(hits.length,0,'all villages can dodge the snapshotted warning');
   for(const index of [0,1,2,3,4]){hits=[];assert.ok(g.trigger(index,p,b,f));step(6,f);assert.ok(scene.children[0].children.every(m=>m.matrix.elements.every(Number.isFinite)));}
   assert.equal(new Set(g.state().history.map(a=>a.name)).size,5,village+' five different direct arts');
   if(village==='dark'){next(f);assert.equal(g.form,'avatar');assert.equal(f.hp,parts[2]);}

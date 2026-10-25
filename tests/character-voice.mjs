@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {characterVoice} from '../src/character-voice.js';
+import {dialogueCast} from '../src/adventure-dialogue.js';
+import {newJourney,village} from '../src/adventure-data.js';
+import {REGIONS} from '../src/adventure-world.js';
+import {createSpeechOutput} from '../src/speech-output.js';
+import {createGameAudio,AUDIO_STORAGE_KEY} from '../src/game-audio.js';
+const s=newJourney(),cast=(v,id)=>dialogueCast({kind:'lore',id},s,REGIONS[v],village(v));
+assert.equal(characterVoice(cast('water','water-ha').npc).gender,'female');
+assert.equal(characterVoice(cast('water','water-chau').npc).gender,'male');
+assert.equal(characterVoice(cast('nameless','nameless-resident-war-cemetery').npc).gender,'female');
+const male=characterVoice({id:'hero'},'male'),female=characterVoice({id:'hero'},'female');assert.ok(female.pitch>male.pitch);assert.ok(characterVoice({appearance:{female:true,age:'elder'}}).rate<female.rate);
+const env=new EventTarget(),utterances=[];env.SpeechSynthesisUtterance=class {constructor(text){this.text=text;}};
+env.speechSynthesis={getVoices:()=>[{lang:'en-US',name:'Female',localService:true},{lang:'vi-VN',name:'Microsoft HoaiMy Online',localService:false},{lang:'vi-VN',name:'Microsoft NamMinh',localService:true}],resume(){},cancel(){},speak(u){utterances.push(u);u.onstart();}};
+const speech=createSpeechOutput({environment:env});speech.speak('Câu của nữ',female);assert.equal(utterances.at(-1).voice.name,'Microsoft HoaiMy Online');speech.speak('Câu của nam',male);assert.equal(utterances.at(-1).voice.name,'Microsoft NamMinh');speech.destroy();
+let saved;const storage={getItem:()=>saved,setItem:(key,value)=>{assert.equal(key,AUDIO_STORAGE_KEY);saved=value;}};
+const audio=createGameAudio({storage});audio.configure({heroVoice:'female'});audio.destroy();const restored=createGameAudio({storage});assert.equal(restored.settings().heroVoice,'female');restored.destroy();
+console.log('PASS: portrait gender including mother, female/male Vietnamese voice selection, elder delivery and persistent hero voice choice.');

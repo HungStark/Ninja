@@ -198,10 +198,14 @@ export const ELEMENT_SPELLS = Object.freeze({
   ice:['ice-orb','ice-lance','ice-volley','ice-barrier','ice-reflect']
 });
 export const ALL_ADVENTURE_SPELLS = Object.freeze(Object.values(ELEMENT_SPELLS).flat());
-const basicArts={nameless:'wind-orb',fire:'fire-volley',water:'water-lance',lightning:'lightning-lance',wind:'wind-orb',earth:'earth-orb',light:'light-orb',dark:'dark-orb',wood:'wood-reflect',ice:'ice-reflect'};
+// Each non-starter art has exactly one authored source: a lesson, boss or NPC quest.
+const starterArts=['fire-volley','water-barrier','lightning-lance'];
+const lessonArts=Object.values(REGIONS).map(r=>r.mentor.spellId);
 for(const [id,region] of Object.entries(REGIONS)){
-  region.mentor.spellIds=id==='water'?['water-lance','water-reflect','water-volley']:[...new Set([basicArts[id],region.mentor.spellId])];
-  region.boss.rewardSpells=[...ELEMENT_SPELLS[id==='nameless'?'wind':id]];
+  region.mentor.spellIds=[region.mentor.spellId];
+  const remaining=ELEMENT_SPELLS[id==='nameless'?'wind':id].filter(spell=>!starterArts.includes(spell)&&!lessonArts.includes(spell));
+  region.boss.rewardSpells=id==='nameless'?[]:[remaining.find(spell=>/meteor|tsunami|thunder|reflect|volley/.test(spell))||remaining.at(-1)];
+  region.questSpells=id==='nameless'?[]:remaining.filter(spell=>!region.boss.rewardSpells.includes(spell));
   region.boss.hp=GUARDIAN_HEALTH[id];
   region.boss.story+=' Chiến thắng để nhận sách bí thuật; hãy đạt đủ cấp hệ rồi mở sách để học.';
 }

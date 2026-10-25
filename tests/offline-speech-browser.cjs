@@ -9,7 +9,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),http
   await page.addInitScript(()=>{window.AnHoaSpeech={getStatus:()=>JSON.stringify({state:'missing-voice',message:'No Vietnamese voice'}),stop(){}};});
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html?test=1&adventure=1`);await page.waitForFunction(()=>document.body.dataset.ready==='true');
   assert.equal(await page.evaluate(()=>__AN_HOA__.audio.settings().music),.75);
-  await page.locator('#homeAudioSettings').tap();await page.locator('#audio-music').fill('0');await page.locator('#audio-effects').fill('0');await page.locator('#audioVoicePreview').tap();
+  await page.locator('#homeAudioSettings').tap();await page.locator('#audioHeroVoice').selectOption('female');assert.equal(await page.evaluate(()=>__AN_HOA__.audio.settings().heroVoice),'female');await page.locator('#audio-music').fill('0');await page.locator('#audio-effects').fill('0');await page.locator('#audioVoicePreview').tap();
   await page.waitForFunction(()=>__AN_HOA__.audio.state().speech.playback?.playing,{},{timeout:20000});
   let a=await page.evaluate(()=>__AN_HOA__.audio.state());assert.equal(a.speech.backend,'bundled');assert.ok(a.speech.playback.samples>22050,'at least a second of real speech');
   await page.waitForFunction(()=>__AN_HOA__.audio.state().rms>.001); // music/effects are zero: only synthesized speech reaches output.
@@ -17,6 +17,11 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),http
   await page.evaluate(()=>__AN_HOA__.audio.pauseVoice(true));assert.equal(await page.evaluate(()=>__AN_HOA__.audio.state().speech.playback.playing),false);
   await page.evaluate(()=>__AN_HOA__.audio.pauseVoice(false));await page.waitForFunction(()=>__AN_HOA__.audio.state().speech.playback.playing);
   await page.locator('#closeAudioSettings').tap();assert.equal(await page.evaluate(()=>__AN_HOA__.audio.state().speaking),false);
+  const variants=await page.evaluate(async()=>{
+   const worker=new Worker('vendor/espeak-ng/worker.js',{type:'module'}),buffers=[];
+   for(const gender of ['male','female']){const pcm=await new Promise((resolve,reject)=>{worker.onmessage=({data})=>data.error?reject(Error(data.error)):resolve(data.pcm);worker.onerror=reject;worker.postMessage({id:gender,text:'Xin chào. Tôi là người giữ ấn của làng.',gender,rate:1,pitch:1});});buffers.push(pcm);}
+   worker.terminate();return {samples:buffers.map(b=>b.length),different:buffers[0].length!==buffers[1].length||buffers[0].some((n,i)=>n!==buffers[1][i])};
+  });assert.ok(variants.samples.every(n=>n>22050));assert.ok(variants.different,'male and female variants produce different real PCM at the same pitch');
   await page.evaluate(()=>__AN_HOA__.audio.dialogueLine({speaker:{id:'hero'},text:'Đây là lời thoại tiếng Việt không cần kết nối mạng.'}));await page.waitForFunction(()=>__AN_HOA__.audio.state().speech.playback.playing);
   await page.evaluate(()=>__AN_HOA__.audio.configure({muted:true}));await page.waitForTimeout(450);a=await page.evaluate(()=>__AN_HOA__.audio.state());assert.equal(a.speaking,false);assert.ok(a.rms<1e-5);
   await page.evaluate(()=>{__AN_HOA__.audio.configure({muted:false,music:.25,effects:.6,voice:.55});__AN_HOA__.audio.visibility(true);});assert.equal(await page.evaluate(()=>__AN_HOA__.audio.state().context),'suspended');await page.evaluate(()=>__AN_HOA__.audio.visibility(false));await page.waitForFunction(()=>__AN_HOA__.audio.state().context==='running');

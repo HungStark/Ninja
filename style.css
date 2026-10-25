@@ -343,3 +343,4 @@ body.guardian-transform #enemyNameplates{display:none!important}.versus-portrait
 @media(max-height:320px){.peace-person svg{max-height:90px}.peace-paper{min-height:130px;padding:8px}.peace-paper p{font-size:8px;line-height:1.4}.peace-signatures svg{height:30px}.peace-signatures{margin-bottom:4px}.peace-heading h2{font-size:18px}.peace-card footer{margin-top:5px}.peace-card footer button{padding:6px 8px}.peace-seal{width:44px;height:44px;left:calc(50% - 22px)}.peace-seal b{font-size:8px}}
 
 .peace-card footer{position:static;left:auto;right:auto;bottom:auto;min-height:32px}.peace-card footer span{display:block!important}
+.audio-slider select{display:block;width:100%;min-height:44px;margin-top:6px;padding:8px 10px;border:1px solid #b9bd8b66;border-radius:4px;background:#29443f;color:#e8ddc0;font:inherit}

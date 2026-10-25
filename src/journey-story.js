@@ -97,7 +97,7 @@ export function villageSidequests(id){
   return people.map((person,i)=>{
     const zones=r.zones.filter(z=>!z.platform&&z.id!=='summit-lotus'),zone=zones[(i+1)%zones.length],template=taskByActivity[person.activity]||['Dấu vết cuộc sống','Tìm vật dụng thất lạc tại địa danh gần làng rồi mang trở về.','Vật dụng thất lạc'];
     const type=person.activity==='mourning'?'retrieve':i%3===1||person.activity==='lookout'?'combat':i%4===3?'survey':'retrieve',element=id==='nameless'?'wind':id;
-    const arts=Object.keys(SKILL_LEVELS[element]),scroll=id!=='nameless'&&i%2===1?arts[1+i%Math.max(1,arts.length-1)]:null;
+    const scroll=r.questSpells[i]||null;
     return {id:`${id}:npc:${person.id}`,giver:person.id,giverName:person.name,village:id,type,element,zone:zone.id,
       title:type==='combat'?`Bảo vệ ${zone.name}`:template[0],description:type==='combat'?`${person.name} nhờ bạn đánh bại kẻ phá hoại tại ${zone.name}, rồi trở lại báo tin.`:`${person.name}: ${template[1]} Tới ${zone.name}, sau đó trở lại gặp tôi.`,
       targetName:type==='combat'?'Kẻ phá hoại · '+zone.name:template[2],targetModel:type==='survey'?'notes':QUEST_ITEM_MODELS[person.activity]||'satchel',x:zone.x+(i%2?2.5:-2.5),z:zone.z+3.5,
@@ -110,7 +110,7 @@ export function completeSidequestTarget(save,q){if(save.story.sidequests[q.id]!=
 export function sidequestReward(save,q){
   if(!q.rewardScroll)return {gold:q.rewardGold,scroll:null};
   const owned=id=>save.learnedSpells.includes(id)||save.progression.books.includes(id);
-  const scroll=[q.rewardScroll,...Object.keys(SKILL_LEVELS[q.element])].find(id=>!owned(id));
+  const scroll=owned(q.rewardScroll)?null:q.rewardScroll;
   return scroll?{gold:0,scroll}:{gold:100,scroll:null};
 }
 export function claimSidequest(save,q){if(save.story.sidequests[q.id]!==2)return false;const reward=sidequestReward(save,q);save.story.sidequests[q.id]=3;save.gold+=reward.gold;save.xp+=q.rewardXp;gainExperience(save.progression,q.element,q.rewardXp);if(reward.scroll)addBooks(save,[reward.scroll]);if(save.story.trackedQuest===q.id)save.story.trackedQuest=null;return true;}

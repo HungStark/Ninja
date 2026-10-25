@@ -6,7 +6,7 @@ import {villageEventObjective,villageEventComplete,advanceVillageEvent} from './
 import {newStory,readStory,HOME,openingObjective,FIRST_VILLAGES,completeSidequestTarget,villageSidequests,INTRO_SQUAD} from './journey-story.js';
 import {newEquipment,readEquipment} from './equipment.js';
 import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS,regionMetrics} from './adventure-world.js';
-import {newProgression,readProgression,regionElement,gainExperience,systemLevel,teachAvailable,canLearn,addBooks,spellElement} from './progression.js';
+import {newProgression,readProgression,regionElement,gainExperience,systemLevel,learnFromBook,canLearn,addBooks,spellElement} from './progression.js';
 export {STARTER_SPELLS,MENTOR_SPELLS} from './adventure-world.js';
 
 // The atlas is also the source of truth for walking between village maps.
@@ -141,6 +141,12 @@ export function readJourney(storage) {
     if(s.story?.revision===1&&s.progression&&!Object.hasOwn(s.progression.xp||{},'water'))delete clean.progression.xp.water;
     clean.learnedSpells=clean.learnedSpells.filter(id=>canLearn(clean.progression,id));
     clean.story=readStory(s.story,clean);clean.flask=readFlask(s.flask,!!clean.story.starter);clean.mines=readMines(s.mines);
+    // Backfill missing rewards when an older journey already completed a source.
+    for(const v of VILLAGES){
+      if(clean.mentors[v.id])addBooks(clean,[REGIONS[v.id].mentor.spellId]);
+      if(clean.bosses[v.id])addBooks(clean,bossRewardSpells(v.id));
+      for(const q of villageSidequests(v.id))if(clean.story.sidequests[q.id]===3&&q.rewardScroll)addBooks(clean,[q.rewardScroll]);
+    }
     for(const key of ['gold','xp','wins'])clean[key]=Number.isSafeInteger(s[key])&&s[key]>=0?s[key]:0;
     return clean;
   }catch{return null;}
@@ -161,16 +167,18 @@ export function mentorReady(save,id) {
 }
 export function completeLesson(save,id) {
   const mentor=REGIONS[id]?.mentor;
-  if(!save.mentors?.[id]&&!mentorReady(save,id))return {learned:false,spellId:mentor?.spellId||null,spellIds:[]};
+  if(!mentor||(!save.mentors?.[id]&&!mentorReady(save,id)))return {learned:false,spellId:mentor?.spellId||null,spellIds:[],bookIds:[]};
   const element=regionElement(id);
+  let bookIds=[];
   if(!save.mentors?.[id]){
     const practice=systemLevel(save.progression,element)?60:120;
     gainExperience(save.progression,element,practice);
     save.mentors??={};save.mentors[id]=true;
+    bookIds=addBooks(save,[mentor.spellId]);
   }
   save.learnedSpells??=[...STARTER_SPELLS];
-  const spellIds=teachAvailable(save,element);
-  return {learned:spellIds.length>0,spellId:mentor.spellId,spellIds};
+  const spellIds=learnFromBook(save,mentor.spellId)?[mentor.spellId]:[];
+  return {completed:true,learned:spellIds.length>0,spellId:mentor.spellId,spellIds,bookIds:bookIds.filter(id=>!spellIds.includes(id))};
 }
 export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
 export function resolveBattle(save,encounter,victory) {

@@ -1,4 +1,5 @@
 import {createSpeechOutput} from './speech-output.js';
+import {characterVoice} from './character-voice.js';
 // Original procedural score and effects: no downloads or third-party recordings.
 export const AUDIO_STORAGE_KEY='anhoa-audio-v1';
 export const VILLAGE_MUSIC={
@@ -14,11 +15,11 @@ export const VILLAGE_MUSIC={
   ice:{name:'Băng · Tuyết rơi',bpm:62,root:69,scale:[0,2,3,7,10],wave:'sine',motif:[4,null,3,null,2,1,null,0,2,null,1,0,null,null,0,null],chords:[0,3,8,5],minor:true,drums:.1},
   duel:{name:'Đấu trường · Nhịp kết ấn',bpm:112,root:50,scale:[0,2,3,7,10],wave:'triangle',motif:[0,2,0,3,2,4,3,2,0,2,3,4,3,2,1,0],chords:[0,5,3,7],minor:true,drums:1}
 };
-const defaults={muted:false,music:.45,effects:.75,voice:.7,readDialogue:true};
+const defaults={muted:false,music:.45,effects:.75,voice:.7,readDialogue:true,heroVoice:'male'};
 const clamp=v=>Math.max(0,Math.min(1,Number(v)||0)),frequency=midi=>440*2**((midi-69)/12);
 export function createGameAudio({storage,contextFactory,android=!!(globalThis.AnHoaSpeech||globalThis.document?.documentElement?.dataset.android==='true')}={}){
   const platformDefaults=android?{...defaults,music:.75,voice:.9}:defaults,musicBoost=android?2:1;
-  let settings={...platformDefaults};try{const raw=JSON.parse((storage||globalThis.localStorage)?.getItem(AUDIO_STORAGE_KEY)||'null');if(raw){for(const key of ['music','effects','voice'])if(Number.isFinite(raw[key]))settings[key]=clamp(raw[key]);for(const key of ['muted','readDialogue'])if(typeof raw[key]==='boolean')settings[key]=raw[key];}}catch{}
+  let settings={...platformDefaults};try{const raw=JSON.parse((storage||globalThis.localStorage)?.getItem(AUDIO_STORAGE_KEY)||'null');if(raw){for(const key of ['music','effects','voice'])if(Number.isFinite(raw[key]))settings[key]=clamp(raw[key]);for(const key of ['muted','readDialogue'])if(typeof raw[key]==='boolean')settings[key]=raw[key];if(['male','female'].includes(raw.heroVoice))settings.heroVoice=raw.heroVoice;}}catch{}
   let ctx=null,master,music,effects,voice,analyser,noiseBuffer,timer=null,theme='nameless',mode='home',musicBus=null,step=0,nextNote=0,dialogue=null,utterance=null,hidden=false,settingsOpen=false,destroyed=false;
   const active=new Set(),lastEffects=new Map(),listeners=new Set(),stats={notes:0,seals:0,casts:0,impacts:0,dialogueLines:0,syllables:0,shuriken:0,dashes:0};
   const notify=()=>listeners.forEach(fn=>fn({...settings}));
@@ -76,13 +77,13 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
   function stopDialogue(){dialogue=null;stopSpeech();apply();}
   function speak(text,speaker={},preview=false){
     stopSpeech();if((!preview&&!settings.readDialogue)||settings.voice<=0||settings.muted||hidden)return false;
-    utterance={};const accepted=speech.speak(text,{rate:speaker.elder?.9:1.02,pitch:speaker.id==='hero'?1.05:speaker.elder?.82:.95,volume:settings.voice});if(!accepted)utterance=null;return accepted;
+    utterance={};const accepted=speech.speak(text,{...characterVoice(speaker,settings.heroVoice),volume:settings.voice});if(!accepted)utterance=null;return accepted;
   }
   const api={
     unlock,
     settings:()=>({...settings}),
     subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);},
-    configure(change){for(const key of ['music','effects','voice'])if(Number.isFinite(change[key]))settings[key]=clamp(change[key]);for(const key of ['muted','readDialogue'])if(typeof change[key]==='boolean')settings[key]=change[key];if(settings.muted||settings.voice===0||change.readDialogue===false)stopDialogue();apply();if(!settings.muted)unlock();try{(storage||globalThis.localStorage)?.setItem(AUDIO_STORAGE_KEY,JSON.stringify(settings));}catch{}notify();},
+    configure(change){if(['male','female'].includes(change.heroVoice)){settings.heroVoice=change.heroVoice;stopDialogue();}for(const key of ['music','effects','voice'])if(Number.isFinite(change[key]))settings[key]=clamp(change[key]);for(const key of ['muted','readDialogue'])if(typeof change[key]==='boolean')settings[key]=change[key];if(settings.muted||settings.voice===0||change.readDialogue===false)stopDialogue();apply();if(!settings.muted)unlock();try{(storage||globalThis.localStorage)?.setItem(AUDIO_STORAGE_KEY,JSON.stringify(settings));}catch{}notify();},
     setScene(village,phase){const next=VILLAGE_MUSIC[village]?village:'nameless';if(theme===next&&mode===phase)return;const changed=theme!==next||(['combat','duel'].includes(mode)!==['combat','duel'].includes(phase));theme=next;mode=phase;if(changed)resetMusic();apply();},
     settingsOpen(open){settingsOpen=open;apply();},
     tone(hz=260,duration=.08,wave='sine',volume=.06){if(canEffect('tone',.018))note(effects,hz,ctx.currentTime,duration,volume,wave,hz*.65);},
@@ -108,7 +109,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
     dash(){if(canEffect('dash',.1)){stats.dashes++;noise(effects,ctx.currentTime,.24,.2,500,'bandpass',3500);}},
     ambient(type){if(!canEffect('ambient-'+type,type==='thunder'?2:.1))return;const t=ctx.currentTime;if(type==='thunder'){noise(effects,t,2.2,.2,180,'lowpass',50);note(effects,55,t,1.8,.09,'sine',28);}else noise(effects,t,.14,.11,900,'lowpass',140);},
     result(won){if(!canEffect('result',.5))return;for(const [i,midi] of (won?[60,64,67,72]:[57,53,50]).entries())note(effects,frequency(midi),ctx.currentTime+i*.15,.65,.09,'triangle');},
-    dialogueLine(line){stopDialogue();stats.dialogueLines++;if(settings.muted||settings.voice===0||hidden)return;const hash=Array.from(line.speaker?.id||'npc').reduce((n,c)=>n+c.charCodeAt(0),0),syllables=Math.min(120,Math.ceil(line.text.replace(/\s/g,'').length/2));dialogue={remaining:syllables,fallbackRemaining:syllables,next:ctx?.currentTime||0,pitch:line.speaker?.id==='hero'?220:line.speaker?.elder?145:165+hash%110};if(speak(line.text,line.speaker))dialogue.remaining=0;apply();},
+    dialogueLine(line){stopDialogue();stats.dialogueLines++;if(settings.muted||settings.voice===0||hidden)return;const hash=Array.from(line.speaker?.id||'npc').reduce((n,c)=>n+c.charCodeAt(0),0),syllables=Math.min(120,Math.ceil(line.text.replace(/\s/g,'').length/2));dialogue={remaining:syllables,fallbackRemaining:syllables,next:ctx?.currentTime||0,pitch:190*characterVoice(line.speaker,settings.heroVoice).pitch+hash%15};if(speak(line.text,line.speaker))dialogue.remaining=0;apply();},
     finishTyping(){if(!utterance){dialogue=null;apply();}},
     stopDialogue,
     speakSpell(spell){speak(spell.name+'!',{id:'hero'});},

@@ -1,4 +1,5 @@
 import {BOT_HEALTH_SCALE} from './enemy-balance.js';
+export const GUARDIAN_BASIC_TIMING=Object.freeze({charge:1.3,slamWindup:1,slamFlight:.9,armor:6});
 export const GUARDIAN_ARTS={
   water:{color:'#50baff',beam:'Thủy tức',specials:[{name:'Thủy trụ nghịch lưu',type:'columns',count:3,delay:.32,damage:24},{name:'Hải triều phân lộ',type:'waves',damage:28}]},
   fire:{color:'#ff793f',beam:'Hỏa tức',specials:[{name:'Hỏa sơn liên bạo',type:'columns',count:3,delay:.45,damage:28},{name:'Vành đai tro nóng',type:'ring',damage:13}]},

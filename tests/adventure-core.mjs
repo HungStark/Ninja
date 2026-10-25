@@ -23,7 +23,7 @@ for(const v of VILLAGES){
   assert.equal(world.blocked(WORLD_LIMIT+1,0),true);
   const lesson=newJourney();lesson.village=v.id;if(v.id==='nameless')lesson.campaign.treatySigned=true;assert.equal(mentorReady(lesson,v.id),false);assert.equal(completeLesson(lesson,v.id).learned,false);lesson.lessons[v.id]=1;
   for(const id of region.mentor.zoneIds){assert.equal(discoverZone(lesson,v.id,id),true);assert.equal(discoverZone(lesson,v.id,id),false);}
-  assert.equal(mentorReady(lesson,v.id),true);assert.equal(completeLesson(lesson,v.id).learned,true);assert.ok(lesson.learnedSpells.some(id=>id.startsWith(v.id==='nameless'?'wind-':v.id+'-')));const learnedCount=lesson.learnedSpells.length;
+  assert.equal(mentorReady(lesson,v.id),true);assert.equal(completeLesson(lesson,v.id).completed,true);assert.ok(lesson.learnedSpells.includes(region.mentor.spellId)||lesson.progression.books.includes(region.mentor.spellId));const learnedCount=lesson.learnedSpells.length;
   completeLesson(lesson,v.id);assert.equal(lesson.learnedSpells.length,learnedCount);assert.equal(lesson.quests[v.id],undefined,'learning must not require combat');
   const boss={kind:'boss',village:v.id};resolveBattle(lesson,boss,true);assert.equal(lesson.bosses[v.id],true);const gold=lesson.gold;assert.equal(gold,region.boss.rewardGold);resolveBattle(lesson,boss,true);assert.equal(lesson.gold,gold,'boss rewards cannot be farmed');
   const restored=readJourney({getItem:()=>JSON.stringify(lesson)});assert.equal(restored.bosses[v.id],true);assert.equal(restored.mentors[v.id],true);assert.equal(restored.discoveries.length,2);assert.ok(region.boss.rewardSpells.every(id=>restored.learnedSpells.includes(id)||restored.progression.books.includes(id)));
@@ -33,7 +33,7 @@ const cornerRoute=findPath([0,0],[1,1],(x,z)=>(x===1&&z===0)||(x===0&&z===1));as
 assert.deepEqual(findPath([0,0],[2,2],(x,z)=>x===2&&z===2),[]);
 assert.deepEqual(findPath([0,0],[2.4,2],x=>x>2.3),[],'a fractional click inside a solid object cannot use its free rounded cell');
 const fighter=new SealGameCore.Fighter();fighter.autoRestore=false;assert.equal(fighter.receive(1001).defeated,true);assert.equal(fighter.hp,0);
-const practiceFighter=new SealGameCore.Fighter();assert.equal(practiceFighter.receive(1001).restored,true);assert.equal(practiceFighter.hp,200);
+const practiceFighter=new SealGameCore.Fighter();assert.equal(practiceFighter.receive(1001).restored,true);assert.equal(practiceFighter.hp,practiceFighter.maxHp);
 const save=newJourney('<Ninja>');save.quests.nameless=1;const encounter={kind:'quest',village:'nameless'};
 resolveBattle(save,encounter,true);assert.equal(save.quests.nameless,2);assert.equal(save.gold,60);save.checkpoint='water';save.village='dark';resolveBattle(save,encounter,false);assert.equal(save.village,'water');assert.deepEqual(save.position,[0,7]);assert.equal(save.gold,60);
 const read=data=>readJourney({getItem:()=>JSON.stringify(data)});
