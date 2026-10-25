@@ -46,19 +46,19 @@ Một mô hình dùng chung giữa phiêu lưu, dạng thú khi giao chiến và
 
 Ba làng đầu có thứ tự 1–3 theo lần gặp thực tế; năm làng sau hòa ước có thứ tự 4–8 theo lần gặp thực tế; Ám là chặng 9. Thứ tự này được lưu, không đổi khi quay lại làng. Cảnh vệ, hộ vệ phụ và đối thủ thường cùng tăng máu, sát thương, tốc độ kết ấn và số kỹ năng theo chặng. Những kẻ truy sát trong sự kiện cũng được điều chỉnh nhẹ theo chặng.
 
-Tổng máu cơ bản của các phase hộ vệ theo chặng, đã gồm 10% máu bù cho việc bỏ G của bot:
+Tổng máu cơ bản của các phase hộ vệ theo chặng, đã gồm 10% máu bù cho việc bỏ G và hệ số gấp đôi của bản cập nhật mới:
 
 | Chặng | Tổng máu hộ vệ |
 | --- | --- |
-| 1 | 484 |
-| 2 | 605 |
-| 3 | 726 |
-| 4 | 847 |
-| 5 | 968 |
-| 6 | 1.089 |
-| 7 | 1.210 |
-| 8 | 1.331 |
-| 9 | 1.815 |
+| 1 | 968 |
+| 2 | 1.210 |
+| 3 | 1.452 |
+| 4 | 1.694 |
+| 5 | 1.936 |
+| 6 | 2.178 |
+| 7 | 2.420 |
+| 8 | 2.662 |
+| 9 | 3.630 |
 
 Điểm sức mạnh và sinh lực đã đầu tư của người chơi chỉ cộng một hệ số nhẹ lên máu địch, tối đa 12%. Không tăng cấp địch vô hạn theo mọi chỉ số. Các thuật, trang bị, mana và bình thuốc người chơi mở được theo hành trình tạo thêm lựa chọn chống địch ở chặng sau. Bảng máu trong nhật ký dùng thông số trận đấu thực tế.
 

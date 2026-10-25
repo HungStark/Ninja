@@ -5,7 +5,7 @@ import {newJourney} from '../src/adventure-data.js';
 import {GUARDIAN_HEALTH,REGIONS} from '../src/adventure-world.js';
 import {campaignStrength} from '../src/campaign-difficulty.js';
 import {INTRO_SQUAD} from '../src/journey-story.js';
-assert.equal(PRACTICE_BOT_HP,220);assert.equal(botHealth(85),94);assert.ok(INTRO_SQUAD.every(p=>p.hp===94));
+assert.equal(PRACTICE_BOT_HP,440);assert.equal(botHealth(85),188);assert.ok(INTRO_SQUAD.every(p=>p.hp===188));
 const base={nameless:360,water:440,fire:550,lightning:660,earth:770,wind:880,light:990,ice:1100,wood:1210,dark:1650};
 for(const [region,hp] of Object.entries(base)){
   assert.equal(GUARDIAN_HEALTH[region],botHealth(hp));assert.equal(REGIONS[region].boss.hp,botHealth(hp));

@@ -104,7 +104,7 @@
     heal: v.kind === 'defense' && ['wood', 'light'].includes(el.id) ? 12 : 0
   })));
   const defaultLoadout = ['fire-volley', 'water-lance', 'lightning-volley', 'earth-barrier', 'ice-reflect'];
-  const chakraRegen=5,cooldownByRank={D:4,C:8,B:10,A:12,S:20,SS:35};
+  const chakraRegen=4,cooldownByRank={D:4,C:8,B:10,A:12,S:20,SS:35};
   const elementalDurations={burn:6,static:8};
   for(const spell of spells)spell.cooldown=spell.cooldown??cooldownByRank[spell.rank]??6;
   for(const spell of spells){if(spell.element==='fire'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tầng bỏng/viên, tối đa 5, mỗi tầng '+elementalDurations.burn+' giây';if(spell.element==='lightning'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tĩnh điện, tối đa 3, mỗi điểm '+elementalDurations.static+' giây';}
@@ -170,7 +170,7 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 200) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
+    constructor(maxHp = 300) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
     get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime||0,this.woodControlTime||0,this.lightningControlTime,this.boatControlTime);}
     set controlTime(value){this.waterControlTime=value;}
     get staticStacks(){return this.staticCharges.length;}

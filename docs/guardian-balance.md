@@ -1,6 +1,6 @@
 ﻿# Hộ vệ: dạng người, quái vật và hợp nhất
 
-G của người chơi lướt 3 m trong 0,2 giây, giữ tăng lực 3 giây, hồi 6 giây từ lúc lướt. Mọi AI bỏ G nhưng vẫn bước né thường và di chuyển trái/phải. Máu bot đã tăng 10%; thay đổi hộ vệ này không nhân thêm máu lần nữa.
+G của người chơi lướt 3 m trong 0,2 giây, giữ tăng lực 3 giây, hồi 6 giây từ lúc lướt. Mọi AI bỏ G nhưng vẫn bước né thường và di chuyển trái/phải. Máu bot giữ hệ số bù 10% trước đây, sau đó gấp đôi theo cập nhật mới; từng phase được nhân đúng một lần.
 
 ## Luồng vào trận
 

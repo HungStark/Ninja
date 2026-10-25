@@ -4,8 +4,8 @@ import {botHealth} from './enemy-balance.js';
 export const SYSTEMS=['fire','water','lightning','wind','earth','light','dark','wood','ice'];
 export const LEVEL_POINTS=[1,1,1,1,2,2,2,3,3,4];
 export const LEVEL_XP=[0,60,150,270,420,620,880,1200,1600,2100];
-export const BASE_STATS={health:200,chakra:100};
-export const ATTRIBUTE_GAINS={health:5,strength:1.5,mana:2};
+export const BASE_STATS={health:300,chakra:100};
+export const ATTRIBUTE_GAINS={health:6,strength:1.5,mana:2};
 export const SKILL_LEVELS={
   water:{'water-barrier':1,'water-lance':2,'water-reflect':3,'water-volley':4,'water-tsunami':5},
   fire:{'fire-volley':1,'fire-barrier':2,'fire-reflect':3,'fire-lance':4,'fire-meteor':5},

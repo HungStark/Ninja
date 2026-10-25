@@ -51,7 +51,7 @@ export function reportGuardian(save){
   save.story.stage='infiltrate';save.gold+=100;return true;
 }
 export function negotiatePeace(save,id){
-  if(id==='nameless'||id==='dark'||save.village!==id||!save.bosses[id]||save.story.peaceSeals.includes(id))return false;
+  if(id==='nameless'||save.village!==id||!save.bosses[id]||save.story.peaceSeals.includes(id))return false;
   save.story.peaceSeals.push(id);save.gold+=100;return true;
 }
 export function openingObjective(save){
@@ -59,7 +59,7 @@ export function openingObjective(save){
   return {...{
     mother:{title:'Lời hứa trước hai nấm mộ',description:'Tìm mẹ ở nghĩa trang. Cha và em trai đã mất trong cuộc chiến giữa Hỏa, Thủy và Lôi. Hãy lập lời hứa hòa bình với mẹ.',targetKind:'lore',targetId:MOTHER_ID},
     chief:{title:'Chọn con đường nhẫn thuật',description:'Gặp trưởng làng để chọn một trong ba thuật cơ bản, nhận túi đựng và 10 phi tiêu.',targetKind:'npc'},
-    guardian:{title:'Giải cứu hộ vệ Vô Danh',description:'Tới Đồi Chuông Gió. Đánh bại cùng lúc ba ninja Hỏa, Thủy, Lôi để hồi sinh hộ vệ đã bị phá hỏng.',targetKind:'intro-guardian'},
+    guardian:{title:'Giải cứu hộ vệ Vô Danh',description:'Tới Đồi Chuông Gió. Cùng Vô Danh Thú đánh bại ba ninja Hỏa, Thủy, Lôi. Linh thú dùng phần sức mạnh còn lại để hỗ trợ bạn, rồi cả hai khôi phục lõi ấn bảo vệ làng.',targetKind:'intro-guardian'},
     report:{title:'Báo tin cho trưởng làng',description:'Hộ vệ đã sống lại. Trở lại trưởng làng để học hai thuật cơ bản còn lại, nhận 100 xu và sứ mệnh lấy dấu ấn hòa bình từ ba làng.',targetKind:'npc'}
   }[s.stage],targetVillage:'nameless'};
 }

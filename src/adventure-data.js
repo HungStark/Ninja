@@ -46,7 +46,7 @@ export function campaignStage(save) {
   if(!['fire','lightning'].every(id=>save.story?.peaceSeals?.includes(id)))return 'fire-lightning';
   if(!save.campaign?.treatySigned)return 'treaty';
   if(!CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.story?.peaceSeals?.includes(id)))return 'envoy';
-  return save.bosses?.dark?'complete':'dark';
+  return save.bosses?.dark?(save.story.peaceSeals.includes('dark')?'complete':'dark-report'):'dark';
 }
 export function canTravel(save,target) {
   if(!village(target))return {allowed:false,reason:'Miền đất này không tồn tại trên địa đồ.'};
@@ -89,6 +89,7 @@ export function campaignObjective(save) {
     if(!treatyDelivered(save,id))return {title:`Trao hòa ước cho ${village(id).name}`,description:'Mang bản hòa ước đã ký tới sứ giả thường trú, giúp người dân chống các thế lực phá ấn và học nghệ thuật của miền đất này.',targetVillage:id,targetKind:'envoy'};
     return infiltrate(id);
   }
+  if(stage==='dark-report')return {title:'Báo tin và ký cam kết với Làng Ám',description:'Vô Nguyệt đã thất bại. Gặp trưởng Làng Ám để báo chiến thắng, ký kết và đóng dấu hòa bình cuối cùng.',targetVillage:'dark',targetKind:'npc'};
   if(stage==='dark')return regionArtsLearned(save,'dark')?challenge('dark'):lesson('dark');
   return {title:'Hòa ước của chín miền',description:'Vô Nguyệt đã thất bại. Chín làng nối lại thủy lộ và đường núi; những người thầy vẫn chờ bạn trên hành trình tự do.',targetVillage:'nameless',targetKind:'complete'};
 }

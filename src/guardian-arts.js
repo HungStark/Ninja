@@ -1,3 +1,4 @@
+import {BOT_HEALTH_SCALE} from './enemy-balance.js';
 export const GUARDIAN_ARTS={
   water:{color:'#50baff',beam:'Thủy tức',specials:[{name:'Thủy trụ nghịch lưu',type:'columns',count:3,delay:.32,damage:24},{name:'Hải triều phân lộ',type:'waves',damage:28}]},
   fire:{color:'#ff793f',beam:'Hỏa tức',specials:[{name:'Hỏa sơn liên bạo',type:'columns',count:3,delay:.45,damage:28},{name:'Vành đai tro nóng',type:'ring',damage:13}]},
@@ -10,7 +11,7 @@ export const GUARDIAN_ARTS={
   dark:{color:'#b78ae8',beam:'Ám tức',specials:[{name:'Nguyệt thực cấm vực',type:'ring',damage:15},{name:'Bóng ma đoạn mệnh',type:'pincers',damage:28}]},
   nameless:{color:'#dfc58c',beam:'Cổ thạch tức',specials:[{name:'Cổ thạch trồi dậy',type:'columns',count:3,delay:.3,damage:24},{name:'Thạch trận khe hở',type:'lanes',damage:28}]}
 };
-export function guardianPhaseHealth(total,village){const weights=village==='dark'?[.3,.35,.35]:[.45,.55],parts=weights.map(w=>Math.round(total*w));parts[parts.length-1]+=total-parts.reduce((a,b)=>a+b,0);return parts;}
+export function guardianPhaseHealth(total,village){const weights=village==='dark'?[.3,.35,.35]:[.45,.55],parts=weights.map(w=>Math.round(total/BOT_HEALTH_SCALE*w)*BOT_HEALTH_SCALE);parts[parts.length-1]+=total-parts.reduce((a,b)=>a+b,0);return parts;}
 export function empowerDarkGuardian(spell){
   if(spell.element!=='dark')return spell;
   return {...spell,cost:0,cooldown:Math.max(1,spell.cooldown*.6),damage:spell.damage*1.5,maxClones:4,cloneCount:2,duration:spell.style==='shadowdive'?4.5:spell.duration,fallTime:spell.style==='shadowbind'?.5:spell.fallTime};
