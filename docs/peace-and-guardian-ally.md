@@ -5,7 +5,7 @@
 - Nhân vật khởi đầu **300 máu**. Mỗi điểm nâng Sinh lực cộng **6 máu**; các điểm đã nâng trong bản lưu cũ áp dụng công thức mới ngay.
 - Hồi mana **4/giây**, cho cả quy tắc chiến đấu thường và hành trình. Chiêu của hộ vệ vốn không tốn mana vẫn giữ cơ chế đó.
 - Máu mọi đối thủ gấp đôi mức trước bản cập nhật: bot tập luyện **220 → 440**, ba ninja mở đầu **94 → 188 mỗi người**, đối thủ thường, cảnh vệ, hộ vệ phụ, toán truy sát và các phase hộ vệ đều được tăng. Nhân đôi sau khi làm tròn để giữ đúng gấp đôi từng thanh máu, không nhân thêm lần nữa khi chuyển phase.
-- Giáp nhập môn Vô Danh **100 → 200 xu**, giáp tay **60 → 120 xu**. Hàng bán vẫn là ba cặp hai hệ 5%; giá các làng khác không đổi. Đồ đã mua không bị thu lại hay trừ xu thêm.
+- Giáp nhập môn Vô Danh **140 xu**, giáp tay **100 xu**, đồng giá trang bị thường tại các làng khác. Hàng bán vẫn là ba cặp hai hệ 5%; giá các làng khác không đổi. Đồ đã mua không bị thu lại hay trừ xu thêm.
 
 ## Vô Danh Thú cùng chiến đấu
 

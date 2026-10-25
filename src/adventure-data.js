@@ -1,4 +1,5 @@
 import {newFlask,readFlask,refillFlask} from './healing-flask.js';
+import {arenaRound} from './enemy-seal-timing.js';
 import {readMines} from './spirit-mines.js';
 import {readInterior,INTERIORS} from './adventure-interiors.js';
 import {combatExperienceRewards} from './combat-experience.js';
@@ -96,7 +97,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
-  return {version:1,worldRevision:2,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+  return {version:1,worldRevision:2,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},arena:{round:1},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -111,6 +112,7 @@ export function readJourney(storage) {
     if(s.worldRevision!==2&&regionMetrics(s.village).scale===2)clean.position=clean.position.map(n=>n*2);
     clean.elevation=s.worldRevision===2&&Number.isFinite(s.elevation)&&s.elevation>=-100&&s.elevation<=200?s.elevation:null;
     clean.expeditions={};if([1,2,3].includes(s.expeditions?.fire))clean.expeditions.fire=s.expeditions.fire;
+    clean.arena={round:arenaRound(s)};
     clean.surface=(s.village==='wind'&&['sky-west','sky-east','sky-north'].includes(s.surface)||s.village==='earth'&&s.surface==='earth-cave'||s.village==='wood'&&s.surface==='heart-tree')?s.surface:null;
     clean.interior=readInterior(s.interior,s.village);
     if(clean.interior){clean.surface=null;clean.elevation=0;}
@@ -182,7 +184,11 @@ export function completeLesson(save,id) {
 }
 export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
 export function resolveBattle(save,encounter,victory) {
-  if(encounter.kind==='arena'){if(victory)save.wins++;return save;}
+  if(encounter.kind==='arena'){
+    const round=arenaRound(save);
+    if(victory&&(encounter.arenaRound===undefined||encounter.arenaRound===round)){save.wins++;save.arena={round:round+1};}
+    return save;
+  }
   if(victory&&encounter.kind==='village-event'){
     if(advanceVillageEvent(save,encounter.village,encounter.eventStep,{victory:true}).ok)save.wins++;
   }

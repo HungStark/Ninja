@@ -77,7 +77,8 @@
     "test:interiors": "node tests/interiors-core.mjs && node tools/build-android.mjs && node tests/interiors-browser.cjs",
     "test:journey-expansion": "node tests/journey-expansion-core.mjs && node tools/build-android.mjs && node tests/journey-expansion-browser.cjs && node tests/guardian-reference-browser.cjs",
     "test:peace-ally": "node tests/peace-and-ally-core.mjs && node tools/build-android.mjs && node tests/peace-and-ally-browser.cjs",
-    "test:guardian-skills": "node tests/guardian-phases-core.mjs && node tests/guardian-ally-arts-core.mjs && node tests/skill-sources-core.mjs && node tests/progression-core.mjs && node tests/character-voice.mjs && node tests/speech-output.mjs && node tools/build-android.mjs && node tests/skill-lesson-browser.cjs && node tests/guardian-phases-browser.cjs && node tests/peace-and-ally-browser.cjs && node tests/offline-speech-browser.cjs"
+    "test:guardian-skills": "node tests/guardian-phases-core.mjs && node tests/guardian-ally-arts-core.mjs && node tests/skill-sources-core.mjs && node tests/progression-core.mjs && node tests/character-voice.mjs && node tests/speech-output.mjs && node tools/build-android.mjs && node tests/skill-lesson-browser.cjs && node tests/guardian-phases-browser.cjs && node tests/peace-and-ally-browser.cjs && node tests/offline-speech-browser.cjs",
+    "test:enemy-seal-speed": "node tests/enemy-seal-speed-core.mjs && node tests/peace-and-ally-core.mjs && node tools/build-android.mjs && node tests/enemy-seal-speed-browser.cjs && node tests/interiors-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"
