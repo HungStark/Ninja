@@ -20,30 +20,45 @@ export function createSpeechOutput({environment=globalThis,onStart=()=>{},onEnd=
  }
  function stop(){const previous=active;active=null;clearTimer();bundled.stop();try{if(native())native().stop();else if(previous)synth()?.cancel();}catch{}}
  function error(id,message){if(!active||active.id!==id||closed)return;active=null;clearTimer();lastError=message;queueMicrotask(()=>{if(!closed&&!active){onError(message);onStatus();}});}
- function start(id){if(!active||active.id!==id)return;clearTimer();active.started=true;lastError='';onStart();onStatus();}
- function end(id){if(!active||active.id!==id)return;active=null;clearTimer();onEnd();onStatus();}
+ function start(id){if(!active||active.id!==id)return;clearTimer();lastError='';if(!active.started){active.started=true;onStart();}onStatus();}
+ function end(id){
+  if(!active||active.id!==id)return;clearTimer();const a=active,part=a.parts[a.part+1];
+  if(!part){active=null;onEnd();onStatus();return;}
+  active={...a,id:prefix+(++serial),part:a.part+1,text:part.text,rate:part.rate??a.baseRate,pitch:part.pitch??a.basePitch,utterance:null,pending:true,gapRemaining:Math.max(0,part.pauseBefore||0),gapStarted:null};
+  schedulePart();
+ }
  function watch(id){clearTimer();timer=setTimeout(()=>{if(active?.id!==id)return;fallback(id,'Giọng hệ thống chưa sẵn sàng.');},4000);}
  function browserSpeak(){
-  const a=active;if(!a||a.backend!=='browser'||a.paused)return;
+  const a=active;if(!a||a.backend!=='browser'||a.paused||a.pending)return;
   const v=voice(a.gender);if(!v){clearTimer();timer=setTimeout(()=>{if(active?.id!==a.id)return;waitExpired=true;fallback(a.id,'Thiết bị chưa có giọng đọc tiếng Việt.');},1500);return;}
   try{const u=new env.SpeechSynthesisUtterance(a.text);a.utterance=u;u.voice=v;u.lang='vi-VN';u.rate=a.rate;u.pitch=a.pitch;u.volume=a.volume;u.onstart=()=>{if(a.backend==='browser')start(a.id);};u.onend=()=>{if(a.backend==='browser')end(a.id);};u.onerror=()=>{if(a.backend==='browser')fallback(a.id,'Giọng đọc gặp lỗi. Hãy thử giọng tiếng Việt khác.');};watch(a.id);synth().resume();synth().speak(u);}catch{fallback(a.id,'Chưa phát được giọng tiếng Việt.');}
+ }
+ function dispatchPart(){
+  const a=active;if(!a||a.paused)return;
+  if(a.backend==='bundled')bundled.speak(a.text,a);
+  else if(a.backend==='android'){try{watch(a.id);native().speak(a.text,a.id,a.rate,a.pitch,a.volume);}catch{fallback(a.id,'Không kết nối được giọng đọc Android.');}}
+  else browserSpeak();
+ }
+ function schedulePart(){
+  const a=active;if(!a?.pending||a.paused)return;
+  clearTimer();
+  if(a.gapRemaining>0){a.gapStarted=Date.now();timer=setTimeout(()=>{if(active!==a||a.paused)return;timer=null;a.pending=false;a.gapRemaining=0;a.gapStarted=null;dispatchPart();},a.gapRemaining*1000);}
+  else{a.pending=false;dispatchPart();}
  }
  const handleNative=e=>{if(closed)return;const d=e.detail||{};if(d.type==='status'){if(d.state==='ready')nativeFailed=false;onStatus();return;}if(!active||active.backend!=='android'||d.id!==active.id)return;if(d.type==='start')start(d.id);else if(d.type==='done')end(d.id);else if(d.type==='error')fallback(d.id,d.message||'Giọng đọc Android gặp lỗi.');};
  const voicesChanged=()=>{waitExpired=false;if(active?.backend==='browser'&&!active.utterance)browserSpeak();onStatus();};
  env.addEventListener?.('anhoa:native-speech',handleNative);synth()?.addEventListener?.('voiceschanged',voicesChanged);
  return {
-  speak(text,{volume=1,rate=1,pitch=1,gender='male'}={}){
+  speak(text,{volume=1,rate=1,pitch=1,gender='male',segments}={}){
    stop();bundledError='';if(closed||!text?.trim()||volume<=0)return false;
    const backend=getOutput&&status().backend==='bundled'?'bundled':native()?'android':synth()&&env.SpeechSynthesisUtterance?'browser':getOutput?'bundled':null;if(!backend)return false;
-   const a={id:prefix+(++serial),backend,text,volume,rate,pitch,gender,paused:false,started:false};active=a;lastError='';
-   if(backend==='bundled')bundled.speak(text,a);
-   else if(backend==='android'){try{watch(a.id);native().speak(text,a.id,rate,pitch,volume);}catch{fallback(a.id,'Không kết nối được giọng đọc Android.');}}
-   else browserSpeak();
+   const parts=segments?.filter(p=>typeof p.text==='string'&&p.text.trim())||[{text}];if(!parts.length)return false;
+   const first=parts[0];active={id:prefix+(++serial),backend,text:first.text,volume,rate:first.rate??rate,pitch:first.pitch??pitch,baseRate:rate,basePitch:pitch,gender,parts,part:0,paused:false,started:false,pending:false};lastError='';dispatchPart();
    return true;
   },
   stop,
-  pause(){if(!active)return;active.paused=true;clearTimer();try{if(active.backend==='bundled')bundled.pause();else if(active.backend==='android')native().pause();else synth().pause();}catch{}},
-  resume(){if(!active)return;active.paused=false;try{if(active.backend==='bundled')bundled.resume();else if(active.backend==='android'){watch(active.id);native().resume();}else if(active.utterance)synth().resume();else browserSpeak();}catch{}},
+  pause(){if(!active||active.paused)return;active.paused=true;if(active.pending){if(active.gapStarted!==null)active.gapRemaining=Math.max(0,active.gapRemaining-(Date.now()-active.gapStarted)/1000);active.gapStarted=null;clearTimer();return;}clearTimer();try{if(active.backend==='bundled')bundled.pause();else if(active.backend==='android')native().pause();else synth().pause();}catch{}},
+  resume(){if(!active?.paused)return;active.paused=false;if(active.pending){schedulePart();return;}try{if(active.backend==='bundled')bundled.resume();else if(active.backend==='android'){watch(active.id);native().resume();}else if(active.utterance)synth().resume();else browserSpeak();}catch{}},
   install(){try{if(native()){native().installVoiceData();return true;}}catch{}return false;},
   openSettings(){try{if(native()){native().openVoiceSettings();return true;}}catch{}return false;},
   status,

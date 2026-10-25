@@ -83,7 +83,8 @@
     "test:hold-and-clones": "node tests/shadow-summon-balance.mjs && node tests/shadow-charge-core.mjs && node tools/build-android.mjs && node tests/hold-and-clones-browser.cjs && node tests/shadow-summons-visual-browser.cjs",
     "test:journey-home": "node tools/build-vercel.mjs && node tests/journey-home-browser.cjs",
     "test:challenge-dialogue": "node tests/challenge-dialogue-core.mjs && node tools/build-vercel.mjs && node tests/challenge-dialogue-browser.cjs",
-    "test:spell-revision": "node tests/spell-revision-core.mjs && node tests/light-core.mjs && node tests/nature-core.mjs && node tests/shadow-charge-core.mjs && node tools/build-vercel.mjs && node tests/spell-revision-browser.cjs"
+    "test:spell-revision": "node tests/spell-revision-core.mjs && node tests/light-core.mjs && node tests/nature-core.mjs && node tests/shadow-charge-core.mjs && node tools/build-vercel.mjs && node tests/spell-revision-browser.cjs",
+    "test:spell-voice": "node tests/spell-voice.mjs && node tests/speech-output.mjs && node tests/character-voice.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

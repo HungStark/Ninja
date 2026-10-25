@@ -1,5 +1,5 @@
 import {createSpeechOutput} from './speech-output.js';
-import {characterVoice} from './character-voice.js';
+import {characterVoice,spellVoice} from './character-voice.js';
 import {spellCastCue,spellImpactCue} from './spell-audio-cues.js';
 // Original procedural score and effects: no downloads or third-party recordings.
 export const AUDIO_STORAGE_KEY='anhoa-audio-v1';
@@ -76,9 +76,9 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
   const speech=createSpeechOutput({getOutput:()=>ctx?{context:ctx,destination:voice}:null,onEnd:()=>{utterance=null;dialogue=null;apply();},onError:()=>{utterance=null;if(dialogue){dialogue.remaining=dialogue.fallbackRemaining;dialogue.next=ctx?.currentTime||0;}apply();},onStatus:()=>notify()});
   function stopSpeech(){utterance=null;speech.stop();}
   function stopDialogue(){dialogue=null;stopSpeech();apply();}
-  function speak(text,speaker={},preview=false){
+  function speak(text,speaker={},preview=false,options={}){
     stopSpeech();if((!preview&&!settings.readDialogue)||settings.voice<=0||settings.muted||hidden)return false;
-    utterance={};const accepted=speech.speak(text,{...characterVoice(speaker,settings.heroVoice),volume:settings.voice});if(!accepted)utterance=null;return accepted;
+    utterance={};const accepted=speech.speak(text,{...characterVoice(speaker,settings.heroVoice),volume:settings.voice,...options});if(!accepted)utterance=null;return accepted;
   }
   const api={
     unlock,
@@ -136,7 +136,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
     dialogueLine(line){stopDialogue();stats.dialogueLines++;if(settings.muted||settings.voice===0||hidden)return;const hash=Array.from(line.speaker?.id||'npc').reduce((n,c)=>n+c.charCodeAt(0),0),syllables=Math.min(120,Math.ceil(line.text.replace(/\s/g,'').length/2));dialogue={remaining:syllables,fallbackRemaining:syllables,next:ctx?.currentTime||0,pitch:190*characterVoice(line.speaker,settings.heroVoice).pitch+hash%15};if(speak(line.text,line.speaker))dialogue.remaining=0;apply();},
     finishTyping(){if(!utterance){dialogue=null;apply();}},
     stopDialogue,
-    speakSpell(spell){speak(spell.name+'!',{id:'hero'});},
+    speakSpell(spell){speak(spell.name,{id:'hero'},false,{segments:spellVoice(spell.name,settings.heroVoice)});},
     stopVoice:stopSpeech,
     pauseVoice(paused){if(paused)speech.pause();else speech.resume();},
     speechStatus:()=>speech.status(),
