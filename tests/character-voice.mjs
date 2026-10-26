@@ -9,7 +9,7 @@ const s=newJourney(),cast=(v,id)=>dialogueCast({kind:'lore',id},s,REGIONS[v],vil
 assert.equal(characterVoice(cast('water','water-ha').npc).gender,'female');
 assert.equal(characterVoice(cast('water','water-chau').npc).gender,'male');
 assert.equal(characterVoice(cast('nameless','nameless-resident-war-cemetery').npc).gender,'female');
-const male=characterVoice({id:'hero'},'male'),female=characterVoice({id:'hero'},'female');assert.ok(female.pitch>male.pitch);assert.ok(characterVoice({appearance:{female:true,age:'elder'}}).rate<female.rate);
+const male=characterVoice({id:'hero'},'male'),female=characterVoice({id:'hero'},'female');assert.ok(female.pitch>male.pitch);assert.equal(male.rate,1.02*1.5);assert.equal(female.rate,1.02*1.5);assert.equal(characterVoice({elder:true}).rate,.9*1.5);assert.ok(characterVoice({appearance:{female:true,age:'elder'}}).rate<female.rate);
 const env=new EventTarget(),utterances=[];env.SpeechSynthesisUtterance=class {constructor(text){this.text=text;}};
 env.speechSynthesis={getVoices:()=>[{lang:'en-US',name:'Female',localService:true},{lang:'vi-VN',name:'Microsoft HoaiMy Online',localService:false},{lang:'vi-VN',name:'Microsoft NamMinh',localService:true}],resume(){},cancel(){},speak(u){utterances.push(u);u.onstart();}};
 const speech=createSpeechOutput({environment:env});speech.speak('Câu của nữ',female);assert.equal(utterances.at(-1).voice.name,'Microsoft HoaiMy Online');speech.speak('Câu của nam',male);assert.equal(utterances.at(-1).voice.name,'Microsoft NamMinh');speech.destroy();

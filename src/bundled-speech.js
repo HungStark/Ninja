@@ -30,7 +30,7 @@ export function createBundledSpeech({getOutput,onStart,onEnd,onError,workerFacto
   return {
     speak(text,options={}){
       stop();const id=++serial;job={id,paused:false,buffer:null};
-      try{ensureWorker();timeout=setTimeout(()=>fail(id),20000);worker.postMessage({id,text,rate:options.rate,pitch:options.pitch,gender:options.gender});}
+      try{ensureWorker();timeout=setTimeout(()=>fail(id),20000);worker.postMessage({id,text,rate:options.rate,pitch:options.pitch,gender:options.gender,language:options.language||'vi'});}
       catch{queueMicrotask(()=>fail(id));}
     },
     stop,

@@ -1,3 +1,4 @@
+import {gameLanguage} from './language.js';
 import {gameAudio} from './game-audio.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {villagerPortrait} from './villager-portrait.js';
@@ -42,7 +43,7 @@ export function conversationLines(item,save,cast,body){
 
 export function createDialogueUI(root){
   const get=id=>root.querySelector('#'+id),card=root.querySelector('.journey-dialog-card'),portrait=get('dialogPortrait'),name=get('dialogSpeakerName'),role=get('dialogSpeakerRole'),body=get('dialogBody'),controls=get('dialogConversationControls'),next=get('dialogNext'),skip=get('dialogSkip'),counter=get('dialogLineCount');
-  const segmenter=globalThis.Intl?.Segmenter?new Intl.Segmenter('vi',{granularity:'grapheme'}):null;
+  const segmenter=globalThis.Intl?.Segmenter?new Intl.Segmenter(gameLanguage(),{granularity:'grapheme'}):null;
   let lines=[],index=0,letters=[],shown=0,budget=0,active=false,complete=false,allowSkip=true,onComplete=()=>{};
   const ready=()=>{const typing=shown<letters.length,last=index===lines.length-1;next.hidden=!typing&&last;next.disabled=false;next.textContent=typing?'Hiện đầy đủ':'Tiếp lời →';counter.textContent=`${index+1} / ${lines.length}`;body.dataset.typing=String(typing);if(last&&!typing&&!complete){complete=true;onComplete();}};
   function render(){const line=lines[index];gameAudio.dialogueLine(line);portrait.innerHTML=speakerPortrait(line.speaker);name.textContent=line.speaker.name;role.textContent=line.speaker.role;letters=segmenter?Array.from(segmenter.segment(line.text),s=>s.segment):Array.from(line.text);shown=0;budget=0;body.textContent='';body.scrollTop=0;body.setAttribute('aria-label',line.text);ready();}

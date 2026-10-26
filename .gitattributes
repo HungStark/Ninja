@@ -10,3 +10,7 @@ assets/hand-data.js -whitespace linguist-generated=true
 *.glb binary
 *.png binary
 *.jpg binary
+
+game.en.js -whitespace linguist-generated=true
+game-core.en.js -whitespace linguist-generated=true
+index.en.html linguist-generated=true

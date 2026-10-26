@@ -1,3 +1,4 @@
+import {gameLanguage} from './language.js';
 import {createSpeechOutput} from './speech-output.js';
 import {characterVoice,spellVoice} from './character-voice.js';
 import {spellCastCue,spellImpactCue} from './spell-audio-cues.js';
@@ -78,7 +79,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
   function stopDialogue(){dialogue=null;stopSpeech();apply();}
   function speak(text,speaker={},preview=false,options={}){
     stopSpeech();if((!preview&&!settings.readDialogue)||settings.voice<=0||settings.muted||hidden)return false;
-    utterance={};const accepted=speech.speak(text,{...characterVoice(speaker,settings.heroVoice),volume:settings.voice,...options});if(!accepted)utterance=null;return accepted;
+    utterance={};const accepted=speech.speak(text,{...characterVoice(speaker,settings.heroVoice),volume:settings.voice,language:gameLanguage(),...options});if(!accepted)utterance=null;return accepted;
   }
   const api={
     unlock,
@@ -136,7 +137,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
     dialogueLine(line){stopDialogue();stats.dialogueLines++;if(settings.muted||settings.voice===0||hidden)return;const hash=Array.from(line.speaker?.id||'npc').reduce((n,c)=>n+c.charCodeAt(0),0),syllables=Math.min(120,Math.ceil(line.text.replace(/\s/g,'').length/2));dialogue={remaining:syllables,fallbackRemaining:syllables,next:ctx?.currentTime||0,pitch:190*characterVoice(line.speaker,settings.heroVoice).pitch+hash%15};if(speak(line.text,line.speaker))dialogue.remaining=0;apply();},
     finishTyping(){if(!utterance){dialogue=null;apply();}},
     stopDialogue,
-    speakSpell(spell){speak(spell.name,{id:'hero'},false,{segments:spellVoice(spell.name,settings.heroVoice)});},
+    speakSpell(spell){speak(spell.name,{id:'hero'},false,{language:'vi',segments:spellVoice(spell.name,settings.heroVoice)});},
     stopVoice:stopSpeech,
     pauseVoice(paused){if(paused)speech.pause();else speech.resume();},
     speechStatus:()=>speech.status(),

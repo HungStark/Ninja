@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <queries><intent><action android:name="android.intent.action.TTS_SERVICE" /></intent></queries>
     <uses-feature android:glEsVersion="0x00030000" android:required="true" />
-    <application android:label="Ấn Hỏa" android:icon="@drawable/ic_launcher"
+    <application android:label="Cửu Ấn" android:icon="@drawable/ic_launcher"
         android:theme="@style/GameTheme" android:allowBackup="false"
         android:hardwareAccelerated="true" android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true"

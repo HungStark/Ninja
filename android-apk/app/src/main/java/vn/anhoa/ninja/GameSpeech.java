@@ -124,7 +124,7 @@ public final class GameSpeech {
             if (line.length() > TextToSpeech.getMaxSpeechInputLength()) {
                 emit("error", id, "Đoạn thoại quá dài để đọc trong một lượt."); return;
             }
-            current = new Request(line, id, Math.max(.5f, Math.min(1.5f, rate)), Math.max(.5f, Math.min(1.5f, pitch)), Math.max(0, Math.min(1, volume)));
+            current = new Request(line, id, Math.max(.5f, Math.min(3f, rate)), Math.max(.5f, Math.min(1.5f, pitch)), Math.max(0, Math.min(1, volume)));
             if ("initializing".equals(state)) return; // Only the most recent line waits for initialization.
             if (!"ready".equals(state)) { failCurrent(message); return; }
             play();

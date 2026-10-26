@@ -1,5 +1,13 @@
-import { build } from "esbuild";
-import fs from "node:fs/promises";
-await build({ entryPoints: ["src/main.js"], bundle: true, outfile: "game.js", format: "iife", target: "es2020", minify: true, legalComments: "eof" });
+import {build,transform} from 'esbuild';
+import fs from 'node:fs/promises';
+import {englishPlugin,localizeSource,localizeText} from './localize.mjs';
+const options={entryPoints:['src/main.js'],bundle:true,format:'iife',target:'es2020',minify:true,legalComments:'eof'};
+await build({...options,outfile:'game.js'});
+const missing=new Set();await build({...options,outfile:'game.en.js',plugins:[englishPlugin(missing)]});
+const core=localizeSource(await fs.readFile('game-core.js','utf8'),'game-core.js',missing);
+await fs.writeFile('game-core.en.js',(await transform(core,{target:'es2020',minify:true,legalComments:'eof'})).code);
+const html=localizeText(await fs.readFile('index.html','utf8'),missing).replace('<html lang="vi">','<html lang="en">').replace('src="game-core.js"','src="game-core.en.js"').replace('src="game.js"','src="game.en.js"');
+await fs.writeFile('index.en.html',html);
+if(missing.size)throw Error('Missing English translations: '+JSON.stringify([...missing]));
 await fs.copyFile('android-apk/ui/android.css','android.css');
-console.log("Built offline browser bundle: " + (await fs.stat("game.js")).size + " bytes");
+console.log('Built Vietnamese and English offline bundles; English catalog coverage is complete.');

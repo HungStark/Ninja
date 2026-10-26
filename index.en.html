@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><script src="language-loader.js"></script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cửu Ấn</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="adventure.css"></head>
+<body>
+<canvas id="world" aria-label="First-person 3D ninja arena"></canvas>
+<div id="darkEyelids" aria-hidden="true"><i></i><i></i></div>
+<div id="shadowSubmerge" aria-hidden="true"></div>
+<div class="vignette"></div><div id="flash"></div>
+<header><a class="brand" href="#" aria-label="Cửu Ấn"><span class="brand-icon">印</span><span>CỬU ẤN<small>NINE-ELEMENT ARENA</small></span></a><div class="header-center"><i></i> DUEL <span>／</span> CHERRY BLOSSOM VALLEY</div><button id="helpButton" class="outline" aria-expanded="false" aria-controls="guide">H <span>Scroll</span></button><button id="qualityButton" class="outline" title="Change graphics quality">◈ <span id="qualityLabel">Balanced</span></button><button id="soundButton" class="icon-button" title="Toggle sound (M)" aria-label="Toggle sound">♪</button></header>
+<main id="hud">
+ <section class="status panel"><div class="eyebrow">HEALTH <span id="healthNumber">1000 / 1000</span></div><div class="meter health"><div id="healthFill"></div></div><div class="eyebrow">MANA <span id="chakraNumber">100 / 100</span></div><div class="meter"><div id="chakraFill"></div></div><div class="status-bottom"><span id="shieldStatus">No shield</span><span id="castCount">0 casts</span></div><div class="carried-ammo-row"><span id="carriedAmmo" hidden></span><button id="cycleAmmo" hidden title="Cycle shuriken type (Tab)">Cycle Tab</button></div></section>
+ <section class="score"><span class="eyebrow">OPPONENTS DEFEATED</span><strong><span id="score">00</span><small> / <span id="totalTargets">01</span></small></strong><div id="roundText">Match 01</div></section>
+ <section class="enemy-status panel"><div class="enemy-heading" id="enemyElement"></div><div class="enemy-health-row"><span id="enemyHealth">1000 / 1000</span><span id="enemyChakra">100 MANA</span></div><div class="meter enemy"><div id="enemyHP"></div></div><div id="enemyAction">Observing…</div><div id="enemyShield"></div></section>
+ <aside class="guide panel" id="guide"><button id="guideToggle" type="button" aria-expanded="false" aria-controls="spellList" title="H · Collapse or expand the scroll"><kbd>H</kbd><span>EQUIPPED SCROLL</span><i aria-hidden="true">‹</i></button><div id="spellList"></div><div class="guide-foot">Keys <kbd>1</kbd>–<kbd>5</kbd> to view techniques · Complete the seals, then press <kbd>SPACE</kbd></div></aside>
+ <div class="reticle" id="reticle"><span></span><span></span><b></b></div><div id="hitMarker">×</div><div class="target-info" id="targetInfo"><span id="targetName"></span><div><i id="targetHP"></i></div></div>
+ <div class="center-status"><span class="eyebrow" id="comboLabel">FORM SEALS TO GATHER MANA</span><div id="comboSlots"></div><div id="message">Follow your equipped scroll to form seals</div><button id="castButton" disabled><kbd>SPACE</kbd><span>CAST</span><b>→</b></button></div>
+ <div id="moveHint">LEFT CLICK: DODGE LEFT · RIGHT CLICK: DODGE RIGHT</div>
+ <button id="dashBoostButton" type="button" title="G: boost for 3 seconds; left/right click to dash 3 m, cooldown 12 seconds"><kbd>G</kbd><span id="dashBoostStatus">Boost · Dash 3 m</span></button>
+ <section class="seal-dock hidden" hidden><div class="dock-heading"><span>TWELVE SEALS <b>／</b> 12 HAND POSES</span><span id="currentSeal">Ready to form seals</span></div><div id="sealKeys"></div></section>
+ <footer><span>Move mouse: aim <b>·</b> Hold left: move left <b>·</b> Hold right: move right</span><span><kbd>BACKSPACE</kbd> Clear sequence <b>·</b> <kbd>ESC</kbd> Pause</span><span class="prototype">NINE ELEMENTS <i>0.3</i></span></footer>
+</main>
+<section class="overlay" id="startScreen" role="dialog" aria-modal="true" aria-label="Technique selection scroll" tabindex="-1"><div class="scroll-book">
+ <div class="scroll-roller scroll-roller-left" aria-hidden="true"></div><div class="scroll-roller scroll-roller-right" aria-hidden="true"></div>
+ <div class="scroll-paper"><div class="scroll-heading"><div></div></div>
+ <div class="scroll-body"><div class="catalog-pane"><nav id="elementFilters" aria-label="Filter elements"></nav><div class="kind-filters" aria-label="Filter by learning status"><button class="active" data-kind="all">All techniques</button><button data-kind="learned">Learned</button><button data-kind="unlearned">Unlearned</button><button id="selectElementLoadout" hidden>Select all</button></div><div id="spellCatalog"></div></div>
+ <aside class="loadout-pane"><div class="eyebrow">YOUR LOADOUT <span id="loadoutCount">0 / 5</span></div><div class="loadout-actions"><button id="clearLoadout">Remove all</button></div><div id="loadoutSlots"></div><div class="loadout-presets" hidden><button id="presetAttack">Default loadout</button><button id="presetDefense">2 attack · 3 defense</button><button id="presetFire">Fire loadout</button></div><p id="loadoutNotice" role="status" aria-live="polite"></p><button id="startButton" class="primary">ENTER BATTLE <span>→</span></button></aside></div></div>
+</div></section>
+<section class="overlay pause hidden" id="pauseScreen"><div class="pause-card panel"><div class="eyebrow">NINE-ELEMENT ARENA</div><h2>Take a short rest.</h2><p>Health, mana, shields and your seal sequence are preserved.</p><button id="resumeButton" class="primary">RESUME <span>→</span></button><button id="resetButton" class="outline">Retry with this loadout</button><button id="changeLoadout" class="outline">Back to technique selection</button></div></section>
+<section class="overlay hidden" id="winScreen"><div class="pause-card panel"><div class="eyebrow" id="resultLabel">MATCH OVER</div><h2 id="resultTitle"></h2><p id="winStats"></p><button id="nextButton" class="primary">CHOOSE TECHNIQUES · NEXT MATCH <span>→</span></button></div></section>
+<div id="loading"><span class="loading-symbol">印</span><p>Loading game...</p></div><div id="errorScreen" class="hidden"></div>
+<script src="game-core.en.js"></script><script src="game.en.js"></script>
+</body></html>

@@ -1,4 +1,4 @@
-# Ấn Hỏa — Android APK
+# Cửu Ấn — Android APK
 
 Bản Android chạy game được đóng gói sẵn trong APK. Thư mục `www/` được tạo từ mã và tài nguyên ở dự án gốc; mỗi lần build sẽ đồng bộ lại, không sửa trực tiếp trong đó. Phần giao diện Android ở `ui/android.css`, điều khiển cảm ứng ở `../src/android-controls.js`.
 

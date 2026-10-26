@@ -7,10 +7,10 @@ async function engine(){
   return enginePromise;
 }
 self.onmessage=async({data})=>{
-  const {id,text,rate=1,pitch=1,gender='male'}=data;
+  const {id,text,rate=1,pitch=1,gender='male',language='vi'}=data;
   try{
     const e=await engine();
-    e.set_voice(gender==='female'?'vi+f3':'vi+m3');e.set_rate(Math.round(175*rate));e.set_pitch(Math.round(50*pitch));e.set_volume(100);
+    e.set_voice((language==='en'?'en-us':'vi')+(gender==='female'?'+f3':'+m3'));e.set_rate(Math.round(175*rate));e.set_pitch(Math.round(50*pitch));e.set_volume(100);
     const chunks=[];let length=0;
     // Text, not SSML: dialogue cannot inject synthesizer commands.
     const plain=String(text).replace(/[<>\[\]]/g,' ');

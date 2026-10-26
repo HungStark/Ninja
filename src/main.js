@@ -1,3 +1,4 @@
+import {setupLanguageSelector} from './language.js';
 import {createBattleIntro} from './battle-intro.js';
 import {empowerDarkGuardian} from './guardian-arts.js';
 import {PRACTICE_BOT_HP} from './enemy-balance.js';
@@ -1531,7 +1532,7 @@ async function main() {
   if (testMode) window.__AN_HOA__.advance = seconds => { for (let t = 0; t < seconds; t += 1 / 60) tick(Math.min(1 / 60, seconds - t)); render(); };
   setupAudioSettings(gameAudio,{onOpen:()=>{const running=started&&!paused&&!won&&!adventure.activeView;if(running)pause();return running;},onClose:wasRunning=>{if(wasRunning)resume();}});
   if(testMode){window.__AN_HOA__.audio=gameAudio;window.__AN_HOA__.guardianArt=index=>guardianPhases.trigger(index,playerPos(),enemyPos(),enemy);}
-  setupScrollOpening();
+  setupLanguageSelector();setupScrollOpening();
   renderLoadout(); renderGuide(); updateUI(); $('loading').classList.add('hidden'); document.body.dataset.ready = 'true'; tick(.016); render(); if (!testMode) requestAnimationFrame(frame);
 }
 main().catch(error => { console.error(error); document.getElementById('loading')?.classList.add('hidden'); const el = document.getElementById('errorScreen'); el.classList.remove('hidden'); el.textContent = 'Không khởi tạo được đồ họa 3D. Hãy mở bằng Chrome/Edge hỗ trợ WebGL 2 và bật tăng tốc đồ họa.'; });

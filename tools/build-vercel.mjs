@@ -7,6 +7,10 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const output = path.join(root, "dist");
 const files = [
   "index.html",
+  "index.en.html",
+  "language-loader.js",
+  "game.en.js",
+  "game-core.en.js",
   "style.css",
   "adventure.css",
   "android.css",

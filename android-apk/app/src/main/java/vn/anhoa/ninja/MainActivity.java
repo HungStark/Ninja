@@ -59,7 +59,7 @@ public final class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) { speech.pageReady(); }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 android.net.Uri url = request.getUrl();
-                return !("https".equals(url.getScheme()) && "appassets.androidplatform.net".equals(url.getHost()) && "/assets/index.html".equals(url.getPath()));
+                return !("https".equals(url.getScheme()) && "appassets.androidplatform.net".equals(url.getHost()) && ("/assets/index.html".equals(url.getPath()) || "/assets/index.en.html".equals(url.getPath())));
             }
         });
         setContentView(game);
