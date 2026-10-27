@@ -20,7 +20,8 @@ import {EARTH_GRAVITY_CINEMATIC_BASE64} from '../assets/audio/earth-gravity-cine
 import {EARTH_HEAVY_ROCK_BASE64} from '../assets/audio/earth-heavy-rock.js';
 import {LIGHT_LASER_BASE64} from '../assets/audio/light-laser.js';
 import {HOLY_STAIR_LASER_BASE64} from '../assets/audio/holy-stair-laser.js';
-const recordings={'dragon-roar':FIRE_DRAGON_ROAR_BASE64,'wind-howl':WIND_WHOOSH_BASE64,'wind-cut':WIND_WHOOSH_BASE64,'spirit-song':WIND_SPIRIT_CHANT_BASE64,'bird-cry':LIGHTNING_HAWK_CRY_BASE64,'thunder-strike':THUNDER_CLAP_BASE64,'shadow-dog':SHADOW_DOG_BARK_BASE64,'shadow-bull':SHADOW_BULL_MOO_BASE64,'shadow-elephant':SHADOW_ELEPHANT_TRUMPET_BASE64,'bamboo-swoosh':BAMBOO_FLIGHT_SWOOSH_BASE64,'snowstorm-wind':SNOWSTORM_WIND_BASE64,'earth-cinematic':EARTH_GRAVITY_CINEMATIC_BASE64,'earth-heavy-rock':EARTH_HEAVY_ROCK_BASE64,'rock-shift':EARTH_HEAVY_ROCK_BASE64,'stone-impact':EARTH_HEAVY_ROCK_BASE64,'light-laser':LIGHT_LASER_BASE64,'dome-laser':LIGHT_LASER_BASE64,'holy-stair-laser':HOLY_STAIR_LASER_BASE64};
+import {HANDSIGN_BASE64} from '../assets/audio/handsign.js';
+const recordings={'hand-sign':HANDSIGN_BASE64,'dragon-roar':FIRE_DRAGON_ROAR_BASE64,'wind-howl':WIND_WHOOSH_BASE64,'wind-cut':WIND_WHOOSH_BASE64,'spirit-song':WIND_SPIRIT_CHANT_BASE64,'bird-cry':LIGHTNING_HAWK_CRY_BASE64,'thunder-strike':THUNDER_CLAP_BASE64,'shadow-dog':SHADOW_DOG_BARK_BASE64,'shadow-bull':SHADOW_BULL_MOO_BASE64,'shadow-elephant':SHADOW_ELEPHANT_TRUMPET_BASE64,'bamboo-swoosh':BAMBOO_FLIGHT_SWOOSH_BASE64,'snowstorm-wind':SNOWSTORM_WIND_BASE64,'earth-cinematic':EARTH_GRAVITY_CINEMATIC_BASE64,'earth-heavy-rock':EARTH_HEAVY_ROCK_BASE64,'rock-shift':EARTH_HEAVY_ROCK_BASE64,'stone-impact':EARTH_HEAVY_ROCK_BASE64,'light-laser':LIGHT_LASER_BASE64,'dome-laser':LIGHT_LASER_BASE64,'holy-stair-laser':HOLY_STAIR_LASER_BASE64};
 const recordingAliases={'wind-cut':'wind-howl','rock-shift':'earth-heavy-rock','stone-impact':'earth-heavy-rock','dome-laser':'light-laser'};
 // The user's recordings are embedded for offline playback.
 export const AUDIO_STORAGE_KEY='anhoa-audio-v1';
@@ -173,7 +174,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
       noiseBuffer=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);const samples=noiseBuffer.getChannelData(0);let seed=7919;for(let i=0;i<samples.length;i++){seed=(seed*16807)%2147483647;samples[i]=seed/1073741824-1;}
       resetMusic();apply();timer=setInterval(schedule,80);
     }catch{ctx=null;return false;}}
-    try{if(ctx.state==='suspended')await ctx.resume();}catch{return false;}for(const type of ['dragon-roar','wind-howl','spirit-song','bird-cry','thunder-strike','shadow-dog','shadow-bull','shadow-elephant','bamboo-swoosh','snowstorm-wind','earth-cinematic','earth-heavy-rock','light-laser','holy-stair-laser',...Object.keys(PROCEDURAL_CUE_DURATIONS)])prepareEffect(type);schedule();return true;
+    try{if(ctx.state==='suspended')await ctx.resume();}catch{return false;}for(const type of ['hand-sign','dragon-roar','wind-howl','spirit-song','bird-cry','thunder-strike','shadow-dog','shadow-bull','shadow-elephant','bamboo-swoosh','snowstorm-wind','earth-cinematic','earth-heavy-rock','light-laser','holy-stair-laser',...Object.keys(PROCEDURAL_CUE_DURATIONS)])prepareEffect(type);schedule();return true;
   }
   function canEffect(key,interval=.045){if(!ctx||ctx.state!=='running'||settings.muted||hidden||settings.effects<=0)return false;const old=lastEffects.get(key)??-Infinity;if(ctx.currentTime-old<interval)return false;lastEffects.set(key,ctx.currentTime);return true;}
   const speech=createSpeechOutput({getOutput:()=>ctx?{context:ctx,destination:voice}:null,onEnd:()=>{utterance=null;dialogue=null;apply();},onError:()=>{utterance=null;if(dialogue){dialogue.remaining=dialogue.fallbackRemaining;dialogue.next=ctx?.currentTime||0;}apply();},onStatus:()=>notify()});
@@ -209,7 +210,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
         scheduleProceduralCue(type,(hz,dur,volume,wave='sine',end=hz,delay=0)=>note(effects,hz,t+delay,dur,volume*power,wave,end),(dur,volume,cutoff,filter='lowpass',end=cutoff,delay=0)=>noise(effects,t+delay,dur,volume*power,cutoff,filter,end));
       });
     },
-    seal(index,valid=true,ready=false,enemy=false){if(!canEffect(enemy?'enemy-seal':'seal',.035))return;stats.seals++;const t=ctx.currentTime,hz=valid?330*2**((index%12)/12):145,level=enemy?.28:1;noise(effects,t,.045,.11*level,1600,'bandpass');note(effects,hz,t,.12,.065*level,'triangle',hz*1.08);if(ready){note(effects,660,t+.04,.24,.055*level);note(effects,990,t+.09,.3,.03*level);}},
+    seal(index,valid=true,ready=false,enemy=false){if(!canEffect(enemy?'enemy-seal':'seal',.035))return;stats.seals++;if(enemy)return;if(soundBuffers.has('hand-sign')){sample('hand-sign');return;}const epoch=soundEpoch;prepareRecording('hand-sign').then(buffer=>{if(buffer&&epoch===soundEpoch&&!destroyed&&!settings.muted&&!hidden&&settings.effects>0&&ctx?.state==='running')sample('hand-sign');});},
     cast(spell,enemy=false){
       if(!canEffect('cast-'+spell.element,.055))return;stats.casts++;
       // These sounds follow their actual effects or individual attack events.

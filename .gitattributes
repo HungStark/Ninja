@@ -15,6 +15,7 @@ game.en.js -whitespace linguist-generated=true
 game-core.en.js -whitespace linguist-generated=true
 index.en.html linguist-generated=true
 *.mp3 binary
+*.m4a binary
 assets/audio/fire-dragon-roar.js -whitespace linguist-generated=true
 assets/audio/wind-whoosh.js -whitespace linguist-generated=true
 assets/audio/wind-spirit-chant.js -whitespace linguist-generated=true
@@ -29,3 +30,5 @@ assets/audio/earth-gravity-cinematic.js -whitespace linguist-generated=true
 assets/audio/earth-heavy-rock.js -whitespace linguist-generated=true
 assets/audio/light-laser.js -whitespace linguist-generated=true
 assets/audio/holy-stair-laser.js -whitespace linguist-generated=true
+assets/audio/handsign.js -whitespace linguist-generated=true
+assets/audio/handsign.mp3 binary

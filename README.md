@@ -12,7 +12,9 @@ Tinh linh gió, chim Lôi Điểu và Thiên Lôi Giáng Thế dùng lần lư�
 
 Chó/bò/voi bóng dùng các file thu âm tại `assets/audio/shadow-dog-bark.mp3`, `assets/audio/shadow-bull-moo.mp3`, `assets/audio/shadow-elephant-trumpet.mp3` và vẫn chỉ kêu khi được lệnh tấn công. `thunder-clap.mp3` đã được cắt khoảng 0,551 giây im lặng đầu file, giữ nguyên phần tiếng nổ.
 
-Âm thanh chiêu thức được cân bằng theo phần âm đang phát, gồm cả MP3 và hiệu ứng tổng hợp. Khoảng lặng và đuôi âm nhỏ không làm tiếng bị tăng quá mức; bộ trộn kiểm soát các lớp tiếng phát đồng thời và giới hạn đỉnh âm. Mức tăng/giảm riêng theo từng file được thay bằng mức chung; thanh âm lượng hiệu ứng vẫn điều chỉnh toàn bộ nhóm. File MP3 gốc được giữ nguyên, âm được cân một lần khi giải mã vào bộ nhớ.
+Âm thanh chiêu thức được cân bằng theo phần âm đang phát, gồm cả MP3 và hiệu ứng tổng hợp. Khoảng lặng và đuôi âm nhỏ không làm tiếng bị tăng quá mức; bộ trộn kiểm soát các lớp tiếng phát đồng thời và giới hạn đỉnh âm. Mức tăng/giảm riêng theo từng file được thay bằng mức chung; thanh âm lượng hiệu ứng vẫn điều chỉnh toàn bộ nhóm. File âm thanh gốc được giữ nguyên, âm được cân một lần khi giải mã vào bộ nhớ.
+
+Khi nhân vật kết ấn tay, game phát âm thanh từ `assets/audio/handsign.m4a`; bản MP3 đã giải mã sạch được nhúng vào game để phát ngoại tuyến.
 
 Trúc Diệp Loạn Vũ phát `bamboo-flight-swoosh.mp3` khi tre/lá tre đã rời cây và đang bay; không phát lúc đang chuẩn bị. Thiên Địa Tuyết Táng phát lặp `snowstorm-wind.mp3` trong suốt thời gian tuyết rơi, kể cả lúc gom tuyết, rồi ngắt khi tuyết hết rơi. Địa Bộc Thiên Tinh dùng `earth-gravity-cinematic.mp3`; bốn chiêu Thổ còn lại dùng `earth-heavy-rock.mp3`. Âm đá bám theo hiệu ứng, dừng khi bị hủy/hết chiêu; Sơn Hà Nghịch Chuyển ngừng tiếng khi hết các đợt chuyển động đất. Cả bốn file đều có trong mục nghe thử và được nhúng để chơi ngoại tuyến.
 
