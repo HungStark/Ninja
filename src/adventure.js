@@ -211,7 +211,8 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   function setObjectiveMarker(item,source='campaign'){
     waypoint=item||null;waypointSource=source;waypointVia=null;if(!item){world.destination.visible=false;return;}
     const plan=routeTo([item.x,item.z],item),ride=plan?.find(l=>l.kind==='traverse');if(ride)waypointVia=world.interactives.find(i=>i.kind==='traversal'&&i.routeId===ride.id&&i.side===ride.side)||null;
-    const target=waypointVia||item;world.destination.position.set(target.x,(target.y??world.heightAt(target.x,target.z))+.12,target.z);world.destination.visible=true;
+    const target=waypointVia||item;world.destination.position.set(target.x,(target.y??world.heightAt(target.x,target.z))+.12,target.z);
+    const targetIsHaLy=item.kind==='story-witness'||item.id==='ha-ly-wounded'||(item.kind==='village-event'&&item.eventVillage==='fire');world.destination.visible=!targetIsHaLy;
   }
   function refreshObjectiveMarker(){
     const id=save.story.trackedQuest,q=id&&sidequestById(id),status=q?save.story.sidequests[q.id]||0:0;

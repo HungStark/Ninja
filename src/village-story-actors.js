@@ -19,7 +19,7 @@ export function createVillageStoryActors({scene,hero,blocked,floor}){
     if(style==='lantern'){mesh(parent,new T.CylinderGeometry(.4,.32,.7,8),'#f5bf73',[0,1.5,0]);mesh(parent,new T.CylinderGeometry(.06,.06,1.4,8),'#655749',[0,.7,0]);return;}
     for(let i=0;i<3;i++){const x=(i-1)*.85;mesh(parent,style==='earth'?new T.DodecahedronGeometry(.65):new T.CylinderGeometry(.16,.25,1.6,7),color,[x,.8,-.4],[1,1+i*.12,1]);}
   }
-  function addActor(id,p,wounded=false){const model=createNinja(HA_LY);model.root.name=wounded?'ha-ly-wounded':'ha-ly-companion';model.root.position.set(p.x,p.y,p.z);if(wounded)model.root.scale.setScalar(1.1);root.add(model.root);return model;}
+  function addActor(id,p,wounded=false){const model=createNinja(HA_LY);model.root.name=wounded?'ha-ly-wounded':'ha-ly-companion';model.root.position.set(p.x,p.y,p.z);if(wounded)model.root.scale.setScalar(1);root.add(model.root);return model;}
   function reset(keepFollower=false){for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;entry=null;trail=[];}activeEvent=null;moving=false;}
   function sync(save,id,interactives,inInterior=false){
     reset(current===id&&!!follower&&save.story?.companion?.recruited);current=id;list=interactives;for(let i=list.length-1;i>=0;i--)if(['village-event','story-witness','companion'].includes(list[i].kind))list.splice(i,1);
