@@ -105,7 +105,7 @@ export function villageSidequests(id){
   });
 }
 export function questForNPC(id,item){const giver=item.kind==='npc'?`${id}-chief`:item.kind==='shop'?`${id}-merchant`:item.kind==='envoy'?`${id}-envoy`:item.kind==='expedition-giver'?'fire-khoi':item.id;return villageSidequests(id).find(q=>q.giver===giver);}
-export function acceptSidequest(save,q){if(save.story.sidequests[q.id])return false;save.story.sidequests[q.id]=1;save.story.trackedQuest=q.id;return true;}
+export function acceptSidequest(save,q){if(save.story.sidequests[q.id])return false;save.story.sidequests[q.id]=1;return true;}
 export function completeSidequestTarget(save,q){if(save.story.sidequests[q.id]!==1)return false;save.story.sidequests[q.id]=2;return true;}
 export function sidequestReward(save,q){
   if(!q.rewardScroll)return {gold:q.rewardGold,scroll:null};
