@@ -187,7 +187,7 @@ async function main() {
   playerShield.scale.set(1.05, 1.5, 1.05); scene.add(playerShield);
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const darkDomain = new DarkDomain(world,reducedMotion);
-  const windArts = new WindArts(scene);
+  const windArts = new WindArts(scene,{onSlash:owner=>gameAudio.windSlash(owner!=='player')});
   const waterBubbles = new WaterBubbles(scene);
   const earthArts = new EarthArts(scene);
   const lightArts = new LightArts(scene,intersectFireWall,(a,b)=>earthArts.intersectTerrain(a,b));
@@ -654,7 +654,7 @@ async function main() {
     if(adventure?.inBattle&&shot.owner==='player'&&result.damage>0)adventure.awardCombatExperience(result.damage*.5,victim?.id||shot.victimId);
     shot.hitResult=result;if(activeBoss()&&shot.owner==='player')guardianPhases.onDamage(result.damage);
     if(result.immune)return true;
-    if(shot.style!=='poisontick')gameAudio.impact(shot.element,result.damage,!result.damage,shot.style);
+    if(!['poisontick','aircut'].includes(shot.style))gameAudio.impact(shot.element,result.damage,!result.damage,shot.style);
     fighter.applyElementHit(shot.element,result,shot.style);
     if(shot.style==='boat'&&result.damage>0){fighter.boatControlTime=Math.max(fighter.boatControlTime,shot.controlDuration||1);interruptActor(shot.owner==='player'?'enemy':'player');}
     if(shot.style==='poisontick'){
@@ -745,7 +745,7 @@ async function main() {
   }
   function meteorImpact(shot) {
     const pos = [shot.p[0], .1, shot.p[2]];
-    gameAudio.cue('explosion');
+    gameAudio.meteorImpact(shot);
     effects.arts.blast(pos, 'meteor', shot.blastRadius);
     for (let j = 0; j < 80; j++) particle(pos, [range(-7, 7), range(2, 12), range(-7, 7)], range(.025, .08), range(.6, 1.2), '#ffc56e');
     recoil = Math.max(recoil, .65); tone(48, .55, 'sawtooth', .09);
@@ -755,7 +755,6 @@ async function main() {
     if (Math.hypot(target[0] - pos[0], target[2] - pos[2]) <= shot.blastRadius) impact(shot, pos);
   }
   function thunderImpact(shot) {
-    gameAudio.cue(shot.style==='thunder'?'thunder-strike':'light-chime');
     const pos=shot.target;
     if(snowBlocks({...shot,old:shot.cloudPoint,p:[...pos]}))return;
     if(shot.style==='jacob')lightArts.flash([pos[0],1.72,pos[2]],2);
@@ -872,16 +871,18 @@ async function main() {
           if (shot.age + 1e-6 < shot.riseTime) continue;
           flightDt = Math.max(0, shot.age - shot.riseTime);
           shot.age = shot.riseTime; shot.p = [...shot.origin]; shot.old = [...shot.p]; shot.phase = 'flying';
+          gameAudio.startBoatRush(shot);
           if (shot.owner === 'player') { beginDragonView(shot); cameraImpacts.trigger('orb', 1.3); }
         }
         shot.flightAge = Math.min(shot.travelTime, shot.flightAge + travelStep(shot,flightDt,true)); shot.age += flightDt;
         shot.p = vadd(shot.origin, vmul(shot.v, shot.flightAge));
         if(snowBlocks(shot)){shots.splice(i,1);continue;}
-        if(crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot))){shots.splice(i,1);continue;}
+        if(crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot))){gameAudio.boatImpact(shot,false);shots.splice(i,1);continue;}
         if (shot.flightAge + 1e-6 >= shot.travelTime) {
           burst(shot.target, 36, 3, shot.color);
           const target = shot.owner === 'enemy' ? playerPos() : enemyPos();
-          if (vlen(vsub(target, shot.target)) <= shot.blastRadius) impact(shot, shot.target);
+          const hitTarget=vlen(vsub(target,shot.target))<=shot.blastRadius;gameAudio.boatImpact(shot,hitTarget);
+          if (hitTarget) impact(shot, shot.target);
           shots.splice(i, 1);
         }
         if (won) break;
@@ -893,7 +894,7 @@ async function main() {
         const prelude = shot.skyTime + shot.returnTime;
         shot.preludeAge = Math.min(prelude, shot.age); shot.fallAge = Math.max(0, shot.age - prelude);
         shot.phase = shot.age < shot.skyTime ? 'sky' : shot.age + 1e-6 < prelude ? 'returning' : 'falling';
-        if(shot.phase==='falling'&&!shot.fallSound){shot.fallSound=true;gameAudio.cue('meteor-fall');}
+        if(shot.phase==='falling'&&!shot.fallSound){shot.fallSound=true;gameAudio.startMeteorFall(shot);}
         shot.p = vadd(shot.skyStart, vmul(shot.v, shot.travelAge));
         if(snowBlocks(shot)){shots.splice(i,1);continue;}
         emitShotTrail(shot, dt);
@@ -1013,6 +1014,7 @@ async function main() {
   }
   function tick(dt) {
     gameAudio.setScene(adventure?.phase==='duel'?'duel':adventure?.village||'nameless',paused?'pause':won?'result':adventure?.phase||'home');
+    if(!started||paused||won||battleIntro.active||guardianPhases.transitioning||adventure?.activeView)gameAudio.updateSpells(null);
     if(battleIntro.active){battleIntro.update(paused?0:dt);return;}
     if(guardianPhases.transitioning){
       if(!paused){animationTime+=dt;guardianPhases.advanceTransition(dt,enemy,guardianPhaseChanged);opponent.update(dt,animationTime,-1,false,enemy,0,false,false,reducedMotion);}
@@ -1139,6 +1141,7 @@ async function main() {
       [{ owner: 'player', fighter: player, pos: playerPos() }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }],fields,reducedMotion);
     darkDomain.visuals(running?dt:0,animationTime,shots);
     windArts.visuals(running?dt:0,animationTime,shots,walls);
+    if(running)gameAudio.updateSpells({shots,walls,clones:darkDomain.clones,spirits:windArts.spirits,bindings:darkDomain.bindings,snow:natureArts.snow,snowballs:natureArts.balls,earth:earthArts.effects,lightPulses:lightArts.pulses,optics:lightArts.optics});
     lightArts.visuals(animationTime,shots,windActors(),walls);
     hands.lightFinger.visible=started&&!won&&!paused&&rules.ready()?.style==='lightray';
     const readyLightStyle=running?rules.ready()?.style:null;
@@ -1179,7 +1182,6 @@ async function main() {
         announce('Địa Bộc Thiên Tinh đang hút bạn lên!',true);
       }else{aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;$('enemyAction').textContent='Bị Địa Bộc Thiên Tinh hút lên';}
     }
-    if(['quake','fall','wallbreak'].includes(type))gameAudio.cue(type==='quake'?'rock-shift':'stone-impact');
     if(type==='quake')cameraImpacts.trigger('meteorHit',.18*clamp(1-vlen(vsub(art.center,playerPos()))/45,.2,1));
     if(type==='fall')cameraImpacts.trigger('meteorHit',.6);
     if(type==='wallbreak')cameraImpacts.trigger('block',.35);
@@ -1398,6 +1400,7 @@ async function main() {
   }
   function startBattle(event) {
     if (started) return;
+    gameAudio.clearSpellSounds();
     heldStepSources.clear();
     phaseTitle.hidden=true;document.body.classList.remove('guardian-transform');
     saveBattleStatistics('restarted');battleMetrics.reset(androidInterface()?'mobile':'desktop');lastPlayerSpell=null;
@@ -1437,6 +1440,7 @@ async function main() {
   function pause() { if (battleIntro.active || !started || won) return;showBattleStatistics();$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;dashBoost.cancelDash(); gameAudio.pauseVoice(true); moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
   function resume(event) { paused = false; gameAudio.pauseVoice(false); moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
+    gameAudio.clearSpellSounds();
     saveBattleStatistics('left');
     battleIntro.reset();phaseTitle.hidden=true;document.body.classList.remove('guardian-transform');squad.reset();guardianAlly.reset();allyHud.hidden=true;guardianPhases.reset();squadHud.hidden=true;
     dashBoost.reset();dashAura.clear();enemyDashAura.clear();

@@ -159,7 +159,12 @@ export class LightningArts {
         g.userData.light.intensity=strikeAge<0?0:fade*55;g.userData.marker.visible=strikeAge<.85;
         return;
       }
-      g.position.fromArray(s.p);g.scale.setScalar(s.size);g.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),new T.Vector3(...s.v).normalize());
+      g.position.fromArray(s.p);g.scale.setScalar(s.size);
+      const direction=new T.Vector3(...s.v).normalize();
+      // Preserve world-up when facing back toward the caster; the shortest
+      // rotation from +Z otherwise rolls the bird sideways or upside down.
+      if(s.style==='bird')g.lookAt(g.position.clone().add(direction));
+      else g.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),direction);
       if(s.style==='bird') {
         const forming=s.phase==='forming',emerge=forming?clamp((s.age-.3)/.65):1;
         const smooth=emerge*emerge*(3-2*emerge),bird=g.userData.bird,orb=g.userData.orb;
@@ -189,7 +194,7 @@ export class LightningArts {
   visualState(shot) {
     const g=this.shots.get(shot);
     if(!g)return null;
-    if(shot.style==='bird')return {orbVisible:g.userData.orb.visible,birdVisible:g.userData.bird.visible,birdScale:g.userData.bird.scale.x};
+    if(shot.style==='bird')return {orbVisible:g.userData.orb.visible,birdVisible:g.userData.bird.visible,birdScale:g.userData.bird.scale.x,forward:new T.Vector3(0,0,1).applyQuaternion(g.quaternion).toArray(),up:new T.Vector3(0,1,0).applyQuaternion(g.quaternion).toArray()};
     if(shot.style==='thunder')return {chargeVisible:g.userData.charge.visible,chargeOpacity:g.userData.chargeMaterial.opacity,boltVisible:g.userData.bolt.visible};
     return null;
   }

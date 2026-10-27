@@ -17,7 +17,8 @@ function spiralGeometry(){
 }
 
 export class WindArts {
-  constructor(scene){
+  constructor(scene,{onSlash=()=>{}}={}){
+    this.onSlash=onSlash;
     this.scene=scene;this.spiritModel=new WindSpiritModel();this.shots=new Map();this.walls=new Map();this.airborne=[];this.recoveries=[];this.spirits=[];this.cuts=[];this.reflections=0;
     this.mint=ribbon('#b8f6df',.8);this.white=ribbon('#effff6');this.soft=ribbon('#73c4ac',.16);
     this.gustMaterial=ribbon('#b8f6df',.38);
@@ -65,7 +66,7 @@ export class WindArts {
       if(a.combo){
         const c=a.combo;c.age=Math.min(c.duration,c.age+dt);const total=Math.min(c.count,Math.floor((c.age+1e-6)/(c.duration/c.count)));
         const victim=actors.find(f=>f.owner===a.victim);
-        while(c.ticks<total){c.ticks++;if(victim){this.cut(victim.pos,c.ticks);damage({owner:a.owner,damage:c.damage/c.count,element:'wind',color:'#9fe9ce',style:'aircut',v:[0,0,1],unreflectable:true},victim.pos);}}
+        while(c.ticks<total){c.ticks++;if(victim){this.cut(victim.pos,c.ticks);this.onSlash(a.owner);damage({owner:a.owner,damage:c.damage/c.count,element:'wind',color:'#9fe9ce',style:'aircut',v:[0,0,1],unreflectable:true},victim.pos);}}
       }
       if(a.life<=1e-6)this.release(a);
     }

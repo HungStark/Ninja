@@ -76,8 +76,8 @@
     {id:'light-volley',name:'Thiên Giai Thánh Phạt',kind:'attack',style:'jacob',rank:'SS',sequence:[...'sdzfzx'],cooldown:35,cost:82,damage:150,count:1,size:1,chargeTime:1.25,blastRadius:3.5,speed:0,subtitle:'Ngước nhìn trời rồi lia xuống theo cột sáng trắng–vàng giáng xuống · 150 sát thương trong bán kính 3,5 m'}
   ].map(s=>({...s,element:'light',glyph:'光',color:'#fff2bd',heal:0,shield:s.shield||0}));
   const darkSpells = [
-    { id:'dark-orb', name:'U Minh Phân Ảnh', kind:'attack', style:'shadowclone', rank:'C', cooldown:2, sequence:[...'dfz'], cost:26, damage:20, count:2, cloneCount:2, maxClones:4, upgradeDamage:30, subtitle:'Tạo 2 chó bóng mỗi lần, tối đa 4 ảnh · chó gây 20 sát thương · đủ 4 ảnh thì mỗi lần nâng một chó thành bò gây 30 sát thương · không bị chiêu đối thủ phá hủy, không cản đạn' },
-    { id:'dark-lance', name:'U Ảnh Tuyệt Sát', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'],cooldown:8, cost:34, damage:20, count:1, requiresClones:true, subtitle:'Lấy đà rồi chạy lao tới điểm ngắm · chó 20, bò 30 sát thương · ngoài lãnh địa biến mất, trong lãnh địa tự trồi lên lại' },
+    { id:'dark-orb', name:'U Minh Phân Ảnh', kind:'attack', style:'shadowclone', rank:'C', cooldown:2, sequence:[...'dfz'], cost:15, damage:20, count:2, cloneCount:2, maxClones:4, upgradeDamage:30, subtitle:'Tạo 2 chó bóng mỗi lần, tối đa 4 ảnh · chó gây 20 sát thương · đủ 4 ảnh thì mỗi lần nâng một chó thành bò gây 30 sát thương · không bị chiêu đối thủ phá hủy, không cản đạn' },
+    { id:'dark-lance', name:'U Ảnh Tuyệt Sát', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'],cooldown:8, cost:20, damage:20, count:1, requiresClones:true, subtitle:'Lấy đà rồi chạy lao tới điểm ngắm · chó 20, bò 30 sát thương · ngoài lãnh địa biến mất, trong lãnh địa tự trồi lên lại' },
     { id:'dark-volley', name:'U Ảnh Huyễn Tượng', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfwq'],cooldown:20, cost:56, damage:90, fallTime:.7, duration:2, count:1, subtitle:'Voi bóng rơi xuống đầu đối thủ, gây 90 sát thương · trong lãnh địa mới nhấn chìm, khóa mọi thao tác 2 giây và nhìn qua bóng đen · có thể né trước khi voi đáp' },
     { id:'dark-domain', name:'U Minh Lĩnh Vực', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfrzsq'],cooldown:45, cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · voi bóng nhấn chìm địch và mở khóa lặn, phân thân bị đánh sẽ trồi lên lại' },
     { id:'dark-reflect', name:'U Ảnh Thuấn Di', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfa'],cooldown:8, cost:32, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
@@ -104,7 +104,7 @@
     heal: v.kind === 'defense' && ['wood', 'light'].includes(el.id) ? 12 : 0
   })));
   const defaultLoadout = ['fire-volley', 'water-lance', 'lightning-volley', 'earth-barrier', 'ice-reflect'];
-  const chakraRegen=4,cooldownByRank={D:4,C:8,B:10,A:12,S:20,SS:35};
+  const chakraRegen=5,cooldownByRank={D:4,C:8,B:10,A:12,S:20,SS:35};
   const elementalDurations={burn:6,static:8};
   for(const spell of spells)spell.cooldown=spell.cooldown??cooldownByRank[spell.rank]??6;
   for(const spell of spells){if(spell.element==='fire'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tầng bỏng/viên, tối đa 5, mỗi tầng '+elementalDurations.burn+' giây';if(spell.element==='lightning'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tĩnh điện, tối đa 3, mỗi điểm '+elementalDurations.static+' giây';}
