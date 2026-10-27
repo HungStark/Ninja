@@ -2,7 +2,7 @@ import {REGIONS} from './adventure-world.js';
 import {gainExperience,regionElement} from './progression.js';
 import {botHealth} from './enemy-balance.js';
 
-export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#93445b',hair:'#29202c'};
+export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
 const stage=(title,body,spot,style,extra={})=>({title,body,spot,style,...extra});
 const choice=(label,correct,feedback)=>({label,correct,feedback});
 export const VILLAGE_EVENTS={

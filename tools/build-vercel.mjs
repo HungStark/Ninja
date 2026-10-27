@@ -18,6 +18,7 @@ const files = [
   "game.js",
   "ket_an.jpg",
   "assets/ninja-hands.glb",
+  "assets/ha-ly.glb",
   "THIRD_PARTY_NOTICES.md",
 ];
 
