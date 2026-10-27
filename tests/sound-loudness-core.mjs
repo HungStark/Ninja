@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {normalizeSound,measureSoundLoudness,SPELL_LOUDNESS_TARGET,SPELL_PEAK_CEILING} from '../src/sound-loudness.js';
+const rate=22050,wave=level=>Float32Array.from({length:rate},(_,i)=>level*Math.sin(i*2*Math.PI*440/rate));
+const quiet=wave(.02),loud=wave(.8);normalizeSound([quiet],rate);normalizeSound([loud],rate);
+assert.ok(Math.abs(20*Math.log10(measureSoundLoudness([quiet],rate).activeRms/measureSoundLoudness([loud],rate).activeRms))<.3,'quiet/loud copies match');
+const padded=new Float32Array(rate*4);padded.set(wave(.2),rate);const p=normalizeSound([padded],rate);assert.ok(Math.abs(p.after-SPELL_LOUDNESS_TARGET)<.005,'silence does not inflate the active sound');assert.ok(padded.slice(0,rate).every(v=>v===0));
+const left=wave(.2),right=Float32Array.from(left,v=>v/2);normalizeSound([left,right],rate);for(let i=0;i<left.length;i++)assert.ok(Math.abs(left[i]-right[i]*2)<1e-6,'stereo balance is preserved');
+const extreme=wave(.02);extreme[100]=1000;normalizeSound([extreme],rate);assert.ok(extreme.every(v=>Number.isFinite(v)&&Math.abs(v)<=SPELL_PEAK_CEILING+1e-6),'large transients stay bounded');
+const silence=new Float32Array(rate);silence[0]=NaN;silence[1]=Infinity;normalizeSound([silence],rate);assert.ok(silence.every(v=>v===0));assert.equal(normalizeSound([],rate).after,0);
+console.log('PASS: quiet/loud matching, silence gating, stereo balance, transient ceiling and finite silent/empty buffers.');
