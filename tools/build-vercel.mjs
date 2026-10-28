@@ -19,6 +19,7 @@ const files = [
   "ket_an.jpg",
   "assets/ninja-hands.glb",
   "assets/ha-ly.glb",
+  "assets/hero-ninja.glb",
   "THIRD_PARTY_NOTICES.md",
 ];
 

@@ -1,7 +1,12 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
 import {createArmorWardrobe} from './hero-armor.js';
 import {createArmguardModel} from './armguard-model.js';
+
+let heroModelPromise;
+function loadHeroModel(){return heroModelPromise??=new GLTFLoader().loadAsync(new URL('assets/hero-ninja.glb',document.baseURI).href).then(gltf=>gltf.scene);}
 
 export function createHero(){
   const root=new T.Group(),body=new T.Group();root.name='crimson-masked-hero';root.add(body);
@@ -85,13 +90,14 @@ export function createHero(){
     const hand=ball(elbow,dark,0,-.43,.035,.078,.1,.07),fingers=[];for(let i=0;i<3;i++)fingers.push(ball(elbow,skin,(i-1)*.035,-.49,.073,.018,.034,.021));
     arms.push({side,pivot:arm,upper,lower,elbow,hand,fingers});
   }
-  const gear=new T.Group();gear.name='hero-equipment';body.add(gear);let gearKey='',equipment=null;
+  const gear=new T.Group();gear.name='hero-equipment';body.add(gear);let gearKey='',equipment=null,avatarPose=null,avatarOutfit=null;
   const armorAnchor=(parent,name)=>{const g=new T.Group();g.name=name;parent.add(g);return g;};
   const armorAnchors={body:gear,shoulders:arms.map(a=>armorAnchor(a.pivot,'armor-shoulder')),bracers:arms.map(a=>armorAnchor(a.elbow,'armor-bracer')),shins:legs.map(l=>armorAnchor(l.knee,'armor-shin')),hips:legs.map(l=>armorAnchor(l.pivot,'armor-hip'))};
   const wardrobe=createArmorWardrobe(armorAnchors);
   function setEquipment(state){
     cloth.color.set(state?.hero?.coat||'#211e25');hair.color.set(state?.hero?.hair||'#161821');
     const armor=state?.armor||{id:'traveler',color:'#29252c',style:'wrap'},bag=state?.bag||{id:'pouch-30',capacity:10},armguard=state?.armguard||{id:'bare-wrists',color:'#403640'};
+    avatarOutfit?.apply(state,armor);
     const key=armor.id+':'+bag.id+':'+armguard.id;if(key===gearKey)return;gearKey=key;equipment={armor:armor.id,bag:bag.id,armguard:armguard.id,gloves:!!armguard.gloves};
     wardrobe.clear();
     const trim=M(armor.elite?'#c4a574':'#8d878a');
@@ -108,14 +114,47 @@ export function createHero(){
     b(strap,.32,1.09,-.19,.27*size,.31*size,.26*size);b(trim,.32,1.19,-.19-.14*size,.23*size,.07,.035);
     b(strap,.18,.77,-.15,.22,.28,.13);root.userData.equipment={...equipment};
   }
-  setEquipment();let stride=0,localX=0,localZ=0,sprintBlend=0;
+  function addAvatar(){
+    loadHeroModel().then(source=>{
+      const visual=cloneSkeleton(source),garments={tops:[],bottoms:[],shoes:[],wraps:[],insignia:[]};
+      visual.traverse(o=>{
+        if(!o.isMesh)return;
+        if(o.name.toLowerCase()==='icosphere'||!o.material){o.visible=false;return;}
+        o.material=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone();
+        for(const m of Array.isArray(o.material)?o.material:[o.material]){
+          const n=m.name.toLowerCase();m.roughness=.88;
+          if(n.includes('tops'))garments.tops.push(m);else if(n.includes('bottoms'))garments.bottoms.push(m);else if(n.includes('shoes'))garments.shoes.push(m);else if(n.includes('crimson wrap'))garments.wraps.push(m);else if(n.includes('warm stitch'))garments.insignia.push(m);
+        }
+      });
+      visual.getObjectByName('Icosphere')?.removeFromParent();
+      const bounds=new T.Box3().setFromObject(visual),size=bounds.getSize(new T.Vector3());
+      if(!Number.isFinite(size.y)||size.y<.5)throw new Error('GLB model has no usable humanoid height');
+      const scale=2.94/size.y;visual.scale.setScalar(scale);visual.position.y=-bounds.min.y*scale;visual.name='hero-ninja-glb';
+      const bones={hips:visual.getObjectByName('J_Bip_C_Hips'),spine:visual.getObjectByName('J_Bip_C_Spine'),chest:visual.getObjectByName('J_Bip_C_Chest'),
+        arms:['J_Bip_L_UpperArm','J_Bip_R_UpperArm'].map(n=>visual.getObjectByName(n)),elbows:['J_Bip_L_LowerArm','J_Bip_R_LowerArm'].map(n=>visual.getObjectByName(n)),
+        legs:['J_Bip_L_UpperLeg','J_Bip_R_UpperLeg'].map(n=>visual.getObjectByName(n)),knees:['J_Bip_L_LowerLeg','J_Bip_R_LowerLeg'].map(n=>visual.getObjectByName(n)),feet:['J_Bip_L_Foot','J_Bip_R_Foot'].map(n=>visual.getObjectByName(n))};
+      const bind=bone=>bone?{bone,base:bone.quaternion.clone(),position:bone.position.clone()}:null;
+      avatarPose={hips:bind(bones.hips),spine:bind(bones.spine),chest:bind(bones.chest)};
+      for(const part of ['arms','elbows','legs','knees','feet'])avatarPose[part]=bones[part].map(bind);
+      root.add(visual);body.visible=false;root.userData.referenceAppearance=true;
+      avatarOutfit={apply(state,armor){
+        for(const m of garments.tops)m.color.set(state?.hero?.coat||'#29272d');
+        for(const m of garments.bottoms)m.color.set(state?.hero?.coat||'#29272d').multiplyScalar(.78);
+        for(const m of garments.shoes)m.color.set('#181a20');
+        for(const m of garments.wraps)m.color.set(armor?.elite?'#c4a574':'#71313a');
+      }};
+      avatarOutfit.apply(null,{id:'traveler'});
+    }).catch(error=>console.warn('Could not load the custom ninja GLB; using the built-in model.',error));
+  }
+  setEquipment();addAvatar();let stride=0,localX=0,localZ=0,sprintBlend=0,airborne=false,airVerticalSpeed=0;
+  function setAirborne(value,verticalSpeed=0){airborne=!!value;airVerticalSpeed=verticalSpeed||0;}
   function update(time,moving,velocity=null,dt=1/60,sprinting=false){
     const yaw=root.rotation.y,vx=moving?(velocity?.x??Math.sin(yaw)*4.6):0,vz=moving?(velocity?.z??Math.cos(yaw)*4.6):0,blend=1-Math.exp(-dt*14);
     localX+=(Math.cos(yaw)*vx-Math.sin(yaw)*vz-localX)*blend;localZ+=(Math.sin(yaw)*vx+Math.cos(yaw)*vz-localZ)*blend;
     const speed=Math.hypot(localX,localZ),weight=Math.min(1,speed/3),side=speed>.001?localX/speed:0,forward=speed>.001?localZ/speed:0,back=forward<0?1:0;
     sprintBlend+=((sprinting&&moving&&forward>.25?weight:0)-sprintBlend)*(1-Math.exp(-dt*12));
     const sprintLean=sprintBlend*.42;
-    stride+=speed*dt*(2.4+Math.abs(side)*.3)*(1+sprintBlend*.08);
+    if(!airborne)stride+=speed*dt*(2.4+Math.abs(side)*.3)*(1+sprintBlend*.08);
     legs.forEach((leg,i)=>{
       const phase=stride+i*Math.PI,swing=Math.sin(phase)*weight,lift=Math.max(0,Math.cos(phase))*weight,knee=lift*(.5+back*.12+sprintBlend*.55);
       leg.pivot.rotation.x=-swing*forward*(back?.4:.58+sprintBlend*.27)-knee*.48-sprintLean;
@@ -132,8 +171,26 @@ export function createHero(){
     body.rotation.x=forward*weight*.045*(1-sprintBlend)+sprintLean;body.rotation.z=-side*weight*.05;
     scarf.rotation.y=Math.sin(time*1.6)*.018+side*weight*.045;
     tails.forEach((tail,i)=>{tail.rotation.x=-.05-weight*.12+Math.sin(time*2.1+i*1.7)*(.025+weight*.045);tail.rotation.z=Math.sin(time*1.7+i)*.025+side*weight*.06;});
+    if(avatarPose){
+      const axis=(x,y,z)=>new T.Vector3(x,y,z),rotation=(x,y,z)=>new T.Quaternion().setFromEuler(new T.Euler(x,y,z));
+      avatarPose.arms.forEach((entry,i)=>{
+        if(!entry)return;const sign=i===0?1:-1,armSwing=airborne?-.12:Math.sin(stride+i*Math.PI)*weight*.28*(1-sprintBlend)+sprintBlend*.18;
+        const relaxed=new T.Quaternion().setFromAxisAngle(axis(0,0,1),-sign*Math.PI*.35),swing=rotation(armSwing,side*weight*.06,0);
+        entry.bone.quaternion.copy(entry.base).premultiply(relaxed).premultiply(swing);
+      });
+      avatarPose.elbows.forEach((entry,i)=>{if(entry){const flex=.12+Math.max(0,Math.cos(stride+i*Math.PI))*weight*.12;entry.bone.quaternion.copy(entry.base).premultiply(rotation(i===0?-flex:flex,0,0));}});
+      avatarPose.legs.forEach((entry,i)=>{
+        if(!entry)return;const phase=stride+i*Math.PI,swing=airborne?-.2:Math.sin(phase)*weight*(back?.4:.58+sprintBlend*.27)-sprintLean,lift=airborne?0:Math.max(0,Math.cos(phase))*weight;
+        entry.bone.quaternion.copy(entry.base).premultiply(rotation(swing,0,0));const knee=avatarPose.knees[i];if(knee)knee.bone.quaternion.copy(knee.base).premultiply(rotation(lift*(.5+back*.12+sprintBlend*.55),0,0));
+        if(airborne&&knee)knee.bone.quaternion.copy(knee.base).premultiply(rotation(airVerticalSpeed>0?.48:.62,0,0));
+        const foot=avatarPose.feet[i];if(foot)foot.bone.quaternion.copy(foot.base).premultiply(rotation(airborne?-.22:-swing-lift*.35,0,0));
+      });
+      if(avatarPose.hips){avatarPose.hips.bone.quaternion.copy(avatarPose.hips.base).premultiply(rotation(airborne?-.04:forward*weight*.045*(1-sprintBlend)+sprintLean,0,airborne?0:-side*weight*.05));avatarPose.hips.bone.position.y=avatarPose.hips.position.y+(airborne?0:Math.sin(time*2)*.008*(1-weight)+Math.abs(Math.sin(stride))*.023*weight);}
+      if(avatarPose.spine)avatarPose.spine.bone.quaternion.copy(avatarPose.spine.base).premultiply(rotation(airborne?.08:-forward*weight*.018,0,airborne?0:side*weight*.018));
+      if(avatarPose.chest)avatarPose.chest.bone.quaternion.copy(avatarPose.chest.base).premultiply(rotation(airborne?-.04:-forward*weight*.012,0,airborne?0:side*weight*.012));
+    }
   }
-  function airPose(v){legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;});arms.forEach(a=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;});}
+  function airPose(v){setAirborne(true,v);legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;});arms.forEach(a=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;});}
   function climbPose(t){arms.forEach((a,i)=>{a.pivot.rotation.x=-2+Math.sin(t*6+i*Math.PI)*.35;});legs.forEach((l,i)=>l.knee.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25);body.rotation.x=-.1;}
-  return {root,group:root,cloth,hair,legs,arms,armorAnchors,update,airPose,climbPose,setEquipment,locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
+  return {root,group:root,cloth,hair,legs,arms,armorAnchors,update,airPose,setAirborne,climbPose,setEquipment,locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
 }

@@ -1,7 +1,7 @@
 const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
-const allowed=new Set(['index.en.html','language-loader.js','game.en.js','game-core.en.js','index.html','style.css','adventure.css','android.css','game.js','game-core.js','ket_an.jpg','assets/ninja-hands.glb']);
+const allowed=new Set(['index.en.html','language-loader.js','game.en.js','game-core.en.js','index.html','style.css','adventure.css','android.css','game.js','game-core.js','ket_an.jpg','assets/ninja-hands.glb','assets/hero-ninja.glb']);
 for(const file of ['worker.js','pre-runtime.js','README.md','source.tgz','wrapper-source.tgz','package/espeak-ng.js','package/espeak-ng.data','package/COPYING','package/README.md','package/package.json'])allowed.add('vendor/espeak-ng/'+file);
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.jpg':'image/jpeg','.glb':'model/gltf-binary'};
 const port=Number(process.env.PORT)||4173;
