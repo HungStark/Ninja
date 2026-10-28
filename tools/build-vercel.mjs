@@ -20,6 +20,7 @@ const files = [
   "assets/ninja-hands.glb",
   "assets/ha-ly.glb",
   "assets/hero-ninja.glb",
+  "assets/npc.vrm",
   "THIRD_PARTY_NOTICES.md",
 ];
 
