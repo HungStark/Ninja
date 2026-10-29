@@ -1,24 +1,27 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
+import {inkMaterial,addInkOutline} from './ink-outline.js';
 
-let sourcePromise;
-function loadSource(){
-  return sourcePromise??=new GLTFLoader().loadAsync(new URL('assets/npc.vrm',document.baseURI).href).then(gltf=>gltf.scene);
+const sourcePromises=new Map();
+function loadSource(female){
+  const file=female?'npc_nu.vrm':'npc_nam.vrm';
+  if(!sourcePromises.has(file))sourcePromises.set(file,new GLTFLoader().loadAsync(new URL(`assets/${file}`,document.baseURI).href).then(gltf=>gltf.scene));
+  return sourcePromises.get(file);
 }
 
 const boneNames={
   hips:'J_Bip_C_Hips',spine:'J_Bip_C_Spine',chest:'J_Bip_C_Chest',head:'J_Bip_C_Head',
   leftArm:'J_Bip_L_UpperArm',leftForearm:'J_Bip_L_LowerArm',rightArm:'J_Bip_R_UpperArm',rightForearm:'J_Bip_R_LowerArm',
-  leftLeg:'J_Bip_L_UpperLeg',rightLeg:'J_Bip_R_UpperLeg',leftHand:'J_Bip_L_Hand',rightHand:'J_Bip_R_Hand'
+  leftLeg:'J_Bip_L_UpperLeg',rightLeg:'J_Bip_R_UpperLeg',leftKnee:'J_Bip_L_LowerLeg',rightKnee:'J_Bip_R_LowerLeg',leftFoot:'J_Bip_L_Foot',rightFoot:'J_Bip_R_Foot',leftHand:'J_Bip_L_Hand',rightHand:'J_Bip_R_Hand'
 };
 
-export function attachMaleNpcModel(root,profile){
-  let visual=null;
-  loadSource().then(source=>{
+export function attachNpcModel(root,profile){
+  let visual=null;const ink=inkMaterial(1.05,'#302b30');
+  loadSource(profile.female).then(source=>{
     if(!root.parent&&!root.userData.villager)return;
     const model=cloneSkinned(source),bounds=new T.Box3().setFromObject(model),height=Math.max(.01,bounds.max.y-bounds.min.y),scale=3/height;
-    model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;model.name='male-npc-vrm';
+    model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;model.name=profile.female?'female-npc-vrm':'male-npc-vrm';
     const seed=Array.from(profile.id||'npc').reduce((n,ch)=>(n*31+ch.charCodeAt(0))>>>0,17),variant=seed%7,hueShift=(variant-3)*.012;
     const skinColor=new T.Color(profile.skin||'#bc9475').multiplyScalar(.84+(seed%7)*.055);
     const clothes=(hex,light)=>{const color=new T.Color(hex),hsl={};color.getHSL(hsl);color.setHSL((hsl.h+hueShift+1)%1,Math.max(.18,Math.min(.9,hsl.s*(.86+(seed%5)*.07))),Math.max(.12,Math.min(.78,hsl.l*light)));return color;};
@@ -28,14 +31,16 @@ export function attachMaleNpcModel(root,profile){
       m.onBeforeCompile=shader=>{shader.uniforms.npcTint={value:color.clone()};shader.uniforms.npcShade={value:new T.Vector2(low,high)};shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 npcTint;uniform vec2 npcShade;').replace('#include <map_fragment>','#include <map_fragment>\nfloat npcLuma=dot(diffuseColor.rgb,vec3(0.299,0.587,0.114));diffuseColor.rgb=npcTint*mix(npcShade.x,npcShade.y,npcLuma);');};
       m.customProgramCacheKey=()=>'npc-appearance-tint-v1';m.needsUpdate=true;return m;
     };
-    model.traverse(o=>{
+    const outlineMeshes=[];model.traverse(o=>{
       if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;
+      outlineMeshes.push(o);
       const tint=material=>{
         const name=material.name.toLowerCase();
         if(name.includes('skin'))return recolor(material,skinColor,.7,1.12);
         if(name.includes('hair')||name.includes('facebrow'))return recolor(material,new T.Color(profile.age==='elder'?'#f3f0e5':'#171719'),profile.age==='elder'?.86:.5,profile.age==='elder'?1.02:.96);
         if(name.includes('tops_01_cloth_02'))return recolor(material,clothColor,.62,1.18);
         if(name.includes('tops_01_cloth_03'))return recolor(material,accentColor,.62,1.18);
+        if(name.includes('tops_01_cloth_02'))return recolor(material,profile.female?accentColor:clothColor,.62,1.18);
         if(name.includes('cloth')||name.includes('tops'))return recolor(material,clothColor,.62,1.18);
         return material.clone();
       };
@@ -48,12 +53,14 @@ export function attachMaleNpcModel(root,profile){
         ][variant];
         for(const [index,name] of Object.entries(o.morphTargetDictionary))if(faces.includes(name))o.morphTargetInfluences[index]=name.startsWith('Fcl_EYE')?.18:name.startsWith('Fcl_BRW')?.13:.1;
         if(profile.age==='elder'&&o.morphTargetDictionary.Fcl_EYE_Sorrow!==undefined)o.morphTargetInfluences[o.morphTargetDictionary.Fcl_EYE_Sorrow]=.16;
+        if(profile.kneelingOffering)for(const [name,value] of [['Fcl_EYE_Sorrow',.22],['Fcl_BRW_Sorrow',.2],['Fcl_MTH_Small',.1]])if(o.morphTargetDictionary[name]!==undefined)o.morphTargetInfluences[o.morphTargetDictionary[name]]=Math.max(o.morphTargetInfluences[o.morphTargetDictionary[name]],value);
       }
     });
+    for(const o of outlineMeshes)addInkOutline(o,ink);
     const bones={};for(const [key,name] of Object.entries(boneNames))bones[key]=model.getObjectByName(name)||null;
     const rest={};for(const [key,bone] of Object.entries(bones))if(bone)rest[key]=bone.quaternion.clone();
     const visualRoot=new T.Group();visualRoot.name='male-npc-visual';visualRoot.add(model);root.add(visualRoot);root.updateMatrixWorld(true);
-    const heldTool=['forging-hammer','working-pick','repair-hammer','fishing-rod'].map(name=>root.getObjectByName(name)).find(Boolean);
+    const heldTool=['forging-hammer','working-pick','repair-hammer','fishing-rod','held-offering-flowers'].map(name=>root.getObjectByName(name)).find(Boolean);
     if(heldTool){
       const oldParent=heldTool.parent,handCandidates=[bones.leftHand,bones.rightHand].filter(Boolean);
       oldParent?.updateWorldMatrix(true,false);
@@ -61,20 +68,23 @@ export function attachMaleNpcModel(root,profile){
       const oldRotation=oldParent?oldParent.getWorldQuaternion(new T.Quaternion()):new T.Quaternion();
       const hand=handCandidates.sort((a,b)=>a.getWorldPosition(new T.Vector3()).distanceToSquared(oldPosition)-b.getWorldPosition(new T.Vector3()).distanceToSquared(oldPosition))[0];
       if(hand){
-        const localPosition=heldTool.position.clone(),localRotation=heldTool.quaternion.clone(),localScale=heldTool.scale.clone(),handRotation=hand.getWorldQuaternion(new T.Quaternion());
-        hand.add(heldTool);
-        heldTool.position.copy(localPosition).multiplyScalar(1/scale);
-        heldTool.quaternion.copy(handRotation.invert().multiply(oldRotation).multiply(localRotation));
-        heldTool.scale.copy(localScale).multiplyScalar(1/scale);
+        if(heldTool.name==='held-offering-flowers')hand.attach(heldTool);
+        else{
+          const localPosition=heldTool.position.clone(),localRotation=heldTool.quaternion.clone(),localScale=heldTool.scale.clone(),handRotation=hand.getWorldQuaternion(new T.Quaternion());
+          hand.add(heldTool);
+          heldTool.position.copy(localPosition).multiplyScalar(1/scale);
+          heldTool.quaternion.copy(handRotation.invert().multiply(oldRotation).multiply(localRotation));
+          heldTool.scale.copy(localScale).multiplyScalar(1/scale);
+        }
       }
     }
-    visual={visualRoot,model,bones,rest,armCorrection:{left:new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),-1.2),right:new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),1.2)}};
+    visual={visualRoot,model,bones,rest,restHipsY:bones.hips?.position.y??0,armCorrection:{left:new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),-1.2),right:new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),1.2)}};
     const procedural=root.getObjectByName('body');if(procedural)procedural.visible=false;
-  }).catch(error=>console.warn('Could not load male NPC VRM:',error));
+  }).catch(error=>console.warn(`Could not load ${profile.female?'female':'male'} NPC VRM:`,error));
 
-  return (time,moving,{body,head,arms,forearms,legs})=>{
+  const update=(time,moving,{body,head,arms,forearms,legs})=>{
     if(!visual)return;
-    const {visualRoot,bones,rest,armCorrection}=visual;
+    const {visualRoot,bones,rest,restHipsY,armCorrection}=visual;
     visualRoot.position.copy(body.position);visualRoot.rotation.copy(body.rotation);
     const apply=(key,rotation,correction=null)=>{
       const bone=bones[key];if(!bone||!rest[key])return;
@@ -82,9 +92,17 @@ export function attachMaleNpcModel(root,profile){
       bone.quaternion.multiply(new T.Quaternion().setFromEuler(rotation));
     };
     apply('head',head.rotation);
+    if(profile.kneelingOffering){
+      if(bones.hips){bones.hips.position.y=restHipsY-.28;}
+      apply('spine',new T.Euler(.24,0,0));apply('chest',new T.Euler(.18,0,0));
+      apply('leftKnee',new T.Euler(1.55,0,0));apply('rightKnee',new T.Euler(1.55,0,0));
+      apply('leftFoot',new T.Euler(-1.25,0,0));apply('rightFoot',new T.Euler(-1.25,0,0));
+    }else if(bones.hips)bones.hips.position.y=restHipsY;
     const armPose=rotation=>new T.Euler(-rotation.x,rotation.y,rotation.z,'XYZ');
     apply('leftArm',armPose(arms[0].rotation),armCorrection.left);apply('rightArm',armPose(arms[1].rotation),armCorrection.right);
     apply('leftForearm',forearms[0].rotation);apply('rightForearm',forearms[1].rotation);
     apply('leftLeg',legs[0].rotation);apply('rightLeg',legs[1].rotation);
   };
+  update.setInkViewport=(width,height)=>ink.uniforms.viewport.value.set(width,height);
+  return update;
 }

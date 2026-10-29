@@ -92,5 +92,5 @@ export function createNinja(look){
     legs[0].pivot.rotation.x=-.22-attack*.2;legs[1].pivot.rotation.x=.25+attack*.18;legs[0].pivot.rotation.z=.11;legs[1].pivot.rotation.z=-.11;head.rotation.y=attack*.15;
   }
   function dispose(){haLyAlive=false;const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
-  return {root,profile,height:profile.height,cloth:base.cloth,hair:base.hair,arms,legs,shoulderGuards,bracers,update,combatPose,dispose};
+  return {root,profile,height:profile.height,cloth:base.cloth,hair:base.hair,arms,legs,shoulderGuards,bracers,update,combatPose,setInkViewport:base.setInkViewport,dispose};
 }

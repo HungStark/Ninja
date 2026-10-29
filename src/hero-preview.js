@@ -5,7 +5,7 @@ export function createHeroPreview(){
   let renderer,scene,camera,hero,containerInUse,observer;
   function render(){
     const container=containerInUse;if(!container?.isConnected||!container.clientWidth||!container.clientHeight)return;
-    const width=container.clientWidth,height=container.clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;
+    const width=container.clientWidth,height=container.clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;hero.setInkViewport(width,height);
     hero.update(0,false);const bounds=new T.Box3().setFromObject(hero.root),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3()),distance=Math.max(size.y,size.x/camera.aspect)*.5/Math.tan(T.MathUtils.degToRad(camera.fov/2))*1.12;
     camera.position.set(center.x+.25,center.y+.1,center.z+distance);camera.lookAt(center);camera.updateProjectionMatrix();renderer.render(scene,camera);
   }

@@ -4,12 +4,15 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
 import {createArmorWardrobe} from './hero-armor.js';
 import {createArmguardModel} from './armguard-model.js';
+import {inkMaterial,addInkOutline} from './ink-outline.js';
 
 let heroModelPromise;
 function loadHeroModel(){return heroModelPromise??=new GLTFLoader().loadAsync(new URL('assets/hero-ninja.glb',document.baseURI).href).then(gltf=>gltf.scene);}
 
 export function createHero(){
   const root=new T.Group(),body=new T.Group();root.name='crimson-masked-hero';root.add(body);
+  const ink=inkMaterial(1.15,'#302b30');
+  function outlineMeshes(group){const meshes=[];group.traverse(o=>{if(o.isMesh&&!o.userData.inkOutline&&!o.userData.hasInkOutline)meshes.push(o);});for(const o of meshes)addInkOutline(o,ink);}
   const mats=new Map(),M=c=>{if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.86,flatShading:true}));return mats.get(c);};
   const cloth=M('#211e25'),dark=M('#14151c'),skin=M('#deb499'),hair=M('#161821'),silver=M('#8d878a'),strap=M('#30272a'),red=M('#762936');
   const boxGeo=new T.BoxGeometry(1,1,1),sphere=new T.SphereGeometry(1,16,10);
@@ -90,11 +93,12 @@ export function createHero(){
     const hand=ball(elbow,dark,0,-.43,.035,.078,.1,.07),fingers=[];for(let i=0;i<3;i++)fingers.push(ball(elbow,skin,(i-1)*.035,-.49,.073,.018,.034,.021));
     arms.push({side,pivot:arm,upper,lower,elbow,hand,fingers});
   }
-  const gear=new T.Group();gear.name='hero-equipment';body.add(gear);let gearKey='',equipment=null,avatarPose=null,avatarOutfit=null;
+  const gear=new T.Group();gear.name='hero-equipment';body.add(gear);let gearKey='',equipment=null,avatarPose=null,avatarOutfit=null,avatarWardrobe=null,lastEquipmentState=null;
   const armorAnchor=(parent,name)=>{const g=new T.Group();g.name=name;parent.add(g);return g;};
   const armorAnchors={body:gear,shoulders:arms.map(a=>armorAnchor(a.pivot,'armor-shoulder')),bracers:arms.map(a=>armorAnchor(a.elbow,'armor-bracer')),shins:legs.map(l=>armorAnchor(l.knee,'armor-shin')),hips:legs.map(l=>armorAnchor(l.pivot,'armor-hip'))};
   const wardrobe=createArmorWardrobe(armorAnchors);
   function setEquipment(state){
+    lastEquipmentState=state||null;
     cloth.color.set(state?.hero?.coat||'#211e25');hair.color.set(state?.hero?.hair||'#161821');
     const armor=state?.armor||{id:'traveler',color:'#29252c',style:'wrap'},bag=state?.bag||{id:'pouch-30',capacity:10},armguard=state?.armguard||{id:'bare-wrists',color:'#403640'};
     avatarOutfit?.apply(state,armor);
@@ -108,11 +112,16 @@ export function createHero(){
       b(trim,.08,1.91,.33,.075,.07,.02).rotation.z=-.48;
       root.userData.armorAppearance={region:'traveler',elite:false,triangles:0,draws:0};
     }else root.userData.armorAppearance=wardrobe.build(armor);
+    if(avatarWardrobe){
+      avatarWardrobe.clear();
+      if(armor.id!=='traveler')root.userData.avatarArmorAppearance=avatarWardrobe.build(armor);
+      else root.userData.avatarArmorAppearance={region:'traveler',elite:false,triangles:0,draws:0};
+    }
     for(const anchor of armorAnchors.bracers){anchor.traverse(o=>o.geometry?.dispose());anchor.clear();anchor.add(createArmguardModel(armguard));}
     for(const arm of arms)for(const finger of arm.fingers)finger.material=armguard.gloves?dark:skin;
     const size=bag.capacity>=50?1.65:bag.capacity>=30?1.4:bag.capacity>=20?1.15:1;
     b(strap,.32,1.09,-.19,.27*size,.31*size,.26*size);b(trim,.32,1.19,-.19-.14*size,.23*size,.07,.035);
-    b(strap,.18,.77,-.15,.22,.28,.13);root.userData.equipment={...equipment};
+    b(strap,.18,.77,-.15,.22,.28,.13);root.userData.equipment={...equipment};outlineMeshes(root);
   }
   function addAvatar(){
     loadHeroModel().then(source=>{
@@ -120,6 +129,7 @@ export function createHero(){
       visual.traverse(o=>{
         if(!o.isMesh)return;
         if(o.name.toLowerCase()==='icosphere'||!o.material){o.visible=false;return;}
+        o.castShadow=true;o.receiveShadow=true;
         o.material=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone();
         for(const m of Array.isArray(o.material)?o.material:[o.material]){
           const n=m.name.toLowerCase();m.roughness=.88;
@@ -136,14 +146,20 @@ export function createHero(){
       const bind=bone=>bone?{bone,base:bone.quaternion.clone(),position:bone.position.clone()}:null;
       avatarPose={hips:bind(bones.hips),spine:bind(bones.spine),chest:bind(bones.chest)};
       for(const part of ['arms','elbows','legs','knees','feet'])avatarPose[part]=bones[part].map(bind);
-      root.add(visual);body.visible=false;root.userData.referenceAppearance=true;
+      root.add(visual);body.visible=false;root.userData.referenceAppearance=true;outlineMeshes(visual);
+      const anchor=(parent,name)=>{const g=new T.Group();g.name=name;parent.add(g);if(parent!==root)g.scale.setScalar(1/scale);return g;};
+      const armorBodyAnchor=anchor(root,'avatar-armor-body');armorBodyAnchor.position.y=.18;
+      const avatarShoulders=[-1,1].map((side,i)=>{const g=anchor(root,`avatar-armor-shoulder-${i}`);g.position.set(side*.32,2.32,.075);return g;});
+      const avatarArmorAnchors={body:armorBodyAnchor,shoulders:avatarShoulders,bracers:bones.elbows.map((bone,i)=>anchor(bone||visual,`avatar-armor-bracer-${i}`)),shins:bones.knees.map((bone,i)=>anchor(bone||visual,`avatar-armor-shin-${i}`)),hips:bones.legs.map((bone,i)=>anchor(bone||visual,`avatar-armor-hip-${i}`))};
+      avatarWardrobe=createArmorWardrobe(avatarArmorAnchors);
       avatarOutfit={apply(state,armor){
         for(const m of garments.tops)m.color.set(state?.hero?.coat||'#29272d');
         for(const m of garments.bottoms)m.color.set(state?.hero?.coat||'#29272d').multiplyScalar(.78);
         for(const m of garments.shoes)m.color.set('#181a20');
         for(const m of garments.wraps)m.color.set(armor?.elite?'#c4a574':'#71313a');
       }};
-      avatarOutfit.apply(null,{id:'traveler'});
+      avatarOutfit.apply(lastEquipmentState,{id:'traveler'});
+      if(lastEquipmentState){gearKey='';setEquipment(lastEquipmentState);}
     }).catch(error=>console.warn('Could not load the custom ninja GLB; using the built-in model.',error));
   }
   setEquipment();addAvatar();let stride=0,localX=0,localZ=0,sprintBlend=0,airborne=false,airVerticalSpeed=0;
@@ -192,5 +208,5 @@ export function createHero(){
   }
   function airPose(v){setAirborne(true,v);legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;});arms.forEach(a=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;});}
   function climbPose(t){arms.forEach((a,i)=>{a.pivot.rotation.x=-2+Math.sin(t*6+i*Math.PI)*.35;});legs.forEach((l,i)=>l.knee.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25);body.rotation.x=-.1;}
-  return {root,group:root,cloth,hair,legs,arms,armorAnchors,update,airPose,setAirborne,climbPose,setEquipment,locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
+  return {root,group:root,cloth,hair,legs,arms,armorAnchors,update,airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
 }

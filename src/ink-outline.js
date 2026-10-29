@@ -36,8 +36,10 @@ export function inkMaterial(width = 1, color = '#342d36', wind = false) {
 }
 
 export function addInkOutline(source, material) {
+  if(source.userData.hasInkOutline)return source.children.find(child=>child.userData.inkOutline)||null;
   const outline = source.isSkinnedMesh ? new T.SkinnedMesh(source.geometry, material) : new T.Mesh(source.geometry, material);
   outline.name = source.name + '_ink'; outline.userData.inkOutline = true;
+  source.userData.hasInkOutline = true;
   outline.frustumCulled = source.frustumCulled;
   if(source.isSkinnedMesh) {
     // Share the live skeleton and bind matrices; the outline bends with every seal.

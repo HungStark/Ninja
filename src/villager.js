@@ -1,11 +1,13 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createVillageActivity} from './village-activities.js';
-import {attachMaleNpcModel} from './male-npc-model.js';
+import {attachNpcModel} from './male-npc-model.js';
+import {inkMaterial,addInkOutline} from './ink-outline.js';
 
 // Human proportions and profession-specific silhouettes, without a chibi base.
 export function createVillager(profile){
   const root=new T.Group(),body=new T.Group();body.name='body';root.add(body);root.name='villager-'+profile.village+'-'+profile.id;root.userData.villager={...profile};
+  const contour=inkMaterial(1.05,'#302b30');
   const colors=new Map(),material=color=>{if(!colors.has(color))colors.set(color,new T.MeshStandardMaterial({color,roughness:.92,flatShading:true}));return colors.get(color);};
   const cloth=material(profile.coat),accent=material(profile.accent),skin=material(profile.skin),hair=material(profile.hair),ink=material('#302e2b'),leather=material('#604936'),linen=material('#d8cbb0'),metal=material('#8b9290');
   skin.flatShading=false;skin.roughness=.64;hair.roughness=.76;leather.roughness=.73;metal.metalness=.65;metal.roughness=.38;
@@ -130,8 +132,9 @@ export function createVillager(profile){
     // Batch static pieces per joint, preserving the articulated head and limbs.
     const obsolete=new Set();root.traverse(parent=>{if(parent.isMesh)return;const batches=new Map();for(const child of [...parent.children])if(child.isMesh){child.updateMatrix();const geo=(child.geometry.index?child.geometry.toNonIndexed():child.geometry.clone()).applyMatrix4(child.matrix);if(!batches.has(child.material))batches.set(child.material,[]);batches.get(child.material).push(geo);obsolete.add(child.geometry);parent.remove(child);}for(const [mat,geos] of batches){const geo=mergeGeometries(geos);geos.forEach(g=>g.dispose());const o=new T.Mesh(geo,mat);o.castShadow=o.receiveShadow=true;parent.add(o);}});obsolete.forEach(g=>g.dispose());
   }
-  const activity=profile.activity?createVillageActivity({root,body,head,arms,profile,material}):null;
-  const maleModelUpdate=!female&&profile.job!=='ninja'?attachMaleNpcModel(root,profile):null;
+  const activity=profile.activity?createVillageActivity({root,body,head,arms,legs,profile,material}):null;
+  const npcModelUpdate=profile.job!=='ninja'?attachNpcModel(root,profile):null;
+  const bodyMeshes=[];body.traverse(o=>{if(o.isMesh&&!o.userData.inkOutline)bodyMeshes.push(o);});for(const o of bodyMeshes)addInkOutline(o,contour);
   // Hand-held tools follow the elbow, while workbenches remain on the ground.
   root.updateMatrixWorld(true);
   arms.forEach((arm,i)=>{for(const child of [...arm.children])if(child.isGroup&&child!==forearms[i])forearms[i].attach(child);});
@@ -158,7 +161,7 @@ export function createVillager(profile){
     head.rotation.y+=lookYaw;head.rotation.x=(head.rotation.x||0)+lookPitch;head.rotation.z=Math.sin(time*.49+profile.variant)*.017;
     brows.position.y=.09+Math.sin(time*.7+profile.variant)*.003;
     root.userData.expression={blink,lookYaw,lookPitch};
-    maleModelUpdate?.(time,moving,{body,head,arms,forearms,legs});
+    npcModelUpdate?.(time,moving,{body,head,arms,forearms,legs});
   }
-  return {root,body,head,arms,forearms,legs,cloth,hair,update,workstation:activity?.station||null};
+  return {root,body,head,arms,forearms,legs,cloth,hair,update,setInkViewport(width,height){contour.uniforms.viewport.value.set(width,height);npcModelUpdate?.setInkViewport(width,height);},workstation:activity?.station||null};
 }

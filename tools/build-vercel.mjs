@@ -21,6 +21,8 @@ const files = [
   "assets/ha-ly.glb",
   "assets/hero-ninja.glb",
   "assets/npc.vrm",
+  "assets/npc_nam.vrm",
+  "assets/npc_nu.vrm",
   "THIRD_PARTY_NOTICES.md",
 ];
 

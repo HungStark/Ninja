@@ -1,6 +1,6 @@
 import * as T from 'three';
 
-export function createVillageActivity({root,body,head,arms,profile,material}){
+export function createVillageActivity({root,body,head,arms,legs,profile,material}){
  const type=profile.activity,station=new T.Group();station.name='workstation-'+type;station.userData.resident=profile.id;root.add(station);
  const wood=material('#785a3e'),metal=material('#768080'),dark=material('#373c3b'),linen=material('#d0bc88'),green=material('#5e7d4e'),clay=material('#b5825e');
  const mesh=(g,m,p,x,y,z)=>{const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;p.add(o);return o;};
@@ -12,7 +12,7 @@ export function createVillageActivity({root,body,head,arms,profile,material}){
  const flowers=(p,x,y,z)=>{const g=new T.Group();g.name='offering-flowers';g.position.set(x,y,z);p.add(g);for(let i=0;i<5;i++){const a=i*2.4,px=Math.sin(a)*.13,pz=Math.cos(a)*.12;beam(g,green,[0,0,0],[px,.32+i%2*.07,pz],.012);ball(g,material(i%2?'#d9b8b9':'#e4daca'),px,.35+i%2*.07,pz,.075);}return g;};
  let tool,turntable,sparks,water,cloth;
  if(['mourning','offering'].includes(type)){
-  tool=flowers(arms[0],-.04,-.91,.12);tool.rotation.x=.45;flowers(station,-.15,.025,1.2);box(station,wood,.32,.035,1.3,.25,.05,.16);
+  tool=flowers(arms[0],-.04,-.91,.12);tool.name='held-offering-flowers';tool.rotation.x=.45;flowers(station,-.15,.025,1.2);box(station,wood,.32,.035,1.3,.25,.05,.16);
  }
  if(type==='forging'){
   tool=root.getObjectByName('forging-hammer');tool?.position.set(0,-.22,.35);
@@ -62,7 +62,12 @@ export function createVillageActivity({root,body,head,arms,profile,material}){
  if(!station.children.length)root.remove(station);
  return {station:station.children.length?station:null,update(time,moving){
   if(moving)return;const t=time+profile.variant*.53;
-  if(['mourning','offering'].includes(type)){body.rotation.x=.1+Math.sin(t*.6)*.025;head.rotation.x=.22;arms[0].rotation.x=-.6;arms[0].rotation.z=-.25;arms[1].rotation.x=-.45;arms[1].rotation.z=.25;}
+  if(['mourning','offering'].includes(type)){
+   if(profile.kneelingOffering){
+    const reach=.5+.12*Math.sin(t*.7);body.position.y=-.025;body.rotation.x=.04;head.rotation.x=.38;arms[0].rotation.x=-1.02-reach*.16;arms[0].rotation.z=-.13;arms[1].rotation.x=-.72;arms[1].rotation.z=.28;
+    legs?.forEach(leg=>{leg.rotation.x=-.12;leg.rotation.z=leg.position.x<0?-.04:.04;});root.userData.residentPose={kind:'kneeling-offering',reach};
+   }else{body.rotation.x=.1+Math.sin(t*.6)*.025;head.rotation.x=.22;arms[0].rotation.x=-.6;arms[0].rotation.z=-.25;arms[1].rotation.x=-.45;arms[1].rotation.z=.25;}
+  }
   if(type==='forging'){const phase=(t*.65)%1,lift=phase<.65?Math.sin(phase/.65*Math.PI/2):Math.max(0,1-(phase-.65)/.12);arms[1].rotation.x=-1.25*lift;arms[0].rotation.x=-.65;arms[0].rotation.z=.5;body.rotation.x=.04+lift*.035;if(sparks){const age=(phase-.77)/.23;sparks.visible=age>=0;for(let i=0;i<5;i++)sparks.children[i].position.set(Math.sin(i*2)*age*.42,Math.max(0,age*.8-age*age*.75),Math.cos(i*2)*age*.42);}}
   if(['repair','mining'].includes(type)){arms[1].rotation.x=-.45-Math.max(0,Math.sin(t*2.8))*.65;arms[0].rotation.x=-.6;body.rotation.x=.08;}
   if(type==='repairing'){arms[1].rotation.x=-.85;arms[1].rotation.z=.16+Math.sin(t*2)*.22;arms[0].rotation.x=-.75;head.rotation.x=.13;}
