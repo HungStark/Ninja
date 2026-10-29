@@ -3,6 +3,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {inkMaterial,addInkOutline} from './ink-outline.js';
 
+const toonRamp=new T.DataTexture(new Uint8Array([52,52,52,255,112,112,112,255,194,194,194,255,255,255,255,255]),4,1,T.RGBAFormat);
+toonRamp.minFilter=toonRamp.magFilter=T.NearestFilter;toonRamp.generateMipmaps=false;toonRamp.needsUpdate=true;
 const sourcePromises=new Map();
 function loadSource(female){
   const file=female?'npc_nu.vrm':'npc_nam.vrm';
@@ -27,9 +29,9 @@ export function attachNpcModel(root,profile){
     const clothes=(hex,light)=>{const color=new T.Color(hex),hsl={};color.getHSL(hsl);color.setHSL((hsl.h+hueShift+1)%1,Math.max(.18,Math.min(.9,hsl.s*(.86+(seed%5)*.07))),Math.max(.12,Math.min(.78,hsl.l*light)));return color;};
     const clothColor=clothes(profile.coat||'#75664e',.65+(seed%6)*.14),accentColor=clothes(profile.accent||'#a89570',.82+(seed%4)*.1);
     const recolor=(material,color,low=.62,high=1.16)=>{
-      const m=material.clone();m.color.set('#ffffff');
+      const m=material.isMeshBasicMaterial?new T.MeshToonMaterial({name:material.name,color:'#ffffff',map:material.map,alphaMap:material.alphaMap,alphaTest:material.alphaTest,opacity:material.opacity,transparent:material.transparent,side:material.side,depthWrite:material.depthWrite,depthTest:material.depthTest,blending:material.blending,vertexColors:material.vertexColors,gradientMap:toonRamp}):material.clone();m.color.set('#ffffff');
       m.onBeforeCompile=shader=>{shader.uniforms.npcTint={value:color.clone()};shader.uniforms.npcShade={value:new T.Vector2(low,high)};shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 npcTint;uniform vec2 npcShade;').replace('#include <map_fragment>','#include <map_fragment>\nfloat npcLuma=dot(diffuseColor.rgb,vec3(0.299,0.587,0.114));diffuseColor.rgb=npcTint*mix(npcShade.x,npcShade.y,npcLuma);');};
-      m.customProgramCacheKey=()=>'npc-appearance-tint-v1';m.needsUpdate=true;return m;
+      m.customProgramCacheKey=()=>'npc-lit-toon-appearance-v1';m.needsUpdate=true;return m;
     };
     const outlineMeshes=[];model.traverse(o=>{
       if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;
@@ -38,9 +40,8 @@ export function attachNpcModel(root,profile){
         const name=material.name.toLowerCase();
         if(name.includes('skin'))return recolor(material,skinColor,.7,1.12);
         if(name.includes('hair')||name.includes('facebrow'))return recolor(material,new T.Color(profile.age==='elder'?'#f3f0e5':'#171719'),profile.age==='elder'?.86:.5,profile.age==='elder'?1.02:.96);
-        if(name.includes('tops_01_cloth_02'))return recolor(material,clothColor,.62,1.18);
-        if(name.includes('tops_01_cloth_03'))return recolor(material,accentColor,.62,1.18);
         if(name.includes('tops_01_cloth_02'))return recolor(material,profile.female?accentColor:clothColor,.62,1.18);
+        if(name.includes('tops_01_cloth_03'))return recolor(material,accentColor,.62,1.18);
         if(name.includes('cloth')||name.includes('tops'))return recolor(material,clothColor,.62,1.18);
         return material.clone();
       };
