@@ -53,7 +53,7 @@ export function attachNpcModel(root,profile){
         ][variant];
         for(const [index,name] of Object.entries(o.morphTargetDictionary))if(faces.includes(name))o.morphTargetInfluences[index]=name.startsWith('Fcl_EYE')?.18:name.startsWith('Fcl_BRW')?.13:.1;
         if(profile.age==='elder'&&o.morphTargetDictionary.Fcl_EYE_Sorrow!==undefined)o.morphTargetInfluences[o.morphTargetDictionary.Fcl_EYE_Sorrow]=.16;
-        if(profile.kneelingOffering)for(const [name,value] of [['Fcl_EYE_Sorrow',.22],['Fcl_BRW_Sorrow',.2],['Fcl_MTH_Small',.1]])if(o.morphTargetDictionary[name]!==undefined)o.morphTargetInfluences[o.morphTargetDictionary[name]]=Math.max(o.morphTargetInfluences[o.morphTargetDictionary[name]],value);
+        if(profile.memorialOffering)for(const [name,value] of [['Fcl_EYE_Sorrow',.22],['Fcl_BRW_Sorrow',.2],['Fcl_MTH_Small',.1]])if(o.morphTargetDictionary[name]!==undefined)o.morphTargetInfluences[o.morphTargetDictionary[name]]=Math.max(o.morphTargetInfluences[o.morphTargetDictionary[name]],value);
       }
     });
     for(const o of outlineMeshes)addInkOutline(o,ink);
@@ -66,9 +66,13 @@ export function attachNpcModel(root,profile){
       oldParent?.updateWorldMatrix(true,false);
       const oldPosition=oldParent?oldParent.getWorldPosition(new T.Vector3()):heldTool.getWorldPosition(new T.Vector3());
       const oldRotation=oldParent?oldParent.getWorldQuaternion(new T.Quaternion()):new T.Quaternion();
-      const hand=handCandidates.sort((a,b)=>a.getWorldPosition(new T.Vector3()).distanceToSquared(oldPosition)-b.getWorldPosition(new T.Vector3()).distanceToSquared(oldPosition))[0];
+      const hand=heldTool.name==='held-offering-flowers'?bones.leftHand:handCandidates.sort((a,b)=>a.getWorldPosition(new T.Vector3()).distanceToSquared(oldPosition)-b.getWorldPosition(new T.Vector3()).distanceToSquared(oldPosition))[0];
       if(hand){
-        if(heldTool.name==='held-offering-flowers')hand.attach(heldTool);
+        if(heldTool.name==='held-offering-flowers'){
+          const handPosition=hand.getWorldPosition(new T.Vector3()),handWorldRotation=hand.getWorldQuaternion(new T.Quaternion()),rootWorldRotation=root.getWorldQuaternion(new T.Quaternion());
+          const offeringPosition=root.localToWorld(root.worldToLocal(handPosition.clone()).add(new T.Vector3(0,0,.07)));
+          hand.add(heldTool);heldTool.position.copy(hand.worldToLocal(offeringPosition));heldTool.quaternion.copy(handWorldRotation.invert().multiply(rootWorldRotation));heldTool.scale.setScalar(1/scale);
+        }
         else{
           const localPosition=heldTool.position.clone(),localRotation=heldTool.quaternion.clone(),localScale=heldTool.scale.clone(),handRotation=hand.getWorldQuaternion(new T.Quaternion());
           hand.add(heldTool);
@@ -92,11 +96,9 @@ export function attachNpcModel(root,profile){
       bone.quaternion.multiply(new T.Quaternion().setFromEuler(rotation));
     };
     apply('head',head.rotation);
-    if(profile.kneelingOffering){
-      if(bones.hips){bones.hips.position.y=restHipsY-.28;}
-      apply('spine',new T.Euler(.24,0,0));apply('chest',new T.Euler(.18,0,0));
-      apply('leftKnee',new T.Euler(1.55,0,0));apply('rightKnee',new T.Euler(1.55,0,0));
-      apply('leftFoot',new T.Euler(-1.25,0,0));apply('rightFoot',new T.Euler(-1.25,0,0));
+    if(profile.memorialOffering){
+      if(bones.hips){bones.hips.position.y=restHipsY;}
+      apply('spine',new T.Euler(.07,0,0));apply('chest',new T.Euler(.04,0,0));
     }else if(bones.hips)bones.hips.position.y=restHipsY;
     const armPose=rotation=>new T.Euler(-rotation.x,rotation.y,rotation.z,'XYZ');
     apply('leftArm',armPose(arms[0].rotation),armCorrection.left);apply('rightArm',armPose(arms[1].rotation),armCorrection.right);

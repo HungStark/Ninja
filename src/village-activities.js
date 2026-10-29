@@ -60,12 +60,13 @@ export function createVillageActivity({root,body,head,arms,legs,profile,material
   for(let i=0;i<6;i++){const a=i*Math.PI/3;ball(station,material('#837a6b'),Math.sin(a)*.45,.12,1.25+Math.cos(a)*.45,.17);}for(const a of [-.6,.6])box(station,wood,a*.18,.16,1.25,.55,.12,.12).rotation.y=a;const ember=ball(station,material('#cd8e4a'),0,.26,1.25,.19);ember.scale.set(.8,1.5,.8);
  }
  if(!station.children.length)root.remove(station);
+ let offerReach=0;
  return {station:station.children.length?station:null,update(time,moving){
   if(moving)return;const t=time+profile.variant*.53;
   if(['mourning','offering'].includes(type)){
-   if(profile.kneelingOffering){
-    const reach=.5+.12*Math.sin(t*.7);body.position.y=-.025;body.rotation.x=.04;head.rotation.x=.38;arms[0].rotation.x=-1.02-reach*.16;arms[0].rotation.z=-.13;arms[1].rotation.x=-.72;arms[1].rotation.z=.28;
-    legs?.forEach(leg=>{leg.rotation.x=-.12;leg.rotation.z=leg.position.x<0?-.04:.04;});root.userData.residentPose={kind:'kneeling-offering',reach};
+   if(profile.memorialOffering){
+    offerReach=.5-.5*Math.cos(t*.7);body.position.y=0;body.rotation.x=.1;head.rotation.x=.2;arms[0].rotation.x=-.2-1.25*offerReach;arms[0].rotation.z=-.06;arms[1].rotation.x=0;arms[1].rotation.z=0;
+    legs?.forEach(leg=>{leg.rotation.x=0;leg.rotation.z=0;});root.userData.residentPose={kind:'standing-offering',reach:offerReach};
    }else{body.rotation.x=.1+Math.sin(t*.6)*.025;head.rotation.x=.22;arms[0].rotation.x=-.6;arms[0].rotation.z=-.25;arms[1].rotation.x=-.45;arms[1].rotation.z=.25;}
   }
   if(type==='forging'){const phase=(t*.65)%1,lift=phase<.65?Math.sin(phase/.65*Math.PI/2):Math.max(0,1-(phase-.65)/.12);arms[1].rotation.x=-1.25*lift;arms[0].rotation.x=-.65;arms[0].rotation.z=.5;body.rotation.x=.04+lift*.035;if(sparks){const age=(phase-.77)/.23;sparks.visible=age>=0;for(let i=0;i<5;i++)sparks.children[i].position.set(Math.sin(i*2)*age*.42,Math.max(0,age*.8-age*age*.75),Math.cos(i*2)*age*.42);}}
@@ -79,6 +80,6 @@ export function createVillageActivity({root,body,head,arms,legs,profile,material
   if(['market','sorting'].includes(type)){arms[1].rotation.x=-.65+Math.sin(t*.9)*.16;arms[0].rotation.x=-.45;head.rotation.x=.08;}
   if(type==='observing'){head.rotation.x=-.08;arms[1].rotation.x=-1.05;arms[0].rotation.x=-.7;}
   if(type==='lookout'){head.rotation.y=Math.sin(t*.3)*.4;arms[1].rotation.x=-1.7;arms[1].rotation.z=-.2;}
-  root.userData.activity={type,phase:t};
+  root.userData.activity={type,phase:t,...(profile.memorialOffering?{reach:offerReach}:{})};
  }};
 }
