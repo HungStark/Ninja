@@ -50,7 +50,8 @@ export async function createHands() {
       else if(surface.name.endsWith('_nail'))outlines.push(addInkOutline(surface,nailInk));
       else if(['sleeve','wrist_cuff','glove_back','wrist_plate'].includes(surface.name))outlines.push(addInkOutline(surface,armorInk));
     }
-    hands.push({ side, wrapper, joints, surfaces, fromPosition: wrapper.position.clone(), fromRotation: wrapper.quaternion.clone(), fromJoints: Object.fromEntries(Object.entries(joints).map(([name, joint]) => [name, joint.quaternion.clone()])) });
+    const wristAnchor=new T.Object3D();wristAnchor.name='combat-wrist-anchor';wristAnchor.position.y=-.145;joints.wrist.add(wristAnchor);
+    hands.push({ side, wrapper, joints, surfaces, wristAnchor, fromPosition: wrapper.position.clone(), fromRotation: wrapper.quaternion.clone(), fromJoints: Object.fromEntries(Object.entries(joints).map(([name, joint]) => [name, joint.quaternion.clone()])) });
   }
   let equippedArmguard={id:'bare-wrists',gloves:false};
   function setArmguard(item){

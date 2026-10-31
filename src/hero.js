@@ -5,7 +5,7 @@ import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
 import {createArmorWardrobe} from './hero-armor.js';
 import {createArmguardModel} from './armguard-model.js';
 import {inkMaterial,addInkOutline} from './ink-outline.js';
-import {sampleHeroGait} from './hero-gait.js';
+import {createCharacterMotion} from './character-motion.js';
 
 let heroModelPromise;
 function loadHeroModel(){return heroModelPromise??=new GLTFLoader().loadAsync(new URL('assets/hero-ninja-simple.glb',document.baseURI).href).then(gltf=>gltf.scene);}
@@ -175,7 +175,7 @@ export function createHero({outlineWidth=1.15}={}){
       if(lastEquipmentState){gearKey='';setEquipment(lastEquipmentState);}
     }).catch(error=>console.warn('Could not load the custom ninja GLB; using the built-in model.',error));
   }
-  setEquipment();const ready=addAvatar()||Promise.resolve();let stride=0,localX=0,localZ=0,sprintBlend=0,airborne=false,airVerticalSpeed=0;
+  setEquipment();const ready=addAvatar()||Promise.resolve(),motion=createCharacterMotion();let stride=0,localX=0,localZ=0,sprintBlend=0,airborne=false,airVerticalSpeed=0;
   function setAirborne(value,verticalSpeed=0){airborne=!!value;airVerticalSpeed=verticalSpeed||0;}
   function avatarArm(i,pitch,spread,flex){
     const entry=avatarPose?.arms[i];if(!entry)return;
@@ -190,22 +190,15 @@ export function createHero({outlineWidth=1.15}={}){
     if(!avatarPose)return;apply(avatarPose.legs[i],hip,spread);apply(avatarPose.knees[i],knee,0);apply(avatarPose.feet[i],ankle,-spread);
   }
   function update(time,moving,velocity=null,dt=1/60,sprinting=false){
-    const yaw=root.rotation.y,vx=moving?(velocity?.x??Math.sin(yaw)*4.6):0,vz=moving?(velocity?.z??Math.cos(yaw)*4.6):0,blend=1-Math.exp(-dt*14);
-    localX+=(Math.cos(yaw)*vx-Math.sin(yaw)*vz-localX)*blend;localZ+=(Math.sin(yaw)*vx+Math.cos(yaw)*vz-localZ)*blend;
-    const speed=Math.hypot(localX,localZ),weight=speed<.005?0:Math.min(1,speed/3),side=speed>.001?localX/speed:0,forward=speed>.001?localZ/speed:0;
-    sprintBlend+=((sprinting&&moving&&forward>.25?weight:0)-sprintBlend)*(1-Math.exp(-dt*12));
-    const sprintLean=sprintBlend*.42;
-    if(!airborne)stride+=speed*dt*(2.4+Math.abs(side)*.3)*(1+sprintBlend*.08);
-    const gait=sampleHeroGait(stride,weight,sprintBlend,forward,side);
+    const state=motion.update(time,moving,velocity,dt,sprinting,root.rotation.y,airborne);({localX,localZ,stride,sprintBlend}=state);
+    const {weight,side,forward,sprintLean,gait}=state;
     legs.forEach((leg,i)=>{
-      const step=gait.legs[i],swing=Math.sin(stride+i*Math.PI)*weight;
+      const step=gait.legs[i];
       leg.pivot.rotation.x=step.hip-sprintLean;
       leg.pivot.rotation.z=step.side;leg.knee.rotation.x=step.knee;
       leg.foot.rotation.x=step.ankle;leg.foot.rotation.z=-step.side;
       // Both hands trail behind the shoulders instead of pumping beside the torso.
-      arms[i].pivot.rotation.x=T.MathUtils.lerp(.06+swing*forward*.3,1.02+Math.sin(stride*2)*.025,sprintBlend);
-      arms[i].pivot.rotation.z=T.MathUtils.lerp(-swing*side*.2,arms[i].side*.12,sprintBlend);
-      arms[i].elbow.rotation.x=-T.MathUtils.lerp(.16+weight*(.26+Math.max(0,-swing)*.15),.10,sprintBlend);
+      arms[i].pivot.rotation.x=state.arms[i].pitch;arms[i].pivot.rotation.z=state.arms[i].spread;arms[i].elbow.rotation.x=-state.arms[i].flex;
     });
     // Lean about the hips, keeping the pelvis and leg stride anchored over the feet.
     body.position.z=-Math.sin(sprintLean)*1.21;

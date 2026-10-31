@@ -45,13 +45,13 @@ export function residentActivityPose(profile,time,moving){
 
 // Solve in world space so the same action works for both VRM proportions and
 // for residents scaled to different heights. Keep the elbow outside the body.
-export function reachResidentHand(root,upper,lower,hand,target,side){
+export function reachResidentHand(root,upper,lower,hand,target,side,poleTarget=null){
   if(!upper||!lower||!hand)return;
   upper.updateWorldMatrix(true,true);
   const shoulder=upper.getWorldPosition(new T.Vector3()),elbow=lower.getWorldPosition(new T.Vector3()),wrist=hand.getWorldPosition(new T.Vector3());
   const goal=root.localToWorld(new T.Vector3(...target)),direction=goal.clone().sub(shoulder),upperLength=shoulder.distanceTo(elbow),lowerLength=elbow.distanceTo(wrist);
   const distance=Math.max(.001,Math.min(direction.length(),upperLength+lowerLength-.001));direction.normalize();
-  const pole=root.localToWorld(new T.Vector3(side*.95,1.65,-.30)).sub(shoulder);
+  const pole=root.localToWorld(poleTarget?new T.Vector3(...poleTarget):new T.Vector3(side*.95,1.65,-.30)).sub(shoulder);
   pole.addScaledVector(direction,-pole.dot(direction));
   if(pole.lengthSq()<.000001)pole.set(side,0,0);pole.normalize();
   const along=(upperLength*upperLength-lowerLength*lowerLength+distance*distance)/(2*distance),height=Math.sqrt(Math.max(0,upperLength*upperLength-along*along));

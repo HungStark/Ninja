@@ -266,25 +266,30 @@ def replace_hair(asset, primitive, kind, head, back):
     material.get("extensions", {}).pop("KHR_materials_unlit", None)
 
 
-report = []
-for source, kind in [("hero-ninja.glb", "hero"), ("npc_nam.vrm", "male"), ("npc_nu.vrm", "female")]:
-    path = ROOT / "assets" / source
-    asset = Asset(path)
-    before = sum(asset.data["accessors"][p["indices"]]["count"] // 3 for m in asset.data["meshes"] for p in m["primitives"])
-    for node in asset.data["nodes"]:
-        if "mesh" not in node:
-            continue
-        skin = asset.data["skins"][node["skin"]]
-        head = next(i for i, joint in enumerate(skin["joints"]) if asset.data["nodes"][joint].get("name") == "J_Bip_C_Head")
-        for primitive in asset.data["meshes"][node["mesh"]]["primitives"]:
-            name = asset.data["materials"][primitive["material"]].get("name", "").lower()
-            if "hair" in name:
-                replace_hair(asset, primitive, kind, head, "hairback" in name)
-            elif ("cloth" in name or "tops" in name or "bottoms" in name) and not primitive.get("targets"):
-                simplify_cloth(asset, primitive)
-    after = sum(asset.data["accessors"][p["indices"]]["count"] // 3 for m in asset.data["meshes"] for p in m["primitives"])
-    output = path.with_name(path.stem + "-simple" + path.suffix)
-    asset.save(output)
-    report.append(dict(source=source, output=output.name, originalTriangles=before, triangles=after, reduction=round(1 - after / before, 3)))
-print(json.dumps(report, indent=2))
-(ROOT / "assets" / "character-blocks.json").write_text(json.dumps(report, indent=2) + "\n")
+def main():
+    report = []
+    for source, kind in [("hero-ninja.glb", "hero"), ("npc_nam.vrm", "male"), ("npc_nu.vrm", "female")]:
+        path = ROOT / "assets" / source
+        asset = Asset(path)
+        before = sum(asset.data["accessors"][p["indices"]]["count"] // 3 for m in asset.data["meshes"] for p in m["primitives"])
+        for node in asset.data["nodes"]:
+            if "mesh" not in node:
+                continue
+            skin = asset.data["skins"][node["skin"]]
+            head = next(i for i, joint in enumerate(skin["joints"]) if asset.data["nodes"][joint].get("name") == "J_Bip_C_Head")
+            for primitive in asset.data["meshes"][node["mesh"]]["primitives"]:
+                name = asset.data["materials"][primitive["material"]].get("name", "").lower()
+                if "hair" in name:
+                    replace_hair(asset, primitive, kind, head, "hairback" in name)
+                elif ("cloth" in name or "tops" in name or "bottoms" in name) and not primitive.get("targets"):
+                    simplify_cloth(asset, primitive)
+        after = sum(asset.data["accessors"][p["indices"]]["count"] // 3 for m in asset.data["meshes"] for p in m["primitives"])
+        output = path.with_name(path.stem + "-simple" + path.suffix)
+        asset.save(output)
+        report.append(dict(source=source, output=output.name, originalTriangles=before, triangles=after, reduction=round(1 - after / before, 3)))
+    print(json.dumps(report, indent=2))
+    (ROOT / "assets" / "character-blocks.json").write_text(json.dumps(report, indent=2) + "\n")
+
+
+if __name__ == "__main__":
+    main()

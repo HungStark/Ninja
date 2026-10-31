@@ -1395,7 +1395,7 @@ async function main() {
     if(battleIntro.active)return;
     if(adventure?.encounter){const e=adventure.encounter;const valid=validateLoadout(availableLoadout(loadout));if(!valid.ok){loadoutMessage=valid.reason;renderLoadout();return;}
       battleIntro.begin(adventure.equipment,e.squad?e.squad.map(n=>({...n,kind:'intro-trio'})):[e],e.kind==='intro-trio'?[{kind:'guardian-ally',village:'nameless',name:'Vô Danh Thú'}]:[]);
-      const initialize=()=>{if(!battleIntro.active)return;battleIntro.preparePortraits();startBattle(event);battleIntro.ready();};if(testMode)initialize();else requestAnimationFrame(()=>setTimeout(initialize,0));
+      const initialize=async()=>{if(!battleIntro.active)return;await battleIntro.preparePortraits();if(!battleIntro.active)return;startBattle(event);battleIntro.ready();};if(testMode)initialize();else requestAnimationFrame(()=>setTimeout(initialize,0));
     }else startBattle(event);
   }
   function startBattle(event) {

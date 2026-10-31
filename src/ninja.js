@@ -2,6 +2,8 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createVillager} from './villager.js';
 import {villagerAppearance} from './villager-appearance.js';
+import {attachVillageNinja} from './village-ninja-model.js';
+import {VILLAGE_NINJA_STYLES} from './village-ninja-style.js';
 
 let haLyAssetPromise;
 function loadHaLyAsset(){
@@ -15,15 +17,17 @@ function cloneHaLyAsset(source){
 
 export function ninjaProfile(look){
   const village=look.village||'nameless',seed=Array.from(look.id||'duel').reduce((s,c)=>(s*31+c.charCodeAt(0))>>>0,13),base=villagerAppearance(village,{kind:'ninja',id:look.id||'duel'});
-  return {...base,id:look.id||'duel',job:'ninja',age:'adult',female:look.female===true,beard:null,hat:null,fur:false,shawl:false,
+  const style=VILLAGE_NINJA_STYLES[village]||VILLAGE_NINJA_STYLES.nameless;
+  return {...base,id:look.id||'duel',job:'ninja',age:'adult',female:look.female===true,beard:null,hat:null,fur:false,shawl:false,skin:look.skin||style.skin,uniformColor:style.coat,accent:style.accent,
     coat:look.coat||'#33495f',hair:look.hair||'#252833',hairStyle:look.hairStyle||(look.female?'ponytail':seed%3===0?'ponytail':'short'),
     height:look.female?2.9:2.96+(seed%4)*.065,width:look.female?.85:.94+(seed%3)*.06,hood:!look.female&&look.kind==='ninja'&&look.id.startsWith('random-')&&seed%3!==0,variant:seed%6};
 }
 
-// The same adult NPC body, face and materials are used in exploration and combat.
+// Village ninja use the hero-derived rig; the procedural body remains a fallback.
 export function createNinja(look){
   const profile=ninjaProfile(look),base=createVillager(profile),{root,body,head}=base;
   root.name='ninja-'+profile.id;root.userData.ninja={id:profile.id,village:profile.village,hood:profile.hood,variant:profile.variant,height:profile.height};
+  const avatar=profile.id==='ha-ly'?null:attachVillageNinja(root,profile,body);
   const mats=new Map(),M=c=>{if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.86,flatShading:true}));return mats.get(c);};
   const dark=M('#22272c'),wrap=M('#424448'),metal=M('#939d9c'),leather=M('#53443b'),accent=M(profile.accent),cloth=base.cloth;
   const sphere=new T.SphereGeometry(1,10,7),cube=new T.BoxGeometry(1,1,1);
@@ -85,12 +89,14 @@ export function createNinja(look){
     legs.forEach((l,i)=>{const step=Math.sin(stride+i*Math.PI)*weight;l.pivot.rotation.x=-step*z*.35;l.pivot.rotation.z=step*x*.25;});
     arms.forEach((a,i)=>{a.pivot.rotation.x=Math.sin(stride+i*Math.PI)*weight*z*.24;a.pivot.rotation.z=-Math.sin(stride+i*Math.PI)*weight*x*.13;});
     body.rotation.z=-x*weight*.035;body.rotation.x=z*weight*.025;scarf.rotation.x=Math.sin(time*2)*.025-weight*.08;
+    avatar?.update(time,moving,velocity,dt);
   }
   function combatPose(attack=0,block=0,bounce=0){
     body.rotation.x=.12+attack*.16-block*.12;body.rotation.y=-attack*.28;body.position.y=-.1+Math.abs(bounce)*.35;
     arms.forEach((a,i)=>{a.pivot.rotation.x=i===1?-.75-attack*.95-block*.45:-.85-block*.7;a.pivot.rotation.z=(i===0?-1:1)*(.22+block*.2);base.forearms[i].rotation.x=i===1?-.8+attack*.7-block*.25:-1.05-block*.25;});
     legs[0].pivot.rotation.x=-.22-attack*.2;legs[1].pivot.rotation.x=.25+attack*.18;legs[0].pivot.rotation.z=.11;legs[1].pivot.rotation.z=-.11;head.rotation.y=attack*.15;
+    avatar?.combatPose(attack,block,bounce);
   }
-  function dispose(){haLyAlive=false;const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
-  return {root,profile,height:profile.height,cloth:base.cloth,hair:base.hair,arms,legs,shoulderGuards,bracers,update,combatPose,setInkViewport:base.setInkViewport,dispose};
+  function dispose(){haLyAlive=false;avatar?.dispose();const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
+  return {root,profile,height:profile.height,cloth:base.cloth,hair:base.hair,arms,legs,shoulderGuards,bracers,update,combatPose,ready:avatar?.ready||Promise.resolve(false),get modelReady(){return avatar?.loaded||false;},get model(){return avatar?.model||null;},get bones(){return avatar?.bones||null;},motionState:()=>avatar?.state(),setCombatMode:value=>avatar?.setCombatMode(value),syncCombatHands:hands=>avatar?.syncCombatHands(hands)||false,setInkViewport(w,h){base.setInkViewport(w,h);avatar?.setInkViewport(w,h);},dispose};
 }

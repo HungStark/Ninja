@@ -21,6 +21,7 @@ const files = [
   "assets/ha-ly.glb",
   "assets/hero-ninja.glb",
   "assets/hero-ninja-simple.glb",
+  "assets/village-ninja.glb",
   "assets/npc.vrm",
   "assets/npc_nam.vrm",
   "assets/npc_nu.vrm",
