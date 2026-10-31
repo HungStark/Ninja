@@ -204,3 +204,7 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 #mobileLayoutEditor>footer button{min-height:36px;white-space:nowrap}
 #mobileLayoutNotice{flex:1;font-size:9px;line-height:1.4;color:#d3c294}
 @media(max-width:600px){.mobile-layout-workspace{grid-template-columns:minmax(0,1fr) 150px;gap:6px}#mobileLayoutEditor h2{font-size:15px}#mobileLayoutEditor nav button{padding:6px;font-size:10px}#mobileLayoutEditor>footer{gap:5px}#mobileLayoutEditor>footer button{font-size:10px;padding:6px}#mobileLayoutNotice{font-size:8px}}
+.android-ui .android-explore-messages>.journey-waypoint{width:max-content;max-width:min(230px,100%);padding:6px 8px;gap:6px;font-size:9px;line-height:1.3}
+.android-ui .android-explore-messages>.journey-waypoint>b{font-size:16px;flex-basis:18px}
+.android-ui .android-explore-messages>.journey-waypoint>span{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.android-ui .android-explore-messages>.journey-waypoint small{font-size:8px;margin-top:2px}

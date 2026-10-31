@@ -107,6 +107,15 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   function arenaDialog(){dialogueItem=null;const round=arenaRound(save),speed=enemySealTiming(0,'arena',round).sealSpeedMultiplier;dialog('GIAO HỮU CỬU LÀNG · VÒNG '+round,'Chọn đại diện giao đấu',`Vòng ${round}: đối thủ kết ấn nhanh ×${speed.toFixed(1)}. Mỗi lần thắng mở vòng tiếp theo và tăng tốc độ thêm 0,1; thua thì thử lại vòng hiện tại. Thắng hoặc thua đều trở lại võ đường; không nhận xu thưởng.`,[...VILLAGES.filter(v=>v.id!=='nameless').map(v=>['Đại diện '+v.name,()=>offerBattle('arena',{...encounterProfile(save,'arena',v.id),village:v.id,element:v.id,name:'Võ sinh '+v.name}),true]),['Để lúc khác',closeDialog,true]]);}
   function persist(){const safe=world.safeSave();save.position=safe.position;save.surface=safe.surface;save.elevation=safe.elevation;save.worldRevision=2;if(admin.active){$('journeySaved').textContent='Admin · Không lưu tiến trình';saveTimer=0;return;}try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));stored=save;$('journeySaved').textContent='Đã lưu';storageFailed=false;}catch{storageFailed=true;$('journeySaved').textContent='Chưa lưu được';}saveTimer=0;}
   let landmarkNotices=[],landmarkNoticeTimer=0;
+  function renderLandmarkIntroduction(){
+    const intro=landmarkNotices[0],panel=$('landmarkIntro');panel.hidden=phase!=='explore'||!intro;
+    if(intro&&panel.dataset.landmark!==intro.id){panel.dataset.landmark=intro.id;panel.innerHTML=`<button type="button" class="landmark-intro-close" aria-label="Đóng giới thiệu địa danh">×</button><strong>${esc(intro.name)}</strong><span>${esc(intro.description)}</span>`;}
+  }
+  $('landmarkIntro').onclick=e=>{
+    if(!e.target.closest('.landmark-intro-close'))return;
+    e.stopPropagation();landmarkNotices.shift();landmarkNoticeTimer=landmarkNotices.length?7:0;
+    renderLandmarkIntroduction();$('nearbyAction').hidden=phase!=='explore'||!!landmarkNotices.length||!nearest();focusGame();
+  };
   function enter(persistSave=true){landmarkNotices=[];landmarkNoticeTimer=0;$('landmarkIntro').hidden=true;recordCampaignVisit(save);path=[];journeyLegs=[];automaticJourney=false;action=null;waypoint=null;waypointSource='campaign';waypointVia=null;momentum.x=momentum.z=0;setPhase('explore');onLoadJourney(save.learnedSpells);world.load(save.village,save);refresh();refreshObjectiveMarker();if(persistSave)persist();}
   function refreshStory({rebuildWorld=false}={}){path=[];journeyLegs=[];automaticJourney=false;action=null;setPhase('explore');onLoadJourney(save.learnedSpells);if(rebuildWorld)world.load(save.village,save,{preserveHero:true});else world.syncSidequests(save);world.syncVillageEvents(save);refresh();refreshObjectiveMarker();persist();}
   function refresh(){const v=village(save.village),q=save.quests[v.id]||0;document.body.style.setProperty('--biome',v.color);$('villageName').textContent=world.interior?.title||v.name;$('villageGlyph').textContent=v.glyph;$('checkpointText').textContent='Hồi sinh · '+village(save.checkpoint).name;$('journeyHeroName').textContent=save.hero.name;$('journeyHeroLevel').textContent=`Bậc ${1+Math.floor(save.xp/150)} · ${save.xp} kinh nghiệm`;$('journeyGold').textContent=(admin.active?'∞':save.gold)+' xu';$('questCount').textContent=Object.values(save.quests).filter(x=>x===3).length+' / 10';
@@ -447,7 +456,11 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
         }
       }
       const p=world.hero.root.position;
-      $('waypointHint').hidden=!waypoint;if(waypoint){const target=waypointVia||waypoint,d=Math.hypot(target.x-p.x,target.z-p.z),angle=-(Math.atan2(target.x-p.x,target.z-p.z)-world.cameraState().yaw-Math.PI);$('waypointHint').innerHTML=`<b style="transform:rotate(${angle}rad)">↑</b><span>${esc(target.label)}<small>${Math.ceil(d)} m · ${target.kind==='landmark'?'Đi bằng WASD':d<2.1?'Nhấn E':waypointVia?'Tới bến / chân đường leo':'Đi bằng WASD'}</small></span>`;}
+      $('waypointHint').hidden=!waypoint;if(waypoint){
+        const target=waypointVia||waypoint,d=Math.hypot(target.x-p.x,target.z-p.z),angle=-(Math.atan2(target.x-p.x,target.z-p.z)-world.cameraState().yaw-Math.PI);
+        const hint=target.kind==='landmark'?'':d<2.1?'Nhấn E':waypointVia?'Tới bến / chân đường leo':'';
+        $('waypointHint').innerHTML=`<b style="transform:rotate(${angle}rad)">↑</b><span title="${esc(target.label)}">${esc(target.label)}<small>${Math.ceil(d)} m${hint?' · '+hint:''}</small></span>`;
+      }
       let newDiscovery=false;
       if(!world.riding)for(const zone of REGIONS[save.village].zones){
         const sameArea=world.interior?world.interior.zones.includes(zone.id):!zone.platform?!world.surface:zone.platform===world.surface;
@@ -464,8 +477,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       const revealed=world.advanceGuards(dt,save.learnedSpells.length>0);if(revealed.length)toast('Bụp! Cảnh vệ giải ngụy trang và đang chạy tới bạn');
       const sentry=world.caughtGuard();if(sentry&&!world.riding)offerBattle('village-guard',{guardId:sentry.id,name:sentry.label});
       if(saveTimer>3&&(moving||storageFailed))persist();
-      const intro=landmarkNotices[0],near=nearest();$('landmarkIntro').hidden=phase!=='explore'||!intro;
-      if(intro&&$('landmarkIntro').dataset.zone!==intro.id){$('landmarkIntro').dataset.zone=intro.id;$('landmarkIntro').innerHTML=`<strong>${esc(intro.name)}</strong><span>${esc(intro.description)}</span>`;}
+      const intro=landmarkNotices[0],near=nearest();renderLandmarkIntroduction();
       $('nearbyAction').hidden=phase!=='explore'||!!intro||!near;if(near)$('nearbyAction').innerHTML=`<kbd>E</kbd> ${questAction(near)||(near.kind==='spirit-ore'?'Gõ linh thạch · ':near.kind==='interior-enter'?'Đi vào · ':near.kind==='interior-exit'?'Đi ra · ':near.kind==='arena-host'?'Thi đấu · ':near.kind==='gate'?'Đi tới ':near.kind==='save'?'Hồi sinh / Dịch chuyển · ':['quest','boss','roamer','village-guard','intro-guardian'].includes(near.kind)?'Đối mặt ':near.kind==='traversal'?'Sử dụng · ':near.kind==='expedition-goal'?'Thu thập · ':'Nói chuyện · ')}${esc(near.label)}`;
       updateMinimap();
     }

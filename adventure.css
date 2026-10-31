@@ -168,5 +168,9 @@ body[data-journey=checkpoint] #startScreen,body[data-journey=admin] #startScreen
 .model-portrait-fallback{position:absolute;inset:0;display:grid;place-items:center;color:#cabb98;font-size:24px;letter-spacing:3px}
 .model-portrait[data-model-ready=true] img{opacity:1}.model-portrait[data-model-ready=true] .model-portrait-fallback{display:none}
 .landmark-intro{width:min(540px,calc(100vw - 48px));pointer-events:none;text-align:left;line-height:1.6;white-space:normal}
-.landmark-intro strong{display:block;margin-bottom:4px;font-size:1.1em;font-weight:600}
+.landmark-intro strong{display:block;min-height:24px;margin-bottom:4px;padding-right:24px;font-size:1.1em;font-weight:600}
 .landmark-intro span{display:block;color:#d1d7c8;font-size:.95em}
+.landmark-intro-close{position:absolute;top:3px;right:3px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:3px;background:transparent;color:#d1d7c8;font-size:22px;line-height:1;cursor:pointer;pointer-events:auto}
+.landmark-intro-close:hover,.landmark-intro-close:focus-visible{background:#ffffff18;color:#fff0cf}
+.landmark-intro-close:focus-visible{outline:2px solid #d6c290;outline-offset:-2px}
+@media(max-width:620px){.journey-waypoint{width:112px;padding:6px;gap:5px;font-size:9px;line-height:1.3}.journey-waypoint>b{font-size:18px;flex-basis:18px}.journey-waypoint>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.journey-waypoint small{margin-top:2px;font-size:8px}}

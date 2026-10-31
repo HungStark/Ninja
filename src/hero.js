@@ -5,6 +5,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
 import {createArmorWardrobe} from './hero-armor.js';
 import {createArmguardModel} from './armguard-model.js';
+import {createShurikenPouch,disposeShurikenPouch} from './shuriken-pouch.js';
 import {characterInkMaterial,addInkOutline} from './ink-outline.js';
 import {createCharacterMotion,REST_ARM_OPEN} from './character-motion.js';
 
@@ -99,16 +100,20 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
     body.visible=false;head=new T.Group();head.name='hero-face';head.position.set(0,2.61,0);body.add(head);scarf=new T.Group();body.add(scarf);
     for(const side of [-1,1]){const pivot=new T.Group(),knee=new T.Group(),foot=new T.Group();pivot.position.set(side*.175,1.21,0);knee.position.y=-.5;foot.position.y=-.51;body.add(pivot);pivot.add(knee);knee.add(foot);legs.push({side,pivot,knee,foot});const arm=new T.Group(),elbow=new T.Group(),hand=new T.Group();arm.position.set(side*.36,2.04,0);elbow.position.set(side*.02,-.46,0);hand.position.set(0,-.43,.035);body.add(arm);arm.add(elbow);elbow.add(hand);arms.push({side,pivot:arm,upper:new T.Group(),lower:new T.Group(),elbow,hand,fingers:[]});}
   }
-  const gear=new T.Group();gear.name='hero-equipment';body.add(gear);let gearKey='',equipment=null,avatarPose=null,avatarOutfit=null,avatarWardrobe=null,lastEquipmentState=null;
+  const gear=new T.Group();gear.name='hero-equipment';body.add(gear);let gearKey='',equipment=null,avatarPose=null,avatarOutfit=null,avatarWardrobe=null,avatarArmorAnchors=null,lastEquipmentState=null,pouch=null;
   const armorAnchor=(parent,name)=>{const g=new T.Group();g.name=name;parent.add(g);return g;};
+  const pouchAnchor=armorAnchor(body,'hero-pouch-anchor');pouchAnchor.position.set(-.34,1.34,-.06);pouchAnchor.rotation.y=-Math.PI/2;
   const armorAnchors={body:gear,shoulders:arms.map(a=>armorAnchor(a.pivot,'armor-shoulder')),bracers:arms.map(a=>armorAnchor(a.elbow,'armor-bracer')),shins:legs.map(l=>armorAnchor(l.knee,'armor-shin')),hips:legs.map(l=>armorAnchor(l.pivot,'armor-hip'))};
   const wardrobe=createArmorWardrobe(armorAnchors);
   function setEquipment(state){
     lastEquipmentState=state||null;
     cloth.color.set(state?.hero?.coat||'#211e25');hair.color.set(state?.hero?.hair||'#161821');
-    const armor=state?.armor||{id:'traveler',color:'#29252c',style:'wrap'},bag=state?.bag||{id:'pouch-30',capacity:10},armguard=state?.armguard||{id:'bare-wrists',color:'#403640'};
+    const armor=state?.armor||{id:'traveler',color:'#29252c',style:'wrap'},bag=state?.bag===null?null:state?.bag||{id:'pouch-30',capacity:10},armguard=state?.armguard||{id:'bare-wrists',color:'#403640'};
     avatarOutfit?.apply(state,armor);
-    const key=armor.id+':'+bag.id+':'+armguard.id;if(key===gearKey)return;gearKey=key;equipment={armor:armor.id,bag:bag.id,armguard:armguard.id,gloves:!!armguard.gloves};
+    const key=armor.id+':'+(bag?.id||'none')+':'+armguard.id;if(key===gearKey)return;gearKey=key;equipment={armor:armor.id,bag:bag?.id||null,armguard:armguard.id,gloves:!!armguard.gloves};
+    if(pouch?.userData.item!==(bag?.id||undefined)){
+      if(pouch)disposeShurikenPouch(pouch);pouch=bag?createShurikenPouch(bag):null;if(pouch)pouchAnchor.add(pouch);
+    }
     if(!procedural){
       if(avatarWardrobe){avatarWardrobe.clear();root.userData.avatarArmorAppearance=armor.id==='traveler'?{region:'traveler',elite:false,triangles:0,draws:0}:avatarWardrobe.build(armor);}
       root.userData.armorAppearance=root.userData.avatarArmorAppearance||{region:'traveler',elite:false,triangles:0,draws:0};root.userData.equipment={...equipment};outlineMeshes(root);return;
@@ -129,9 +134,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
     }
     for(const anchor of armorAnchors.bracers){anchor.traverse(o=>o.geometry?.dispose());anchor.clear();anchor.add(createArmguardModel(armguard));}
     for(const arm of arms)for(const finger of arm.fingers)finger.material=armguard.gloves?dark:skin;
-    const size=bag.capacity>=50?1.65:bag.capacity>=30?1.4:bag.capacity>=20?1.15:1;
-    b(strap,.32,1.09,-.19,.27*size,.31*size,.26*size);b(trim,.32,1.19,-.19-.14*size,.23*size,.07,.035);
-    b(strap,.18,.77,-.15,.22,.28,.13);root.userData.equipment={...equipment};outlineMeshes(root);
+    root.userData.equipment={...equipment};outlineMeshes(root);
   }
   function addAvatar(){
     if(procedural||typeof document==='undefined'||document.baseURI==='about:blank')return;
@@ -169,10 +172,17 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
       avatarPose={hips:bind(bones.hips),spine:bind(bones.spine),chest:bind(bones.chest),scale,legLength:(bones.knees[0]?.position.length()||.393)+(bones.feet[0]?.position.length()||.46)};
       for(const part of ['arms','elbows','legs','knees','feet'])avatarPose[part]=bones[part].map(bind);
       root.add(visual);body.visible=false;root.userData.referenceAppearance=true;outlineMeshes(visual);
+      // The armor is fitted to a standing character, rather than the source T-pose.
+      for(let i=0;i<2;i++)avatarArm(i,.06,0,.16,REST_ARM_OPEN);
+      root.updateMatrixWorld(true);
       const anchor=(parent,name)=>{const g=new T.Group();g.name=name;parent.add(g);if(parent!==root)g.scale.setScalar(1/scale);return g;};
-      const armorBodyAnchor=anchor(root,'avatar-armor-body');armorBodyAnchor.position.y=.18;
-      const avatarShoulders=[-1,1].map((side,i)=>{const g=anchor(root,`avatar-armor-shoulder-${i}`);g.position.set(side*.32,2.32,.075);return g;});
-      const avatarArmorAnchors={body:armorBodyAnchor,shoulders:avatarShoulders,bracers:bones.elbows.map((bone,i)=>anchor(bone||visual,`avatar-armor-bracer-${i}`)),shins:bones.knees.map((bone,i)=>anchor(bone||visual,`avatar-armor-shin-${i}`)),hips:bones.legs.map((bone,i)=>anchor(bone||visual,`avatar-armor-hip-${i}`))};
+      // Keep the authored standing fit, then let the actual joints carry each plate.
+      const armorBodyAnchor=anchor(root,'avatar-armor-body');armorBodyAnchor.position.y=.18;(bones.chest||bones.spine||bones.hips||visual).attach(armorBodyAnchor);
+      const avatarShoulders=[-1,1].map((side,i)=>{const g=anchor(root,`avatar-armor-shoulder-${i}`);g.position.set(side*.32,2.32,.075);(bones.arms[side<0?1:0]||bones.chest||visual).attach(g);return g;});
+      avatarArmorAnchors={body:armorBodyAnchor,shoulders:avatarShoulders,bracers:bones.elbows.map((bone,i)=>anchor(bone||visual,`avatar-armor-bracer-${i}`)),shins:bones.knees.map((bone,i)=>anchor(bone||visual,`avatar-armor-shin-${i}`)),hips:bones.legs.map((bone,i)=>anchor(bone||visual,`avatar-armor-hip-${i}`))};
+      if(bones.hips){
+        root.add(pouchAnchor);pouchAnchor.position.copy(root.worldToLocal(bones.hips.getWorldPosition(new T.Vector3()))).add(new T.Vector3(-.34,.02,-.06));pouchAnchor.rotation.set(0,-Math.PI/2,0);pouchAnchor.scale.setScalar(1);bones.hips.attach(pouchAnchor);
+      }
       avatarWardrobe=createArmorWardrobe(avatarArmorAnchors);
       avatarOutfit={apply(state,armor){
         for(const m of garments.tops)m.color.set(state?.hero?.coat||'#29272d');
@@ -228,5 +238,5 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
   }
   function airPose(v){setAirborne(true,v);legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;avatarLeg(i,l.pivot.rotation.x,l.knee.rotation.x,l.foot.rotation.x);});arms.forEach((a,i)=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;a.elbow.rotation.x=-.35;avatarArm(i,-.6,i===0?.22:-.22,.35);});}
   function climbPose(t){arms.forEach((a,i)=>{a.pivot.rotation.x=-2+Math.sin(t*6+i*Math.PI)*.35;a.elbow.rotation.x=-.5;avatarArm(i,a.pivot.rotation.x,0,.5);});legs.forEach((l,i)=>{l.knee.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25;avatarLeg(i,-.15,l.knee.rotation.x,-l.knee.rotation.x+.15);});body.rotation.x=-.1;}
-  return {root,group:root,ready,get modelReady(){return root.userData.referenceAppearance===true;},cloth,hair,legs,arms,armorAnchors,update,airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
+  return {root,group:root,ready,get modelReady(){return root.userData.referenceAppearance===true;},cloth,hair,legs,arms,armorAnchors,get equippedArmorAnchors(){return avatarArmorAnchors||armorAnchors;},get pouch(){return pouch;},update,airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
 }

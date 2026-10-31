@@ -60,6 +60,7 @@
     "test:shuriken": "node tests/shuriken-equipment.mjs && node tests/shuriken-browser.cjs",
     "test:ninjas": "node tests/ninja-models.mjs && node tests/enemy-movement-core.mjs && node tests/enemy-encounters-browser.cjs",
     "test:armor": "node tests/armor-designs.mjs && node tests/shop-hero-browser.cjs",
+    "test:armor-motion": "node tests/armor-designs.mjs && node tests/hero-equipment-motion-browser.cjs",
     "test:equipment": "node tests/shuriken-equipment.mjs && node tests/equipment-core.mjs && node tests/shop-hero-browser.cjs",
     "test:armguards": "node tests/armguards-core.mjs && node tests/armguards-browser.cjs",
     "test:dash": "node tests/dash-boost.mjs && node tests/enemy-movement-core.mjs && node tests/enemy-balance-core.mjs && node tests/dash-boost-browser.cjs && node tests/enemy-balance-browser.cjs",
