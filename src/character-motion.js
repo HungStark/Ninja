@@ -1,5 +1,8 @@
 import {sampleHeroGait} from './hero-gait.js';
 
+// A small resting gap keeps hands outside the coat without returning to A-pose.
+export const REST_ARM_OPEN=.11;
+
 // One gait/cadence/transition sampler for the hero and village ninja rigs.
 export function createCharacterMotion(){
   let localX=0,localZ=0,stride=0,sprintBlend=0;

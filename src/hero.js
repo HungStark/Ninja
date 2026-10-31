@@ -5,7 +5,7 @@ import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
 import {createArmorWardrobe} from './hero-armor.js';
 import {createArmguardModel} from './armguard-model.js';
 import {inkMaterial,addInkOutline} from './ink-outline.js';
-import {createCharacterMotion} from './character-motion.js';
+import {createCharacterMotion,REST_ARM_OPEN} from './character-motion.js';
 
 let heroModelPromise;
 function loadHeroModel(){return heroModelPromise??=new GLTFLoader().loadAsync(new URL('assets/hero-ninja-simple.glb',document.baseURI).href).then(gltf=>gltf.scene);}
@@ -177,10 +177,10 @@ export function createHero({outlineWidth=1.15}={}){
   }
   setEquipment();const ready=addAvatar()||Promise.resolve(),motion=createCharacterMotion();let stride=0,localX=0,localZ=0,sprintBlend=0,airborne=false,airVerticalSpeed=0;
   function setAirborne(value,verticalSpeed=0){airborne=!!value;airVerticalSpeed=verticalSpeed||0;}
-  function avatarArm(i,pitch,spread,flex){
+  function avatarArm(i,pitch,spread,flex,clearance=0){
     const entry=avatarPose?.arms[i];if(!entry)return;
     const sign=i===0?1:-1,relaxed=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),-sign*1.55);
-    entry.bone.quaternion.copy(entry.base).premultiply(relaxed).premultiply(new T.Quaternion().setFromEuler(new T.Euler(pitch,0,spread)));
+    entry.bone.quaternion.copy(entry.base).premultiply(relaxed).premultiply(new T.Quaternion().setFromEuler(new T.Euler(pitch,0,spread+sign*clearance)));
     const elbow=avatarPose.elbows[i];
     // Forearms run along local X: Y bends the elbow, X merely twists it.
     if(elbow)elbow.bone.quaternion.copy(elbow.base).multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),-sign*flex));
@@ -209,7 +209,7 @@ export function createHero({outlineWidth=1.15}={}){
     if(avatarPose){
       const rotation=(x,y,z)=>new T.Quaternion().setFromEuler(new T.Euler(x,y,z));
       for(let i=0;i<2;i++){
-        avatarArm(i,airborne?-.6:arms[i].pivot.rotation.x,airborne?(i===0?.22:-.22):arms[i].pivot.rotation.z,airborne?.35:-arms[i].elbow.rotation.x);
+        avatarArm(i,airborne?-.6:arms[i].pivot.rotation.x,airborne?(i===0?.22:-.22):arms[i].pivot.rotation.z,airborne?.35:-arms[i].elbow.rotation.x,airborne?0:REST_ARM_OPEN);
         const step=gait.legs[i];avatarLeg(i,airborne?-.3:step.hip-sprintLean,airborne?(airVerticalSpeed>0?.48:.62):step.knee,airborne?-.22:step.ankle,airborne?0:step.side);
       }
       if(avatarPose.hips){avatarPose.hips.bone.quaternion.copy(avatarPose.hips.base).premultiply(rotation(airborne?-.04:forward*weight*.045*(1-sprintBlend)+sprintLean,0,airborne?0:-side*weight*.05));avatarPose.hips.bone.position.y=avatarPose.hips.position.y+(airborne?0:-gait.drop*avatarPose.legLength+Math.sin(time*2)*.008*(1-weight)/avatarPose.scale);}

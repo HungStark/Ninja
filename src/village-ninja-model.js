@@ -2,7 +2,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {inkMaterial,addInkOutline} from './ink-outline.js';
-import {createCharacterMotion} from './character-motion.js';
+import {createCharacterMotion,REST_ARM_OPEN} from './character-motion.js';
 import {reachResidentHand} from './resident-rig-pose.js';
 import {applyVillageNinjaStyle} from './village-ninja-style.js';
 
@@ -20,16 +20,16 @@ export function attachVillageNinja(root,profile,fallback){
     else if(/tops|body_00_skin/i.test(o.material?.name||''))o.visible=!combat;
   });};
   const apply=(bone,q)=>{if(bone)bone.quaternion.copy(rest.get(bone)).premultiply(q);};
-  function arm(i,pitch,spread,flex){
+  function arm(i,pitch,spread,flex,clearance=0){
     const side=i===0?1:-1,upper=bones.arms[i],lower=bones.elbows[i];
-    if(upper)upper.quaternion.copy(rest.get(upper)).premultiply(rotation(0,0,-side*1.55)).premultiply(rotation(pitch,0,spread));
+    if(upper)upper.quaternion.copy(rest.get(upper)).premultiply(rotation(0,0,-side*1.55)).premultiply(rotation(pitch,0,spread+side*clearance));
     if(lower)lower.quaternion.copy(rest.get(lower)).multiply(rotation(0,-side*flex,0));
   }
   function pose(state,time){
     if(!bones)return;
     const {weight,forward,side,sprintLean,sprintBlend,gait}=state;
     for(let i=0;i<2;i++){
-      const step=gait.legs[i],a=state.arms[i];arm(i,a.pitch,a.spread,a.flex);
+      const step=gait.legs[i],a=state.arms[i];arm(i,a.pitch,a.spread,a.flex,REST_ARM_OPEN);
       apply(bones.legs[i],rotation(step.hip-sprintLean,0,step.side));apply(bones.knees[i],rotation(step.knee));apply(bones.feet[i],rotation(step.ankle,0,-step.side));
     }
     apply(bones.hips,rotation(forward*weight*.045*(1-sprintBlend)+sprintLean,0,-side*weight*.05));

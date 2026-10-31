@@ -156,6 +156,8 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 .android-ui #journeyDialog .dialog-person{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .android-ui #journeyDialog #dialogPortrait{flex:1 1 0;min-height:0;display:flex;justify-content:center}
 .android-ui #journeyDialog #dialogPortrait svg{width:auto;max-width:100%;height:100%;box-sizing:border-box;box-shadow:none}
+.android-ui #journeyDialog #dialogPortrait .model-portrait{width:auto;max-width:100%;height:100%;flex:0 1 auto;box-shadow:none}
+.android-ui #journeyDialog #dialogPortrait .model-portrait{width:auto;max-width:100%;height:100%;flex:0 1 auto;box-shadow:none}
 .android-ui #journeyDialog #dialogSpeakerName{flex:0 0 auto;font-size:10px;line-height:1.2;margin-top:4px}
 .android-ui #journeyDialog #dialogSpeakerRole{display:none}
 .android-ui #journeyDialog .dialog-copy{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;gap:6px;overflow:hidden}

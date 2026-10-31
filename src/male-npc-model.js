@@ -3,6 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {inkMaterial,addInkOutline} from './ink-outline.js';
 import {residentActivityPose,reachResidentHand} from './resident-rig-pose.js';
+import {REST_ARM_OPEN} from './character-motion.js';
 
 const toonRamp=new T.DataTexture(new Uint8Array([52,52,52,255,112,112,112,255,194,194,194,255,255,255,255,255]),4,1,T.RGBAFormat);
 toonRamp.minFilter=toonRamp.magFilter=T.NearestFilter;toonRamp.generateMipmaps=false;toonRamp.needsUpdate=true;
@@ -20,9 +21,9 @@ const boneNames={
 };
 
 export function attachNpcModel(root,profile){
-  if(typeof document==='undefined'){const idle=()=>{};idle.setInkViewport=()=>{};return idle;}
+  if(typeof document==='undefined'){const idle=()=>{};idle.setInkViewport=()=>{};idle.ready=Promise.resolve(false);return idle;}
   let visual=null;const ink=inkMaterial(1.05,'#302b30');
-  loadSource(profile.female).then(source=>{
+  const ready=loadSource(profile.female).then(source=>{
     if(!root.parent&&!root.userData.villager)return;
     const model=cloneSkinned(source),bounds=new T.Box3().setFromObject(model),height=Math.max(.01,bounds.max.y-bounds.min.y),scale=3/height;
     model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;model.name=profile.female?'female-npc-vrm':'male-npc-vrm';
@@ -76,7 +77,8 @@ export function attachNpcModel(root,profile){
     }
     visual={visualRoot,model,bones,rest,held,fingers,scale,restHipsY:bones.hips?.position.y??0};
     const procedural=root.getObjectByName('body');if(procedural)procedural.visible=false;
-  }).catch(error=>console.warn(`Could not load ${profile.female?'female':'male'} NPC VRM:`,error));
+    root.userData.characterModel={asset:profile.female?'npc_nu-simple.vrm':'npc_nam-simple.vrm',ready:true};return true;
+  }).catch(error=>{console.warn(`Could not load ${profile.female?'female':'male'} NPC VRM:`,error);return false;});
 
   const update=(time,moving,{body,head,arms,forearms,legs})=>{
     if(!visual)return;
@@ -94,7 +96,7 @@ export function attachNpcModel(root,profile){
     channels.forEach((channel,i)=>{
       const upper=bones[channel.upper],lower=bones[channel.lower],side=channel.side;
       if(bones[channel.hand])bones[channel.hand].quaternion.copy(rest[channel.hand]);
-      if(upper)upper.quaternion.copy(rest[channel.upper]).premultiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),-side*1.55)).premultiply(new T.Quaternion().setFromEuler(new T.Euler(arms[i].rotation.x,0,arms[i].rotation.z*.5)));
+      if(upper)upper.quaternion.copy(rest[channel.upper]).premultiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),-side*1.55)).premultiply(new T.Quaternion().setFromEuler(new T.Euler(arms[i].rotation.x,0,arms[i].rotation.z*.5+side*REST_ARM_OPEN)));
       if(lower)lower.quaternion.copy(rest[channel.lower]).multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),-side*Math.max(.10,-forearms[i].rotation.x)));
       const knee=pose?.kneeling?2.1:pose?.knee||.08,hip=pose?.kneeling?-.5:legs[i].rotation.x-knee*.5;
       apply(channel.leg,new T.Euler(hip,0,0));apply(channel.knee,new T.Euler(knee,0,0));apply(channel.foot,new T.Euler(-hip-knee,0,0));
@@ -120,5 +122,6 @@ export function attachNpcModel(root,profile){
     root.userData.residentRigPose={kind:pose?.type||'relaxed-standing',hipsDrop:pose?.hipsDrop||0,reach:pose?.reach||0};
   };
   update.setInkViewport=(width,height)=>ink.uniforms.viewport.value.set(width,height);
+  update.ready=ready;
   return update;
 }

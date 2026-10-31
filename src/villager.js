@@ -163,5 +163,5 @@ export function createVillager(profile){
     root.userData.expression={blink,lookYaw,lookPitch};
     npcModelUpdate?.(time,moving,{body,head,arms,forearms,legs});
   }
-  return {root,body,head,arms,forearms,legs,cloth,hair,update,setInkViewport(width,height){contour.uniforms.viewport.value.set(width,height);npcModelUpdate?.setInkViewport(width,height);},workstation:activity?.station||null};
+  return {root,body,head,arms,forearms,legs,cloth,hair,update,ready:npcModelUpdate?.ready||Promise.resolve(false),get modelReady(){return root.userData.characterModel?.ready===true;},setInkViewport(width,height){contour.uniforms.viewport.value.set(width,height);npcModelUpdate?.setInkViewport(width,height);},workstation:activity?.station||null};
 }

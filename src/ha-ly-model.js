@@ -2,7 +2,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {inkMaterial,addInkOutline} from './ink-outline.js';
-import {createCharacterMotion} from './character-motion.js';
+import {createCharacterMotion,REST_ARM_OPEN} from './character-motion.js';
 import {reachResidentHand} from './resident-rig-pose.js';
 
 const ramp=new T.DataTexture(new Uint8Array([80,80,80,255,154,154,154,255,222,222,222,255,255,255,255,255]),4,1,T.RGBAFormat);
@@ -27,7 +27,7 @@ export function attachHaLy(root,profile,fallback){
       const step=state.gait.legs[i],a=state.arms[i],side=i===0?1:-1;
       apply(bones.legs[i],rotation(wounded?-1.70:step.hip-state.sprintLean,0,wounded?side*.07:step.side));
       apply(bones.knees[i],rotation(wounded?1.48:step.knee));apply(bones.feet[i],rotation(wounded?-.08:step.ankle));
-      arm(i,wounded?-.2:a.pitch,wounded?side*.1:a.spread,wounded?1.2:a.flex);
+      arm(i,wounded?-.2:a.pitch,wounded?side*.1+side*REST_ARM_OPEN:a.spread+side*REST_ARM_OPEN,wounded?1.2:a.flex);
     }
     for(const bone of bones.skirt){
       const front=/Front/.test(bone.name),side=/Side/.test(bone.name),i=bone.name.includes('_L_')?0:1;

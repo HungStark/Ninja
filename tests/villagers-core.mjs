@@ -15,7 +15,7 @@ for(const [id,region] of Object.entries(REGIONS))for(const person of [{kind:'chi
   let triangles=0;char.root.traverse(o=>{if(o.isMesh)triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;});maxTriangles=Math.max(maxTriangles,triangles);assert.ok(triangles<4500,'lightweight NPC geometry');
   char.update(1,false);char.update(2,true,null,.016);char.root.updateMatrixWorld(true);char.root.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite)));
   const kind=person.kind==='chief'?'npc':person.kind,cast=dialogueCast({kind,id:person.id},newJourney(),region,village(id));
-  if(cast?.npc.appearance){assert.deepEqual(cast.npc.appearance,profile);const svg=speakerPortrait(cast.npc);assert.ok(svg.includes('data-villager-job="'+profile.job+'"'));assert.ok(svg.includes(profile.skin));}
+  if(cast?.npc.appearance){assert.deepEqual(cast.npc.appearance,profile);const portrait=speakerPortrait(cast.npc);assert.ok(portrait.includes('data-portrait-kind="villager"'));assert.ok(portrait.includes('data-model-ready="false"'));assert.ok(!portrait.includes('<svg'),'dialogue mounts a model portrait rather than the old drawing');}
   count++;
 }
 assert.ok(jobs.size>=12&&silhouettes.size>=30);
