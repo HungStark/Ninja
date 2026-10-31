@@ -37,6 +37,12 @@ The hand mesh, rig, seal poses, environment meshes and procedural texture drawin
 
 `assets/npc.vrm`, `assets/npc_nam.vrm`, and `assets/npc_nu.vrm` are supplied by the user and included unchanged. Their VRM metadata names the author as "me" and requires credit; each file also states that redistribution is not permitted and modification is prohibited. NPC color variants are applied at runtime by the game shaders.
 
+At the user's request, `tools/character-blocks.py` generates separate simplified
+variants of `hero-ninja.glb`, `npc_nam.vrm`, and `npc_nu.vrm`. These variants
+replace hair geometry and reduce clothing geometry. The original files and
+the existing author and license metadata are retained; the variants do not
+grant any additional rights in the supplied assets.
+
 Fire dragon roar: the user supplied `dragon-studio-epic-dragon-roar-364481.mp3`.
 The original file is stored as `assets/audio/fire-dragon-roar.mp3` and embedded
 unchanged in the offline game bundles by `tools/build.mjs`.

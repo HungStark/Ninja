@@ -1,0 +1,23 @@
+[
+  {
+    "source": "hero-ninja.glb",
+    "output": "hero-ninja-simple.glb",
+    "originalTriangles": 30535,
+    "triangles": 20705,
+    "reduction": 0.322
+  },
+  {
+    "source": "npc_nam.vrm",
+    "output": "npc_nam-simple.vrm",
+    "originalTriangles": 23163,
+    "triangles": 19436,
+    "reduction": 0.161
+  },
+  {
+    "source": "npc_nu.vrm",
+    "output": "npc_nu-simple.vrm",
+    "originalTriangles": 30157,
+    "triangles": 19966,
+    "reduction": 0.338
+  }
+]

@@ -1,14 +1,17 @@
-const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path');
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs/promises');
+const {spawn}=require('node:child_process');
 (async()=>{
   const output='test-results/locomotion';await fs.mkdir(output,{recursive:true});
+  const server=spawn(process.execPath,['server.cjs'],{env:{...process.env,PORT:'4322'},windowsHide:true,stdio:['ignore','pipe','pipe']});
+  await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(Error('server exit '+code)));});
   const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   let page,checkpoint='load';
   try{
-    page=await browser.newPage({viewport:{width:1440,height:960}});const errors=[];page.on('pageerror',e=>errors.push(e.stack));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+    page=await browser.newPage({viewport:{width:1440,height:960}});await page.route('**/favicon.ico',route=>route.fulfill({status:204,body:''}));const errors=[];page.on('pageerror',e=>errors.push(e.stack));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     const {newJourney}=await import('../src/adventure-data.js'),save=newJourney();save.position=[0,7];
     await page.addInitScript(s=>localStorage.setItem('anhoa-adventure-v1',JSON.stringify(s)),save);
     const state=()=>page.evaluate(()=>__AN_HOA__.adventure()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t);
-    await page.goto('file:///'+path.join(process.cwd(),'index.html').replaceAll('\\','/')+'?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await page.locator('#continueJourney').click();await advance(.3);await page.locator('#campaignToggle').click();
+    await page.goto('http://127.0.0.1:4322/?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await page.locator('#continueJourney').click();await advance(.3);await page.locator('#campaignToggle').click();
     await page.mouse.move(800,450);await page.mouse.wheel(0,575);await advance(.3);
     const move=async(keys,forward,side,name)=>{
       checkpoint=name;const before=await state(),duration=.5;for(const key of keys)await page.keyboard.down(key);await advance(.25);await page.screenshot({path:`${output}/${name}.png`});await advance(.25);for(const key of keys)await page.keyboard.up(key);const after=await state(),yaw=before.camera.yaw,dx=after.position[0]-before.position[0],dz=after.position[1]-before.position[1],speed=4.6*(forward<0?.75:1),length=Math.hypot(forward,side);
@@ -17,7 +20,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
       assert.ok(Math.abs((Math.cos(yaw)*dx-Math.sin(yaw)*dz)/(speed*duration)-side/length)<.015,`${name} strafe component`);
       assert.ok(Math.abs(after.camera.yaw-yaw)<1e-6);assert.ok(Math.abs(Math.atan2(Math.sin(after.camera.heroYaw-yaw-Math.PI),Math.cos(after.camera.heroYaw-yaw-Math.PI)))<1e-6,'moving sideways/backward preserves facing');
       const motion=after.locomotion;assert.ok(motion.speed>speed*.95);if(forward)assert.equal(Math.sign(motion.forward),Math.sign(forward));else assert.ok(Math.abs(motion.forward)<.02);if(side)assert.equal(Math.sign(motion.side),-Math.sign(side));else assert.ok(Math.abs(motion.side)<.02);
-      for(const leg of motion.legs){assert.ok(leg.knee>=0&&leg.knee<.7);assert.ok(Math.abs(leg.hip[0]+leg.knee+leg.ankle)<1e-6,'feet counter-rotate instead of pointing into the ground');}
+      for(const leg of motion.legs){assert.ok(leg.knee>=0&&leg.knee<2.2);assert.ok(Math.abs(leg.hip[0]+leg.knee+leg.ankle)<1e-6,'feet counter-rotate instead of pointing into the ground');}
       if(!forward)assert.ok(motion.legs.some(l=>Math.abs(l.hip[1])>.06),'a strafe steps sideways instead of reusing a forward swing');
       await advance(.6);const stopped=(await state()).locomotion;assert.ok(stopped.speed<.005,'release eases into idle');assert.ok(stopped.legs.every(l=>Math.hypot(...l.hip)<.002&&l.knee<.002));return Math.hypot(dx,dz);
     };
@@ -27,5 +30,5 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
     await page.mouse.move(800,450);await page.mouse.down({button:'right'});await page.mouse.move(920,450);await page.mouse.up({button:'right'});await advance(.1);
     await move(['ArrowDown'],-1,0,'rotated-backward');await move(['ArrowRight'],0,1,'rotated-right');
     assert.deepEqual(errors,[]);console.log('PASS: directional steps and bent knees, grounded foot angles, 25% slower backsteps/diagonals, normalized diagonal speed, stable heading, rotated-camera movement, opposite-key cancellation and smooth idle.');
-  }catch(e){if(page){await page.screenshot({path:`${output}/failure.png`}).catch(()=>{});await fs.writeFile(`${output}/failure.json`,JSON.stringify({checkpoint,message:e.message,state:await page.evaluate(()=>__AN_HOA__?.adventure()).catch(()=>null)},null,2));}e.message=checkpoint+': '+e.message;throw e;}finally{await browser.close();}
+  }catch(e){if(page){await page.screenshot({path:`${output}/failure.png`}).catch(()=>{});await fs.writeFile(`${output}/failure.json`,JSON.stringify({checkpoint,message:e.message,state:await page.evaluate(()=>__AN_HOA__?.adventure()).catch(()=>null)},null,2));}e.message=checkpoint+': '+e.message;throw e;}finally{await browser.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

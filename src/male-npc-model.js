@@ -7,7 +7,7 @@ const toonRamp=new T.DataTexture(new Uint8Array([52,52,52,255,112,112,112,255,19
 toonRamp.minFilter=toonRamp.magFilter=T.NearestFilter;toonRamp.generateMipmaps=false;toonRamp.needsUpdate=true;
 const sourcePromises=new Map();
 function loadSource(female){
-  const file=female?'npc_nu.vrm':'npc_nam.vrm';
+  const file=female?'npc_nu-simple.vrm':'npc_nam-simple.vrm';
   if(!sourcePromises.has(file))sourcePromises.set(file,new GLTFLoader().loadAsync(new URL(`assets/${file}`,document.baseURI).href).then(gltf=>gltf.scene));
   return sourcePromises.get(file);
 }

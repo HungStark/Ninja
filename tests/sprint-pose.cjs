@@ -12,10 +12,10 @@ const {chromium}=require('playwright'),{build}=require('esbuild');
     for(const arm of hero.arms){
       const shoulder=arm.pivot.getWorldPosition(new T.Vector3()),hand=arm.hand.getWorldPosition(new T.Vector3());
       assert.ok(hand.z<shoulder.z-.8,'both hands stay behind the shoulders through the stride');
-      assert.ok(Math.abs(arm.elbow.rotation.x)<.09,'arms stay almost straight');
+      assert.ok(Math.abs(arm.elbow.rotation.x)>.08&&Math.abs(arm.elbow.rotation.x)<.14,'Naruto arms stay extended with a relaxed elbow');
     }
     for(const leg of hero.legs){const foot=leg.foot.getWorldQuaternion(new T.Quaternion()),up=new T.Vector3(0,1,0).applyQuaternion(foot);assert.ok(up.y>.999,'foot stays level despite the torso lean');}
-    assert.ok(hero.legs.every(l=>l.knee.rotation.x>=0&&l.knee.rotation.x<=1.051));
+    assert.ok(hero.legs.every(l=>l.knee.rotation.x>=0&&l.knee.rotation.x<2.2));
   }
   assert.deepEqual(hero.root.position,start,'posing never moves the gameplay root');
   tick(60,false,false);assert.ok(hero.locomotionState().sprintBlend<.00001);assert.ok(Math.abs(hero.locomotionState().lean[0])<.00001);
