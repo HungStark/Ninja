@@ -5,7 +5,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkeleton} from 'three/addons/utils/SkeletonUtils.js';
 import {createArmorWardrobe} from './hero-armor.js';
 import {createArmguardModel} from './armguard-model.js';
-import {inkMaterial,addInkOutline} from './ink-outline.js';
+import {characterInkMaterial,addInkOutline} from './ink-outline.js';
 import {createCharacterMotion,REST_ARM_OPEN} from './character-motion.js';
 
 let heroModelPromise;
@@ -13,7 +13,7 @@ function loadHeroModel(){return heroModelPromise??=new GLTFLoader().loadAsync(ne
 
 export function createHero({outlineWidth=1.15,procedural=typeof document==='undefined'}={}){
   const root=new T.Group(),body=new T.Group();root.name='crimson-masked-hero';root.add(body);root.userData.proceduralCharacter=procedural;
-  const ink=inkMaterial(outlineWidth,'#302b30');
+  const ink=characterInkMaterial(outlineWidth,'#302b30');
   function outlineMeshes(group){const meshes=[];group.traverse(o=>{if(o.isMesh&&!o.userData.inkOutline&&!o.userData.hasInkOutline&&!/eye|facemouth|facebrow/i.test(Array.isArray(o.material)?o.material.map(m=>m.name).join(' '):o.material?.name||''))meshes.push(o);});for(const o of meshes)addInkOutline(o,ink);}
   const mats=new Map(),M=c=>{if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.86,flatShading:true}));return mats.get(c);};
   const cloth=M('#211e25'),dark=M('#14151c'),skin=M('#deb499'),hair=M('#161821'),silver=M('#8d878a'),strap=M('#30272a'),red=M('#762936');

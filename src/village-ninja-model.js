@@ -2,7 +2,7 @@ import {prepareCharacterSource} from './character-assets.js';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {inkMaterial,addInkOutline} from './ink-outline.js';
+import {characterInkMaterial,addInkOutline} from './ink-outline.js';
 import {createCharacterMotion,REST_ARM_OPEN} from './character-motion.js';
 import {reachResidentHand} from './resident-rig-pose.js';
 import {applyVillageNinjaStyle} from './village-ninja-style.js';
@@ -11,7 +11,7 @@ let sourcePromise;
 const rotation=(x=0,y=0,z=0)=>new T.Quaternion().setFromEuler(new T.Euler(x,y,z));
 
 export function attachVillageNinja(root,profile,fallback){
-  const ink=inkMaterial(.8,'#302b30'),motion=createCharacterMotion();
+  const ink=characterInkMaterial(.8,'#302b30'),motion=createCharacterMotion();
   let visual=null,bones=null,rest=null,hipsY=0,scale=1,alive=true,combat=false,lastState=null,lastTime=0;
   const boneNames={hips:'J_Bip_C_Hips',spine:'J_Bip_C_Spine',chest:'J_Bip_C_Chest',head:'J_Bip_C_Head'};
   const handsVisible=()=>{if(visual)visual.traverse(o=>{

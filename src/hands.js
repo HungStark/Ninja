@@ -5,7 +5,7 @@ import { HAND_GLB_BASE64 } from "../assets/hand-data.js";
 import { handMaterials } from './hand-materials.js';
 import { poses } from "./poses.js";
 import { createSealShadow, createHandFire, createHandWater, createHandLightning, createHandElement } from './hand-vfx.js';
-import { inkMaterial, addInkOutline } from './ink-outline.js';
+import { characterInkMaterial, addInkOutline } from './ink-outline.js';
 import {createArmguardModel,disposeArmguard} from './armguard-model.js';
 export async function createHands() {
   const bytes = Uint8Array.from(atob(HAND_GLB_BASE64), (c) => c.charCodeAt(0));
@@ -24,7 +24,7 @@ export async function createHands() {
   scene.add(fireLight);
   const hands = [], materials = Object.fromEntries(Object.entries(handMaterials()).map(([k,m])=>[k,m.clone()]));
   const baseColors=Object.fromEntries(Object.entries(materials).map(([k,m])=>[k,m.color.clone()]));
-  const ink = inkMaterial(.35, '#60484a'), nailInk = inkMaterial(.18, '#916c70'), armorInk = inkMaterial(.40, '#111827');
+  const ink = characterInkMaterial(.35, '#60484a'), nailInk = characterInkMaterial(.18, '#916c70'), armorInk = characterInkMaterial(.40, '#111827');
   const inkMaterials = [ink, nailInk, armorInk], outlines = [];
   for (const side of [-1, 1]) {
     const wrapper = new T.Group(), model = clone(gltf.scene);

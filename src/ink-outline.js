@@ -1,6 +1,15 @@
 import * as T from 'three';
 import { windTime } from './materials.js';
 
+// Keep the authored widths available for a later, thinner character contour.
+export const CHARACTER_OUTLINES_ENABLED = false;
+export function characterInkMaterial(width = 1, color = '#342d36') {
+  const material = inkMaterial(width, color);
+  // Material visibility also holds when the distance budget shows outline meshes.
+  material.visible = CHARACTER_OUTLINES_ENABLED;
+  return material;
+}
+
 // Width is measured in screen pixels, so the contour stays fine during camera cuts.
 export function inkMaterial(width = 1, color = '#342d36', wind = false) {
   return new T.ShaderMaterial({

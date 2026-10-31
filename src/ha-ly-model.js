@@ -2,7 +2,7 @@ import {prepareCharacterSource} from './character-assets.js';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {inkMaterial,addInkOutline} from './ink-outline.js';
+import {characterInkMaterial,addInkOutline} from './ink-outline.js';
 import {createCharacterMotion,REST_ARM_OPEN} from './character-motion.js';
 import {reachResidentHand} from './resident-rig-pose.js';
 
@@ -12,7 +12,7 @@ const rotation=(x=0,y=0,z=0)=>new T.Quaternion().setFromEuler(new T.Euler(x,y,z)
 let sourcePromise;
 
 export function attachHaLy(root,profile,fallback){
-  const ink=inkMaterial(.65,'#30272b'),motion=createCharacterMotion();
+  const ink=characterInkMaterial(.65,'#30272b'),motion=createCharacterMotion();
   let visual=null,bones=null,rest=null,hipsY=0,scale=1,alive=true,storyPose='standing',lastTime=0,lastState=null,bonds=null;
   const apply=(bone,q)=>{if(bone)bone.quaternion.copy(rest.get(bone)).premultiply(q);};
   function arm(i,pitch,spread,flex){const side=i===0?1:-1,upper=bones.arms[i],lower=bones.elbows[i];upper.quaternion.copy(rest.get(upper)).premultiply(rotation(0,0,-side*1.55)).premultiply(rotation(pitch,0,spread));lower.quaternion.copy(rest.get(lower)).multiply(rotation(0,-side*flex,0));}

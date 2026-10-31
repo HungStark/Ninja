@@ -2,13 +2,13 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createVillageActivity} from './village-activities.js';
 import {attachNpcModel} from './male-npc-model.js';
-import {inkMaterial,addInkOutline} from './ink-outline.js';
+import {characterInkMaterial,addInkOutline} from './ink-outline.js';
 import {trackCharacterLoad} from './character-assets.js';
 
 // Human proportions and profession-specific silhouettes, without a chibi base.
 export function createVillager(profile,{procedural=typeof document==='undefined'}={}){
   const root=new T.Group(),body=new T.Group();body.name='body';root.add(body);root.name='villager-'+profile.village+'-'+profile.id;root.userData.villager={...profile};root.userData.proceduralCharacter=procedural;
-  const contour=inkMaterial(1.05,'#302b30');
+  const contour=characterInkMaterial(1.05,'#302b30');
   const colors=new Map(),material=color=>{if(!colors.has(color))colors.set(color,new T.MeshStandardMaterial({color,roughness:.92,flatShading:true}));return colors.get(color);};
   const cloth=material(profile.coat),accent=material(profile.accent),skin=material(profile.skin),hair=material(profile.hair),ink=material('#302e2b'),leather=material('#604936'),linen=material('#d8cbb0'),metal=material('#8b9290');
   skin.flatShading=false;skin.roughness=.64;hair.roughness=.76;leather.roughness=.73;metal.metalness=.65;metal.roughness=.38;

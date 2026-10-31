@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
-import {inkMaterial,addInkOutline} from './ink-outline.js';
+import {characterInkMaterial,addInkOutline} from './ink-outline.js';
 import {residentActivityPose,reachResidentHand} from './resident-rig-pose.js';
 import {REST_ARM_OPEN} from './character-motion.js';
 import {prepareCharacterSource} from './character-assets.js';
@@ -23,7 +23,7 @@ const boneNames={
 
 export function attachNpcModel(root,profile){
   if(typeof document==='undefined'){const idle=()=>{};idle.setInkViewport=()=>{};idle.ready=Promise.resolve(false);return idle;}
-  let visual=null,alive=true;const ink=inkMaterial(1.05,'#302b30');
+  let visual=null,alive=true;const ink=characterInkMaterial(1.05,'#302b30');
   const ready=loadSource(profile.female).then(source=>{
     if(!alive||!root.parent&&!root.userData.villager)return false;
     const model=cloneSkinned(source),bounds=new T.Box3().setFromObject(model),height=Math.max(.01,bounds.max.y-bounds.min.y),scale=3/height;
