@@ -44,8 +44,8 @@ export function createVillageStoryActors({scene,hero,blocked,floor,addSolid,remo
     }
     if(save.story?.companion?.recruited){if(!follower){const hp=hero.root.position,p=safePoint({x:hp.x+1.3,z:hp.z+1});follower=addActor(HA_LY.id,p);entry={kind:'companion',id:HA_LY.id,label:'Hạ Ly · Bạn đồng hành',x:p.x,z:p.z,y:p.y};trail=[hp.clone()];}list.push(entry);}
   }
-  function update(dt,time,paused=false,riding=false){
-    clock=time;for(const actor of stationary)actor.update(time,false,null,paused?0:dt);if(!follower)return;const hp=hero.root.position,p=follower.root.position,previous=p.clone();moving=false;
+  function update(dt,time,paused=false,riding=false,budget=null){
+    clock=time;for(const actor of stationary){const slot=budget?.prepare(actor,hero.root.position,dt);if(!slot||slot.tick)actor.update(time,false,null,paused?0:slot?.dt||dt);}if(!follower)return;const hp=hero.root.position,p=follower.root.position,previous=p.clone();moving=false;
     if(!paused){const last=trail.at(-1);if(!last||last.distanceTo(hp)>.32)trail.push(hp.clone());if(trail.length>160)trail.shift();
       if(p.distanceTo(hp)>22||(!riding&&Math.abs(hp.y-p.y)>6)){const safe=safePoint({x:hp.x+1.3,z:hp.z+1});p.set(safe.x,safe.y,safe.z);trail=[hp.clone()];catchups++;}
       let target=trail[0];while(trail.length>1&&p.distanceTo(trail[0])<.5){trail.shift();target=trail[0];}

@@ -1149,9 +1149,10 @@ async function main() {
     const opticalHint={lightsphere:'SPACE tạo cầu thủy tinh trước mặt · 8 giây · laser xuyên qua thành 7 sắc',lightdome:'SPACE gọi gương rơi ghép vòm · đủ đi ra tự do · khóa G · tốc độ 50%, chạm vòm 25% · 10 giây',lightmirror:'SPACE tạo gương trước mặt · phản đòn phía trước trong 2,5 giây'}[readyLightStyle];
     if(opticalHint)$('message').textContent=opticalHint;
   }
+  let dialogueFrameKey=null;
   function render() {
     touchControls?.update();
-    if(adventure?.activeView){enemyNameplates.update(camera3d,[],false);renderer.info.reset();renderer.clear();renderer.render(adventure.world.scene,adventure.world.camera);return;}
+    if(adventure?.activeView){const key=adventure.phase==='dialog'?[adventure.village,canvas.width,canvas.height].join(':'):null;if(key&&key===dialogueFrameKey)return;dialogueFrameKey=key;enemyNameplates.update(camera3d,[],false);renderer.info.reset();renderer.clear();renderer.render(adventure.world.scene,adventure.world.camera);return;}dialogueFrameKey=null;
     natureArts.visuals(shots,windActors(),camera3d,quality,reducedMotion);
     opponent.group.visible=!natureArts.hidden('enemy');if(natureArts.hidden('player'))playerAvatar.group.visible=false;
     if(['wood','ice'].includes(enemy.defenseElement))opponent.shield.visible=false;

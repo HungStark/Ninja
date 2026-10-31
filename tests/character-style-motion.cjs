@@ -28,8 +28,10 @@ function accessor(asset,index){
       for(let pi=0;pi<original.json.meshes[mi].primitives.length;pi++){
         const p=original.json.meshes[mi].primitives[pi],q=simple.json.meshes[mi].primitives[pi];
         if(p.targets){
-          assert.deepEqual(q,p,'facial primitives and morph references stay untouched');
-          for(const target of p.targets)for(const index of Object.values(target))assert.deepEqual(accessor(simple,index),accessor(original,index),'facial morph deltas preserved');
+          assert.deepEqual(q.attributes,p.attributes,'face geometry and skin remain unchanged');assert.equal(q.indices,p.indices);
+          const oldNames=original.json.meshes[mi].extras.targetNames,newNames=simple.json.meshes[mi].extras.targetNames;
+          for(const [i,name]of newNames.entries()){const target=p.targets[oldNames.indexOf(name)];assert.deepEqual(q.targets[i],target);for(const index of Object.values(target))assert.deepEqual(accessor(simple,index),accessor(original,index),'retained facial expression deltas preserved');}
+          assert.ok(newNames.length<=16,'unused facial GPU targets are pruned');
         }
         const positions=accessor(simple,q.attributes.POSITION),indices=accessor(simple,q.indices);
         assert.ok(indices.every(([i])=>i<positions.length),'all triangle indices reference existing vertices');

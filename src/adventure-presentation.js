@@ -19,7 +19,7 @@ export function createContactShadows(scene,capacity=96){
       }`});
   const mesh=new T.InstancedMesh(geometry,material,capacity),dummy=new T.Object3D(),up=new T.Vector3(0,1,0),normal=new T.Vector3();
   mesh.name='character-contact-shadows';mesh.userData.noCollision=true;mesh.frustumCulled=false;mesh.count=0;scene.add(mesh);
-  return {mesh,update(characters,floorAt){let count=0;for(const char of characters){const root=char.root;if(!root?.visible||count>=capacity)continue;
+  return {mesh,update(characters,floorAt){let count=0;for(const char of characters){const root=char.root;if(!root?.visible||root.userData.renderBudgetVisible===false||count>=capacity)continue;
     const p=root.position,y=floorAt(p.x,p.z,p.y+.12),height=Math.max(0,p.y-y);if(!Number.isFinite(y)||height>3)continue;
     const dx=floorAt(p.x+.18,p.z,y+.35)-floorAt(p.x-.18,p.z,y+.35),dz=floorAt(p.x,p.z+.18,y+.35)-floorAt(p.x,p.z-.18,y+.35);
     normal.set(-Math.max(-.4,Math.min(.4,dx))/.36,1,-Math.max(-.4,Math.min(.4,dz))/.36).normalize();

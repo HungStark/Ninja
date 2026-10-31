@@ -7,7 +7,7 @@ import {village} from './adventure-data.js';
 // these characters would actually say to one another in the world.
 export function battleConversation(encounter,save){
   const hero=heroSpeaker(save),lines=[],say=(speaker,text)=>lines.push({speaker,text});
-  const opponent=(entry=encounter,index=0)=>{const look=encounterAppearance({...encounter,...entry});return {id:'challenge-'+look.id+'-'+index,name:entry.name||encounter.name,role:village(look.village).name,appearance:ninjaProfile(look)};};
+  const opponent=(entry=encounter,index=0)=>{const look=encounterAppearance({...encounter,...entry});return {id:'challenge-'+look.id+'-'+index,name:entry.name||encounter.name,role:village(look.village||look.id).name,appearance:look.kind==='creature'?look:ninjaProfile(look)};};
   const enemy=opponent();
   if(encounter.kind==='intro-trio'){
     const foes=encounter.squad.map(opponent);

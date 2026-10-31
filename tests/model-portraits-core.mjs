@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {PORTRAIT_IMAGES} from '../src/portrait-images.js';
+import {portraitKey,PORTRAIT_COATS} from '../src/portrait-key.js';
+import {portraitPresets} from '../src/portrait-presets.js';
+import {ARMORS} from '../src/equipment.js';
+for(const [key]of portraitPresets())assert.ok(PORTRAIT_IMAGES[key],'generated preset exists: '+key);
+let bytes=0;for(const name of new Set(Object.values(PORTRAIT_IMAGES))){assert.match(name,/^[a-f0-9]{20}\.webp$/);const b=await fs.readFile('assets/portraits/'+name);assert.equal(b.toString('ascii',0,4),'RIFF');assert.equal(b.toString('ascii',8,12),'WEBP');bytes+=b.length;}assert.ok(bytes<3*1024*1024,'whole portrait catalog stays below 3 MiB');
+for(const armor of ARMORS)for(const coat of PORTRAIT_COATS)assert.ok(PORTRAIT_IMAGES[portraitKey({id:'hero',coat,armor})]);
+const hero={id:'hero',coat:'#211e25',armor:ARMORS[0]};assert.equal(portraitKey(hero),portraitKey({...hero,name:'Renamed',equipment:{armor:ARMORS[0],ammo:{iron:0}}}));
+const runtime=await fs.readFile('src/model-portrait.js','utf8');assert.ok(!/WebGLRenderer|createHero|createNinja|getVertexPosition|toDataURL|portrait-renderer/.test(runtime),'dialogue path only reads baked images');
+const intro=await fs.readFile('src/battle-intro.js','utf8');assert.ok(!/WebGLRenderer|createHero|createNinja|toDataURL/.test(intro),'VS portraits also avoid runtime model rendering');
+console.log('PASS: complete model portrait catalog, safe WebP filenames, hero equipment/coat keys, stable nonvisual keys and no runtime 3D snapshot work.');

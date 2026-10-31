@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import * as T from 'three';
+import {createCharacterBudget} from '../src/character-budget.js';
+const budget=createCharacterBudget(),scene=new T.Scene(),hero=new T.Vector3(),actor={root:new T.Group()};scene.add(actor.root);
+const mesh=new T.Mesh(new T.BoxGeometry(),new T.MeshBasicMaterial()),outline=new T.Mesh(mesh.geometry,mesh.material);mesh.castShadow=true;outline.userData.inkOutline=true;actor.root.add(mesh,outline);
+let ticks=0;for(let i=0;i<60;i++){budget.begin();if(budget.prepare(actor,hero,1/60).tick)ticks++;}assert.ok(ticks>=29&&ticks<=31,'near idle pose updates at 30 Hz');assert.equal(outline.visible,true);assert.equal(mesh.castShadow,true);
+actor.root.position.x=30;budget.prepare(actor,hero,.1);assert.equal(outline.visible,false);assert.equal(mesh.castShadow,false);assert.equal(actor.root.visible,true,'visual budget leaves gameplay visibility alone');
+actor.root.position.x=100;assert.equal(budget.prepare(actor,hero,1).tick,false);assert.equal(actor.root.getObjectByName('character-render-budget').visible,false);assert.equal(actor.root.userData.renderBudgetVisible,false);
+actor.root.position.x=0;actor.root.visible=false;assert.equal(budget.prepare(actor,hero,1).tick,false,'hidden disguised guards stay hidden');assert.equal(actor.root.visible,false);actor.root.visible=true;assert.equal(budget.prepare(actor,hero,.1).tick,true);
+budget.setQuality(2);budget.prepare(actor,hero,.1);assert.equal(outline.visible,false);assert.equal(mesh.castShadow,false);
+const late=new T.Group();actor.root.add(late);actor.root.userData.characterModel={ready:true};budget.prepare(actor,hero,0);assert.equal(late.parent.name,'character-render-budget','late-loaded rig enters the same distance budget');assert.equal(actor.root.getObjectByName('character-render-budget').position.length(),0);assert.equal(actor.root.position.x,0);
+console.log('PASS: visual-only character distance/animation/shadow/outline budget, guard visibility and asynchronous model attachment.');

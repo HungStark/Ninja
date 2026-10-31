@@ -5,6 +5,7 @@ import {portraitMarkup,mountModelPortrait,modelPortrait} from './model-portrait.
 import {armorById,equipmentState} from './equipment.js';
 import {HA_LY,HA_LY_MOTHER,currentVillageEvent} from './village-events.js';
 import {ninjaProfile} from './ninja.js';
+import {encounterAppearance} from './encounter-appearance.js';
 export const speakerPortrait=portraitMarkup;
 
 export function heroSpeaker(save){return {name:save.hero.name,role:'Người giữ ấn',coat:save.hero.coat,hair:save.hero.hair,armor:armorById(save.equipment?.armor),equipment:equipmentState(save),id:'hero'};}
@@ -21,6 +22,8 @@ export function dialogueCast(item,save,region,biome){
   const n=region.npcs.find(n=>n.id===(item.kind==='expedition-giver'?'fire-khoi':item.id)),index=region.npcs.indexOf(n);
   const npc=n?{name:n.name,role:n.role,coat:n.kind==='mentor'?biome.color:n.kind==='healer'?'#d0d9c0':'#8a7962',hair:index%2?'#ddd0b5':'#3c4243',elder:n.kind==='mentor',id:n.id}:{name:item.kind==='npc'?'Trưởng làng':item.kind==='envoy'?'Đại diện '+biome.name:item.kind==='boss'?region.boss.name:item.kind==='quest'?item.label:'Đại diện các làng',role:biome.name,coat:item.kind==='npc'?'#77725c':biome.color,hair:item.kind==='npc'?'#b2b9a9':'#30333c',elder:item.kind==='npc',id:item.kind};
   if(n||['npc','envoy','treaty'].includes(item.kind)){const appearance=villagerAppearance(biome.id,n||{kind:item.kind==='npc'?'chief':'envoy'});Object.assign(npc,{appearance,coat:appearance.coat,hair:appearance.hair,elder:appearance.age==='elder'});}
+  else if(['quest','village-guard'].includes(item.kind))npc.appearance=ninjaProfile(encounterAppearance({kind:item.kind,village:biome.id}));
+  else if(['intro-guardian','boss'].includes(item.kind))npc.appearance={kind:'creature',id:biome.id};
   return {hero,npc};
 }
 

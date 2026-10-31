@@ -1,3 +1,4 @@
+import {prepareCharacterSource} from './character-assets.js';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -8,7 +9,7 @@ import {inkMaterial,addInkOutline} from './ink-outline.js';
 import {createCharacterMotion,REST_ARM_OPEN} from './character-motion.js';
 
 let heroModelPromise;
-function loadHeroModel(){return heroModelPromise??=new GLTFLoader().loadAsync(new URL('assets/hero-ninja-simple.glb',document.baseURI).href).then(gltf=>gltf.scene);}
+function loadHeroModel(){return heroModelPromise??=new GLTFLoader().loadAsync(new URL('assets/hero-ninja-simple.glb',document.baseURI).href).then(gltf=>prepareCharacterSource(gltf.scene));}
 
 export function createHero({outlineWidth=1.15}={}){
   const root=new T.Group(),body=new T.Group();root.name='crimson-masked-hero';root.add(body);

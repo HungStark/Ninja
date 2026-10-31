@@ -4,13 +4,14 @@ import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {inkMaterial,addInkOutline} from './ink-outline.js';
 import {residentActivityPose,reachResidentHand} from './resident-rig-pose.js';
 import {REST_ARM_OPEN} from './character-motion.js';
+import {prepareCharacterSource} from './character-assets.js';
 
 const toonRamp=new T.DataTexture(new Uint8Array([52,52,52,255,112,112,112,255,194,194,194,255,255,255,255,255]),4,1,T.RGBAFormat);
 toonRamp.minFilter=toonRamp.magFilter=T.NearestFilter;toonRamp.generateMipmaps=false;toonRamp.needsUpdate=true;
 const sourcePromises=new Map();
 function loadSource(female){
   const file=female?'npc_nu-simple.vrm':'npc_nam-simple.vrm';
-  if(!sourcePromises.has(file))sourcePromises.set(file,new GLTFLoader().loadAsync(new URL(`assets/${file}`,document.baseURI).href).then(gltf=>gltf.scene));
+  if(!sourcePromises.has(file))sourcePromises.set(file,new GLTFLoader().loadAsync(new URL(`assets/${file}`,document.baseURI).href).then(gltf=>prepareCharacterSource(gltf.scene)));
   return sourcePromises.get(file);
 }
 
@@ -22,9 +23,9 @@ const boneNames={
 
 export function attachNpcModel(root,profile){
   if(typeof document==='undefined'){const idle=()=>{};idle.setInkViewport=()=>{};idle.ready=Promise.resolve(false);return idle;}
-  let visual=null;const ink=inkMaterial(1.05,'#302b30');
+  let visual=null,alive=true;const ink=inkMaterial(1.05,'#302b30');
   const ready=loadSource(profile.female).then(source=>{
-    if(!root.parent&&!root.userData.villager)return;
+    if(!alive||!root.parent&&!root.userData.villager)return false;
     const model=cloneSkinned(source),bounds=new T.Box3().setFromObject(model),height=Math.max(.01,bounds.max.y-bounds.min.y),scale=3/height;
     model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;model.name=profile.female?'female-npc-vrm':'male-npc-vrm';
     const seed=Array.from(profile.id||'npc').reduce((n,ch)=>(n*31+ch.charCodeAt(0))>>>0,17),variant=seed%7,hueShift=(variant-3)*.012;
@@ -123,5 +124,6 @@ export function attachNpcModel(root,profile){
   };
   update.setInkViewport=(width,height)=>ink.uniforms.viewport.value.set(width,height);
   update.ready=ready;
+  update.dispose=()=>{alive=false;if(visual){const materials=new Set(),skeletons=new Set();visual.model.traverse(o=>{if(o.skeleton)skeletons.add(o.skeleton);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])materials.add(m);});materials.forEach(m=>m.dispose());skeletons.forEach(s=>s.dispose());visual.visualRoot.removeFromParent();visual=null;}ink.dispose();};
   return update;
 }

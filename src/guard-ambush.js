@@ -34,5 +34,5 @@ export function createGuardAmbush({entry,char,land,physics,heightAt,blocked,find
     }
     return revealed;
   }
-  return {entry,char,disguise,update,reveal,dismiss(){phase='withdrawn';path=[];moving=false;},caught:()=>phase==='caught',animate(time,dt){if(char.root.visible)char.update(time,moving,velocity,dt);},state:()=>({...entry,phase,home:{...home},ninjaVisible:char.root.visible,disguiseVisible:disguise.visible,moving,alertRadius:GUARD_ALERT_RADIUS,runSpeed:GUARD_RUN_SPEED})};
+  return {entry,char,disguise,update,reveal,dismiss(){phase='withdrawn';path=[];moving=false;},caught:()=>phase==='caught',animate(time,dt,animate=true){if(animate&&char.root.visible)char.update(time,moving,velocity,dt);},state:()=>({...entry,phase,home:{...home},ninjaVisible:char.root.visible,disguiseVisible:disguise.visible,moving,alertRadius:GUARD_ALERT_RADIUS,runSpeed:GUARD_RUN_SPEED})};
 }

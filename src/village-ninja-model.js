@@ -1,3 +1,4 @@
+import {prepareCharacterSource} from './character-assets.js';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
@@ -43,7 +44,7 @@ export function attachVillageNinja(root,profile,fallback){
     const speed=velocity?Math.hypot(velocity.x,velocity.z):4.6;
     lastState=motion.update(time,moving,velocity,dt,moving&&speed>5.1,root.rotation.y);lastTime=time;pose(lastState,time);
   }
-  const ready=typeof document==='undefined'?Promise.resolve(false):(sourcePromise??=new GLTFLoader().loadAsync(new URL('assets/village-ninja.glb',document.baseURI).href).then(g=>g.scene)).then(source=>{
+  const ready=typeof document==='undefined'?Promise.resolve(false):(sourcePromise??=new GLTFLoader().loadAsync(new URL('assets/village-ninja.glb',document.baseURI).href).then(g=>prepareCharacterSource(g.scene))).then(source=>{
     if(!alive)return false;
     visual=clone(source);applyVillageNinjaStyle(visual,profile);visual.name='village-ninja-glb';
     scale=3/1.79;visual.scale.setScalar(scale);root.add(visual);fallback.visible=false;

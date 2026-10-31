@@ -163,5 +163,6 @@ export function createVillager(profile){
     root.userData.expression={blink,lookYaw,lookPitch};
     npcModelUpdate?.(time,moving,{body,head,arms,forearms,legs});
   }
-  return {root,body,head,arms,forearms,legs,cloth,hair,update,ready:npcModelUpdate?.ready||Promise.resolve(false),get modelReady(){return root.userData.characterModel?.ready===true;},setInkViewport(width,height){contour.uniforms.viewport.value.set(width,height);npcModelUpdate?.setInkViewport(width,height);},workstation:activity?.station||null};
+  function dispose(){npcModelUpdate?.dispose?.();const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry&&!o.isSkinnedMesh)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());contour.dispose();root.userData.villager=null;}
+  return {root,body,head,arms,forearms,legs,cloth,hair,update,dispose,ready:npcModelUpdate?.ready||Promise.resolve(false),get modelReady(){return root.userData.characterModel?.ready===true;},setInkViewport(width,height){contour.uniforms.viewport.value.set(width,height);npcModelUpdate?.setInkViewport(width,height);},workstation:activity?.station||null};
 }

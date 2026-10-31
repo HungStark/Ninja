@@ -1,3 +1,4 @@
+import {prepareCharacterSource} from './character-assets.js';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
@@ -42,7 +43,7 @@ export function attachHaLy(root,profile,fallback){
     visual.traverse(o=>{const d=o.morphTargetDictionary,v=o.morphTargetInfluences;if(!d||!v)return;const blink=time%4.8;for(const [name,value]of [['Fcl_EYE_Close',blink<.16?Math.sin(blink/.16*Math.PI):wounded?.12:0],['Fcl_BRW_Sorrow',wounded?.45:0],['Fcl_MTH_Small',wounded?.12:0]])if(d[name]!==undefined)v[d[name]]=value;});
   }
   function update(time,moving,velocity=null,dt=1/60){lastTime=time;lastState=motion.update(time,moving,velocity,dt,moving&&Math.hypot(velocity?.x||0,velocity?.z||0)>5.1,root.rotation.y);pose(lastState,time);}
-  const ready=typeof document==='undefined'?Promise.resolve(false):(sourcePromise??=new GLTFLoader().loadAsync(new URL('assets/ha-ly-simple.glb',document.baseURI).href).then(g=>g.scene)).then(source=>{
+  const ready=typeof document==='undefined'?Promise.resolve(false):(sourcePromise??=new GLTFLoader().loadAsync(new URL('assets/ha-ly-simple.glb',document.baseURI).href).then(g=>prepareCharacterSource(g.scene))).then(source=>{
     if(!alive)return false;
     visual=clone(source);visual.name='ha-ly-rigged-appearance';
     const bounds=new T.Box3().setFromObject(visual);scale=3/(bounds.max.y-bounds.min.y);visual.scale.setScalar(scale);visual.position.y=-bounds.min.y*scale;

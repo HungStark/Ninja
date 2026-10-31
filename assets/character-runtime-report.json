@@ -1,0 +1,26 @@
+[
+  {
+    "file": "hero-ninja-simple.glb",
+    "beforeBytes": 5366448,
+    "bytes": 3389932,
+    "maxFaceTargets": 0
+  },
+  {
+    "file": "npc_nam-simple.vrm",
+    "beforeBytes": 13140404,
+    "bytes": 5496644,
+    "maxFaceTargets": 16
+  },
+  {
+    "file": "npc_nu-simple.vrm",
+    "beforeBytes": 14338676,
+    "bytes": 5525932,
+    "maxFaceTargets": 16
+  },
+  {
+    "file": "village-ninja.glb",
+    "beforeBytes": 5337336,
+    "bytes": 5234792,
+    "maxFaceTargets": 2
+  }
+]

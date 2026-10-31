@@ -15,6 +15,7 @@ const assert = require("node:assert/strict");
       assert.ok((await res.arrayBuffer()).byteLength > 0);
     }
     for (const url of ["/.git/config", "/package-lock.json", "/src/main.js", "/%2e%2e/server.cjs"]) assert.equal((await fetch("http://127.0.0.1:4319" + url)).status, 404);
+    const {PORTRAIT_IMAGES}=await import('../src/portrait-images.js');const portrait=await fetch('http://127.0.0.1:4319/assets/portraits/'+Object.values(PORTRAIT_IMAGES)[0]);assert.equal(portrait.status,200);assert.match(portrait.headers.get('content-type'),/image\/webp/);assert.match(portrait.headers.get('cache-control'),/immutable/);assert.equal((await fetch('http://127.0.0.1:4319/assets/portraits/report.json')).status,404);
     console.log("PASS: local server assets, MIME types and source/metadata isolation.");
   } finally {
     child.kill();
