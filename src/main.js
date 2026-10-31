@@ -1459,14 +1459,14 @@ async function main() {
     document.body.classList.remove('playing', 'paused'); ['pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden')); $('startScreen').classList.remove('hidden'); loadoutMessage = ''; renderLoadout();
   }
   function toggleSound(){gameAudio.configure({muted:!gameAudio.settings().muted});}
-  function nextBattle(){if(adventure?.inBattle){const victory=adventureVictory;prepare();adventure.finishBattle(victory);}else prepare(true);}
+  function nextBattle(){if(adventure?.inBattle){const victory=adventureVictory;adventure.finishBattle(victory);}else prepare(true);}
   potionButton=document.createElement('button');potionButton.id='potionButton';potionButton.type='button';potionButton.className='potion-button';document.querySelector('#hud>.status').append(potionButton);
   function refreshFlaskUI(){if(potionButton){const f=adventure?.flask;potionButton.hidden=!adventure?.inBattle||!f?.owned;potionButton.textContent='T · Bình thuốc '+(f?.charges??0)+'/'+(f?.maxCharges??1)+' · '+((f?.fraction??.25)*100)+'%';potionButton.disabled=!f?.charges||player.hp>=player.maxHp||paused||won;}}
   function healWithFlask(){if(!started||paused||won||cinematicActive()||!adventure?.inBattle)return;const r=adventure.useHealingFlask(player.hp,player.maxHp);if(!r.ok){announce(adventure.flask.charges?'Máu đang đầy.':'Bình thuốc đã hết · Nạp lại tại ấn hồi sinh.');return;}player.hp=r.hp;refreshFlaskUI();gameAudio.tone(660,.13,'sine',.04);announce('Bình thuốc · +'+Math.round(r.heal)+' máu');updateUI();}
   potionButton.onclick=healWithFlask;
   $('cycleAmmo').onclick=()=>{if(started&&!paused&&!won&&adventure?.inBattle){adventure.cycleShuriken();updateUI();}};
   for(const parent of ['pauseScreen','winScreen','startScreen']){const b=document.createElement('button');b.id=parent+'AdminExit';b.className='outline';b.textContent='Thoát admin · Khôi phục tiến trình';b.hidden=true;b.onclick=()=>adventure?.setAdminEnabled(false);$(parent).querySelector(parent==='startScreen'?'.scroll-heading>div':'.pause-card').append(b);adminExitButtons.push(b);}
-  $('startButton').onclick = start; $('resumeButton').onclick = resume; $('resetButton').onclick = e => { started = false; start(e); }; $('changeLoadout').onclick = () => {if(adventure?.retreatLocked){announce('Không thể rút lui khi chưa có dấu ấn hòa bình.',true);return;}if(adventure?.inBattle){prepare();adventure.finishBattle(false);}else prepare();}; $('nextButton').onclick = nextBattle; $('castButton').onclick = cast; $('soundButton').onclick = toggleSound;
+  $('startButton').onclick = start; $('resumeButton').onclick = resume; $('resetButton').onclick = e => { started = false; start(e); }; $('changeLoadout').onclick = () => {if(adventure?.retreatLocked){announce('Không thể rút lui khi chưa có dấu ấn hòa bình.',true);return;}if(adventure?.inBattle){adventure.finishBattle(false);}else prepare();}; $('nextButton').onclick = nextBattle; $('castButton').onclick = cast; $('soundButton').onclick = toggleSound;
   function toggleGuide(){const expanded=$('guide').classList.toggle('is-expanded');$('guide').classList.remove('hidden');for(const id of ['helpButton','guideToggle'])$(id).setAttribute('aria-expanded',String(expanded));}
   $('helpButton').onclick=toggleGuide;$('guideToggle').onclick=toggleGuide;
   $('dashBoostButton').onclick=armDash;
@@ -1479,7 +1479,7 @@ async function main() {
     if (e.target instanceof HTMLButtonElement && (!started || paused || won) && key === ' ') return;
     if ([' ', 'backspace', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) e.preventDefault();
     if (e.repeat) return;
-    if (key === 'escape'&&adventure?.phase==='loadout'){e.stopImmediatePropagation();if(adventure.retreatLocked){announce('Cảnh vệ đã áp sát · Phải giao chiến.',true);return;}prepare();adventure.cancelBattle();return;}
+    if (key === 'escape'&&adventure?.phase==='loadout'){e.stopImmediatePropagation();if(adventure.retreatLocked){announce('Cảnh vệ đã áp sát · Phải giao chiến.',true);return;}adventure.cancelBattle();return;}
     if (key === 'enter') { e.preventDefault(); if (won) nextBattle(); else if (!started) start(e); else if (paused) resume(e); return; }
     if (key === 'escape') { if (started && !won && !paused) pause(); return; }
     if (key === 'h') { toggleGuide(); return; }

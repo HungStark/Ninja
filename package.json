@@ -96,7 +96,8 @@
     "test:spell-voice": "node tests/spell-voice.mjs && node tests/speech-output.mjs && node tests/character-voice.mjs",
     "test:spell-sounds": "node tests/spell-sounds-core.mjs && node tools/build-android.mjs && node tests/spell-sounds-browser.cjs",
     "test:sound-loudness": "node tests/sound-loudness-core.mjs && node tools/build-android.mjs && node tests/sound-loudness-browser.cjs",
-    "test:localization": "node tools/build-vercel.mjs && node tools/build-android.mjs && node tests/localization-core.mjs && node tests/server.cjs && node tests/localization-browser.cjs"
+    "test:localization": "node tools/build-vercel.mjs && node tools/build-android.mjs && node tests/localization-core.mjs && node tests/server.cjs && node tests/localization-browser.cjs",
+    "test:loading": "node tests/loading-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

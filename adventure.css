@@ -139,6 +139,13 @@ body[data-journey=checkpoint] #startScreen,body[data-journey=admin] #startScreen
 .journal-story ol{padding-left:1.5em;line-height:1.7}.journal-story li.done{opacity:.6}.journal-story li.current{color:#f2d99d;font-weight:600}
 
 .journey-map-transition{position:fixed;inset:0;z-index:180;display:grid;place-items:center;background:#10191c;color:#efd9a5;font:600 clamp(16px,3vw,24px) serif;pointer-events:auto}.journey-map-transition[hidden]{display:none}
+.journey-map-transition{z-index:1000;padding:24px;background:radial-gradient(ellipse at 50% 42%,#244148,#101e26 70%);text-align:center;cursor:wait;outline:none}
+.journey-loading-card{display:flex;flex-direction:column;align-items:center;gap:24px;max-width:480px}
+.journey-loading-card strong{font-weight:500;line-height:1.5}.journey-loading-card p{margin:12px 0 0;color:#b4c8be;font:400 13px/1.7 Arial,sans-serif}
+.journey-loading-spinner{width:56px;height:56px;border:3px solid #d6c18e30;border-top-color:#efd9a5;border-radius:50%;animation:journey-loading-spin 1s linear infinite;will-change:transform}
+.journey-loading-card [hidden]{display:none}.journey-loading-card button{cursor:pointer}
+@keyframes journey-loading-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.journey-loading-spinner{animation:none}}
 
 /* Keep Vietnamese diacritics in one font and leave room above/below headings. */
 #adventure .journey-intro h1{line-height:1.25;letter-spacing:-.5px}
