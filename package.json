@@ -51,6 +51,7 @@
     "test:ha-ly": "node tests/village-events-core.mjs && node tools/build.mjs && node tests/ha-ly-rescue-browser.cjs && node tests/village-events-browser.cjs",
     "test:village-ninjas": "node tools/build.mjs && node tests/village-ninja-browser.cjs --game",
     "test:sprint-pose": "node tools/build-android.mjs && node tests/sprint-pose.cjs",
+    "test:landmarks": "node tests/landmark-introductions-browser.cjs",
     "test:landscape": "node tests/landscape-core.mjs && node tests/landscape-browser.cjs",
     "test:biomes": "node tests/biomes-core.mjs && node tests/biomes-browser.cjs",
     "test:ruins": "node tests/nameless-ruins.cjs",

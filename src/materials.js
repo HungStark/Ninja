@@ -10,6 +10,16 @@ function ramp() {
   return gradient = tex;
 }
 const windChunk = ["#include <begin_vertex>", "vec3 windOrigin=(modelMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;", "#ifdef USE_INSTANCING", "windOrigin=(modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;", "#endif", "float windPhase=uWindTime*1.65+windOrigin.x*.39+windOrigin.z*.25;", "float bend=max(position.y,0.0);", "transformed.x+=sin(windPhase)*bend*bend*.16;", "transformed.z+=cos(windPhase*.79)*bend*.09;"].join("\n");
+export function withWind(material, { upwardLighting = false } = {}) {
+  material.onBeforeCompile = shader => {
+    shader.uniforms.uWindTime = windTime;
+    shader.vertexShader = 'uniform float uWindTime;\n' + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', windChunk);
+    if (upwardLighting) shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n#ifdef DOUBLE_SIDED\nnormal *= faceDirection;\n#endif');
+  };
+  material.customProgramCacheKey = () => 'ground-cover-wind-' + upwardLighting;
+  return material;
+}
 export function toon(color, options = {}) {
   const { wind = false, rim = 0.12, ...rest } = options;
   const material = new T.MeshToonMaterial({ color, gradientMap: ramp(), ...rest });

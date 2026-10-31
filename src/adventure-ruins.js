@@ -82,7 +82,7 @@ export function buildThatchedRuin(c,g,w,d,index){
     const vx=-w*.45+vine*.22;beam([vx,.1,front+.18],[vx+.18,h-vine*.38,front+.18],.017,M('#555943'));
     for(let k=0;k<10-vine;k++){const leaf=mesh(new T.IcosahedronGeometry(.17,0),M(k%3?'#656c49':'#7c7a50'),shell,vx+Math.sin(k*2+vine)*.21,.24+k*.25,front+.2);leaf.scale.set(1,.6,.4);}
   }
-  for(const zz of [-d/2-.17,d/2+.17])for(let k=0;k<9;k++){const tuft=mesh(createGrassGeometry(),M('#7a7751'),shell,-w*.4+(k%3)*.14,0,zz+(k%2)*.05);tuft.material.side=T.DoubleSide;tuft.scale.setScalar(.6);tuft.castShadow=false;tuft.userData.noCollision=true;tuft.rotation.y=k*2.4;}
+  for(const zz of [-d/2-.17,d/2+.17])for(let k=0;k<9;k++){const tuft=mesh(createGrassGeometry(),M(c.v.ground),shell,-w*.4+(k%3)*.14,0,zz+(k%2)*.05);tuft.material.side=T.DoubleSide;tuft.scale.setScalar(.6);tuft.castShadow=false;tuft.userData.noCollision=true;tuft.rotation.y=k*2.4;}
 }
 
 export function buildWarCemetery(c,zone){
@@ -99,7 +99,7 @@ export function buildWarCemetery(c,zone){
     box(grave,moss,-.19,.15,-.13,.26,.22,.025);
     if(n%3===0){const offering=box(grave,wood,.17,.11,.13,.25,.04,.28);offering.rotation.y=.3;for(let k=0;k<3;k++)cyl(grave,M('#948563'),.1+k*.055,.22,.14,.012,.28,4);}
     if(n===6||n===11){head.rotation.z=.9;head.position.y=.27;cap.visible=false;}
-    for(let k=0;k<3;k++){const dry=mesh(createGrassGeometry(),M('#8a7d59'),grave,-.45+k*.11,0,.1+(k%2)*.16);dry.material.side=T.DoubleSide;dry.scale.setScalar(.5);dry.castShadow=false;dry.userData.noCollision=true;dry.rotation.y=k*2.4;}
+    for(let k=0;k<3;k++){const dry=mesh(createGrassGeometry(),M(c.v.ground),grave,-.45+k*.11,0,.1+(k%2)*.16);dry.material.side=T.DoubleSide;dry.scale.setScalar(.5);dry.castShadow=false;dry.userData.noCollision=true;dry.rotation.y=k*2.4;}
   }
   // The central lane and the path toward the village stay clear for walking.
   for(const side of [-1,1])for(let k=0;k<8;k++){const x=side*9.1,z=-8+k*2.65,y=at(x,z),post=box(g,wood,x,y+.42,z,.13,.85,.14);post.rotation.z=Math.sin(k*3)*.17;if(k%3!==1){const rail=box(g,wood,x,y+.59,z+1,.09,.1,2.3);rail.rotation.x=(k%3===0?.12:-.07);}}

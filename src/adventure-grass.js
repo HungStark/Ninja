@@ -1,19 +1,16 @@
 import * as T from 'three';
 import {createGrassGeometry} from './grass.js';
-import {toon,windTime} from './materials.js';
-
-const palettes={
-  nameless:['#626344','#afa477'],water:['#476d50','#a1bb79'],
-  fire:['#78633f','#c3a267'],lightning:['#767047','#bdaf76'],
-  earth:['#797044','#bfb17b'],wind:['#527c57','#bdd08a'],
-  light:['#85804c','#d1ca8c'],ice:['#869c91','#d7e2dd'],
-  wood:['#3f6845','#97b76c'],dark:['#565765','#a29aaf']
-};
+import {withWind,windTime} from './materials.js';
+import {village} from './adventure-data.js';
 
 export function createVillageGrass({id,limit,heightAt,allowed,rand}){
   const root=new T.Group();root.name='village-grass';root.userData.noCollision=true;
-  const geometry=createGrassGeometry(...palettes[id]);
-  const material=toon('#ffffff',{vertexColors:true,side:T.DoubleSide,wind:true,rim:.02});
+  const ground=new T.Color(village(id).ground);
+  const geometry=createGrassGeometry(ground.clone().multiplyScalar(.76),ground.clone().multiplyScalar(.95));
+  const normals=geometry.attributes.normal;
+  for(let i=0;i<normals.count;i++)normals.setXYZ(i,0,1,0);
+  // Match both the terrain hue and its lighting; only the blade tips brighten a little.
+  const material=withWind(new T.MeshStandardMaterial({vertexColors:true,roughness:1,side:T.DoubleSide}),{upwardLighting:true});
   const dummy=new T.Object3D(),chunks=[],tile=28;
   const density=id==='wood'||id==='wind'?.8:id==='ice'?.38:.6;
   for(let x0=-limit;x0<limit;x0+=tile)for(let z0=-limit;z0<limit;z0+=tile){
@@ -26,7 +23,7 @@ export function createVillageGrass({id,limit,heightAt,allowed,rand}){
       dummy.position.set(x-x0,heightAt(x,z)-.025,z-z0);
       dummy.rotation.set(0,rand()*Math.PI*2,0);
       dummy.scale.set(s,s*(id==='ice'?.7:1),s);dummy.updateMatrix();
-      matrices.push(dummy.matrix.clone());tints.push(.82+rand()*.25);
+      matrices.push(dummy.matrix.clone());tints.push(.94+rand()*.1);
     }
     if(!matrices.length)continue;
     const mesh=new T.InstancedMesh(geometry,material,matrices.length);

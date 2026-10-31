@@ -38,7 +38,7 @@ const {pathToFileURL}=require('node:url');
       mark('peaceful lesson in '+id);const r=REGIONS[id],before=(await state()).save;
       await walk('mentor',r.mentor.npcId);assert.equal((await state()).phase,'dialog');
       await dialog('Xin nhận lời chỉ giáo');assert.equal((await state()).save.lessons[id],1);
-      for(const zone of r.mentor.zoneIds){await walk('landmark',zone);assert.equal((await state()).phase,'dialog');assert.ok((await state()).save.discoveries.includes(`${id}:${zone}`));await dialog('Tiếp tục khám phá');}
+      for(const zone of r.mentor.zoneIds){await walk('landmark',zone);assert.equal((await state()).phase,'explore');assert.ok((await state()).save.discoveries.includes(`${id}:${zone}`));}
       await walk('mentor',r.mentor.npcId);await dialog('Lĩnh hội');
       const after=(await state()).save;assert.equal(after.mentors[id],true);assert.ok(after.learnedSpells.some(spell=>spell.startsWith(id+'-')));
       assert.equal(after.wins,before.wins,'mentor lesson must not require a fight');assert.deepEqual((await combat()).learnedSpells,after.learnedSpells);
@@ -110,10 +110,10 @@ const {pathToFileURL}=require('node:url');
     await advance(2);assert.equal((await combat()).won,true);assert.equal((await combat()).health,0);await click('nextButton');s=await state();
     assert.equal(s.save.village,'nameless');assert.deepEqual(s.position,[0,7]);assert.ok(!s.save.bosses.water);assert.deepEqual(s.save.learnedSpells,waterLearned);
     await goTo('water');await winBoss('water',true);await click('openJournal');assert.equal(await page.locator('#journalBoss').isDisabled(),true);await click('closeJournal');
-    await walk('landmark','falls');await dialog('Tiếp tục khám phá');await snapshot('water');
+    await walk('landmark','falls');await snapshot('water');
     await page.reload();await ready();await click('continueJourney');assert.equal((await state()).save.bosses.water,true);
 
-    for(const id of ['fire','lightning']){await goTo(id);await learn(id);await winBoss(id);if(id==='fire'){await walk('landmark','crater');await dialog('Tiếp tục khám phá');await snapshot(id);}}
+    for(const id of ['fire','lightning']){await goTo(id);await learn(id);await winBoss(id);if(id==='fire'){await walk('landmark','crater');await snapshot(id);}}
     mark('three leaders sign the peace treaty');
     await goTo('nameless');assert.equal((await state()).save.campaign.treatySigned,false);
     await walk('treaty');await dialog('Ký hiệp ước hòa bình');assert.equal((await state()).save.campaign.treatySigned,true);await snapshot('peace-treaty');
@@ -121,10 +121,10 @@ const {pathToFileURL}=require('node:url');
     const landmarks={earth:'stone-arch',wind:'sky-ruins',light:'sun-temple',ice:'crystal-cave',wood:'elder-tree'};
     for(const id of ['earth','wind','light','ice','wood']){
       await goTo(id);mark('deliver the treaty in '+id);await walk('envoy');await dialog('Trao hiệp ước hòa bình');assert.ok((await state()).save.campaign.deliveries.includes(id));
-      await learn(id);await winBoss(id);await walk('landmark',landmarks[id]);await dialog('Tiếp tục khám phá');await snapshot(id);
+      await learn(id);await winBoss(id);await walk('landmark',landmarks[id]);await snapshot(id);
     }
     mark('the final mastermind in Dark');
-    await goTo('dark');await learn('dark');await winBoss('dark');await walk('landmark','moon-temple');await dialog('Tiếp tục khám phá');await snapshot('dark');
+    await goTo('dark');await learn('dark');await winBoss('dark');await walk('landmark','moon-temple');await snapshot('dark');
     s=await state();assert.equal(s.save.campaign.treatySigned,true);assert.equal(new Set(s.save.campaign.deliveries).size,5);
     for(const id of ['water','fire','lightning','earth','wind','light','ice','wood','dark'])assert.equal(s.save.bosses[id],true,`${id} leader completed`);
     assert.equal(s.save.learnedSpells.length,45);assert.equal((await combat()).learnedSpells.length,45);assert.deepEqual(errors,[]);

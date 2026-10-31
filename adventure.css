@@ -167,3 +167,6 @@ body[data-journey=checkpoint] #startScreen,body[data-journey=admin] #startScreen
 .model-portrait img{display:block;width:100%;height:100%;object-fit:contain;opacity:0}
 .model-portrait-fallback{position:absolute;inset:0;display:grid;place-items:center;color:#cabb98;font-size:24px;letter-spacing:3px}
 .model-portrait[data-model-ready=true] img{opacity:1}.model-portrait[data-model-ready=true] .model-portrait-fallback{display:none}
+.landmark-intro{width:min(540px,calc(100vw - 48px));pointer-events:none;text-align:left;line-height:1.6;white-space:normal}
+.landmark-intro strong{display:block;margin-bottom:4px;font-size:1.1em;font-weight:600}
+.landmark-intro span{display:block;color:#d1d7c8;font-size:.95em}
