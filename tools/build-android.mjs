@@ -6,7 +6,7 @@ const root=fileURLToPath(new URL('../',import.meta.url)),out=path.join(root,'and
 await fs.mkdir(path.join(out,'assets'),{recursive:true});
 const files=['language-loader.js','game.en.js','game-core.en.js','style.css','adventure.css','game-core.js','game.js','ket_an.jpg','assets/ninja-hands.glb','assets/ha-ly.glb','assets/hero-ninja.glb','assets/npc.vrm','assets/npc_nam.vrm','assets/npc_nu.vrm','THIRD_PARTY_NOTICES.md'];
 await Promise.all(files.map(f=>fs.copyFile(path.join(root,f),path.join(out,f))));
-await Promise.all(['hero-ninja-simple.glb','village-ninja.glb','npc_nam-simple.vrm','npc_nu-simple.vrm'].map(f=>fs.copyFile(path.join(root,'assets',f),path.join(out,'assets',f))));
+await Promise.all(['ha-ly-simple.glb','hero-ninja-simple.glb','village-ninja.glb','npc_nam-simple.vrm','npc_nu-simple.vrm'].map(f=>fs.copyFile(path.join(root,'assets',f),path.join(out,'assets',f))));
 for(const language of ['vi','en']){
  const name=language==='en'?'index.en.html':'index.html';
  let html=await fs.readFile(path.join(root,name),'utf8');

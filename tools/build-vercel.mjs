@@ -20,6 +20,7 @@ const files = [
   "assets/ninja-hands.glb",
   "assets/ha-ly.glb",
   "assets/hero-ninja.glb",
+  "assets/ha-ly-simple.glb",
   "assets/hero-ninja-simple.glb",
   "assets/village-ninja.glb",
   "assets/npc.vrm",

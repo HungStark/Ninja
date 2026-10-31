@@ -45,6 +45,7 @@
     "test:locomotion": "node tests/locomotion.cjs",
     "test:character-style": "node tests/character-style-motion.cjs",
     "test:resident-models": "node tests/resident-model-browser.cjs",
+    "test:ha-ly": "node tests/village-events-core.mjs && node tools/build.mjs && node tests/ha-ly-rescue-browser.cjs && node tests/village-events-browser.cjs",
     "test:village-ninjas": "node tools/build.mjs && node tests/village-ninja-browser.cjs --game",
     "test:sprint-pose": "node tools/build-android.mjs && node tests/sprint-pose.cjs",
     "test:landscape": "node tests/landscape-core.mjs && node tests/landscape-browser.cjs",

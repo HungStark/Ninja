@@ -3,6 +3,8 @@ import {gainExperience,regionElement} from './progression.js';
 import {botHealth} from './enemy-balance.js';
 
 export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
+export const HA_LY_MOTHER={id:'fire-ha-ly-mother',name:'Bà Hồng',role:'Mẹ nuôi của Hạ Ly',kind:'healer',female:true,age:'elder',hair:'#bdb5a2',hairStyle:'bun',coat:'#7c594d',accent:'#b79e75',height:2.7,width:.94,shawl:true};
+export const FIRE_PRISON={x:-12,z:20};
 const stage=(title,body,spot,style,extra={})=>({title,body,spot,style,...extra});
 const choice=(label,correct,feedback)=>({label,correct,feedback});
 export const VILLAGE_EVENTS={
@@ -13,10 +15,10 @@ export const VILLAGE_EVENTS={
     stage('Người làm chứng bên bến','Mộc An nhận ra kẻ giao hàng mang huy hiệu hình trăng khuyết. Ông đồng ý đưa dân làng ra khỏi bến và làm chứng rằng vụ việc không phải do Làng Hỏa. Đường tới hộ vệ đã mở.',0,'water')
   ]},
   fire:{title:'Người con gái giữa tro tàn',speaker:'Hạ Ly',stages:[
-    stage('Tiếng gọi sau cổng Hỏa','Một nữ ninja bị thương đang trốn sau đống hàng cháy. Nàng tên Hạ Ly, vừa mang theo chứng cứ về những kẻ giả danh các làng thì bị truy sát. Hai kẻ áo đen đang quay lại tìm nàng.','entrance','injured'),
-    stage('Bảo vệ Hạ Ly','Hạ Ly không thể đứng dậy. Hai kẻ truy sát chặn lối ra và đòi bạn giao nàng cho chúng. Hãy đánh bại cả hai để đưa nàng tới nơi an toàn.','entrance','injured',{battle:true,enemy:'Đội truy sát Hắc Y'}),
-    stage('Thuốc cho vết thương','Dù toán truy sát đã bị đẩy lui, lưỡi dao tẩm độc vẫn khiến Hạ Ly sốt cao. Nàng chỉ bạn tới túi thuốc Hỏa Tâm được giấu cạnh khu dân cư. Mang thuốc về để cầm máu và giải độc.',0,'medicine'),
-    stage('Một người cùng đường','Sau khi được băng bó, Hạ Ly trao cho bạn mảnh mật thư có dấu trăng khuyết. Nàng cũng muốn tìm kẻ đứng sau chiến tranh và xin được cùng bạn du hành. Từ đây hai người có thể bảo vệ và lắng nghe nhau.','entrance','injured',{recruit:true})
+    stage('Lời nhờ cậy của mẹ nuôi','Bà Hồng, mẹ nuôi của Hạ Ly, đang đợi bên cổng Làng Hỏa. Bà kể con gái bị Hắc Y bắt giữ sau khi tìm ra chứng cứ giả danh các làng. Hạ Ly bị thương, bị trói trong nhà lao phía tây cổng làng. Bà nhờ bạn giải cứu nàng trước khi chúng chuyển tù.','entrance','mother',{speaker:'Bà Hồng',speakerId:HA_LY_MOTHER.id}),
+    stage('Phá khóa nhà lao','Qua song sắt, bạn thấy Hạ Ly ngồi gục trên ghế, hai tay bị trói trước bụng. Hai cai ngục Hắc Y giữ chìa khóa và chặn cửa. Đánh bại cả hai để mở nhà lao và tháo dây trói cho nàng.','prison-gate','captive',{battle:true,enemy:'Cai ngục Hắc Y'}),
+    stage('Thuốc cho vết thương','Cửa lao đã mở, dây trói đã được tháo nhưng Hạ Ly vẫn chưa thể đi lại. Nàng nhờ bạn lấy túi thuốc Hỏa Tâm được giấu cạnh khu dân cư. Mang thuốc trở lại nhà lao để băng bó vết thương.',0,'medicine'),
+    stage('Một người cùng đường','Bạn trở lại nhà lao, dùng thuốc Hỏa Tâm băng bó cho Hạ Ly. Nàng trao cho bạn mảnh mật thư có dấu trăng khuyết và cảm ơn vì đã giữ lời với mẹ nuôi. Sau khi hồi sức, nàng muốn cùng bạn tìm ra kẻ đứng sau cuộc chiến.','prison','injured',{recruit:true})
   ]},
   lightning:{title:'Đêm cao nguyên tắt sáng',speaker:'Kỹ sư Tử Khang',stages:[
     stage('Trạm tiếp lôi mất tín hiệu','Ba cột dẫn sét bị nối sai khiến khu dân cư tối đen. Tử Khang phát hiện một cầu chì bị đổi thành tinh thể tím lạ. Cần cô lập nguồn trước khi sửa mạch.',0,'lightning'),
@@ -64,7 +66,7 @@ export const VILLAGE_EVENTS={
 
 export function villageEventStep(save,id){return Math.max(0,Math.min(VILLAGE_EVENTS[id]?.stages.length||0,save.story?.villageEvents?.[id]||0));}
 export function villageEventComplete(save,id){return !VILLAGE_EVENTS[id]||villageEventStep(save,id)>=VILLAGE_EVENTS[id].stages.length;}
-export function currentVillageEvent(save,id=save.village){const chapter=VILLAGE_EVENTS[id],step=villageEventStep(save,id);return chapter&&step<chapter.stages.length?{...chapter.stages[step],step,village:id,chapter:chapter.title,speaker:chapter.speaker}:null;}
+export function currentVillageEvent(save,id=save.village){const chapter=VILLAGE_EVENTS[id],step=villageEventStep(save,id);return chapter&&step<chapter.stages.length?{...chapter.stages[step],step,village:id,chapter:chapter.title,speaker:chapter.stages[step].speaker||chapter.speaker}:null;}
 export function villageEventObjective(save,id=save.village){const e=currentVillageEvent(save,id);return e?{title:e.title,description:e.body,targetVillage:id,targetKind:'village-event',targetId:`story-${id}-${e.step}`} : null;}
 export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=false}={}){
   const e=currentVillageEvent(save,id);if(!e||save.village!==id||e.step!==expectedStep)return {ok:false,reason:'stage'};
@@ -76,6 +78,8 @@ export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=
   return {ok:true,completed,recruited:completed&&id==='fire'};
 }
 export function eventSpot(id,event){
+  if(id==='fire'&&event.spot==='prison-gate')return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+3.25};
+  if(id==='fire'&&event.spot==='prison')return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+.65};
   if(event.spot==='entrance')return {x:2.4,z:17};
   const zones=REGIONS[id].zones.filter(z=>!z.platform&&!['summit-lotus','red-cliff'].includes(z.id)),zone=zones[Number(event.spot)||0];
   // Use the district approach, already connected to the village road network.
@@ -85,7 +89,7 @@ export function eventSpot(id,event){
 export function villageEventEncounter(id){
   if(id==='fire'){
     const squad=[{name:'Hắc Y · Kẻ mang hỏa phù',element:'fire',village:'fire',hp:botHealth(100),spellIds:['fire-volley']},{name:'Hắc Y · Kẻ khóa đường lui',element:'lightning',village:'lightning',hp:botHealth(95),spellIds:['lightning-lance']}].map((n,i)=>({...n,damageMultiplier:.38,sealDelay:.85,restTime:4.2,weaponInterval:4,initialDelay:2+i*2}));
-    return {...squad[0],name:'Hai kẻ truy sát Hạ Ly',village:'fire',squad,eventStep:1};
+    return {...squad[0],name:'Hai cai ngục Hắc Y',village:'fire',squad,eventStep:1};
   }
   if(id==='dark')return {name:'Kẻ giữ màn sương',element:'dark',hp:botHealth(230),spellIds:['dark-orb','dark-lance','dark-domain'],damageMultiplier:.8,sealDelay:.6,restTime:2.8,weaponInterval:2.7,eventStep:2};
   return null;

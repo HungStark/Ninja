@@ -68,7 +68,7 @@ export function createAdventureScene(){
   const standingHeightAt=(x,z)=>{const b=bridgeAt(x,z,.25);return b?bridgeHeight(b,x,z):current==='fire'&&Math.hypot(x-88,z+96)<10?36:heightAt(x,z);};
   const heroHeightAt=(x,z)=>surface?platformFor(surface)?.toY??standingHeightAt(x,z):standingHeightAt(x,z);
   const physics=createCharacterPhysics({position:hero.root.position,baseFloor:(x,z)=>surface?platformFor(surface)?.toY??groundHeight(x,z):current==='ice'?heightAt(x,z):groundHeight(x,z),staticBlocked:(x,z)=>surface?platformBlocked(surface,x,z):boundaryBlocked(x,z)||current==='water'&&isDeepWater(x,z)&&!waterDeckAt(x,z,hero.root.position.y+.4)});
-  const storyActors=createVillageStoryActors({scene,hero,blocked,floor:(x,z)=>physics.floorAt(x,z,standingHeightAt(x,z)+.55)});
+  const storyActors=createVillageStoryActors({scene,hero,blocked,addSolid:physics.addBox,removeSolid:physics.removeBox,floor:(x,z)=>physics.floorAt(x,z,standingHeightAt(x,z)+.55)});
   const contactFloor=(x,z,ceiling)=>physics.floorAt(x,z,ceiling,current==='ice'?heightAt(x,z):groundHeight(x,z));
   const waterDeckAt=(x,z,ceiling=Infinity)=>physics.floorAt(x,z,ceiling)>=waterwayAt(x,z).y-.15;
   function platformBlocked(key,x,z,padding=0){const p=platformFor(key)?.platform;if(!p)return true;const dx=x-p.x,dz=z-p.z,outside=p.ellipse?(dx/(p.width/2-.5))**2+(dz/(p.depth/2-.5))**2>1:Math.abs(dx)>=p.width/2-.25||Math.abs(dz)>=p.depth/2-.25;

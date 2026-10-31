@@ -4,7 +4,7 @@ import {villagerAppearance} from './villager-appearance.js';
 import {villagerPortrait} from './villager-portrait.js';
 import {heroPortrait} from './hero-portrait.js';
 import {armorById} from './equipment.js';
-import {HA_LY,currentVillageEvent} from './village-events.js';
+import {HA_LY,HA_LY_MOTHER,currentVillageEvent} from './village-events.js';
 import {ninjaProfile} from './ninja.js';
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -21,7 +21,9 @@ export function dialogueCast(item,save,region,biome){
   if(!item||!['npc','lore','healer','mentor','expedition-giver','envoy','treaty','boss','quest','shop','intro-guardian','village-guard','village-event','companion','story-witness'].includes(item.kind))return null;
   const hero=heroSpeaker(save);
   if(['village-event','companion','story-witness'].includes(item.kind)){
-    const girl=item.kind!=='village-event'||biome.id==='fire',e=currentVillageEvent(save),appearance=girl?ninjaProfile(HA_LY):villagerAppearance(biome.id,{id:'story-guide-'+biome.id,kind:'lore'});
+    const e=currentVillageEvent(save),mother=item.id===HA_LY_MOTHER.id||(item.kind==='village-event'&&e?.speakerId===HA_LY_MOTHER.id);
+    if(mother){const appearance={...villagerAppearance('fire',HA_LY_MOTHER),...HA_LY_MOTHER};return {hero,npc:{...HA_LY_MOTHER,appearance,elder:true}};}
+    const girl=item.kind!=='village-event'||biome.id==='fire',appearance=girl?ninjaProfile(HA_LY):villagerAppearance(biome.id,{id:'story-guide-'+biome.id,kind:'lore'});
     return {hero,npc:{id:girl?HA_LY.id:'story-guide-'+biome.id,name:girl?HA_LY.name:e?.speaker||'Người làm chứng',role:girl?(save.story.companion.recruited?HA_LY.role:'Nữ ninja Làng Hỏa · Đang bị thương'):'Câu chuyện của '+biome.name,appearance,coat:appearance.coat,hair:appearance.hair}};
   }
   const n=region.npcs.find(n=>n.id===(item.kind==='expedition-giver'?'fire-khoi':item.id)),index=region.npcs.indexOf(n);

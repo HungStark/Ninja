@@ -50,6 +50,12 @@ hands and village patches. Village hair, colors and uniform motifs are authored
 by this project's `src/village-ninja-style.js`; the supplied hero files remain
 unchanged.
 
+`assets/ha-ly-simple.glb` is a user-requested derivative built from the original
+user-supplied `hehe.vrm` with `tools/build-ha-ly.py`. It retains the source rig,
+skin weights, textures and VRM attribution metadata, with simplified clothing
+and newly authored block hair. The original VRM and `assets/ha-ly.glb` are
+unchanged. The derivative does not grant additional rights in the source asset.
+
 Fire dragon roar: the user supplied `dragon-studio-epic-dragon-roar-364481.mp3`.
 The original file is stored as `assets/audio/fire-dragon-roar.mp3` and embedded
 unchanged in the offline game bundles by `tools/build.mjs`.

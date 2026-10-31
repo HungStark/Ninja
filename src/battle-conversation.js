@@ -36,8 +36,8 @@ export function battleConversation(encounter,save){
     say(hero,'Nếu không thể thuyết phục bằng lời nói, tôi sẽ chứng minh bằng hành động.');
   }else if(encounter.kind==='village-event'){
     const protecting=encounter.village==='fire';
-    say(hero,protecting?'Dừng tay! Cô ấy đã bị thương. Tôi sẽ không để các người truy sát cô ấy nữa.':'Ta đã lần ra dấu vết của ngươi. Đừng tiếp tục che giấu sự thật sau màn sương này.');
-    say(enemy,protecting?'Dám che chở cho cô ta? Vậy ngươi cũng là kẻ thù của chúng ta!':'Ngươi biết quá nhiều rồi. Đừng mong rời khỏi đây để kể lại chuyện này.');
+    say(hero,protecting?'Mở cửa nhà lao và thả Hạ Ly ra! Cô ấy đã bị thương. Tôi đã hứa với mẹ cô ấy sẽ đưa cô ấy trở về.':'Ta đã lần ra dấu vết của ngươi. Đừng tiếp tục che giấu sự thật sau màn sương này.');
+    say(enemy,protecting?'Muốn lấy chìa khóa ư? Đánh bại chúng ta trước đã. Không ai được đưa tù nhân ra khỏi đây!':'Ngươi biết quá nhiều rồi. Đừng mong rời khỏi đây để kể lại chuyện này.');
     if(encounter.squad?.length>1)say(opponent(encounter.squad[1],1),'Chịu thua đi! Một mình ngươi không thể cản được chúng ta.');
     say(hero,'Chừng nào vẫn còn người gặp nạn, tôi sẽ không lùi bước.');
     say(enemy,'Vậy hãy thử sống sót qua trận này!');

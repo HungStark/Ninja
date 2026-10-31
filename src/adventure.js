@@ -6,7 +6,7 @@ import {arenaRound,enemySealTiming} from './enemy-seal-timing.js';
 import {flaskState,useFlask,refillFlask,upgradeFlask} from './healing-flask.js';
 import {strikeOre,ORE_SWING_COOLDOWN} from './spirit-mines.js';
 import {INTERIORS,enterInterior,leaveInterior,interiorForZone} from './adventure-interiors.js';
-import {VILLAGE_EVENTS,HA_LY,currentVillageEvent,villageEventStep,villageEventComplete,advanceVillageEvent,villageEventEncounter} from './village-events.js';
+import {VILLAGE_EVENTS,HA_LY,HA_LY_MOTHER,currentVillageEvent,villageEventStep,villageEventComplete,advanceVillageEvent,villageEventEncounter} from './village-events.js';
 import {createAdminSession,checkpointAccess,adminOpponents} from './adventure-access.js';
 import {gameAudio} from './game-audio.js';
 import {combatExperienceElement,requiresGuardBattle} from './combat-experience.js';
@@ -185,7 +185,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       const content=document.createElement('div');content.className='journal-group-content';content.append(...nodes);details.append(content);return details;
     };
     const eventCards=Object.entries(VILLAGE_EVENTS).map(([id,event])=>{const card=document.createElement('article');card.className='journal-story';const step=villageEventStep(save,id);card.innerHTML='<small>'+esc(village(id).name)+' · '+(step===event.stages.length?'ĐÃ HOÀN THÀNH':step+'/'+event.stages.length)+'</small><h3>'+esc(event.title)+'</h3><ol>'+event.stages.map((s,i)=>'<li class="'+(i<step?'done':i===step?'current':'')+'">'+(i<step?'✓ ':'')+esc(s.title)+'</li>').join('')+'</ol>';if(id===save.village&&step<event.stages.length){const button=document.createElement('button');button.className='journey-secondary';button.textContent='Theo dấu câu chuyện trong làng ↗';button.onclick=()=>{closeDialog();moveToItem(findJourneyItem('village-event'));};card.append(button);}return group('event-'+id,village(id).name+' · '+event.title,step+'/'+event.stages.length,[card],id===save.village);});
-    const companionCard=document.createElement('div');companionCard.className='journal-story';companionCard.innerHTML='<small>BẠN ĐỒNG HÀNH</small><h3>Hạ Ly</h3><p>'+(save.story.companion.recruited?'Nữ ninja Hỏa đang du hành cùng bạn. Đến gần và nhấn E để trò chuyện.':'Một nữ ninja gặp nạn tại Làng Hỏa đang cần người giúp đỡ.')+'</p>';
+    const companionCard=document.createElement('div');companionCard.className='journal-story';companionCard.innerHTML='<small>BẠN ĐỒNG HÀNH</small><h3>Hạ Ly</h3><p>'+(save.story.companion.recruited?'Nữ ninja Hỏa đang du hành cùng bạn. Đến gần và nhấn E để trò chuyện.':'Mẹ nuôi của Hạ Ly đang nhờ người giải cứu nàng khỏi nhà lao tại Làng Hỏa.')+'</p>';
     const tasks=[...work.querySelectorAll('[data-sidequest]')],taskGroups=[];
     for(const button of tasks){const status=save.story.sidequests[button.dataset.sidequest]||0;button.dataset.questStatus=status;button.classList.toggle('journal-quest-ready',status===2);button.classList.toggle('journal-quest-completed',status===3);}
     const mentorTask=stories.shift();mentorTask.dataset.lesson=v.id;mentorTask.dataset.questStatus=save.mentors[v.id]?3:mentorReady(save,v.id)?2:save.lessons[v.id]?1:0;tasks.push(mentorTask);
@@ -212,7 +212,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     waypoint=item||null;waypointSource=source;waypointVia=null;if(!item){world.destination.visible=false;return;}
     const plan=routeTo([item.x,item.z],item),ride=plan?.find(l=>l.kind==='traverse');if(ride)waypointVia=world.interactives.find(i=>i.kind==='traversal'&&i.routeId===ride.id&&i.side===ride.side)||null;
     const target=waypointVia||item;world.destination.position.set(target.x,(target.y??world.heightAt(target.x,target.z))+.12,target.z);
-    const targetIsHaLy=item.kind==='story-witness'||item.id==='ha-ly-wounded'||(item.kind==='village-event'&&item.eventVillage==='fire');world.destination.visible=!targetIsHaLy;
+    const targetIsHaLy=item.id==='ha-ly-wounded'||(item.kind==='village-event'&&item.eventVillage==='fire'&&item.step!==0);world.destination.visible=!targetIsHaLy;
   }
   function refreshObjectiveMarker(){
     const id=save.story.trackedQuest,q=id&&sidequestById(id),status=q?save.story.sidequests[q.id]||0:0;
@@ -243,7 +243,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   }
   function storyEventDialog(item){
     const event=currentVillageEvent(save);if(!event||event.step!==item?.step)return;dialogueItem=item;
-    const buttons=event.battle?[[save.village==='fire'?'Đứng ra bảo vệ Hạ Ly':'Vượt qua kẻ canh màn sương',()=>offerBattle('village-event',villageEventEncounter(save.village))],['Chuẩn bị thêm',closeDialog,true]]:event.choices?event.choices.map((c,i)=>[c.label,()=>finishStoryStep(event,i),i>0]):[[event.recruit?'Mời Hạ Ly cùng lên đường':event.style==='medicine'?'Mang thuốc Hỏa Tâm về':event.style==='rope'?'Kéo dây đưa người ra':event.style==='letter'?'Giữ lại chứng cứ':'Tiếp tục câu chuyện',()=>finishStoryStep(event)],['Để tôi chuẩn bị thêm',closeDialog,true]];
+    const buttons=event.battle?[[save.village==='fire'?'Đánh bại cai ngục':'Vượt qua kẻ canh màn sương',()=>offerBattle('village-event',villageEventEncounter(save.village))],['Chuẩn bị thêm',closeDialog,true]]:event.choices?event.choices.map((c,i)=>[c.label,()=>finishStoryStep(event,i),i>0]):[[event.speakerId===HA_LY_MOTHER.id?'Nhận nhiệm vụ giải cứu Hạ Ly':event.recruit?'Băng bó và mời Hạ Ly cùng lên đường':event.style==='medicine'?'Mang thuốc Hỏa Tâm về':event.style==='rope'?'Kéo dây đưa người ra':event.style==='letter'?'Giữ lại chứng cứ':'Tiếp tục câu chuyện',()=>finishStoryStep(event)],['Để tôi chuẩn bị thêm',closeDialog,true]];
     dialog(event.chapter,event.title,event.body,buttons);Array.from($('dialogActions').children).forEach((b,i)=>b.dataset.eventChoice=i);
   }
   function companionDialog(joined=false){
@@ -287,7 +287,11 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(item.kind==='arena-host'){arenaDialog();return;}
     if(item.kind==='village-event'){storyEventDialog(item);return;}
     if(item.kind==='companion'){companionDialog();return;}
-    if(item.kind==='story-witness'){dialog('HẠ LY · CHỜ THUỐC','Một lời hứa giữa tro tàn','Hạ Ly vẫn đang chờ thuốc Hỏa Tâm. Hãy mang túi thuốc được đánh dấu về để chữa thương cho nàng.',[['Đánh dấu túi thuốc',()=>{closeDialog();moveToItem(findJourneyItem('village-event'));}],['Ở lại một lát',closeDialog,true]]);return;}
+    if(item.kind==='story-witness'){
+      const mother=item.id===HA_LY_MOTHER.id,step=villageEventStep(save,'fire');
+      const body=mother?(step>=4?'Bà Hồng cảm ơn bạn đã đưa con gái ra khỏi nhà lao. Bà dặn hai người giữ gìn sức khỏe trên đường đi.':'Xin hãy cứu Hạ Ly. Con bé bị thương trong nhà lao phía tây cổng làng. Tôi đã giấu thuốc Hỏa Tâm gần khu dân cư để các con dùng khi cần.'):(step===0?'Hạ Ly đang bị trói và không thể đứng dậy. Hãy gặp mẹ nuôi của nàng, Bà Hồng, bên cổng Làng Hỏa để biết chuyện gì đã xảy ra.':'Hạ Ly ngồi ôm vết thương trong nhà lao đã mở cửa. Hãy lấy túi thuốc Hỏa Tâm rồi trở lại băng bó cho nàng.');
+      dialog(mother?'MẸ NUÔI CỦA HẠ LY':'HẠ LY · NHÀ LAO','Một lời hứa giữa tro tàn',body,[[step>=4?'Chào bà':'Theo dấu nhiệm vụ',()=>{closeDialog();if(step<4)moveToItem(findJourneyItem('village-event'));}],['Ở lại một lát',closeDialog,true]]);return;
+    }
     if(item.kind==='home'){dialog('NGÔI NHÀ BÊN NGHĨA TRANG','Nơi lời hứa bắt đầu','Ngôi nhà vẫn còn đồ dùng của cha và em trai. Mẹ đang đặt hoa ngoài nghĩa trang. Từ nơi hoang tàn này, con đường hòa bình sẽ bắt đầu.',[['Tìm mẹ',()=>{closeDialog();moveToItem(world.interactives.find(i=>i.id===MOTHER_ID));}],['Tiếp tục',closeDialog,true]]);return;}
     if(item.id===MOTHER_ID&&save.story.stage==='mother'){
       dialog('MẸ · NGHĨA TRANG VÔ DANH','Lời hứa trước cha và em trai','Cha và em trai con đã mất trong cuộc chiến giữa ba làng Hỏa, Thủy và Lôi. Mẹ không muốn con sống với thù hận. Nếu con lên đường, hãy đem hòa bình về, để không còn người mẹ nào phải đứng trước hai nấm mộ như mẹ.',[['Con hứa sẽ đem lại hòa bình cho thế giới này',()=>{if(promiseMother(save)){refreshStory();toast('Đã lập lời hứa với mẹ · Tới gặp trưởng làng');}}],['Con muốn ở bên mẹ một lát',closeDialog,true]],{requireComplete:true});return;
@@ -363,7 +367,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   function finishBattle(victory){if(!encounter)return;const battle={...encounter},before=campaignStage(save),arts=save.learnedSpells.length;resolveBattle(save,encounter,victory);world.clearEnemy();cooldown=90;distance=0;encounter=null;enter();
     if(battle.kind==='arena'){toast(victory?'Đã thắng vòng '+battle.arenaRound+' · Vòng '+arenaRound(save)+' đã mở':'Có thể thử lại vòng '+arenaRound(save)+' tại võ đường');return;}
     if(admin.active){toast('ADMIN · Kết quả giao chiến chỉ áp dụng trong phiên thử nghiệm');return;}
-    if(victory&&battle.kind==='village-event'){dialogueItem=null;dialog('SỰ KIỆN CHÍNH',battle.village==='fire'?'Hạ Ly đã thoát khỏi toán truy sát':'Màn sương đã bị phá',battle.village==='fire'?'Hai kẻ áo đen rút lui. Hạ Ly đã an toàn, nhưng vết thương nhiễm độc vẫn cần thuốc. Nàng chỉ bạn nơi giấu túi thuốc Hỏa Tâm.':'Kẻ canh cổng đã thất bại. Hãy mang các chứng cứ qua màn sương tới gặp Vân Dạ trước khi đối mặt Vô Nguyệt.',[['Theo dấu câu chuyện',()=>{closeDialog();moveToItem(findJourneyItem('village-event'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
+    if(victory&&battle.kind==='village-event'){dialogueItem=null;dialog('SỰ KIỆN CHÍNH',battle.village==='fire'?'Đã mở cửa nhà lao':'Màn sương đã bị phá',battle.village==='fire'?'Bạn lấy được chìa khóa từ hai cai ngục, mở cửa lao và tháo dây trói cho Hạ Ly. Nàng vẫn chưa thể đi lại vì vết thương. Hãy tìm túi thuốc Hỏa Tâm rồi trở lại chữa thương cho nàng.':'Kẻ canh cổng đã thất bại. Hãy mang các chứng cứ qua màn sương tới gặp Vân Dạ trước khi đối mặt Vô Nguyệt.',[['Theo dấu câu chuyện',()=>{closeDialog();moveToItem(findJourneyItem('village-event'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
     if(victory&&battle.kind==='intro-trio'){dialog('HỘ VỆ VÔ DANH HỒI SINH','Ánh sáng trở lại lõi ấn','Ba ninja đã bị đánh bại. Bạn trả lõi ấn về ngực hộ vệ, những đường nứt bắt đầu sáng trở lại. Hộ vệ đứng lên bảo vệ quê nhà. Hãy trở về báo tin cho trưởng làng.',[['Trở về báo cáo',()=>{closeDialog();followCampaign();}],['Tiếp tục khám phá',closeDialog,true]]);return;}
     if(victory&&battle.kind==='boss'&&battle.village!=='dark'){toast('Đã khuất phục hộ vệ · Gặp trưởng làng để thương lượng dấu ấn hòa bình');return;}
     if(victory&&battle.kind==='boss'&&battle.village==='dark'){dialog('BÁO CÁO CHIẾN THẮNG','Vô Nguyệt đã thất bại','Trở về gặp trưởng Làng Ám để thông báo, cùng ký cam kết và đóng dấu hòa bình cuối cùng.',[['Trở về báo cáo',()=>{closeDialog();followCampaign();}],['Tiếp tục khám phá',closeDialog,true]]);return;}
