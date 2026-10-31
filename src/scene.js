@@ -3,6 +3,7 @@ import {buildInterior,INTERIORS} from "./adventure-interiors.js";
 import { toon, canvasTexture, windyDepth, glowTexture, windTime } from "./materials.js";
 import { inkMaterial, addInkOutline } from './ink-outline.js';
 import { createTerrainGrid, TerrainSurface } from './terrain-surface.js';
+import { createGrassGeometry } from './grass.js';
 let seed = 1681;
 const rand = () => {
   seed = Math.imul(seed, 1664525) + 1013904223 >>> 0;
@@ -174,19 +175,7 @@ export function createWorld() {
     }
   });
   mats.wood.map = barkTex;
-  const grassGeo = new T.BufferGeometry(), blades = [], colors = [];
-  const baseColor = new T.Color('#527c57'), tipColor = new T.Color('#bdd08a');
-  for (let blade = 0; blade < 5; blade++) {
-    const angle = blade / 5 * Math.PI * 2, height = .45 + blade * .07;
-    const dx = Math.cos(angle) * .18, dz = Math.sin(angle) * .18;
-    for (const p of [[-.035, 0, 0], [.035, 0, 0], [dx, height, dz]]) {
-      blades.push(...p);
-      colors.push(...(p[1] === 0 ? baseColor : tipColor).toArray());
-    }
-  }
-  grassGeo.setAttribute('position', new T.Float32BufferAttribute(blades, 3));
-  grassGeo.setAttribute('color', new T.Float32BufferAttribute(colors, 3));
-  grassGeo.computeVertexNormals();
+  const grassGeo = createGrassGeometry();
   const grassMat = toon('#ffffff', { vertexColors: true, side: T.DoubleSide, wind: true, rim: .02 });
   const grass = new T.InstancedMesh(grassGeo, grassMat, 1700), dummy = new T.Object3D();
   for (let i = 0; i < grass.count; i++) {

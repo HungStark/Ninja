@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {createGrassGeometry} from './grass.js';
 
 // Vô Danh's cottages retain a recognisable home beneath the damage: plaster,
 // wattle and a steep straw roof, rather than a frame of burnt square posts.
@@ -81,7 +82,7 @@ export function buildThatchedRuin(c,g,w,d,index){
     const vx=-w*.45+vine*.22;beam([vx,.1,front+.18],[vx+.18,h-vine*.38,front+.18],.017,M('#555943'));
     for(let k=0;k<10-vine;k++){const leaf=mesh(new T.IcosahedronGeometry(.17,0),M(k%3?'#656c49':'#7c7a50'),shell,vx+Math.sin(k*2+vine)*.21,.24+k*.25,front+.2);leaf.scale.set(1,.6,.4);}
   }
-  for(const zz of [-d/2-.17,d/2+.17])for(let k=0;k<9;k++){const tuft=mesh(new T.ConeGeometry(.09,.42,4),M('#7a7751'),shell,-w*.4+(k%3)*.14,.18,zz+(k%2)*.05);tuft.rotation.z=Math.sin(k)*.3;}
+  for(const zz of [-d/2-.17,d/2+.17])for(let k=0;k<9;k++){const tuft=mesh(createGrassGeometry(),M('#7a7751'),shell,-w*.4+(k%3)*.14,0,zz+(k%2)*.05);tuft.material.side=T.DoubleSide;tuft.scale.setScalar(.6);tuft.castShadow=false;tuft.userData.noCollision=true;tuft.rotation.y=k*2.4;}
 }
 
 export function buildWarCemetery(c,zone){
@@ -98,7 +99,7 @@ export function buildWarCemetery(c,zone){
     box(grave,moss,-.19,.15,-.13,.26,.22,.025);
     if(n%3===0){const offering=box(grave,wood,.17,.11,.13,.25,.04,.28);offering.rotation.y=.3;for(let k=0;k<3;k++)cyl(grave,M('#948563'),.1+k*.055,.22,.14,.012,.28,4);}
     if(n===6||n===11){head.rotation.z=.9;head.position.y=.27;cap.visible=false;}
-    for(let k=0;k<3;k++){const dry=mesh(new T.ConeGeometry(.025,.36,3),M('#8a7d59'),grave,-.45+k*.11,.16,.1+(k%2)*.16);dry.rotation.z=(k-1)*.38;}
+    for(let k=0;k<3;k++){const dry=mesh(createGrassGeometry(),M('#8a7d59'),grave,-.45+k*.11,0,.1+(k%2)*.16);dry.material.side=T.DoubleSide;dry.scale.setScalar(.5);dry.castShadow=false;dry.userData.noCollision=true;dry.rotation.y=k*2.4;}
   }
   // The central lane and the path toward the village stay clear for walking.
   for(const side of [-1,1])for(let k=0;k<8;k++){const x=side*9.1,z=-8+k*2.65,y=at(x,z),post=box(g,wood,x,y+.42,z,.13,.85,.14);post.rotation.z=Math.sin(k*3)*.17;if(k%3!==1){const rail=box(g,wood,x,y+.59,z+1,.09,.1,2.3);rail.rotation.x=(k%3===0?.12:-.07);}}
@@ -112,7 +113,7 @@ export function buildWarCemetery(c,zone){
 
 export function addWarVegetation(c,rand){
   const {mesh,box,M}=c,g=c.group(0,0);g.name='war-scarred-vegetation';
-  const trunk=M('#585343'),charcoal=M('#44463d'),leaf=M('#777952'),grass=M('#898061');
+  const trunk=M('#585343'),charcoal=M('#44463d'),leaf=M('#777952');
   const allowed=(x,z,pad)=>!c.clearCorridor(x,z,pad)&&!c.reserved(x,z,pad)&&!c.inRiver(x,z,pad)&&!c.obstacles.some(o=>Math.abs(x-o.x)<o.w+pad&&Math.abs(z-o.z)<o.d+pad);
   const beam=(x,y,z,tx,ty,tz,r,material=trunk)=>{const delta=new T.Vector3(tx-x,ty-y,tz-z),o=mesh(new T.CylinderGeometry(r*.48,r,delta.length(),5),material,g,(x+tx)/2,(y+ty)/2,(z+tz)/2);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize());return o;};
   let trees=0;
@@ -123,8 +124,6 @@ export function addWarVegetation(c,rand){
     c.obstacle(x,z,.8,.8);trees++;
   }
   for(let k=0;k<32;k++){const x=(rand()-.5)*130,z=(rand()-.5)*130;if(!allowed(x,z,1.2))continue;const y=c.heightAt(x,z);if(k%2){const log=box(g,charcoal,x,y+.18,z,.28,.3,1.8+rand());log.rotation.set(.08,rand()*6,.09);}else{const stump=mesh(new T.CylinderGeometry(.2,.38,.65,5),trunk,g,x,y+.3,z);stump.rotation.z=.13;}}
-  const tufts=new T.InstancedMesh(new T.ConeGeometry(.035,.5,3),grass,1800),dummy=new T.Object3D();let n=0;
-  for(let k=0;k<1100;k++){const x=(rand()-.5)*140,z=(rand()-.5)*140;if(c.inRiver(x,z,.4)||c.reserved(x,z,.2)||c.obstacles.some(o=>Math.abs(x-o.x)<o.w&&Math.abs(z-o.z)<o.d)||c.clearCorridor(x,z,.15)&&rand()<.92)continue;const y=c.heightAt(x,z);for(let j=0;j<3&&n<1800;j++){const h=.22+rand()*.4;dummy.position.set(x+(rand()-.5)*.3,y+h*.45,z+(rand()-.5)*.3);dummy.rotation.set((rand()-.5)*.6,rand()*6,(j-1)*.35);dummy.scale.set(1,h/.5,1);dummy.updateMatrix();tufts.setMatrixAt(n++,dummy.matrix);}}
-  tufts.count=n;tufts.name='dry-war-grass';tufts.receiveShadow=true;g.add(tufts);g.userData.deadTrees=trees;
+  g.userData.deadTrees=trees;
   return g;
 }
