@@ -47,3 +47,28 @@ npm run test:sprint-pose
 Bộ kiểm tra model tải cả ba asset thật qua HTTP, so sánh biểu cảm và rig với
 bản gốc, kiểm tra trọng số xương, độ gập chân/tay và vị trí giày khi chạy.
 Ảnh so sánh nằm trong `test-results/character-style-motion/`.
+
+## Tóc, ảnh tu luyện và hoạt động cư dân
+
+Mũ tóc NPC có khoảng hở với da đầu, kể cả giữa các mặt phẳng, để tránh lộ
+da khi camera nhìn từ trên xuống. Viền mắt, lông mày và miệng không dùng
+lớp viền đặc của toàn thân. Hero có màu da ấm và mặt nạ vải che phần dưới mặt.
+
+Ảnh tu luyện đợi model tải xong, tính khung hình từ các mesh đang hiện và
+tư thế đã áp dụng, rồi vẽ ở độ phân giải gấp đôi kích thước hiển thị.
+Các mesh dự phòng đã ẩn và bề rộng T-pose không làm ảnh bị thu nhỏ nữa.
+
+`resident-rig-pose.js` chuyển hoạt động sang các đích đặt tay và góc thân,
+hông, gối của rig VRM. Tay -X của nhân vật cũ được ánh xạ sang tay phải VRM;
+tay +X sang tay trái VRM. Hai đoạn cánh tay được giải theo độ dài xương thật.
+Mẹ Liên quỳ dâng hoa; làm ruộng, đóng gỗ, rèn sắt, đọc sách và các hoạt động
+khác có tư thế riêng. Dụng cụ chuyển ra khỏi model dự phòng đã ẩn, gắn vào
+lòng bàn tay; các ngón tay co quanh cán. Bàn làm việc vẫn ở trên mặt đất.
+
+```sh
+npm run test:resident-models
+```
+
+Bộ kiểm tra tải model thật, bắn tia từ trên xuống để kiểm tra tóc che da đầu,
+đo chuyển động khớp tay/gối và chụp ảnh bảng tu luyện trong game ở hai kích
+thước màn hình. Ảnh nằm trong `test-results/resident-model-fixes/`.

@@ -10,10 +10,10 @@ import {sampleHeroGait} from './hero-gait.js';
 let heroModelPromise;
 function loadHeroModel(){return heroModelPromise??=new GLTFLoader().loadAsync(new URL('assets/hero-ninja-simple.glb',document.baseURI).href).then(gltf=>gltf.scene);}
 
-export function createHero(){
+export function createHero({outlineWidth=1.15}={}){
   const root=new T.Group(),body=new T.Group();root.name='crimson-masked-hero';root.add(body);
-  const ink=inkMaterial(1.15,'#302b30');
-  function outlineMeshes(group){const meshes=[];group.traverse(o=>{if(o.isMesh&&!o.userData.inkOutline&&!o.userData.hasInkOutline)meshes.push(o);});for(const o of meshes)addInkOutline(o,ink);}
+  const ink=inkMaterial(outlineWidth,'#302b30');
+  function outlineMeshes(group){const meshes=[];group.traverse(o=>{if(o.isMesh&&!o.userData.inkOutline&&!o.userData.hasInkOutline&&!/eye|facemouth|facebrow/i.test(Array.isArray(o.material)?o.material.map(m=>m.name).join(' '):o.material?.name||''))meshes.push(o);});for(const o of meshes)addInkOutline(o,ink);}
   const mats=new Map(),M=c=>{if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.86,flatShading:true}));return mats.get(c);};
   const cloth=M('#211e25'),dark=M('#14151c'),skin=M('#deb499'),hair=M('#161821'),silver=M('#8d878a'),strap=M('#30272a'),red=M('#762936');
   const boxGeo=new T.BoxGeometry(1,1,1),sphere=new T.SphereGeometry(1,16,10);
@@ -126,7 +126,7 @@ export function createHero(){
   }
   function addAvatar(){
     if(typeof document==='undefined'||document.baseURI==='about:blank')return;
-    loadHeroModel().then(source=>{
+    return loadHeroModel().then(source=>{
       const visual=cloneSkeleton(source),garments={tops:[],bottoms:[],shoes:[],wraps:[],insignia:[]};
       visual.traverse(o=>{
         if(!o.isMesh)return;
@@ -135,10 +135,21 @@ export function createHero(){
         o.material=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone();
         for(const m of Array.isArray(o.material)?o.material:[o.material]){
           const n=m.name.toLowerCase();m.roughness=.88;
+          if(n.includes('face_00_skin'))m.color.set('#dfb99e');
           if(n.includes('tops'))garments.tops.push(m);else if(n.includes('bottoms'))garments.bottoms.push(m);else if(n.includes('shoes'))garments.shoes.push(m);else if(n.includes('crimson wrap'))garments.wraps.push(m);else if(n.includes('warm stitch'))garments.insignia.push(m);
         }
       });
       visual.getObjectByName('Icosphere')?.removeFromParent();
+      // A solid cloth mask keeps the pale mouth/cheek texture from reading as
+      // a white stripe at the small size used by the training portrait.
+      const faceBone=visual.getObjectByName('J_Bip_C_Head');
+      if(faceBone){
+        const maskGeometry=new T.BufferGeometry();
+        maskGeometry.setAttribute('position',new T.Float32BufferAttribute([-.096,1.592,.045,0,1.589,.097,.096,1.592,.045,-.078,1.526,.027,0,1.522,.079,.078,1.526,.027,-.099,1.58,-.018,-.084,1.528,-.019,.099,1.58,-.018,.084,1.528,-.019],3));
+        maskGeometry.setIndex([0,3,1,1,3,4,1,4,2,2,4,5,6,7,0,0,7,3,2,5,8,8,5,9]);
+        visual.updateMatrixWorld(true);maskGeometry.applyMatrix4(faceBone.matrixWorld.clone().invert().multiply(visual.matrixWorld));maskGeometry.computeVertexNormals();
+        const faceMask=new T.Mesh(maskGeometry,new T.MeshStandardMaterial({color:'#24242b',roughness:1,side:T.DoubleSide}));faceMask.name='hero-cloth-face-mask';faceBone.add(faceMask);
+      }
       const bounds=new T.Box3().setFromObject(visual),size=bounds.getSize(new T.Vector3());
       if(!Number.isFinite(size.y)||size.y<.5)throw new Error('GLB model has no usable humanoid height');
       const scale=2.94/size.y;visual.scale.setScalar(scale);visual.position.y=-bounds.min.y*scale;visual.name='hero-ninja-glb';
@@ -164,7 +175,7 @@ export function createHero(){
       if(lastEquipmentState){gearKey='';setEquipment(lastEquipmentState);}
     }).catch(error=>console.warn('Could not load the custom ninja GLB; using the built-in model.',error));
   }
-  setEquipment();addAvatar();let stride=0,localX=0,localZ=0,sprintBlend=0,airborne=false,airVerticalSpeed=0;
+  setEquipment();const ready=addAvatar()||Promise.resolve();let stride=0,localX=0,localZ=0,sprintBlend=0,airborne=false,airVerticalSpeed=0;
   function setAirborne(value,verticalSpeed=0){airborne=!!value;airVerticalSpeed=verticalSpeed||0;}
   function avatarArm(i,pitch,spread,flex){
     const entry=avatarPose?.arms[i];if(!entry)return;
@@ -215,5 +226,5 @@ export function createHero(){
   }
   function airPose(v){setAirborne(true,v);legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;avatarLeg(i,l.pivot.rotation.x,l.knee.rotation.x,l.foot.rotation.x);});arms.forEach((a,i)=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;a.elbow.rotation.x=-.35;avatarArm(i,-.6,i===0?.22:-.22,.35);});}
   function climbPose(t){arms.forEach((a,i)=>{a.pivot.rotation.x=-2+Math.sin(t*6+i*Math.PI)*.35;a.elbow.rotation.x=-.5;avatarArm(i,a.pivot.rotation.x,0,.5);});legs.forEach((l,i)=>{l.knee.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25;avatarLeg(i,-.15,l.knee.rotation.x,-l.knee.rotation.x+.15);});body.rotation.x=-.1;}
-  return {root,group:root,cloth,hair,legs,arms,armorAnchors,update,airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
+  return {root,group:root,ready,cloth,hair,legs,arms,armorAnchors,update,airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
 }

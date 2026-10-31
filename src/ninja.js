@@ -69,7 +69,7 @@ export function createNinja(look){
     for(let k=0;k<3;k++)box(leg,accent,0,-.55-k*.1,.148,.19,.022,.018).rotation.z=side*.1;
   }
   let haLyAlive=true;
-  if(profile.id==='ha-ly')loadHaLyAsset().then(source=>{
+  if(profile.id==='ha-ly'&&typeof document!=='undefined')loadHaLyAsset().then(source=>{
     if(!haLyAlive||!root.parent)return;
     const visual=cloneHaLyAsset(source);visual.updateMatrixWorld(true);
     const bounds=new T.Box3().setFromObject(visual),height=Math.max(.01,bounds.max.y-bounds.min.y),scale=profile.height/height;

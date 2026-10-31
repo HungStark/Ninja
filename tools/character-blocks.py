@@ -225,7 +225,9 @@ def hair_geometry(kind, back=False):
             x = (j - 2) * .035
             lock([(x, 1.661, -.125, .027, .016), (x, 1.574, -.124, .025, .019), (x * .85, 1.512 + (j % 2) * .014, -.088, .002, .002)])
     elif back:
-        cap(0, 1.642 if kind == "male" else 1.481, -.022, .106 if kind == "male" else .113, .134 if kind == "male" else .128, .12)
+        # Leave clearance above the skull, including between the flat facets.
+        # Matching only the skull's maximum height lets it pierce the cap.
+        cap(0, 1.646 if kind == "male" else 1.487, -.025, .122 if kind == "male" else .125, .164 if kind == "male" else .153, .146)
     elif kind == "male":
         # A single chunky tied bun replaces hundreds of small hair cards.
         for j in range(4):
