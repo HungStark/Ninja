@@ -15,7 +15,9 @@ export function createVillageActivity({root,body,head,arms,legs,profile,material
   tool=flowers(arms[0],-.04,-.91,.12);tool.name='held-offering-flowers';tool.rotation.x=.45;flowers(station,-.15,.025,1.2);box(station,wood,.32,.035,1.3,.25,.05,.16);
  }
  if(type==='forging'){
-  tool=root.getObjectByName('forging-hammer');tool?.position.set(0,-.22,.35);
+  tool=root.getObjectByName('forging-hammer');
+  if(!tool){tool=new T.Group();tool.name='forging-hammer';arms[1].add(tool);cyl(tool,wood,.05,-.92,.12,.035,.62);box(tool,metal,.05,-.62,.12,.35,.18,.18);}
+  tool.position.set(0,-.22,.35);
   box(station,dark,.44,.42,.78,.48,.8,.5);box(station,metal,.44,.92,.78,.84,.22,.55);box(station,metal,.21,1.08,.78,.32,.1,.4);box(station,material('#e77835'),.42,1.09,.8,.3,.035,.09);
   box(station,dark,-1.2,.35,.9,.85,.7,.9);box(station,material('#ad5933'),-1.2,.73,.9,.62,.07,.65);for(let i=0;i<5;i++)ball(station,material('#d18b42'),-1.45+(i%3)*.22,.8,.72+Math.floor(i/3)*.25,.12);
   sparks=new T.Group();sparks.name='forge-sparks';sparks.position.set(.42,1.1,.8);station.add(sparks);const glow=new T.MeshBasicMaterial({color:'#ffc579'});for(let i=0;i<5;i++)ball(sparks,glow,0,0,0,.025);

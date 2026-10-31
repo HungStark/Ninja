@@ -3,21 +3,24 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createVillageActivity} from './village-activities.js';
 import {attachNpcModel} from './male-npc-model.js';
 import {inkMaterial,addInkOutline} from './ink-outline.js';
+import {trackCharacterLoad} from './character-assets.js';
 
 // Human proportions and profession-specific silhouettes, without a chibi base.
-export function createVillager(profile){
-  const root=new T.Group(),body=new T.Group();body.name='body';root.add(body);root.name='villager-'+profile.village+'-'+profile.id;root.userData.villager={...profile};
+export function createVillager(profile,{procedural=typeof document==='undefined'}={}){
+  const root=new T.Group(),body=new T.Group();body.name='body';root.add(body);root.name='villager-'+profile.village+'-'+profile.id;root.userData.villager={...profile};root.userData.proceduralCharacter=procedural;
   const contour=inkMaterial(1.05,'#302b30');
   const colors=new Map(),material=color=>{if(!colors.has(color))colors.set(color,new T.MeshStandardMaterial({color,roughness:.92,flatShading:true}));return colors.get(color);};
   const cloth=material(profile.coat),accent=material(profile.accent),skin=material(profile.skin),hair=material(profile.hair),ink=material('#302e2b'),leather=material('#604936'),linen=material('#d8cbb0'),metal=material('#8b9290');
   skin.flatShading=false;skin.roughness=.64;hair.roughness=.76;leather.roughness=.73;metal.metalness=.65;metal.roughness=.38;
-  const cube=new T.BoxGeometry(1,1,1),sphere=new T.SphereGeometry(1,10,7);
+  const cube=procedural?new T.BoxGeometry(1,1,1):null,sphere=procedural?new T.SphereGeometry(1,10,7):null;
   const mesh=(geo,mat,parent,x,y,z,sx=1,sy=1,sz=1)=>{const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;};
   const box=(p,m,x,y,z,w,h,d)=>mesh(cube,m,p,x,y,z,w,h,d);
   const ball=(p,m,x,y,z,w,h,d)=>mesh(sphere,m,p,x,y,z,w,h,d);
   const cone=(p,m,x,y,z,r1,r2,h,n=8)=>mesh(new T.CylinderGeometry(r1,r2,h,n),m,p,x,y,z);
   const part=(name,parent=body)=>{const g=new T.Group();g.name=name;parent.add(g);return g;};
   const width=profile.width,robe=['sage','priest','elder','envoy','lantern'].includes(profile.job),female=profile.female;
+  const legs=[],arms=[],forearms=[];let head,eyes,brows;
+  if(procedural){
   const torso=cone(body,cloth,0,1.62,0,(female?.325:.35)*width,(female?.265:.3)*width,1.01);torso.scale.z=.66;
   ball(body,cloth,0,1.1,0,.34*width,.22,.22);
   box(body,leather,0,1.23,.008,.68*width,.105,.46);
@@ -27,7 +30,6 @@ export function createVillager(profile){
     const apron=part('work-apron');box(apron,['smith','miner'].includes(profile.job)?leather:accent,0,1.48,.25,.48*width,1.12,.045);box(apron,leather,.18*width,1.95,.19,.055,.3,.035).rotation.z=.2;
     box(apron,cloth,-.12,1.04,.295,.16,.19,.05);box(apron,cloth,.12,1.04,.295,.16,.19,.05);
   }
-  const legs=[],arms=[],forearms=[];
   for(const side of [-1,1]){
     const leg=part('leg-'+side);leg.position.set(side*.17*width,1.08,0);
     cone(leg,robe?ink:cloth,0,-.24,0,.14,.115,.47,7);const shin=cone(leg,ink,0,-.69,.01,.11,.095,.43,7);
@@ -40,10 +42,10 @@ export function createVillager(profile){
     ball(forearm,skin,0,-.44,.015,.095,.125,.09);arms.push(arm);forearms.push(forearm);
   }
   cone(body,skin,0,2.2,0,.11,.13,.25,8);
-  const head=part('face');head.position.set(0,2.55,.015);
+  head=part('face');head.position.set(0,2.55,.015);
   const faceWidth=female?.255:.275+(profile.variant%2)*.015;
   ball(head,skin,0,0,0,faceWidth,.345,.25);
-  const eyes=part('expressive-eyes',head),brows=part('expressive-brows',head);eyes.position.set(0,.026,.239);brows.position.set(0,.09,.23);
+  eyes=part('expressive-eyes',head);brows=part('expressive-brows',head);eyes.position.set(0,.026,.239);brows.position.set(0,.09,.23);
   for(const side of [-1,1]){
     ball(head,skin,side*(faceWidth-.012),-.015,-.005,.055,.085,.05);
     ball(eyes,material('#e6ddd1'),side*.105,0,0,.06,.025,.012);
@@ -127,13 +129,18 @@ export function createVillager(profile){
     for(const side of [-1,1])box(prop,profile.job==='leader'?metal:accent,side*.4,1.99,0,.27,.17,.37);
     const scroll=cone(prop,linen,-.45,1.19,.16,.08,.08,.48,7);scroll.rotation.z=.3;box(prop,accent,-.45,1.2,.245,.18,.055,.025);
   }
+  }else{
+    body.visible=false;head=part('face');head.position.set(0,2.55,.015);eyes=part('expressive-eyes',head);brows=part('expressive-brows',head);
+    for(const side of [-1,1]){const leg=part('leg-'+side);leg.position.set(side*.17*width,1.08,0);legs.push(leg);const arm=part('arm-'+side);arm.position.set(side*.37*width,1.96,0);const elbow=part('elbow-'+side,arm);elbow.position.set(side*.055,-.46,.015);arms.push(arm);forearms.push(elbow);}
+  }
+  if(!procedural){if(['elder','sage'].includes(profile.job))arms[1].rotation.x=-.16;if(['elder','sage','boatman','farmer'].includes(profile.job))arms[1].rotation.z=-.12;}
   root.scale.setScalar(profile.height/3);
-  if(profile.activity){
+  if(procedural&&profile.activity){
     // Batch static pieces per joint, preserving the articulated head and limbs.
     const obsolete=new Set();root.traverse(parent=>{if(parent.isMesh)return;const batches=new Map();for(const child of [...parent.children])if(child.isMesh){child.updateMatrix();const geo=(child.geometry.index?child.geometry.toNonIndexed():child.geometry.clone()).applyMatrix4(child.matrix);if(!batches.has(child.material))batches.set(child.material,[]);batches.get(child.material).push(geo);obsolete.add(child.geometry);parent.remove(child);}for(const [mat,geos] of batches){const geo=mergeGeometries(geos);geos.forEach(g=>g.dispose());const o=new T.Mesh(geo,mat);o.castShadow=o.receiveShadow=true;parent.add(o);}});obsolete.forEach(g=>g.dispose());
   }
   const activity=profile.activity?createVillageActivity({root,body,head,arms,legs,profile,material}):null;
-  const npcModelUpdate=profile.job!=='ninja'?attachNpcModel(root,profile):null;
+  const npcModelUpdate=!procedural&&profile.job!=='ninja'?attachNpcModel(root,profile):null;
   const bodyMeshes=[];body.traverse(o=>{if(o.isMesh&&!o.userData.inkOutline)bodyMeshes.push(o);});for(const o of bodyMeshes)addInkOutline(o,contour);
   // Hand-held tools follow the elbow, while workbenches remain on the ground.
   root.updateMatrixWorld(true);
@@ -163,6 +170,6 @@ export function createVillager(profile){
     root.userData.expression={blink,lookYaw,lookPitch};
     npcModelUpdate?.(time,moving,{body,head,arms,forearms,legs});
   }
-  function dispose(){npcModelUpdate?.dispose?.();const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry&&!o.isSkinnedMesh)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());contour.dispose();root.userData.villager=null;}
-  return {root,body,head,arms,forearms,legs,cloth,hair,update,dispose,ready:npcModelUpdate?.ready||Promise.resolve(false),get modelReady(){return root.userData.characterModel?.ready===true;},setInkViewport(width,height){contour.uniforms.viewport.value.set(width,height);npcModelUpdate?.setInkViewport(width,height);},workstation:activity?.station||null};
+  function dispose(){npcModelUpdate?.dispose?.();const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry&&!o.isSkinnedMesh)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());colors.forEach(m=>m.dispose());contour.dispose();root.userData.villager=null;}
+  return {root,body,head,arms,forearms,legs,cloth,hair,update,dispose,ready:trackCharacterLoad(root,procedural?'procedural':profile.female?'npc_nu-simple.vrm':'npc_nam-simple.vrm',(npcModelUpdate?.ready||Promise.resolve(procedural)).then(loaded=>{if(loaded)update(0,false,null,0);return loaded;})),get modelReady(){return root.userData.characterModel?.ready===true;},setInkViewport(width,height){contour.uniforms.viewport.value.set(width,height);npcModelUpdate?.setInkViewport(width,height);},workstation:activity?.station||null};
 }

@@ -4,7 +4,7 @@ import {createHero} from './hero.js';
 export function createHeroPreview(){
   let renderer,scene,camera,hero,containerInUse,observer;
   function render(){
-    const container=containerInUse;if(!container?.isConnected||!container.clientWidth||!container.clientHeight)return;
+    const container=containerInUse;if(!container?.isConnected||!container.clientWidth||!container.clientHeight||!hero.modelReady)return;
     const width=container.clientWidth,height=container.clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;hero.setInkViewport(width,height);
     hero.update(0,false);hero.root.updateMatrixWorld(true);
     const bounds=new T.Box3(),point=new T.Vector3();

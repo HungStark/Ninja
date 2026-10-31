@@ -1,3 +1,4 @@
+import {trackCharacterLoad} from './character-assets.js';
 import * as T from 'three';
 import {attachHaLy} from './ha-ly-model.js';
 import {createVillager} from './villager.js';
@@ -13,18 +14,21 @@ export function ninjaProfile(look){
     height:look.female?2.9:2.96+(seed%4)*.065,width:look.female?.85:.94+(seed%3)*.06,hood:!look.female&&look.kind==='ninja'&&look.id.startsWith('random-')&&seed%3!==0,variant:seed%6};
 }
 
-// Village ninja use the hero-derived rig; the procedural body remains a fallback.
+// Browser characters start with control joints only, then attach the current rig.
 export function createNinja(look){
   const profile=ninjaProfile(look),base=createVillager(profile),{root,body,head}=base;
   root.name='ninja-'+profile.id;root.userData.ninja={id:profile.id,village:profile.village,hood:profile.hood,variant:profile.variant,height:profile.height};
   const avatar=profile.id==='ha-ly'?attachHaLy(root,profile,body):attachVillageNinja(root,profile,body);
+  const procedural=root.userData.proceduralCharacter;
+  const shoulderGuards=[],bracers=[],arms=base.arms.map((pivot,i)=>({side:i===0?-1:1,pivot})),legs=base.legs.map((pivot,i)=>({side:i===0?-1:1,pivot}));let scarf;
   const mats=new Map(),M=c=>{if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.86,flatShading:true}));return mats.get(c);};
-  const dark=M('#22272c'),wrap=M('#424448'),metal=M('#939d9c'),leather=M('#53443b'),accent=M(profile.accent),cloth=base.cloth;
-  const sphere=new T.SphereGeometry(1,10,7),cube=new T.BoxGeometry(1,1,1);
+  const sphere=procedural?new T.SphereGeometry(1,10,7):null,cube=procedural?new T.BoxGeometry(1,1,1):null;
   const mesh=(g,m,p,x,y,z,sx=1,sy=1,sz=1)=>{const o=new T.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=o.receiveShadow=true;p.add(o);return o;};
   const box=(p,m,x,y,z,w,h,d)=>mesh(cube,m,p,x,y,z,w,h,d);
   const ball=(p,m,x,y,z,w,h,d)=>mesh(sphere,m,p,x,y,z,w,h,d);
   const panel=(p,m,points,z,depth=.025)=>{const shape=new T.Shape();points.forEach(([x,y],i)=>i?shape.lineTo(x,y):shape.moveTo(x,y));shape.closePath();return mesh(new T.ExtrudeGeometry(shape,{depth,bevelEnabled:true,bevelSize:.008,bevelThickness:.007,bevelSegments:1,steps:1,curveSegments:2}),m,p,0,0,z);};
+  if(procedural){
+  const dark=M('#22272c'),wrap=M('#424448'),metal=M('#939d9c'),leather=M('#53443b'),accent=M(profile.accent),cloth=base.cloth;
   const mask=ball(head,dark,0,-.145,0,.303,.19,.268);mask.name='ninja-face-mask';
   for(let i=0;i<3;i++)box(head,wrap,0,-.075-i*.05,.268-i*.012,.24-i*.035,.012,.012).rotation.z=i%2?.07:-.07;
   const band=box(head,cloth,0,.17,.232,.58,.105,.055);band.name='ninja-headband';
@@ -47,9 +51,7 @@ export function createNinja(look){
   const sword=box(body,dark,-.15,1.62,-.31,.09,1.05,.095);sword.rotation.z=-.43;sword.name='ninja-sheathed-blade';
   const hilt=box(body,leather,-.4,2.17,-.31,.095,.31,.1);hilt.rotation.z=-.43;box(body,metal,-.34,2.04,-.31,.25,.033,.14).rotation.z=-.43;
   for(let i=0;i<4;i++)box(body,accent,-.46+i*.035,2.28-i*.067,-.371,.11,.018,.016).rotation.z=-.43;
-  const scarf=panel(body,cloth,[[-.1,2.14],[-.27,2.1],[-.39,1.68],[-.26,1.32],[-.19,1.5],[-.15,1.24],[-.08,1.7]],-.29,.018);scarf.geometry.translate(0,-2.14,0);scarf.position.y=2.14;scarf.name='ninja-travel-scarf';
-  const shoulderGuards=[],bracers=[];
-  const arms=base.arms.map((pivot,i)=>({side:i===0?-1:1,pivot})),legs=base.legs.map((pivot,i)=>({side:i===0?-1:1,pivot}));
+  scarf=panel(body,cloth,[[-.1,2.14],[-.27,2.1],[-.39,1.68],[-.26,1.32],[-.19,1.5],[-.15,1.24],[-.08,1.7]],-.29,.018);scarf.geometry.translate(0,-2.14,0);scarf.position.y=2.14;scarf.name='ninja-travel-scarf';
   for(let i=0;i<2;i++){
     const side=i===0?-1:1,arm=arms[i].pivot,elbow=base.forearms[i],leg=legs[i].pivot,shoulder=new T.Group(),bracer=new T.Group();arm.add(shoulder);elbow.add(bracer);bracer.position.set(0,0,-.015);shoulderGuards.push(shoulder);bracers.push(bracer);
     panel(shoulder,wrap,[[-.12,-.02],[.12,-.02],[.15,-.16],[0,-.21],[-.15,-.16]],.15,.027);
@@ -61,6 +63,9 @@ export function createNinja(look){
     box(leg,leather,0,-.19,.15,.23,.07,.027);box(leg,leather,0,-.28,.145,.23,.045,.026);
     panel(leg,wrap,[[-.085,-.52],[-.1,-.67],[-.06,-.87],[.06,-.87],[.1,-.67],[.085,-.52]],.105,.027);
     for(let k=0;k<3;k++)box(leg,accent,0,-.55-k*.1,.148,.19,.022,.018).rotation.z=side*.1;
+  }
+  }else{
+    scarf=new T.Group();body.add(scarf);for(let i=0;i<2;i++){const shoulder=new T.Group(),bracer=new T.Group();arms[i].pivot.add(shoulder);base.forearms[i].add(bracer);shoulderGuards.push(shoulder);bracers.push(bracer);}
   }
   let stride=0;
   function update(time,moving,velocity=null,dt=1/60){
@@ -76,6 +81,6 @@ export function createNinja(look){
     legs[0].pivot.rotation.x=-.22-attack*.2;legs[1].pivot.rotation.x=.25+attack*.18;legs[0].pivot.rotation.z=.11;legs[1].pivot.rotation.z=-.11;head.rotation.y=attack*.15;
     avatar?.combatPose(attack,block,bounce);
   }
-  function dispose(){avatar?.dispose();const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}
-  return {root,profile,height:profile.height,cloth:base.cloth,hair:base.hair,arms,legs,shoulderGuards,bracers,update,combatPose,ready:avatar?.ready||Promise.resolve(false),get modelReady(){return avatar?.loaded||false;},get model(){return avatar?.model||null;},get bones(){return avatar?.bones||null;},motionState:()=>avatar?.state(),setStoryPose:value=>avatar?.setStoryPose?.(value),setCombatMode:value=>avatar?.setCombatMode(value),syncCombatHands:hands=>avatar?.syncCombatHands(hands)||false,setInkViewport(w,h){base.setInkViewport(w,h);avatar?.setInkViewport(w,h);},dispose};
+  function dispose(){avatar?.dispose();base.dispose();mats.forEach(m=>m.dispose());}
+  return {root,profile,height:profile.height,cloth:base.cloth,hair:base.hair,arms,legs,shoulderGuards,bracers,update,combatPose,ready:trackCharacterLoad(root,profile.id==='ha-ly'?'ha-ly-simple.glb':'village-ninja.glb',avatar?.ready||Promise.resolve(false)),get modelReady(){return avatar?.loaded||false;},get model(){return avatar?.model||null;},get bones(){return avatar?.bones||null;},motionState:()=>avatar?.state(),setStoryPose:value=>avatar?.setStoryPose?.(value),setCombatMode:value=>avatar?.setCombatMode(value),syncCombatHands:hands=>avatar?.syncCombatHands(hands)||false,setInkViewport(w,h){base.setInkViewport(w,h);avatar?.setInkViewport(w,h);},dispose};
 }

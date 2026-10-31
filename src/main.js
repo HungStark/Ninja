@@ -1538,6 +1538,7 @@ async function main() {
   setupAudioSettings(gameAudio,{onOpen:()=>{const running=started&&!paused&&!won&&!adventure.activeView;if(running)pause();return running;},onClose:wasRunning=>{if(wasRunning)resume();}});
   if(testMode){window.__AN_HOA__.audio=gameAudio;window.__AN_HOA__.guardianArt=index=>guardianPhases.trigger(index,playerPos(),enemyPos(),enemy);}
   setupLanguageSelector();setupScrollOpening();
+  if(!await adventure.world.charactersReady())throw Object.assign(new Error('Character model loading failed'),{code:'CHARACTER_LOAD'});
   renderLoadout(); renderGuide(); updateUI(); $('loading').classList.add('hidden'); document.body.dataset.ready = 'true'; tick(.016); render(); if (!testMode) requestAnimationFrame(frame);
 }
-main().catch(error => { console.error(error); document.getElementById('loading')?.classList.add('hidden'); const el = document.getElementById('errorScreen'); el.classList.remove('hidden'); el.textContent = 'Không khởi tạo được đồ họa 3D. Hãy mở bằng Chrome/Edge hỗ trợ WebGL 2 và bật tăng tốc đồ họa.'; });
+main().catch(error => { console.error(error); document.getElementById('loading')?.classList.add('hidden'); const el = document.getElementById('errorScreen'); el.classList.remove('hidden'); el.textContent = error.code==='CHARACTER_LOAD'?'Không tải được mô hình nhân vật. Hãy tải lại trò chơi và kiểm tra kết nối.':'Không khởi tạo được đồ họa 3D. Hãy mở bằng Chrome/Edge hỗ trợ WebGL 2 và bật tăng tốc đồ họa.'; });

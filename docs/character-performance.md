@@ -10,6 +10,17 @@ rendering another set of characters before each fight.
 hero armor/coat combination; changing a name or ammunition does not invalidate
 the image. Pending loads cannot replace a newer speaker or a closed dialogue.
 
+The browser character factories now start with controller groups only; they do
+not build the old procedural body, hair, uniform or duplicate equipment while
+waiting for GLB/VRM. NPC workstations and held tools are still created and attach
+to the loaded rig. The old procedural geometry remains available for explicit
+procedural/native validation. The initial loading screen waits for the current
+character models and reports a model-loading error if an asset fails. Hero and
+resident resting poses are applied before their ready promises resolve, avoiding
+an initial A-pose. `test:character-loading` delays actual model requests and checks
+zero legacy body meshes before/after loading, source reuse, cancellation and the
+startup success/failure screens.
+
 Regenerate images after changing model appearance:
 
 ```powershell

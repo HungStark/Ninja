@@ -45,6 +45,7 @@
     "test:locomotion": "node tests/locomotion.cjs",
     "test:character-style": "node tests/character-style-motion.cjs",
     "test:resident-models": "node tests/resident-model-browser.cjs",
+    "test:character-loading": "node tools/build.mjs && node tests/character-loading-browser.cjs",
     "assets:portraits": "node tools/build-portraits.mjs",
     "test:character-performance": "node tests/character-budget-core.mjs && node tests/model-portraits-core.mjs && node tools/build.mjs && node tests/model-portraits-browser.cjs && node tests/character-performance-browser.cjs after",
     "test:ha-ly": "node tests/village-events-core.mjs && node tools/build.mjs && node tests/ha-ly-rescue-browser.cjs && node tests/village-events-browser.cjs",
