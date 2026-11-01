@@ -34,5 +34,5 @@ export function createGuardAmbush({entry,char,land,physics,heightAt,blocked,find
     }
     return revealed;
   }
-  return {entry,char,disguise,update,reveal,dismiss(){phase='withdrawn';path=[];moving=false;},caught:()=>phase==='caught',animate(time,dt,animate=true){if(animate&&char.root.visible)char.update(time,moving,velocity,dt);},state:()=>({...entry,phase,home:{...home},ninjaVisible:char.root.visible,disguiseVisible:disguise.visible,moving,alertRadius:GUARD_ALERT_RADIUS,runSpeed:GUARD_RUN_SPEED})};
+  return {entry,char,disguise,update,reveal,reset(){phase=standing?'guarding':'hidden';age=0;path=[];replan=0;lastTarget=null;moving=false;velocity={x:0,z:0};Object.assign(entry,home,{revealed:standing});char.root.position.set(home.x,home.y,home.z);char.root.rotation.y=Math.atan2(-home.x,-home.z);char.root.visible=standing;disguise.visible=!standing;if(solid){solid.bottom=home.y;solid.top=home.y+1.05;}},dispose(){if(solid)physics.removeBox(solid);},dismiss(){phase='withdrawn';path=[];moving=false;},caught:()=>phase==='caught',animate(time,dt,animate=true){if(animate&&char.root.visible)char.update(time,moving,velocity,dt);},state:()=>({...entry,phase,home:{...home},ninjaVisible:char.root.visible,disguiseVisible:disguise.visible,moving,alertRadius:GUARD_ALERT_RADIUS,runSpeed:GUARD_RUN_SPEED})};
 }

@@ -5,7 +5,7 @@ export const SYSTEMS=['fire','water','lightning','wind','earth','light','dark','
 export const LEVEL_POINTS=[1,1,1,1,2,2,2,3,3,4];
 export const LEVEL_XP=[0,60,150,270,420,620,880,1200,1600,2100];
 export const BASE_STATS={health:300,chakra:100};
-export const ATTRIBUTE_GAINS={health:6,strength:1.5,mana:2};
+export const ATTRIBUTE_GAINS={health:6,strength:1.5,mana:1,manaRegen:.1};
 export const SKILL_LEVELS={
   water:{'water-barrier':1,'water-lance':2,'water-reflect':3,'water-volley':4,'water-tsunami':5},
   fire:{'fire-volley':1,'fire-barrier':2,'fire-reflect':3,'fire-lance':4,'fire-meteor':5},
@@ -27,7 +27,7 @@ export function systemLevel(progression,element){
 }
 export function earnedPoints(progression){return SYSTEMS.reduce((total,element)=>total+LEVEL_POINTS.slice(0,systemLevel(progression,element)).reduce((a,b)=>a+b,0),0);}
 export function remainingPoints(progression){return Math.max(0,earnedPoints(progression)-Object.values(progression.attributes).reduce((a,b)=>a+b,0));}
-export function combatStats(progression){const a=progression.attributes;return {maxHp:BASE_STATS.health+ATTRIBUTE_GAINS.health*a.health,maxChakra:BASE_STATS.chakra+BASE_STATS.chakra*ATTRIBUTE_GAINS.mana*a.mana/100,damageMultiplier:1+a.strength*ATTRIBUTE_GAINS.strength/100,points:remainingPoints(progression)};}
+export function combatStats(progression){const a=progression.attributes;return {maxHp:BASE_STATS.health+ATTRIBUTE_GAINS.health*a.health,maxChakra:BASE_STATS.chakra+ATTRIBUTE_GAINS.mana*a.mana,chakraRegen:5+ATTRIBUTE_GAINS.manaRegen*a.mana,damageMultiplier:1+a.strength*ATTRIBUTE_GAINS.strength/100,points:remainingPoints(progression)};}
 export function readProgression(raw,learned=[]){
   const p=newProgression();
   if(raw&&typeof raw==='object'){
@@ -62,8 +62,21 @@ export function teachAvailable(save,element){
   save.learnedSpells.push(...ids);save.progression.books=save.progression.books.filter(id=>!ids.includes(id));return ids;
 }
 // Explicit arsenals and encounter strength; opening trio is authored separately.
+// Each regular sentry has three arts. Conditional arts include their setup.
+export const GUARD_ARSENALS={
+ fire:['fire-volley','fire-barrier','water-reflect'],
+ water:['water-barrier','water-lance','earth-barrier'],
+ lightning:['lightning-lance','lightning-barrier','water-reflect'],
+ wind:['wind-orb','wind-volley','wind-lance'],
+ earth:['earth-orb','earth-barrier','lightning-lance'],
+ light:['light-orb','light-lance','water-reflect'],
+ dark:['dark-orb','dark-lance','fire-volley'],
+ wood:['wood-reflect','wood-orb','lightning-lance'],
+ ice:['ice-reflect','ice-lance','lightning-lance']
+};
 export function encounterProfile(save,kind,region){
  const element=regionElement(region),strength=campaignStrength(save,region,kind),ordered=Object.keys(SKILL_LEVELS[element]).sort((a,b)=>requiredLevel(a)-requiredLevel(b));
- const elite=kind==='guardian-guard',guard=kind==='village-guard'||elite,count=kind==='boss'?5:Math.min(5,elite?2+Math.floor(strength.rank/3):guard?1+Math.floor(strength.rank/3):1+Math.floor(strength.rank/3));
- return {element,...strength,hp:botHealth(strength.hp),spellIds:ordered.slice(0,count),...(kind==='boss'?{phaseSpellIds:ordered,phases:region==='dark'?3:2}:{})};
+ const count=kind==='boss'||kind==='guardian-guard'?5:Math.min(5,1+Math.floor(strength.rank/3));
+ const spellIds=kind==='village-guard'?[...GUARD_ARSENALS[element]]:ordered.slice(0,count);
+ return {element,...strength,hp:botHealth(strength.hp),spellIds,...(kind==='boss'?{phaseSpellIds:ordered,phases:region==='dark'?3:2}:{})};
 }

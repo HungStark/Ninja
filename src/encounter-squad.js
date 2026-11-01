@@ -8,7 +8,7 @@ export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwW
   const members=[];
   function reset(){for(const m of members){m.rig.root.removeFromParent();m.rig.dispose();m.aura.dispose();}members.length=0;}
   const pos=m=>[m.rig.root.position.x,m.rig.root.position.y+1.72,m.rig.root.position.z];
-  return {reset,
+  return {reset,syncVisibility(){for(const m of members)m.rig.root.visible=m.fighter.hp>0;},
     start(profiles,spawn){reset();profiles.slice(1).forEach((profile,i)=>{
       const rig=createNinja(encounterAppearance({kind:'intro-trio',...profile})),fighter=new Fighter(profile.hp);fighter.autoRestore=false;
       rig.root.position.copy(spawn).add(new T.Vector3(i===0?-3.8:3.8,0,1.8));scene.add(rig.root);
@@ -20,7 +20,8 @@ export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwW
     position(id){const m=members.find(m=>m.id===id);return m&&pos(m);},
     update(dt,time,enabled=true,reducedMotion=false){
       for(const m of members){
-        const alive=m.fighter.hp>0;m.castAge+=dt;
+        const alive=m.fighter.hp>0;m.castAge+=dt;m.rig.root.visible=alive;
+        if(!alive){m.spell=null;m.pose=-1;m.moving=false;m.trace=[];m.traceCast=false;}
         if(enabled&&alive){
           m.fighter.tick(dt);m.rules.tick(dt);m.weaponTimer-=dt;
           const old=pos(m),next=m.movement.update(dt,{position:old,shots:getShots(),beginner:true,casting:!!m.spell,blocked:m.fighter.controlTime>0});m.rig.root.position.x=next[0];m.moving=Math.abs(next[0]-old[0])>.0001;
@@ -35,9 +36,8 @@ export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwW
           }
         }
         m.aura.update(enabled?dt:0,m.rig.root.position.toArray(),alive&&m.movement.state().dashBoost.dashing>0,reducedMotion);
-        m.rig.update(time,alive&&m.moving,{x:m.movement.state().velocity,z:0},dt);
-        if(!alive){m.rig.root.rotation.z=T.MathUtils.damp(m.rig.root.rotation.z,-1.45,4,dt);m.rig.root.position.y=T.MathUtils.damp(m.rig.root.position.y,-.6,4,dt);}
-        else if(m.pose>=0&&!reducedMotion){m.rig.arms.forEach((a,i)=>{a.pivot.rotation.x=-1.1;a.pivot.rotation.z=(i?1:-1)*.35;});}
+        if(alive)m.rig.update(time,m.moving,{x:m.movement.state().velocity,z:0},dt);
+        if(alive&&m.pose>=0&&!reducedMotion){m.rig.arms.forEach((a,i)=>{a.pivot.rotation.x=-1.1;a.pivot.rotation.z=(i?1:-1)*.35;});}
       }
     },
     state:()=>members.map(m=>({id:m.id,name:m.profile.name,element:m.profile.element,hp:m.fighter.hp,maxHp:m.fighter.maxHp,position:pos(m),height:m.rig.height,visible:m.rig.root.visible,chakra:m.rules.chakra,spellIds:[...m.profile.spellIds],casts:m.casts,pose:m.pose,sequence:[...m.rules.sequence],sealTrace:[...m.trace],traceCast:m.traceCast,movement:m.movement.state()}))

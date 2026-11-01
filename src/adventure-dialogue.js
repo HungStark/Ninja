@@ -6,6 +6,7 @@ import {armorById,equipmentState} from './equipment.js';
 import {HA_LY,HA_LY_MOTHER,currentVillageEvent} from './village-events.js';
 import {ninjaProfile} from './ninja.js';
 import {encounterAppearance} from './encounter-appearance.js';
+import {questForNPC} from './journey-story.js';
 export const speakerPortrait=portraitMarkup;
 
 export function heroSpeaker(save){return {name:save.hero.name,role:'Người giữ ấn',coat:save.hero.coat,hair:save.hero.hair,armor:armorById(save.equipment?.armor),equipment:equipmentState(save),id:'hero'};}
@@ -29,13 +30,27 @@ export function dialogueCast(item,save,region,biome){
 
 export function conversationLines(item,save,cast,body){
   const {hero,npc}=cast,line=(speaker,text)=>({speaker,text});
-  if(['village-event','companion','story-witness'].includes(item.kind))return [line(npc,body),line(hero,item.kind==='companion'?'Chúng ta cùng đi tiếp. Có bạn đồng hành, con đường này đã khác trước rồi.':'Tôi sẽ giúp. Hãy cùng làm rõ chuyện này trước khi có thêm ai gặp nạn.')];
+  if(['village-event','companion','story-witness'].includes(item.kind))return [line(npc,body)];
   if(item.id==='nameless-resident-war-cemetery'&&save.story?.stage==='mother')return [line(hero,'Mẹ, con nhớ cha và em. Con muốn làm điều gì đó để cuộc chiến này chấm dứt.'),line(npc,body),line(npc,'Mẹ chỉ mong con trở về bình an. Nếu con quyết tâm lên đường, hãy hứa với mẹ: đừng để lòng thù hận dẫn lối. Hãy đem hòa bình về cho những người còn sống.')];
-  if(item.kind==='npc')return [line(hero,save.quests[save.village]===2?'Tôi đã giải quyết xong việc được giao và trở về báo tin.':'Trưởng làng, có điều gì tôi có thể giúp không?'),line(npc,body)];
-  if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire>=2?'Tôi đã trở lại. Những bông Hồng Liên này có giúp được người bị thương không?':'Tôi nghe nói có người cần thuốc chữa thương. Tôi có thể giúp gì?'),line(npc,body)];
+  if(item.kind==='npc')return save.quests[save.village]===2?[line(hero,'Kẻ phá hoại đã bị chặn lại. Tôi trở về báo tin để mọi người yên tâm.'),line(npc,body)]:[line(npc,body)];
+  if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire>=2?'Tôi đã trở lại. Những bông Hồng Liên này có giúp được người bị thương không?':'Thuốc chữa bỏng cần loại dược liệu nào? Tôi có thể tìm trên Vách Tro.'),line(npc,body)];
   if(item.kind==='envoy')return [line(hero,'Tôi đến để chuyển lời từ ba làng Thủy, Hỏa và Lôi.'),line(npc,body)];
   if(['quest','boss'].includes(item.kind))return [line(hero,'Ta tới để chấm dứt chuyện này.'),line(npc,body)];
-  return [line(npc,body),line(hero,item.kind==='mentor'?'Tôi sẽ ghi nhớ lời chỉ dạy.':'Cảm ơn đã chia sẻ. Tôi đã hiểu rồi.')];
+  const quest=questForNPC(save.village,item);
+  return quest&&save.story?.sidequests[quest.id]===3?[line(npc,sidequestThanks(quest)),line(npc,body)]:[line(npc,body)];
+}
+
+export function sidequestThanks(quest){
+  if(quest.targetModel==='flowers')return 'Cảm ơn con đã mang hoa về. Có những người vẫn được nhớ tới, dù họ không còn ở bên chúng ta.';
+  if(quest.type==='combat')return 'Cảm ơn bạn đã ngăn những kẻ phá hoại. Mọi người có thể yên tâm trở lại làm việc rồi.';
+  if(quest.type==='survey')return 'Những ghi chép bạn mang về đã giúp tôi tìm ra chỗ cần sửa. Cảm ơn bạn đã cất công khảo sát.';
+  return 'Đúng là thứ tôi đang tìm! Nhờ bạn mang về, công việc của tôi có thể tiếp tục. Cảm ơn bạn.';
+}
+
+export function sidequestLines(quest,status,{hero,npc},body){
+  if(status>=2)return [{speaker:npc,text:body}];
+  const reply=status===1?'Tôi đang theo dấu việc này. Khi có kết quả, tôi sẽ trở lại.':quest.type==='combat'?'Tôi sẽ tới đó xem xét. Nếu có kẻ đe dọa dân làng, tôi sẽ ngăn chúng.':quest.type==='survey'?'Tôi sẽ kiểm tra khu vực và ghi lại những gì tìm thấy.':'Tôi sẽ tìm quanh khu vực đó và mang đồ về cho bạn.';
+  return [{speaker:npc,text:body},{speaker:hero,text:reply}];
 }
 
 export function createDialogueUI(root){

@@ -9,6 +9,7 @@ export function createVillageStoryActors({scene,hero,blocked,floor,addSolid,remo
   const root=new T.Group();root.name='village-story-actors';scene.add(root);
   let follower=null,entry=null,activeEvent=null,current='nameless',list=[],trail=[],moving=false,catchups=0,clock=0;
   let stationary=[],prison=null,captive=null,mother=null;
+  let syncedKey=null,syncedList=null;
   const dispose=g=>{const gs=new Set(),ms=new Set();g.traverse(o=>{if(o.geometry)gs.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])ms.add(m);});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());g.removeFromParent();};
   function safePoint(p){for(const radius of [0,1.2,2.5,4,6,8])for(let i=0;i<(radius?16:1);i++){const a=i*Math.PI/8,x=p.x+Math.cos(a)*radius,z=p.z+Math.sin(a)*radius;if(!blocked(x,z))return {x,z,y:floor(x,z)};}return {...p,y:floor(p.x,p.z)};}
   function mesh(parent,geometry,color,p,scale=[1,1,1]){const m=new T.Mesh(geometry,new T.MeshStandardMaterial({color,roughness:.8,emissive:color,emissiveIntensity:.06}));m.position.fromArray(p);m.scale.fromArray(scale);m.castShadow=true;parent.add(m);return m;}
@@ -22,8 +23,10 @@ export function createVillageStoryActors({scene,hero,blocked,floor,addSolid,remo
     for(let i=0;i<3;i++){const x=(i-1)*.85;mesh(parent,style==='earth'?new T.DodecahedronGeometry(.65):new T.CylinderGeometry(.16,.25,1.6,7),color,[x,.8,-.4],[1,1+i*.12,1]);}
   }
   function addActor(id,p,wounded=false){const model=createNinja(HA_LY);model.root.name=wounded?'ha-ly-wounded':'ha-ly-companion';model.root.position.set(p.x,p.y,p.z);root.add(model.root);if(wounded)stationary.push(model);return model;}
-  function reset(keepFollower=false){for(const s of prison?.colliders||[])removeSolid(s);prison=null;for(const actor of stationary){actor.dispose?.();actor.root.userData.villager=null;dispose(actor.root);}stationary=[];captive=null;mother=null;if(!keepFollower)follower?.dispose();for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;entry=null;trail=[];}activeEvent=null;moving=false;}
+  function reset(keepFollower=false){syncedKey=null;syncedList=null;for(const s of prison?.colliders||[])removeSolid(s);prison=null;for(const actor of stationary){actor.dispose?.();actor.root.userData.villager=null;dispose(actor.root);}stationary=[];captive=null;mother=null;if(!keepFollower)follower?.dispose();for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;entry=null;trail=[];}activeEvent=null;moving=false;}
   function sync(save,id,interactives,inInterior=false){
+    const key=JSON.stringify([id,inInterior,villageEventStep(save,id),!!save.story?.companion?.recruited]);
+    if(key===syncedKey&&interactives===syncedList)return;
     reset(current===id&&!!follower&&save.story?.companion?.recruited);current=id;list=interactives;for(let i=list.length-1;i>=0;i--)if(['village-event','story-witness','companion'].includes(list[i].kind))list.splice(i,1);
     activeEvent=inInterior?null:currentVillageEvent(save,id);
     if(id==='fire'&&!inInterior){
@@ -43,6 +46,7 @@ export function createVillageStoryActors({scene,hero,blocked,floor,addSolid,remo
       list.push({kind:'village-event',id:`story-${id}-${activeEvent.step}`,eventVillage:id,step:activeEvent.step,x:p.x,z:p.z,y:p.y,label:activeEvent.title});
     }
     if(save.story?.companion?.recruited){if(!follower){const hp=hero.root.position,p=safePoint({x:hp.x+1.3,z:hp.z+1});follower=addActor(HA_LY.id,p);entry={kind:'companion',id:HA_LY.id,label:'Hạ Ly · Bạn đồng hành',x:p.x,z:p.z,y:p.y};trail=[hp.clone()];}list.push(entry);}
+    syncedKey=key;syncedList=interactives;
   }
   function update(dt,time,paused=false,riding=false,budget=null){
     clock=time;for(const actor of stationary){const slot=budget?.prepare(actor,hero.root.position,dt);if(!slot||slot.tick)actor.update(time,false,null,paused?0:slot?.dt||dt);}if(!follower)return;const hp=hero.root.position,p=follower.root.position,previous=p.clone();moving=false;

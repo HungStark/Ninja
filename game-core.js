@@ -118,6 +118,7 @@
   class GameRules {
     constructor(ids = defaultLoadout,options={}) {
       this.maxChakra=Number.isFinite(options.maxChakra)&&options.maxChakra>=100?options.maxChakra:100;
+      this.chakraRegen=Number.isFinite(options.chakraRegen)&&options.chakraRegen>=0?options.chakraRegen:chakraRegen;
       this.cooldownOverrides=options.cooldownOverrides||{};
       this.sequence = []; this.chakra = this.maxChakra; this.time = 0; this.lastSeal = -Infinity; this.cooldown = 0; this.casts = 0;this.usedOnce=new Set();
       this.cooldowns={};this.shurikenCooldown=0;this.shurikenThrows=0;
@@ -130,7 +131,7 @@
       this.loadout = [...ids]; this.spells = ids.map(id => {const spell=spells.find(s => s.id === id),override=this.cooldownOverrides[id];return Number.isFinite(override)&&override>0&&override<spell.cooldown?{...spell,cooldown:override}:spell;}); this.clear(); return result;
     }
     tick(dt) {
-      this.time += dt; this.chakra = Math.min(this.maxChakra, this.chakra + dt * chakraRegen); this.cooldown = Math.max(0, this.cooldown - dt);this.shurikenCooldown=Math.max(0,this.shurikenCooldown-dt);
+      this.time += dt; this.chakra = Math.min(this.maxChakra, this.chakra + dt * this.chakraRegen); this.cooldown = Math.max(0, this.cooldown - dt);this.shurikenCooldown=Math.max(0,this.shurikenCooldown-dt);
       if(this.shurikenCooldown<1e-7)this.shurikenCooldown=0;
       for(const id of Object.keys(this.cooldowns)){this.cooldowns[id]=Math.max(0,this.cooldowns[id]-dt);if(this.cooldowns[id]<1e-7)delete this.cooldowns[id];}
     }
