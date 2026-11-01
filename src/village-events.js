@@ -1,10 +1,11 @@
 import {REGIONS} from './adventure-world.js';
-import {gainExperience,regionElement} from './progression.js';
+import {gainExperience,regionElement,GUARD_ARSENALS} from './progression.js';
+import {FIRE_PRISON_SITE,FIRE_MOTHER_SITE,FIRE_MEDICINE_SITE} from './village-zoning.js';
 import {botHealth} from './enemy-balance.js';
 
 export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
 export const HA_LY_MOTHER={id:'fire-ha-ly-mother',name:'Bà Hồng',role:'Mẹ nuôi của Hạ Ly',kind:'healer',female:true,age:'elder',hair:'#bdb5a2',hairStyle:'bun',coat:'#7c594d',accent:'#b79e75',height:2.7,width:.94,shawl:true};
-export const FIRE_PRISON={x:-12,z:20};
+export const FIRE_PRISON=FIRE_PRISON_SITE;
 const stage=(title,body,spot,style,extra={})=>({title,body,spot,style,...extra});
 const choice=(label,correct,feedback)=>({label,correct,feedback});
 export const VILLAGE_EVENTS={
@@ -15,7 +16,7 @@ export const VILLAGE_EVENTS={
     stage('Người làm chứng bên bến','Mộc An nhận ra kẻ giao hàng mang huy hiệu hình trăng khuyết. Ông đồng ý đưa dân làng ra khỏi bến và làm chứng rằng vụ việc không phải do Làng Hỏa. Đường tới hộ vệ đã mở.',0,'water')
   ]},
   fire:{title:'Người con gái giữa tro tàn',speaker:'Hạ Ly',stages:[
-    stage('Lời nhờ cậy của mẹ nuôi','Bà Hồng, mẹ nuôi của Hạ Ly, đang đợi bên cổng Làng Hỏa. Bà kể con gái bị Hắc Y bắt giữ sau khi tìm ra chứng cứ giả danh các làng. Hạ Ly bị thương, bị trói trong nhà lao phía tây cổng làng. Bà nhờ bạn giải cứu nàng trước khi chúng chuyển tù.','entrance','mother',{speaker:'Bà Hồng',speakerId:HA_LY_MOTHER.id}),
+    stage('Lời nhờ cậy của mẹ nuôi','Bà Hồng, mẹ nuôi của Hạ Ly, đang đợi bên cổng khu quân sự Làng Hỏa. Bà kể con gái bị Hắc Y bắt giữ sau khi tìm ra chứng cứ giả danh các làng. Hạ Ly bị thương, bị trói trong nhà lao thuộc khu quân sự cạnh nhà họp. Bà nhờ bạn giải cứu nàng trước khi chúng chuyển tù.','entrance','mother',{speaker:'Bà Hồng',speakerId:HA_LY_MOTHER.id}),
     stage('Phá khóa nhà lao','Qua song sắt, bạn thấy Hạ Ly ngồi gục trên ghế, hai tay bị trói trước bụng. Hai cai ngục Hắc Y giữ chìa khóa và chặn cửa. Đánh bại cả hai để mở nhà lao và tháo dây trói cho nàng.','prison-gate','captive',{battle:true,enemy:'Cai ngục Hắc Y'}),
     stage('Thuốc cho vết thương','Cửa lao đã mở, dây trói đã được tháo nhưng Hạ Ly vẫn chưa thể đi lại. Nàng nhờ bạn lấy túi thuốc Hỏa Tâm được giấu cạnh khu dân cư. Mang thuốc trở lại nhà lao để băng bó vết thương.',0,'medicine'),
     stage('Một người cùng đường','Bạn trở lại nhà lao, dùng thuốc Hỏa Tâm băng bó cho Hạ Ly. Nàng trao cho bạn mảnh mật thư có dấu trăng khuyết và cảm ơn vì đã giữ lời với mẹ nuôi. Sau khi hồi sức, nàng muốn cùng bạn tìm ra kẻ đứng sau cuộc chiến.','prison','injured',{recruit:true})
@@ -80,15 +81,17 @@ export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=
 export function eventSpot(id,event){
   if(id==='fire'&&event.spot==='prison-gate')return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+3.25};
   if(id==='fire'&&event.spot==='prison')return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+.65};
+  if(id==='fire'&&event.spot==='entrance')return {...FIRE_MOTHER_SITE};
+  if(id==='fire'&&event.style==='medicine')return {...FIRE_MEDICINE_SITE};
   if(event.spot==='entrance')return {x:2.4,z:17};
-  const zones=REGIONS[id].zones.filter(z=>!z.platform&&!['summit-lotus','red-cliff'].includes(z.id)),zone=zones[Number(event.spot)||0];
+  const zones=REGIONS[id].zones.filter(z=>!z.platform&&!['summit-lotus','red-cliff'].includes(z.id)),zone=zones[(Number(event.spot)||0)%zones.length];
   // Use the district approach, already connected to the village road network.
   const distance=Math.max(6,Math.hypot(zone.x,zone.z)-Math.min(zone.radius*.7,9));const a=Math.atan2(zone.x,zone.z);
   return {x:Math.sin(a)*distance,z:Math.cos(a)*distance};
 }
 export function villageEventEncounter(id){
   if(id==='fire'){
-    const squad=[{name:'Hắc Y · Kẻ mang hỏa phù',element:'fire',village:'fire',hp:botHealth(100),spellIds:['fire-volley']},{name:'Hắc Y · Kẻ khóa đường lui',element:'lightning',village:'lightning',hp:botHealth(95),spellIds:['lightning-lance']}].map((n,i)=>({...n,damageMultiplier:.38,sealDelay:.85,restTime:4.2,weaponInterval:4,initialDelay:2+i*2}));
+    const squad=[{name:'Hắc Y · Kẻ mang hỏa phù',element:'fire',village:'fire',hp:botHealth(100),spellIds:[...GUARD_ARSENALS.fire]},{name:'Hắc Y · Kẻ khóa đường lui',element:'lightning',village:'lightning',hp:botHealth(95),spellIds:[...GUARD_ARSENALS.lightning]}].map((n,i)=>({...n,damageMultiplier:.38,sealDelay:.85,restTime:4.2,weaponInterval:4,initialDelay:2+i*2}));
     return {...squad[0],name:'Hai cai ngục Hắc Y',village:'fire',squad,eventStep:1};
   }
   if(id==='dark')return {name:'Kẻ giữ màn sương',element:'dark',hp:botHealth(230),spellIds:['dark-orb','dark-lance','dark-domain'],damageMultiplier:.8,sealDelay:.6,restTime:2.8,weaponInterval:2.7,eventStep:2};

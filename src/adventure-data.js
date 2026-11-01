@@ -36,7 +36,7 @@ export const QUESTS={
   wood:{title:'Lời khẩn của vườn thuốc',enemy:'Kẻ Săn Mộc Ấn',x:31,z:23,location:'Vườn Dược Linh Chi',story:'Kẻ săn Mộc Ấn đang hút sinh lực của Vườn Dược Linh Chi phía đông. Ngăn hắn để những cây thuốc có thể cứu dân làng.'},
   dark:{title:'Ngọn đèn cho người trở về',enemy:'Ảnh nhẫn Không Tên',x:-32,z:23,location:'Phố Đèn Lồng Tím',story:'Ảnh nhẫn Không Tên lần lượt dập đèn ở Phố Đèn Lồng Tím phía tây. Hãy giữ những ngọn đèn còn lại để khách đi muộn tìm được đường về.'}
 };
-for(const id of ['water','fire','lightning','wind','earth','ice','wood']){QUESTS[id].x*=2;QUESTS[id].z*=2;}QUESTS.water.x=82;QUESTS.water.z=38;
+for(const id of ['water','fire','lightning','wind','earth','ice','wood','light','dark']){QUESTS[id].x*=2;QUESTS[id].z*=2;}QUESTS.water.x=82;QUESTS.water.z=38;
 export const CAMPAIGN_REGIONS=Object.freeze(['earth','wind','light','ice','wood']);
 const firstLeaders=['water','fire','lightning'];
 const treatyDelivered=(save,id)=>save.campaign?.deliveries?.includes(id)===true;
@@ -78,7 +78,7 @@ export function campaignObjective(save) {
   const local=villageEventObjective(save);if(local&&(FIRST_VILLAGES.includes(save.village)||save.village==='dark'||treatyDelivered(save,save.village)||save.bosses[save.village]))return local;
   const stage=campaignStage(save);
   const lesson=id=>({title:`Học thuật tại ${village(id).name}`,description:REGIONS[id].mentor.clue,targetVillage:id,targetKind:'mentor'});
-  const challenge=id=>({title:`Đối mặt ${REGIONS[id].boss.name}`,description:`Tìm ${REGIONS[id].boss.title} tại ${REGIONS[id].zones[3].name}. Chiến thắng để nhận bí thuật và tiếp tục hành trình.`,targetVillage:id,targetKind:'boss'});
+  const challenge=id=>({title:`Đối mặt ${REGIONS[id].boss.name}`,description:`Tìm hộ vệ tại sân nhà họp của làng. Chiến thắng để nhận bí thuật và tiếp tục hành trình.`,targetVillage:id,targetKind:'boss'});
   const infiltrate=id=>!save.bosses[id]&&!villageEventComplete(save,id)?villageEventObjective(save,id):save.bosses[id]?{title:'Thương lượng dấu ấn hòa bình',description:'Hộ vệ đã bị khuất phục. Gặp trưởng '+village(id).name+' để đối thoại và nhận dấu ấn hòa bình.',targetVillage:id,targetKind:'npc'}:{title:'Khuất phục hộ vệ '+village(id).name,description:'Thâm nhập làng, đánh bại cảnh vệ trên đường và đối mặt '+REGIONS[id].boss.name+'. Có thể tìm cao nhân và giúp cư dân để chuẩn bị.',targetVillage:id,targetKind:'boss'};
   if(stage==='water'||stage==='fire-lightning'){
     const id=FIRST_VILLAGES.includes(save.village)&&!save.story.peaceSeals.includes(save.village)?save.village:FIRST_VILLAGES.find(id=>!save.story.peaceSeals.includes(id));return infiltrate(id);
@@ -97,7 +97,7 @@ export function campaignObjective(save) {
 
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
-  return {version:1,worldRevision:2,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},arena:{round:1},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+  return {version:1,worldRevision:3,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},arena:{round:1},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -107,10 +107,10 @@ export function readJourney(storage) {
     const clean=newJourney(s.hero.name,hex(s.hero.coat)?s.hero.coat:'#211e25',hex(s.hero.hair)?s.hero.hair:'#161821');
     clean.equipment=readEquipment(s.equipment);if(s.hero.look!=='crimson-wanderer-v2'){clean.hero.hair='#161821';clean.hero.coat='#211e25';}
     clean.village=s.village;clean.checkpoint=s.checkpoint;
-    const limit=s.worldRevision===2?regionMetrics(s.village).limit:70;
+    const limit=s.worldRevision>=2?regionMetrics(s.village).limit:70;
     clean.position=Array.isArray(s.position)&&s.position.length===2&&s.position.every(n=>Number.isFinite(n)&&Math.abs(n)<=limit)?[...s.position]:[0,7];
-    if(s.worldRevision!==2&&regionMetrics(s.village).scale===2)clean.position=clean.position.map(n=>n*2);
-    clean.elevation=s.worldRevision===2&&Number.isFinite(s.elevation)&&s.elevation>=-100&&s.elevation<=200?s.elevation:null;
+    if((s.worldRevision<2||!s.worldRevision||s.worldRevision===2&&['light','dark'].includes(s.village))&&regionMetrics(s.village).scale===2)clean.position=clean.position.map(n=>n*2);
+    clean.elevation=s.worldRevision>=2&&Number.isFinite(s.elevation)&&s.elevation>=-100&&s.elevation<=200?s.elevation:null;
     clean.expeditions={};if([1,2,3].includes(s.expeditions?.fire))clean.expeditions.fire=s.expeditions.fire;
     clean.arena={round:arenaRound(s)};
     clean.surface=(s.village==='wind'&&['sky-west','sky-east','sky-north'].includes(s.surface)||s.village==='earth'&&s.surface==='earth-cave'||s.village==='wood'&&s.surface==='heart-tree')?s.surface:null;
@@ -218,8 +218,10 @@ export function resolveBattle(save,encounter,victory) {
 // A* over a one-unit grid. Diagonal moves cannot cut across solid corners.
 export function findPath(from,to,blocked) {
   if(!Array.isArray(from)||!Array.isArray(to)||from.length!==2||to.length!==2||![...from,...to].every(Number.isFinite))return [];
-  const grid=blocked.limit||WORLD_LIMIT,key=(x,z)=>`${x},${z}`,snap=p=>p.map(Math.round);
-  const start=snap(from),end=snap(to),valid=(x,z)=>Math.abs(x)<=grid&&Math.abs(z)<=grid&&!blocked(x,z);
+  const grid=blocked.limit||WORLD_LIMIT,key=(x,z)=>`${x},${z}`,snap=p=>p.map(Math.round),walkable=new Map();
+  // A search evaluates each grid cell many times from neighboring nodes.
+  // Collision state is fixed for this call; keep the cache local to the search.
+  const start=snap(from),end=snap(to),valid=(x,z)=>{if(Math.abs(x)>grid||Math.abs(z)>grid)return false;const k=key(x,z);if(!walkable.has(k))walkable.set(k,!blocked(x,z));return walkable.get(k);};
   if(!valid(...end)||Math.abs(to[0])>grid||Math.abs(to[1])>grid||blocked(...to))return [];
   if(start.some(n=>Math.abs(n)>grid))return [];
   const open=[],cost=new Map([[key(...start),0]]),parent=new Map(),closed=new Set();

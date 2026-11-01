@@ -1,10 +1,11 @@
 import * as T from 'three';
+import {insidePlot} from './village-zoning.js';
 
 export const GUARD_ALERT_RADIUS=10,GUARD_RUN_SPEED=5.8;
 export function createGuardAmbush({entry,char,land,physics,heightAt,blocked,findPath,smoke}){
-  const standing=entry.guardRole==='guardian',home={x:entry.x,y:entry.y,z:entry.z},disguise=new T.Group();disguise.name='guard-disguise-'+entry.disguise;disguise.position.set(home.x,home.y,home.z);land.add(disguise);entry.revealed=standing;char.root.visible=standing;disguise.visible=!standing;
+  const standing=['guardian','gate','jailer'].includes(entry.guardRole),home={x:entry.x,y:entry.y,z:entry.z},disguise=new T.Group();disguise.name='guard-disguise-'+entry.disguise;disguise.position.set(home.x,home.y,home.z);land.add(disguise);entry.revealed=standing;char.root.visible=standing;disguise.visible=!standing;
   const mesh=(geometry,color,x,y,z)=>{const object=new T.Mesh(geometry,new T.MeshStandardMaterial({color,roughness:1,flatShading:true}));object.position.set(x,y,z);object.castShadow=true;object.receiveShadow=true;disguise.add(object);return object;};
-  if(standing){/* These two elite guards stand openly at their posts. */}
+  if(standing){/* Gate and guardian sentries stand openly at their posts. */}
   else if(entry.disguise==='stump'){
     const trunk=mesh(new T.CylinderGeometry(.46,.66,1.05,7),'#62503c',0,.52,0);trunk.rotation.z=.08;mesh(new T.CylinderGeometry(.4,.4,.055,7),'#a18b60',.04,1.075,0);for(let i=0;i<4;i++){const a=i*Math.PI/2,root=mesh(new T.ConeGeometry(.22,.8,5),'#62503c',Math.sin(a)*.47,.18,Math.cos(a)*.47);root.rotation.z=Math.sin(a)*.9;root.rotation.x=Math.cos(a)*.9;}
   }else if(entry.disguise==='bush'){
@@ -16,7 +17,7 @@ export function createGuardAmbush({entry,char,land,physics,heightAt,blocked,find
   let phase=standing?'guarding':'hidden',age=0,path=[],replan=0,lastTarget=null,moving=false,velocity={x:0,z:0};
   function reveal(){if(phase!=='hidden')return false;phase='revealing';age=0;entry.revealed=true;smoke.burst([home.x,home.y,home.z]);return true;}
   function update(dt,{hero,enabled=true,riding=false,surface=null}){
-    moving=false;velocity={x:0,z:0};if(!enabled||riding||surface)return false;
+    moving=false;velocity={x:0,z:0};if(!enabled||riding||surface||entry.courtBounds&&!insidePlot(entry.courtBounds,hero.x,hero.z,-1))return false;
     const p=char.root.position,d=Math.hypot(p.x-hero.x,p.z-hero.z,p.y-hero.y);let revealed=false;
     if(phase==='guarding'&&d<=GUARD_ALERT_RADIUS)phase='chasing';
     if(phase==='hidden'&&d<=GUARD_ALERT_RADIUS)revealed=reveal();

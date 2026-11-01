@@ -1,3 +1,4 @@
+import {levelVillageTerrain} from './village-zoning.js';
 import {GUARDIAN_FORMS} from './guardian-beasts.js';
 // Authored places, people and terrain. Base coordinates expand per region below.
 import {landmarkResidents} from './adventure-residents.js';
@@ -5,7 +6,7 @@ import {botHealth} from './enemy-balance.js';
 export const WORLD_LIMIT = 140;
 export const GATE_RADIUS = 62;
 export const ARRIVAL_RADIUS = 57;
-export function regionMetrics(id){const scale=['water','fire','lightning','wind','earth','ice','wood'].includes(id)?2:1;return {scale,limit:70*scale,size:140*scale,area:(140*scale)**2,gateRadius:70*scale-8,arrivalRadius:70*scale-13};}
+export function regionMetrics(id){const scale=['water','fire','lightning','wind','earth','ice','wood','light','dark'].includes(id)?2:1;return {scale,limit:70*scale,size:140*scale,area:(140*scale)**2,gateRadius:70*scale-8,arrivalRadius:70*scale-13};}
 
 // Legacy saved journeys used this starter. New journeys choose their art in journey-story.
 export const STARTER_SPELLS = Object.freeze(['water-barrier']);
@@ -224,8 +225,8 @@ for(const [id,form] of Object.entries(GUARDIAN_FORMS)){const boss=REGIONS[id].bo
 const hill=(x,z,cx,cz,width,height)=>height*Math.exp(-((x-cx)**2+(z-cz)**2)/(width*width));
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
 
-// Existing place IDs remain stable while the seven great villages expand to 280 x 280 m.
-for(const id of ['water','fire','lightning','wind','earth','ice','wood']){const r=REGIONS[id];for(const zone of r.zones){zone.x*=2;zone.z*=2;zone.radius*=1.4;}for(const n of r.npcs)if(n.kind!=='lore'){n.x*=2;n.z*=2;}r.boss.x*=2;r.boss.z*=2;r.houses=r.houses.map(([x,z,w,d])=>[x*2,z*2,w,d]);}
+// Existing place IDs remain stable while the nine elemental villages expand to 280 x 280 m.
+for(const id of ['water','fire','lightning','wind','earth','ice','wood','light','dark']){const r=REGIONS[id];for(const zone of r.zones){zone.x*=2;zone.z*=2;zone.radius*=1.4;}for(const n of r.npcs)if(n.kind!=='lore'){n.x*=2;n.z*=2;}r.boss.x*=2;r.boss.z*=2;r.houses=r.houses.map(([x,z,w,d])=>[x*2,z*2,w,d]);}
 REGIONS.nameless.subtitle='Làng biên địa đổ nát · chiến tuyến giữa Thủy, Hỏa và Lôi';
 REGIONS.nameless.npcs[0].dialogue='Thủy, Hỏa và Lôi nhiều lần kéo quân qua đây. Những mái nhà cháy dở và hố đạn là ký ức của người còn sống. Hãy giúp ba làng ngừng chiến.';
 REGIONS.nameless.zones[1].description='Quán trà mất nửa mái sau một trận tập kích. Vết chém và đầu tên còn ghim trên cột gỗ.';
@@ -300,7 +301,7 @@ function baseTerrainHeight(id,x,z){
   if(distance<river.width+river.bank)return river.y+(ground-river.y)*smooth((distance-river.width)/river.bank);
   return ground;
 }
-export function terrainHeight(id,x,z){const scale=regionMetrics(id).scale;let h=baseTerrainHeight(id,x/scale,z/scale);if(id==='water'){const w=waterwayAt(x,z);h=Math.max(h,-.15);if(w.distance<w.width)h=w.y-4.5*(1-smooth(w.distance/w.width));else if(w.distance<w.width+6)h=w.y+(h-w.y)*smooth((w.distance-w.width)/6);}if(id==='ice')h+=(-.6-h)*smooth((z-86)/8);return h;}
+export function terrainHeight(id,x,z){const scale=regionMetrics(id).scale;let h=baseTerrainHeight(id,x/scale,z/scale);if(id==='water'){const w=waterwayAt(x,z);h=Math.max(h,-.15);if(w.distance<w.width)h=w.y-4.5*(1-smooth(w.distance/w.width));else if(w.distance<w.width+6)h=w.y+(h-w.y)*smooth((w.distance-w.width)/6);}if(id==='ice')h+=(-.6-h)*smooth((z-86)/8);return levelVillageTerrain(id,x,z,h);}
 
 export function districtAt(id,x,z) {
   const zones=REGIONS[id]?.zones;

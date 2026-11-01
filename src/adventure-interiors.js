@@ -1,20 +1,23 @@
 import {SPIRIT_ORES} from './spirit-mines.js';
 import * as T from 'three';
 import {REGIONS} from './adventure-world.js';
+import {HALL_STYLES,hallId,planVillageCivic} from './village-civic.js';
 
 export const INTERIORS={
   'earth-cave':{id:'earth-cave',village:'earth',title:'Đại Hang Địa Tâm',spawn:[0,-14],bounds:{x:22,minZ:-58,maxZ:-8},center:[0,-33],exit:[0,-9.5],exterior:[0,-11.2],surface:null,zones:['great-cave','cave-crystals'],sky:'#111718',ambient:1.05},
   'wood-arena':{id:'wood-arena',village:'wood',title:'Võ Đường Cửu Làng',spawn:[0,23],bounds:{x:25,minZ:-31,maxZ:31},center:[0,0],exit:[0,28.5],exterior:[1,2.25],surface:'heart-tree',zones:[],sky:'#26322d',ambient:1.7}
 };
+for(const id of Object.keys(HALL_STYLES))INTERIORS[hallId(id)]={id:hallId(id),village:id,kind:'council',title:'Nhà họp · Trưởng làng',style:HALL_STYLES[id],spawn:[0,12],bounds:{x:16,minZ:-20,maxZ:18},center:[0,-1],exit:[0,15.5],exterior:[0,7],surface:null,zones:[],sky:'#555e57',ambient:1.7};
+export const councilInterior=id=>INTERIORS[hallId(id)]||null;
 export const interiorForZone=(village,id)=>village==='earth'&&['great-cave','cave-crystals'].includes(id)?'earth-cave':null;
 export function interiorForSave(save){const room=INTERIORS[save.interior?.id];return room?.village===save.village?room:null;}
-export function enterInterior(save,id,standing){const room=INTERIORS[id];if(!room||room.village!==save.village||save.interior)return false;save.interior={id,returnPosition:[...standing.position],returnSurface:standing.surface||null,returnElevation:standing.elevation};save.position=[...room.spawn];save.surface=null;save.elevation=0;return true;}
-export function leaveInterior(save){const room=interiorForSave(save);if(!room)return false;const from=save.interior;save.position=[...from.returnPosition];save.surface=from.returnSurface;save.elevation=from.returnElevation;save.interior=null;return true;}
-export function readInterior(raw,village){const room=INTERIORS[raw?.id];if(!room||room.village!==village)return null;const p=raw.returnPosition,valid=Array.isArray(p)&&p.length===2&&p.every(n=>Number.isFinite(n)&&Math.abs(n)<140);return {id:room.id,returnPosition:valid?[...p]:[...room.exterior],returnSurface:room.surface,returnElevation:Number.isFinite(raw.returnElevation)&&raw.returnElevation>=-20&&raw.returnElevation<100?raw.returnElevation:null};}
+export function enterInterior(save,id,standing){const room=INTERIORS[id];if(!room||room.village!==save.village||save.interior)return false;save.interior={id,...(room.kind==='council'?{layoutRevision:2}:{}),returnPosition:[...standing.position],returnSurface:standing.surface||null,returnElevation:standing.elevation};save.position=[...room.spawn];save.surface=null;save.elevation=0;return true;}
+export function leaveInterior(save){const room=interiorForSave(save);if(!room)return false;const from=save.interior;if(room.kind==='council'&&from.layoutRevision!==2){const entry=planVillageCivic(save.village).hall.entry;from.returnPosition=[entry.x,entry.z];from.returnSurface=null;from.returnElevation=entry.y;}save.position=[...from.returnPosition];save.surface=from.returnSurface;save.elevation=from.returnElevation;save.interior=null;return true;}
+export function readInterior(raw,village){const room=INTERIORS[raw?.id];if(!room||room.village!==village)return null;const p=raw.returnPosition,valid=Array.isArray(p)&&p.length===2&&p.every(n=>Number.isFinite(n)&&Math.abs(n)<140);return {id:room.id,...(room.kind==='council'?{layoutRevision:raw?.layoutRevision===2?2:0}:{}),returnPosition:valid?[...p]:[...room.exterior],returnSurface:room.surface,returnElevation:Number.isFinite(raw.returnElevation)&&raw.returnElevation>=-20&&raw.returnElevation<100?raw.returnElevation:null};}
 
 // Only this room is built after the outdoor scene has been disposed.
 export function buildInterior(c,room){
-  const oreNodes=new Map();const {land,box,cyl,mesh,M,physics}=c,root=new T.Group();root.name='interior-'+room.id;land.add(root);const wood=room.id==='wood-arena',b=room.bounds,center=(b.minZ+b.maxZ)/2,depth=b.maxZ-b.minZ;
+  const oreNodes=new Map();const {land,box,cyl,mesh,M,physics}=c,root=new T.Group();root.name='interior-'+room.id;root.userData.style=room.style;land.add(root);const wood=room.id==='wood-arena'||room.kind==='council',b=room.bounds,center=(b.minZ+b.maxZ)/2,depth=b.maxZ-b.minZ;
   const solid=(o,name)=>c.solidMesh(o,{name,stepable:false});
   const stone=M(wood?'#68553e':'#5c5b50'),trim=M(wood?'#493a2d':'#373f3d'),warm=M('#e2bd73',.4);
   const floor=box(root,M(wood?'#99815c':'#777361'),0,-.18,center,b.x*2,.36,depth);floor.name='interior-floor';physics.addBox({name:'interior-floor',x:0,z:center,w:b.x*2,d:depth,bottom:-.36,top:0});
@@ -22,8 +25,22 @@ export function buildInterior(c,room){
   for(const z of [b.minZ-.3,b.maxZ+.3])solid(box(root,stone,0,5.5,z,b.x*2+1,11,.6),'interior-end-wall');
   // Back-side roof closes the room without exposing any landscape above it.
   const roof=box(root,M(wood?'#4a4030':'#42483f'),0,12,center,b.x*2+1,.5,depth+1);roof.name='interior-ceiling';
-  const fixtures=[{kind:'interior-exit',id:room.id,x:room.exit[0],z:room.exit[1],y:0,label:wood?'Ra hiên nhà trên cây':'Trở ra Làng Thổ'}];
-  if(wood){
+  const fixtures=[{kind:'interior-exit',id:room.id,x:room.exit[0],z:room.exit[1],y:0,label:room.kind==='council'?'Ra sân nhà họp':wood?'Ra hiên nhà trên cây':'Trở ra Làng Thổ'}];
+  if(room.kind==='council'){
+    const colors={water:'#76a7b5',fire:'#b46547',lightning:'#a795c7',earth:'#c2a071',wind:'#a0bda2',light:'#e1cd8f',ice:'#badbe1',wood:'#83a169',dark:'#89799e'},accent=M(colors[room.village]);
+    // Central council table, chairs, records and a small private sleeping area.
+    solid(box(root,trim,0,.65,-5,10,1.3,3.4),'council-table');box(root,M('#c9b38c'),0,1.34,-5,10.2,.12,3.6);
+    for(const side of [-1,1])for(const x of [-4,-1.3,1.3,4]){const z=-5+side*3;solid(box(root,stone,x,.42,z,1.5,.84,1.5),'council-chair');box(root,trim,x,1.4,z+side*.6,1.5,1.1,.15);}
+    for(const x of [-10,10])for(const z of [-14,5]){cyl(root,trim,x,5.2,z,.4,10.4,8);box(root,accent,x,7.3,z+.45,1.5,3,.08);}
+    for(let i=0;i<5;i++)box(root,M(i%2?'#ded2aa':'#b69a77'),-3+i*1.4,1.44,-5,1,.035,.7);
+    box(root,accent,0,5,-19.5,6,5,.14);const emblem=mesh(new T.TorusGeometry(1.1,.13,6,24,room.village==='dark'?Math.PI*1.6:Math.PI*2),warm,root,0,5,-19.3);emblem.rotation.z=.35;
+    solid(box(root,trim,-11,1.9,-15,5,3.8,1.4),'council-archive');for(let row=0;row<3;row++)for(let k=0;k<8;k++)box(root,M(k%2?'#ad9469':'#d2bd8e'),-13+k*.55,.7+row,-14.2,.32,.6,.22);
+    solid(box(root,trim,11,.4,-14,3.6,.8,6),'chief-bed');box(root,M('#d7cdb2'),11,.88,-14,3.4,.16,5.8);box(root,M('#eee2bf'),11,1.04,-16,2.8,.2,1);
+    solid(box(root,trim,7.5,1.5,-14, .18,3,7),'chief-private-screen');box(root,accent,7.6,1.7,-14,.07,2.3,6.2);
+    for(const side of [-1,1]){box(root,trim,side*15.55,4,-2,.1,4,6);box(root,M('#c9d8d0',.15),side*15.45,4,-2,.08,3.6,5.6);}
+    const light=new T.PointLight('#ffdfab',8,35,1.5);light.position.set(0,7,0);root.add(light);cyl(root,warm,0,8,0,.65,.45,8);
+    fixtures.push({kind:'npc',id:room.village+'-chief',x:0,z:-12,y:0,label:'Trưởng làng'});
+  }else if(wood){
     for(let z=b.minZ+1;z<b.maxZ;z+=1.25)box(root,M(Math.round(z)%2?'#a28c67':'#917852'),0,.006,z,b.x*2-.4,.012,.035);
     for(const side of [-1,1])for(const z of [-24,-12,0,12,24])solid(box(root,trim,side*23,5.6,z,.75,11.2,.75),'arena-timber-column');
     for(const z of [-24,-12,0,12,24])box(root,trim,0,10.7,z,47,.6,.6);

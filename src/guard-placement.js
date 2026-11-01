@@ -1,16 +1,19 @@
+import {insidePlot} from './village-zoning.js';
 export const HIDDEN_GUARD_COUNT=8;
 export const GUARDIAN_GUARD_COUNT=2;
 export const MIN_GUARD_SPACING=15;
 
 // Resolve against the finished map. Reserve even defeated guards' home slots so
 // surviving guards do not move closer together when a previous one disappears.
-export function placeVillageGuards(definitions,{limit,boss,valid,heightAt}){
+export function placeVillageGuards(definitions,{limit,boss,valid,heightAt,campuses=[]}){
   const placed=[],positions=new Map();
   const order=[...definitions].sort((a,b)=>(b.guardRole==='guardian')-(a.guardRole==='guardian'));
   for(const entry of order){
     const standing=entry.guardRole==='guardian';
     const accepts=(x,z)=>{
       if(Math.abs(x)>limit-3||Math.abs(z)>limit-3)return false;
+      if(entry.courtBounds&&!insidePlot(entry.courtBounds,x,z,-3))return false;
+      if(!entry.courtBounds&&entry.guardRole!=='gate'&&campuses.some(p=>insidePlot(p,x,z,2)))return false;
       const distance=Math.hypot(x-boss.x,z-boss.z);
       if(standing?(distance<9||distance>28):distance<25)return false;
       if(placed.some(p=>Math.hypot(x-p.x,z-p.z)<MIN_GUARD_SPACING+.05))return false;

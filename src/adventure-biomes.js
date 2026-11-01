@@ -23,6 +23,15 @@ export function traversalComponent(id,x,z,surface=null){if(id==='water')return w
 
 // Plan walking legs and actual ferry/climbing legs separately. Water is never a walkable shortcut.
 export function planExpedition(from,to,{id,surface=null,targetSurface=null,routes,walk}){
+  if(id==='water'){
+    // Estate walls and graded riverbanks can change which docks connect on
+    // foot. Search actual walking legs instead of assuming old water sectors.
+    const queue=[{at:from,legs:[]}],seen=new Set();
+    while(queue.length){const node=queue.shift(),final=walk(node.at,to,null);if(final.length||Math.hypot(node.at[0]-to[0],node.at[1]-to[1])<.1)return [...node.legs,...(final.length?[{kind:'walk',path:final}]:[])];
+      for(const route of routes)for(const side of [0,1]){const key=route.id+':'+side;if(seen.has(key))continue;const dock=side?route.to:route.from,path=walk(node.at,dock,null);if(!path.length&&Math.hypot(node.at[0]-dock[0],node.at[1]-dock[1])>.1)continue;seen.add(key);queue.push({at:side?route.from:route.to,legs:[...node.legs,...(path.length?[{kind:'walk',path}]:[]),{kind:'traverse',id:route.id,side}]});}
+    }
+    return null;
+  }
   const start=traversalComponent(id,...from,surface),goal=traversalComponent(id,...to,targetSurface),queue=[{component:start,rides:[]}],seen=new Set([start]);let rides;
   while(queue.length){const node=queue.shift();if(node.component===goal){rides=node.rides;break;}for(const route of routes)for(const side of [0,1]){const a=side?route.to:route.from,b=side?route.from:route.to,ca=traversalComponent(id,...a,side?route.platform?.id:null),cb=traversalComponent(id,...b,side?null:route.platform?.id);if(ca===node.component&&!seen.has(cb)){seen.add(cb);queue.push({component:cb,rides:[...node.rides,{route,side}]});}}}
   if(!rides)return null;const legs=[];let at=from,atSurface=surface;
@@ -60,9 +69,9 @@ export function buildBiome(c,routes){
   }
   if(id==='water'){
     for(const axis of ['x','z']){const positions=[],indices=[];for(let k=0;k<=300;k++){const t=k-150,center=axis==='z'?46+Math.sin(t*.025)*9:69+Math.sin(t*.028)*7,width=axis==='z'?7:6;for(const side of [-1,1])positions.push(axis==='z'?center+side*width:t,-.675,axis==='z'?t:center+side*width);if(k<300){const n=k*2;indices.push(n,n+2,n+1,n+1,n+2,n+3);}}if(axis==='x')for(let k=0;k<indices.length;k+=3)[indices[k+1],indices[k+2]]=[indices[k+2],indices[k+1]];const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();const canal=mesh(geometry,new T.MeshStandardMaterial({color:'#5f9eaf',metalness:.22,roughness:.22,transparent:true,opacity:.87}),land);canal.name='fishing-village-canal';}
-    for(let k=0;k<22;k++){const z=-118+k*11,w=riverAt(id,z),side=k%2?1:-1,x=w.x+side*(w.width+2),y=heightAt(x,z);const g=new T.Group();g.name='fishing-shed';g.position.set(x,y,z);land.add(g);for(const sx of [-1,1])cyl(g,M('#625b48'),sx*2,1.45,0,.1,4.1,6);box(g,M('#bba87c'),0,3.5,0,5,.16,3);for(let j=0;j<7;j++)beam(g,M('#817f66'),new T.Vector3(-2+j*.65,.4,.1),new T.Vector3(-2+j*.65,2.4,.1),.025);for(let j=0;j<6;j++){const fish=mesh(new T.OctahedronGeometry(.23),M('#a2bbb7'),g,-1.7+j*.62,1.3+Math.sin(j)*.2,.2);fish.scale.set(.5,1.4,.4);}for(let j=0;j<3;j++)cyl(g,M('#877457'),j*.8-1,.3,1.1,.38,.6,8);}
+    for(let k=0;k<22;k++){const z=-118+k*11,w=riverAt(id,z),side=k%2?1:-1,x=w.x+side*(w.width+2),y=heightAt(x,z);if(c.clearCorridor(x,z,4))continue;const g=new T.Group();g.name='fishing-shed';g.position.set(x,y,z);land.add(g);for(const sx of [-1,1])cyl(g,M('#625b48'),sx*2,1.45,0,.1,4.1,6);box(g,M('#bba87c'),0,3.5,0,5,.16,3);for(let j=0;j<7;j++)beam(g,M('#817f66'),new T.Vector3(-2+j*.65,.4,.1),new T.Vector3(-2+j*.65,2.4,.1),.025);for(let j=0;j<6;j++){const fish=mesh(new T.OctahedronGeometry(.23),M('#a2bbb7'),g,-1.7+j*.62,1.3+Math.sin(j)*.2,.2);fish.scale.set(.5,1.4,.4);}for(let j=0;j<3;j++)cyl(g,M('#877457'),j*.8-1,.3,1.1,.38,.6,8);}
   }
-  if(id==='ice'){const sea=box(land,M('#9ec9d6'),0,-.64,116,280,.1,56);sea.name='polar-frozen-sea';for(let k=0;k<28;k++){const x=-127+k*9.3,z=94+(k%4)*11,ice=mesh(new T.DodecahedronGeometry(2.5+k%3),M(k%2?'#cde2e7':'#a9cfdb'),land,x,.5,z);ice.scale.set(1,1+k%3*.6,1.5);} }
+  if(id==='ice'){const sea=box(land,M('#9ec9d6'),0,-.64,116,280,.1,56);sea.name='polar-frozen-sea';for(let k=0;k<28;k++){const x=-127+k*9.3,z=94+(k%4)*11;if(c.clearCorridor(x,z,5))continue;const ice=mesh(new T.DodecahedronGeometry(2.5+k%3),M(k%2?'#cde2e7':'#a9cfdb'),land,x,.5,z);ice.scale.set(1,1+k%3*.6,1.5);} }
   if(id==='earth'){
     const g=new T.Group();g.name='earth-cave-sealed-entrance';land.add(g);const y=heightAt(0,-14),stone=M('#716755');
     mesh(new T.TorusGeometry(4,1.1,7,20,Math.PI),stone,g,0,y+.8,-14);
@@ -77,7 +86,7 @@ export function buildBiome(c,routes){
     for(const [x,z] of [[-15,9],[14,16],[-28,-15],[26,-32]]){const y=heightAt(x,z);for(let k=0;k<5;k++){const pole=box(land,M('#42443b'),x+k*.6,y+.8,z,.16,1.6,.15);pole.rotation.z=(k-2)*.11;}box(land,M('#49483b'),x+1.2,y+.9,z,3,.1,.1);for(const side of [-1,0,1]){const banner=box(land,M(side<0?'#58737a':side===0?'#786783':'#874f42'),x+side*2,y+1.8,z,.8,1.2,.04);banner.rotation.z=side*.2;}}
   }
   if(id==='fire')fixtures.push({kind:'expedition-giver',x:-6,z:5,label:'Thợ Khôi · Hồng liên cứu thương'},{kind:'expedition-goal',x:88,z:-96,y:36,label:'Hái Hồng Liên trên đỉnh núi'});
-  if(id==='wind')for(const [x,z] of [[-100,-92],[-92,-100],[-108,-98],[102,96]]){const y=heightAt(x,z),g=new T.Group();g.position.set(x,y,z);land.add(g);mesh(new T.ConeGeometry(2.5,12,8),M('#d0c6a4'),g,0,6,0);const rotor=new T.Group();rotor.position.set(0,10,2);g.add(rotor);for(let k=0;k<4;k++){const blade=new T.Group();blade.rotation.z=k*Math.PI/2;rotor.add(blade);box(blade,M('#ddd5b4'),.4,3,0,1,5,.1);}animated.push({kind:'windmill',mesh:rotor});}
+  if(id==='wind')for(const [x,z] of [[-100,-92],[-92,-100],[-108,-98],[102,96]]){if(c.clearCorridor(x,z,5))continue;const y=heightAt(x,z),g=new T.Group();g.position.set(x,y,z);land.add(g);mesh(new T.ConeGeometry(2.5,12,8),M('#d0c6a4'),g,0,6,0);const rotor=new T.Group();rotor.position.set(0,10,2);g.add(rotor);for(let k=0;k<4;k++){const blade=new T.Group();blade.rotation.z=k*Math.PI/2;rotor.add(blade);box(blade,M('#ddd5b4'),.4,3,0,1,5,.1);}animated.push({kind:'windmill',mesh:rotor});}
   return fixtures;
 }
 

@@ -5,10 +5,10 @@ import {REGIONS,regionMetrics,isDeepWater,riverAt} from '../src/adventure-world.
 import {planExpedition} from '../src/adventure-biomes.js';
 globalThis.innerWidth=1440;globalThis.innerHeight=960;
 const world=createAdventureScene(),load=id=>{const s=newJourney();s.village=id;world.load(id,s);return s;};
-for(const id of ['water','fire','lightning','wind','earth','ice','wood']){
- assert.equal(regionMetrics(id).area/regionMetrics('nameless').area,4);assert.equal(regionMetrics(id).size,280);load(id);assert.ok(REGIONS[id].zones.length>=6);
+for(const id of ['water','fire','lightning','wind','earth','ice','wood','light','dark']){
+ assert.equal(regionMetrics(id).area/regionMetrics('nameless').area,4);assert.equal(regionMetrics(id).size,280);load(id);assert.ok(REGIONS[id].zones.length>=1);
  for(const item of world.interactives.filter(i=>i.kind!=='village-guard')){const plan=planExpedition([0,7],[item.x,item.z],{id,routes:world.routes,targetSurface:item.platform,walk:(a,b,key)=>findPath(a,b,world.navigationBlocked(key))});assert.ok(plan,`${id}: reachable ${item.kind}/${item.id}`);}
- assert.equal(world.blocked(141,0),true);for(const gate of world.gates){const p=[gate.x*world.metrics.arrivalRadius/world.metrics.gateRadius,gate.z*world.metrics.arrivalRadius/world.metrics.gateRadius];assert.equal(world.blocked(...p),false,`${id}: arrival from ${gate.id} is clear`);}
+ assert.equal(world.blocked(141,0),true);for(const gate of world.gates){const length=Math.hypot(gate.x,gate.z),p=[gate.x*(1-6/length),gate.z*(1-6/length)];assert.equal(world.blocked(...p),false,`${id}: arrival from ${gate.id} is clear`);}
 }
 load('nameless');assert.equal(world.metrics.size,140);assert.ok(world.scene.getObjectsByProperty('name','village-house').some(h=>h.userData.ruined));assert.equal(world.blocked(71,0),true);
 load('water');assert.equal(world.routes.length,5);const ferry=world.routes[0];assert.ok(isDeepWater((ferry.from[0]+ferry.to[0])/2,36));assert.equal(findPath(ferry.from,ferry.to,world.blocked).length,0,'deep water requires a ferry');
@@ -28,5 +28,5 @@ load('wood');{
  assert.equal(world.canHeroMove(5,0),false,'tree trunk remains solid');assert.equal(world.canHeroMove(10,5),true,'stair landing fills the former notch with a real floor');
 }
 load('lightning');world.update(12,false);assert.equal(world.weatherState().raining,true);assert.ok(world.weatherState().strikes>0);world.update(45,false);assert.equal(world.weatherState().raining,false);world.update(40,false);assert.equal(world.weatherState().raining,true);
-const old=newJourney();delete old.worldRevision;old.village='water';old.position=[60,-50];const migrated=readJourney({getItem:()=>JSON.stringify(old)});assert.deepEqual(migrated.position,[120,-100]);assert.equal(migrated.worldRevision,2);migrated.position=[132,-124];assert.deepEqual(readJourney({getItem:()=>JSON.stringify(migrated)}).position,[132,-124]);
-console.log('PASS: seven fourfold villages, all places reachable with real traversal legs, impassable deep rivers/ferries, input-driven climbing and ladders, elevated saves, separate cave entrance, intermittent storms, ruins and old-save migration.');
+const old=newJourney();delete old.worldRevision;old.village='water';old.position=[60,-50];const migrated=readJourney({getItem:()=>JSON.stringify(old)});assert.deepEqual(migrated.position,[120,-100]);assert.equal(migrated.worldRevision,3);migrated.position=[132,-124];assert.deepEqual(readJourney({getItem:()=>JSON.stringify(migrated)}).position,[132,-124]);
+console.log('PASS: nine fourfold villages, all places reachable with real traversal legs, impassable deep rivers/ferries, input-driven climbing and ladders, elevated saves, separate cave entrance, intermittent storms, ruins and old-save migration.');

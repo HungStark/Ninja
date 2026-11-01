@@ -72,6 +72,7 @@ export function villageGuards(id){
   }
   const length=Math.hypot(r.boss.x,r.boss.z)||1,fx=-r.boss.x/length,fz=-r.boss.z/length;
   for(let i=0;i<GUARDIAN_GUARD_COUNT;i++){const side=i?-1:1;guards.push({id:id+'-guardian-sentry-'+(i+1),village:id,element:id,name:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ'),x:r.boss.x+fx*10+fz*side*9,z:r.boss.z+fz*10-fx*side*9,guardRole:'guardian',disguise:null,kind:'village-guard',label:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ')});}
+  for(let i=0;i<2;i++)guards.push({id:id+'-jailer-'+(i+1),village:id,element:id,name:'Cảnh ngục',kind:'village-guard',guardRole:'jailer',disguise:null,x:0,z:0,label:'Cảnh ngục · '+(i+1)});
   return guards;
 }
 const taskByActivity={
