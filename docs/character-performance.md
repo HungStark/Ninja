@@ -27,6 +27,17 @@ Regenerate images after changing model appearance:
 & '.tools/node-v24.21.0-win-x64/node.exe' tools/build-portraits.mjs
 ```
 
+Elder NPCs use slightly lowered eyelids, shallow cheek shaping and soft creases
+on their existing face materials. Three deterministic age variants preserve
+individual expressions. Geometry and source textures remain shared; the change
+adds no meshes, textures or draw calls. Eyelid aging blends with blinking rather
+than stacking a second closed-eye shape. Adult NPCs keep their original face.
+Resting elders also curve their spine and chest slightly, with head compensation
+to keep looking forward. Their pelvis stays over their feet; authored working
+and kneeling poses retain precedence over the resting posture.
+After changing only elder faces, regenerate their 21 portraits with
+`tools/build-portraits.mjs --elders`; this preserves the rest of the catalog.
+
 `portrait-presets.js` and `portrait-renderer.js` are builder-only modules. The
 catalog contains 453 presets deduplicated into 293 WebP files (1,387,022 bytes),
 at 256×304. The static server uses content-hashed filenames and immutable image

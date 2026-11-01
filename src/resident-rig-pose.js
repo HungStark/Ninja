@@ -1,5 +1,13 @@
 import * as T from 'three';
 
+// Curve the upper back, keeping the pelvis over the feet and the gaze forward.
+// Authored work/kneeling poses take precedence over this resting posture.
+export function residentStandingPose(profile,moving=false){
+  if(profile.age!=='elder')return null;
+  const amount=moving?.7:1,variant=(profile.variant||0)%3;
+  return {spine:(.15+variant*.01)*amount,chest:.07*amount,head:-.11*amount,hipsDrop:.012*amount,knee:.10};
+}
+
 // Targets use the resident's root coordinates (a three-unit standing figure).
 // Index 0 is the old procedural arm at -X; index 1 is the arm at +X.
 export function residentActivityPose(profile,time,moving){

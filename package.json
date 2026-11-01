@@ -98,7 +98,8 @@
     "test:sound-loudness": "node tests/sound-loudness-core.mjs && node tools/build-android.mjs && node tests/sound-loudness-browser.cjs",
     "test:localization": "node tools/build-vercel.mjs && node tools/build-android.mjs && node tests/localization-core.mjs && node tests/server.cjs && node tests/localization-browser.cjs",
     "test:loading": "node tests/loading-browser.cjs",
-    "test:journey-fixes": "node tests/journey-fixes-core.mjs && node tests/adventure-resume-core.mjs && node tests/journey-fixes-browser.cjs"
+    "test:journey-fixes": "node tests/journey-fixes-core.mjs && node tests/adventure-resume-core.mjs && node tests/journey-fixes-browser.cjs",
+    "test:elder-faces": "node tests/elder-faces-browser.cjs && node tests/model-portraits-core.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

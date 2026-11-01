@@ -2,9 +2,10 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 import {characterInkMaterial,addInkOutline} from './ink-outline.js';
-import {residentActivityPose,reachResidentHand} from './resident-rig-pose.js';
+import {residentActivityPose,residentStandingPose,reachResidentHand} from './resident-rig-pose.js';
 import {REST_ARM_OPEN} from './character-motion.js';
 import {prepareCharacterSource} from './character-assets.js';
+import {applyElderFace} from './elder-face.js';
 
 const toonRamp=new T.DataTexture(new Uint8Array([52,52,52,255,112,112,112,255,194,194,194,255,255,255,255,255]),4,1,T.RGBAFormat);
 toonRamp.minFilter=toonRamp.magFilter=T.NearestFilter;toonRamp.generateMipmaps=false;toonRamp.needsUpdate=true;
@@ -61,6 +62,7 @@ export function attachNpcModel(root,profile){
         if(profile.memorialOffering)for(const [name,value] of [['Fcl_EYE_Sorrow',.22],['Fcl_BRW_Sorrow',.2],['Fcl_MTH_Small',.1]])if(o.morphTargetDictionary[name]!==undefined)o.morphTargetInfluences[o.morphTargetDictionary[name]]=Math.max(o.morphTargetInfluences[o.morphTargetDictionary[name]],value);
       }
     });
+    const elderFace=applyElderFace(model,profile);if(elderFace)root.userData.elderFace={...elderFace.style};
     for(const o of outlineMeshes)addInkOutline(o,ink);
     const bones={};for(const [key,name] of Object.entries(boneNames))bones[key]=model.getObjectByName(name)||null;
     const rest={};for(const [key,bone] of Object.entries(bones))if(bone)rest[key]=bone.quaternion.clone();
@@ -76,7 +78,7 @@ export function attachNpcModel(root,profile){
       prop.position.fromArray(prop.userData.grip||[0,0,0]).negate();prop.rotation.set(0,0,0);
       held.push({carrier,hand,betweenHands});
     }
-    visual={visualRoot,model,bones,rest,held,fingers,scale,restHipsY:bones.hips?.position.y??0};
+    visual={visualRoot,model,bones,rest,held,fingers,scale,elderFace,restHipsY:bones.hips?.position.y??0};
     const procedural=root.getObjectByName('body');if(procedural)procedural.visible=false;
     root.userData.characterModel={asset:profile.female?'npc_nu-simple.vrm':'npc_nam-simple.vrm',ready:true};return true;
   }).catch(error=>{console.warn(`Could not load ${profile.female?'female':'male'} NPC VRM:`,error);return false;});
@@ -84,22 +86,24 @@ export function attachNpcModel(root,profile){
   const update=(time,moving,{body,head,arms,forearms,legs})=>{
     if(!visual)return;
     const {visualRoot,bones,rest,restHipsY,held,fingers,scale}=visual,pose=residentActivityPose(profile,time,moving);
+    const standing=pose?null:residentStandingPose(profile,moving),hipsDrop=pose?.hipsDrop??standing?.hipsDrop??0;
+    visual.elderFace?.update(root.userData.expression?.blink||0);
     visualRoot.position.copy(body.position);if(pose?.kneeling)visualRoot.position.y=0;
     visualRoot.rotation.set(0,0,body.rotation.z*.4);
     const apply=(key,rotation)=>{
       const bone=bones[key];if(!bone||!rest[key])return;
       bone.quaternion.copy(rest[key]).premultiply(new T.Quaternion().setFromEuler(rotation));
     };
-    apply('head',head.rotation);
-    if(bones.hips)bones.hips.position.y=restHipsY-(pose?.hipsDrop||0)/scale;
-    apply('spine',new T.Euler(pose?.spine??body.rotation.x,0,0));apply('chest',new T.Euler(pose?.chest||0,0,0));
+    apply('head',new T.Euler(head.rotation.x+(standing?.head||0),head.rotation.y,head.rotation.z));
+    if(bones.hips)bones.hips.position.y=restHipsY-hipsDrop/scale;
+    apply('spine',new T.Euler(pose?.spine??standing?.spine??body.rotation.x,0,0));apply('chest',new T.Euler(pose?.chest??standing?.chest??0,0,0));
     const channels=[{upper:'rightArm',lower:'rightForearm',hand:'rightHand',leg:'rightLeg',knee:'rightKnee',foot:'rightFoot',side:-1},{upper:'leftArm',lower:'leftForearm',hand:'leftHand',leg:'leftLeg',knee:'leftKnee',foot:'leftFoot',side:1}];
     channels.forEach((channel,i)=>{
       const upper=bones[channel.upper],lower=bones[channel.lower],side=channel.side;
       if(bones[channel.hand])bones[channel.hand].quaternion.copy(rest[channel.hand]);
       if(upper)upper.quaternion.copy(rest[channel.upper]).premultiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),-side*1.55)).premultiply(new T.Quaternion().setFromEuler(new T.Euler(arms[i].rotation.x,0,arms[i].rotation.z*.5+side*REST_ARM_OPEN)));
       if(lower)lower.quaternion.copy(rest[channel.lower]).multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),-side*Math.max(.10,-forearms[i].rotation.x)));
-      const knee=pose?.kneeling?2.1:pose?.knee||.08,hip=pose?.kneeling?-.5:legs[i].rotation.x-knee*.5;
+      const knee=pose?.kneeling?2.1:pose?.knee??standing?.knee??.08,hip=pose?.kneeling?-.5:legs[i].rotation.x-knee*.5;
       apply(channel.leg,new T.Euler(hip,0,0));apply(channel.knee,new T.Euler(knee,0,0));apply(channel.foot,new T.Euler(-hip-knee,0,0));
       if(pose?.hands)reachResidentHand(root,upper,lower,bones[channel.hand],pose.hands[i],side);
     });
@@ -120,7 +124,7 @@ export function attachNpcModel(root,profile){
       const curl=holding?(profile.memorialOffering?[.45,.8,.6]:[.75,1.05,.85]):[.08,.15,.1];
       bone.quaternion.copy(base).multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),-side*curl[joint]*(thumb?.5:1)));
     }
-    root.userData.residentRigPose={kind:pose?.type||'relaxed-standing',hipsDrop:pose?.hipsDrop||0,reach:pose?.reach||0};
+    root.userData.residentRigPose={kind:pose?.type||(standing?(moving?'elder-walking':'elder-standing'):'relaxed-standing'),hipsDrop,reach:pose?.reach||0};
   };
   update.setInkViewport=(width,height)=>ink.uniforms.viewport.value.set(width,height);
   update.ready=ready;

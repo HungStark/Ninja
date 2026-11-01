@@ -49,7 +49,7 @@ const {spawn}=require('node:child_process'),{chromium}=require('playwright'),{bu
     for(const key of ['mother','farmer','carpenter','smith']){assert.ok(results[key].props.length>0&&results[key].props.every(p=>p.visible),'work tools remain visible on the actual model');const y=results[key].cycle.map(s=>s.hands[1][1]),z=results[key].cycle.map(s=>s.hands[0][2]);assert.ok(Math.max(...y)-Math.min(...y)>.045||Math.max(...z)-Math.min(...z)>.08,key+' performs an articulated work cycle');}
     const {newJourney}=await import('../src/adventure-data.js');const save=newJourney();save.position=[0,7];
     await page.addInitScript(s=>localStorage.setItem('anhoa-adventure-v1',JSON.stringify(s)),save);
-    await page.goto('http://127.0.0.1:4324/?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#continueJourney').click();await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await page.keyboard.press('c');
+    await page.goto('http://127.0.0.1:4324/?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#continueJourney').click();await page.waitForFunction(()=>__AN_HOA__.adventure().phase==='explore');await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await page.keyboard.press('c');
     await page.waitForFunction(()=>document.querySelector('#heroPreview canvas')?.dataset.modelReady==='true');
     assert.ok(await page.locator('#heroPreview canvas').evaluate(c=>c.width>=c.clientWidth*1.9),'training portrait renders at double resolution');
     await page.screenshot({path:out+'/training-in-game.png'});
