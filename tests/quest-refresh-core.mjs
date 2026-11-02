@@ -7,7 +7,7 @@ const world=createAdventureScene(),timings=[],types=new Set();
 for(const village of VILLAGES){
   const save=newJourney();save.village=village.id;const start=performance.now();world.load(village.id,save);const loadMs=performance.now()-start;
   const position=world.hero.root.position.toArray(),physics=world.physicsState(),residents=world.residentsState(),solids=[...world.solids],guards=world.guardsState();
-  const meshes=[];world.scene.traverse(o=>{if(o.isMesh)meshes.push(o);});let disposed=0;for(const geometry of new Set(meshes.map(m=>m.geometry)))geometry.addEventListener('dispose',()=>disposed++);
+  const questRoots=new Set();world.scene.traverse(o=>{if(o.name.startsWith('quest-item-')||o.userData.questActor)questRoots.add(o);});const meshes=[];world.scene.traverse(o=>{let quest=false;for(let p=o;p;p=p.parent)if(questRoots.has(p))quest=true;if(o.isMesh&&!quest)meshes.push(o);});let disposed=0;for(const geometry of new Set(meshes.map(m=>m.geometry)))geometry.addEventListener('dispose',()=>disposed++);
   let syncMs=0;
   for(const q of villageSidequests(village.id)){
     types.add(q.type);assert.equal(acceptSidequest(save,q),true);const at=performance.now();world.syncSidequests(save);syncMs+=performance.now()-at;

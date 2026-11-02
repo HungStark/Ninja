@@ -82,7 +82,7 @@ export function campaignObjective(save,{localOnly=false}={}) {
     if(id==='nameless'){
       const opening=openingObjective(save);if(opening)return opening;
       if(canSignTreaty(save))return campaignObjective(save);
-      if(save.campaign?.treatySigned&&!save.mentors[id])return lesson(id);
+
     }else{
       const event=villageEventObjective(save);if(event)return event;
       if(!save.bosses[id]||!save.story.peaceSeals.includes(id))return infiltrate(id);
@@ -137,8 +137,8 @@ export function readJourney(storage) {
     clean.activated=[...new Set([...clean.activated,s.checkpoint])];
     for(const v of VILLAGES){
       if([1,2,3].includes(s.quests?.[v.id]))clean.quests[v.id]=s.quests[v.id];
-      if(s.lessons?.[v.id]===1)clean.lessons[v.id]=1;
-      if(s.mentors?.[v.id]===true)clean.mentors[v.id]=true;
+      if(REGIONS[v.id].mentor&&s.lessons?.[v.id]===1)clean.lessons[v.id]=1;
+      if(REGIONS[v.id].mentor&&s.mentors?.[v.id]===true)clean.mentors[v.id]=true;
       if(s.bosses?.[v.id]===true)clean.bosses[v.id]=true;
     }
     const zones=new Set(Object.entries(REGIONS).flatMap(([id,r])=>r.zones.map(zone=>`${id}:${zone.id}`)));
@@ -157,11 +157,14 @@ export function readJourney(storage) {
     if(s.story?.revision===1&&s.progression&&!Object.hasOwn(s.progression.xp||{},'water'))delete clean.progression.xp.water;
     clean.learnedSpells=clean.learnedSpells.filter(id=>canLearn(clean.progression,id));
     clean.story=readStory(s.story,clean);clean.flask=readFlask(s.flask,!!clean.story.starter);clean.mines=readMines(s.mines);
+    // Keep rewards already earned from the retired Vô Danh lesson.
+    if(s.mentors?.nameless)addBooks(clean,['wind-barrier']);
     // Backfill missing rewards when an older journey already completed a source.
     for(const v of VILLAGES){
       if(clean.mentors[v.id])addBooks(clean,[REGIONS[v.id].mentor.spellId]);
       if(clean.bosses[v.id])addBooks(clean,bossRewardSpells(v.id));
       for(const q of villageSidequests(v.id))if(clean.story.sidequests[q.id]===3&&q.rewardScroll)addBooks(clean,[q.rewardScroll]);
+      for(const q of villageSidequests(v.id,true))if(s.story?.sidequests?.[q.id]===3&&q.rewardScroll)addBooks(clean,[q.rewardScroll]);
     }
     for(const key of ['gold','xp','wins'])clean[key]=Number.isSafeInteger(s[key])&&s[key]>=0?s[key]:0;
     return clean;
@@ -179,7 +182,7 @@ export function discoverZone(save,id,zoneId) {
 }
 export function mentorReady(save,id) {
   const mentor=REGIONS[id]?.mentor;
-  return !!mentor&&(id!=='nameless'||save.campaign?.treatySigned===true)&&save.lessons?.[id]===1&&!save.mentors?.[id]&&mentor.zoneIds.every(zoneId=>save.discoveries?.includes(`${id}:${zoneId}`));
+  return !!mentor&&(id!=='nameless'||save.campaign?.treatySigned===true)&&!save.mentors?.[id]&&mentor.zoneIds.every(zoneId=>save.discoveries?.includes(`${id}:${zoneId}`));
 }
 export function completeLesson(save,id) {
   const mentor=REGIONS[id]?.mentor;
@@ -224,7 +227,7 @@ export function resolveBattle(save,encounter,victory) {
       addBooks(save,bossRewardSpells(encounter.village));
     }
   }
-  else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;for(const reward of combatExperienceRewards(encounter,encounter.kind==='quest'?65:45))gainExperience(save.progression,reward.element,reward.xp);if(encounter.kind==='quest'&&save.quests[encounter.village]===1)save.quests[encounter.village]=2;}
+  else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;for(const reward of combatExperienceRewards(encounter,encounter.kind==='quest'?65:45))gainExperience(save.progression,reward.element,reward.xp);if(encounter.kind==='quest'&&(save.quests[encounter.village]||0)<2){if(!save.quests[encounter.village]){save.story.earlyVillageQuests??=[];save.story.earlyVillageQuests.push(encounter.village);}save.quests[encounter.village]=2;}}
   else{refillFlask(save);save.interior=null;save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
   return save;
 }

@@ -12,7 +12,12 @@ export function createQuestItem({model='satchel',name=''}){
   const box=(m,x,y,z,w,h,d)=>add(new T.BoxGeometry(w,h,d),m,x,y,z);
   const cyl=(m,x,y,z,r,h)=>add(new T.CylinderGeometry(r,r,h,8),m,x,y,z);
   const wood=M('#80613f'),linen=M('#d5c59b'),dark=M('#454b46'),green=M('#627947'),metal=M('#a1abb1',{metalness:.5,roughness:.4});
-  if(model==='flowers'){
+  if(model==='lotus'){
+    const stem=cyl(green,0,.52,0,.035,1.04),petalGeometry=new T.SphereGeometry(1,10,7),petal=M('#d95c79'),heart=M('#ffc66a',{emissive:'#db681c',emissiveIntensity:.35});
+    for(let k=0;k<8;k++){const a=k*Math.PI/4,o=add(petalGeometry,petal,Math.sin(a)*.18,1.04,Math.cos(a)*.18,.095,.25,.055);o.rotation.set(Math.cos(a)*.55,0,-Math.sin(a)*.55);}
+    add(new T.SphereGeometry(.12,10,7),heart,0,1.08,0);
+    for(const side of [-1,1]){const leaf=add(petalGeometry,green,side*.16,.54,0,.24,.055,.1);leaf.rotation.z=side*.4;}
+  }else if(model==='flowers'){
     const petal=new T.CircleGeometry(1,6),white=M('#f2ecdd',{side:T.DoubleSide}),gold=M('#d3ae49'),stemGeometry=new T.CylinderGeometry(.018,.022,1,5);
     for(let k=0;k<7;k++){
       const a=k*2.4,r=k? .16+(k%2)*.1:0,x=Math.sin(a)*r,z=Math.cos(a)*r,y=.7+(k%3)*.12;

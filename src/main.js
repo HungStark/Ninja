@@ -300,7 +300,15 @@ async function main() {
   };
   function renderGuide() {
     $('spellList').innerHTML = rules.spells.map((s, i) => spellMarkup(s, i)).join('');
-    document.querySelectorAll('[data-spell]').forEach(el => el.onclick = () => selectSpell(Number(el.dataset.spell)));
+    $('spellList').style.setProperty('--carried-count',rules.spells.length);
+    document.querySelectorAll('[data-spell]').forEach(el => el.onclick = e => {const i=Number(el.dataset.spell);if(androidInterface()){e.preventDefault();sealCarriedSpell(i);}else selectSpell(i);});
+  }
+  function sealCarriedSpell(i){
+    const spell=rules.spells[i];if(!spell||cinematicActive()||!started||paused||won||adventure?.activeView||darkDomain.transition||player.controlTime>0)return;
+    const sequence=rules.sequence,continuing=sequence.length<spell.sequence.length&&sequence.every((key,index)=>key===spell.sequence[index]);
+    const step=continuing?sequence.length:0;
+    if(!continuing){rules.clear();battleMetrics.clear();hands.clearEffects();activePose=-1;}
+    selected=i;seal(spell.sequence[step]);
   }
   function selectSpell(i) { if (!rules.spells[i]) return; selected = i; updateUI(); }
   function announce(text, error = false) {

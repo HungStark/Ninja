@@ -6,7 +6,7 @@ import {STARTER_CHOICES,villageSidequests,acceptSidequest,completeSidequestTarge
 import {SYSTEMS,learnFromBook} from '../src/progression.js';
 const starters=STARTER_CHOICES.map(s=>s.id),sources=[];
 for(const [v,r] of Object.entries(REGIONS)){
- sources.push([r.mentor.spellId,v+':lesson']);
+ if(r.mentor)sources.push([r.mentor.spellId,v+':lesson']);
  for(const id of r.boss.rewardSpells)sources.push([id,v+':boss']);
  for(const q of villageSidequests(v))if(q.rewardScroll)sources.push([q.rewardScroll,q.id]);
 }
@@ -15,9 +15,11 @@ assert.deepEqual(sources.map(s=>s[0]).sort(),SealGameCore.spells.map(s=>s.id).fi
 for(const reverse of [false,true]){
  const s=newJourney();s.learnedSpells=[...starters];s.campaign.treatySigned=true;s.story.stage='infiltrate';s.progression.xp=Object.fromEntries(SYSTEMS.map(e=>[e,2100]));
  const villages=Object.keys(REGIONS);if(reverse)villages.reverse();
- for(const v of villages){const r=REGIONS[v];s.village=v;s.lessons[v]=1;s.discoveries.push(...r.mentor.zoneIds.map(z=>v+':'+z));
+ for(const v of villages){const r=REGIONS[v];s.village=v;s.lessons[v]=1;s.discoveries.push(...(r.mentor?.zoneIds||[]).map(z=>v+':'+z));
+  if(r.mentor){
   const before=[...s.learnedSpells],reward=completeLesson(s,v);assert.deepEqual(reward.spellIds,[r.mentor.spellId]);assert.deepEqual(s.learnedSpells,[...before,r.mentor.spellId]);
   const xp=JSON.stringify(s.progression.xp);assert.deepEqual(completeLesson(s,v).spellIds,[]);assert.equal(JSON.stringify(s.progression.xp),xp);
+  }else assert.deepEqual(completeLesson(s,v).spellIds,[]);
   resolveBattle(s,{kind:'boss',village:v},true);
   const quests=villageSidequests(v);if(reverse)quests.reverse();for(const q of quests){assert.ok(acceptSidequest(s,q));assert.ok(completeSidequestTarget(s,q));assert.ok(claimSidequest(s,q));assert.equal(claimSidequest(s,q),false);}
  }

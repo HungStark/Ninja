@@ -14,11 +14,10 @@ export function fitMobileWidget(base,pref,width,height,safe={left:8,right:8,top:
 export function setupMobileLayout({getState,pause,release}){
   const specs=[
     ['joystick','explore','#androidJoystick','Cần di chuyển','◎'],
-    ['jump','explore','[data-mobile-key=" "]','Nhảy','↑'],['interact','explore','[data-mobile-key="e"]','Tương tác','E'],['training','explore','[data-mobile-key="c"]','Tu luyện','C'],
+    ['jump','explore','[data-mobile-key=" "]','Nhảy','↑'],['interact','explore','[data-mobile-key="e"]','Tương tác','E'],['training','explore','[data-mobile-key="c"]','Tu luyện','C'],['equipment','explore','[data-mobile-key="v"]','Trang bị','V'],
     ['story','explore','.journey-quest','Tuyến truyện chính','▤'],['map','explore','.journey-minimap','Bản đồ khu vực','◎'],
     ['journal','explore','#openJournal','Nhật ký','▤'],['atlas','explore','#openAtlas','Bản đồ thế giới','◎'],['menu','explore','#journeyMenu','Tạm dừng','Ⅱ'],
     ['location','explore','.journey-location','Tên vùng đất','◇'],['messages','explore','.android-explore-messages','Thông báo khám phá','!'],['nearby','explore','#nearbyAction','Gợi ý tương tác','E'],
-    ...[...'qwerasdfzxcv'].map(k=>['seal-'+k,'combat','[data-touch-seal="'+k+'"]','Kết ấn '+k.toUpperCase(),k.toUpperCase()]),
     ['health','combat','#hud>.status','Máu và mana','♥'],['guide','combat','#guide','Quyển trục mang theo','▤'],['combo','combat','.center-status','Chuỗi kết ấn','印'],
     ['cast','combat','#castButton','Thi triển / Phi tiêu','SPACE'],['boost','combat','#dashBoostButton','Tăng lực','G'],
     ['dodge-left','combat','#androidStepLeft','Né trái','‹'],['dodge-right','combat','#androidStepRight','Né phải','›'],
@@ -79,7 +78,7 @@ export function setupMobileLayout({getState,pause,release}){
   }
   function chooseMode(next){mode=next;const list=specs.filter(s=>s.mode===mode);select.replaceChildren(...list.map(s=>{const option=document.createElement('option');option.value=s.id;option.textContent=s.label;return option;}));if(!list.some(s=>s.id===selected))selected=list[0].id;draw();}
   function close(){open=false;drag=null;editor.hidden=true;document.body.classList.remove('mobile-layout-editing');schedule();}
-  function show(){if(open)return;release();const state=getState();if(state.started&&!state.paused&&!state.won&&!['home','explore','dialog','progression','journal','shop','atlas'].includes(state.phase))pause();draft=structuredClone(saved);for(const s of specs)bases.set(s.id,measure(s));open=true;editor.hidden=false;document.body.classList.add('mobile-layout-editing');get('mobileLayoutNotice').textContent='';chooseMode(['combat','duel'].includes(state.phase)?'combat':'explore');}
+  function show(){if(open)return;release();const state=getState();if(state.started&&!state.paused&&!state.won&&!['home','explore','dialog','progression','equipment','journal','shop','atlas'].includes(state.phase))pause();draft=structuredClone(saved);for(const s of specs)bases.set(s.id,measure(s));open=true;editor.hidden=false;document.body.classList.add('mobile-layout-editing');get('mobileLayoutNotice').textContent='';chooseMode(['combat','duel'].includes(state.phase)?'combat':'explore');}
   editor.querySelectorAll('[data-layout-mode]').forEach(b=>b.onclick=()=>chooseMode(b.dataset.layoutMode));select.onchange=()=>{selected=select.value;draw();};
   for(const [name,key,multiplier] of [['X','x',.01],['Y','y',.01],['Scale','scale',.01],['Opacity','opacity',.01]])get('mobileLayout'+name).oninput=e=>{draft[selected]={...current().p,[key]:Number(e.target.value)*multiplier};draw();};
   get('mobileLayoutResetItem').onclick=()=>{delete draft[selected];draw();};get('mobileLayoutReset').onclick=()=>{draft={};draw();get('mobileLayoutNotice').textContent='Đã khôi phục mặc định. Bấm Lưu để áp dụng.';};get('mobileLayoutCancel').onclick=close;

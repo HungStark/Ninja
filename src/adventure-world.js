@@ -25,10 +25,10 @@ export const REGIONS = {
     npcs:[
       {id:'nameless-lan',name:'Bà Lan',role:'Người giữ ký ức',kind:'lore',x:-6,z:5,dialogue:'Làng này từng đón người của cả chín hệ. Muốn biết một miền đất, hãy rời quảng trường và nghe những người sống ở đó.'},
       {id:'nameless-sen',name:'Dược sư Sen',role:'Chủ quán trà',kind:'healer',x:25,z:18,dialogue:'Mời một chén trà ấm. Đường Trà Cổ nối những mái nhà với thế giới ngoài núi; chuyện tốt lành cũng đi theo con đường ấy.'},
-      {id:'nameless-trac',name:'Lão Trác',role:'Ẩn sĩ giữ cầu',kind:'mentor',x:-27,z:-23,dialogue:'Đừng vội rút vũ khí. Hãy nghe gió ở ruộng bậc thang và trên đồi chuông, rồi trở về kể ta nghe.'}
+      {id:'nameless-trac',name:'Lão Trác',role:'Người giữ cầu',kind:'lore',x:-27,z:-23,dialogue:'Ta trông coi cây cầu này để người dân qua lại an toàn. Nếu gặp kẻ phá cầu, hãy báo trưởng làng.'}
     ],
     boss:{id:'nameless-bellwarden',name:'Hộ Vệ Chuông Vỡ',title:'Cự nhân canh thung lũng',x:25,z:-46,hp:1500,rewardGold:150,rewardXp:210,story:'Bộ giáp đá của người giữ đình bị lời nguyền đánh thức. Tiếng chuông vỡ gọi nó lang thang trên đồi mỗi hoàng hôn.'},
-    mentor:{npcId:'nameless-trac',spellId:'wind-barrier',clue:'Lắng nghe Ruộng Bậc Thang và Đồi Chuông Gió, rồi trở về Cầu Đá Vọng Âm.',zoneIds:['terraces','bell-shrine'],lesson:'Gió mạnh không chỉ để chém. Hãy xếp những luồng gió thành một bức tường bảo vệ người phía sau. Ta truyền cho con Phong Thuẫn Thiên Thành.'},
+    mentor:null,
     houses:[[-14,14,4,3],[-21,9,3.5,3],[13,14,3.5,3],[20,11,4,3],[31,25,3.5,3],[-36,20,4,3],[-23,-16,3.5,3],[-37,-19,3.5,3],[20,-29,4,3],[31,-31,3,3]]
   },
   fire: {
@@ -186,7 +186,7 @@ export const REGIONS = {
   }
 };
 
-export const MENTOR_SPELLS = Object.freeze(Object.values(REGIONS).map(region=>region.mentor.spellId));
+export const MENTOR_SPELLS = Object.freeze(Object.values(REGIONS).flatMap(region=>region.mentor?[region.mentor.spellId]:[]));
 export const ELEMENT_SPELLS = Object.freeze({
   fire:['fire-volley','fire-lance','fire-meteor','fire-barrier','fire-reflect'],
   water:['water-lance','water-volley','water-tsunami','water-barrier','water-reflect'],
@@ -201,9 +201,9 @@ export const ELEMENT_SPELLS = Object.freeze({
 export const ALL_ADVENTURE_SPELLS = Object.freeze(Object.values(ELEMENT_SPELLS).flat());
 // Each non-starter art has exactly one authored source: a lesson, boss or NPC quest.
 const starterArts=['fire-volley','water-barrier','lightning-lance'];
-const lessonArts=Object.values(REGIONS).map(r=>r.mentor.spellId);
+const lessonArts=Object.values(REGIONS).flatMap(r=>r.mentor?[r.mentor.spellId]:[]);
 for(const [id,region] of Object.entries(REGIONS)){
-  region.mentor.spellIds=[region.mentor.spellId];
+  if(region.mentor)region.mentor.spellIds=[region.mentor.spellId];
   const remaining=ELEMENT_SPELLS[id==='nameless'?'wind':id].filter(spell=>!starterArts.includes(spell)&&!lessonArts.includes(spell));
   region.boss.rewardSpells=id==='nameless'?[]:[remaining.find(spell=>/meteor|tsunami|thunder|reflect|volley/.test(spell))||remaining.at(-1)];
   region.questSpells=id==='nameless'?[]:remaining.filter(spell=>!region.boss.rewardSpells.includes(spell));

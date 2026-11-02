@@ -101,7 +101,9 @@
     "test:journey-fixes": "node tests/journey-fixes-core.mjs && node tests/adventure-resume-core.mjs && node tests/journey-fixes-browser.cjs",
     "test:elder-faces": "node tests/elder-faces-browser.cjs && node tests/model-portraits-core.mjs",
     "test:civic": "node tests/village-civic-core.mjs && node tests/village-civic-browser.cjs",
-    "test:companion": "node tests/companion-follow-core.mjs && node tests/companion-follow-scene-core.mjs && node tests/adventure-access-core.mjs && node tests/companion-admin-browser.cjs"
+    "test:companion": "node tests/companion-follow-core.mjs && node tests/companion-follow-scene-core.mjs && node tests/adventure-access-core.mjs && node tests/companion-admin-browser.cjs",
+    "test:inventory-quests": "node tests/inventory-quest-core.mjs && node tests/skill-sources-core.mjs && node tests/quest-refresh-core.mjs && node tests/inventory-quest-browser.cjs",
+    "test:mobile-scroll": "node tools/build-android.mjs && node tests/mobile-scroll-seals.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

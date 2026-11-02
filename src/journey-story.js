@@ -12,7 +12,7 @@ export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa Vũ Liên Châu',ele
 export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:botHealth(85),spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
 export const FIRST_VILLAGES=['water','fire','lightning'];
 const STAGES=['mother','chief','guardian','report','infiltrate'];
-export function newStory(){return {revision:1,stage:'mother',starter:null,guardianRestored:false,peaceSeals:[],defeatedGuards:[],sidequests:{},trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false}};}
+export function newStory(){return {revision:1,stage:'mother',starter:null,guardianRestored:false,peaceSeals:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false}};}
 export function readStory(raw,save){
   const s=newStory();
   if(raw?.revision!==1){
@@ -28,6 +28,12 @@ export function readStory(raw,save){
   s.defeatedGuards=[...new Set(Array.isArray(raw.defeatedGuards)?raw.defeatedGuards.filter(id=>validGuards.has(id)):[])];
   const validQuests=new Set(Object.keys(REGIONS).flatMap(id=>villageSidequests(id).map(q=>q.id)));
   for(const [id,status] of Object.entries(raw.sidequests||{}))if(validQuests.has(id)&&[1,2,3].includes(status))s.sidequests[id]=status;
+  s.earlyTargets=[...new Set((Array.isArray(raw.earlyTargets)?raw.earlyTargets:[]).filter(id=>validQuests.has(id)&&(!s.sidequests[id]||s.sidequests[id]===2)))];
+  s.earlyVillageQuests=[...new Set((Array.isArray(raw.earlyVillageQuests)?raw.earlyVillageQuests:[]).filter(id=>REGIONS[id]&&save.quests[id]===2))];
+  s.questItems=[...new Set((Array.isArray(raw.questItems)?raw.questItems:[]).filter(id=>(validQuests.has(id)&&(s.earlyTargets.includes(id)||s.sidequests[id]===2))||(id==='fire:hong-lien'&&save.expeditions?.fire!==3)))];
+  for(const id of s.earlyTargets)if(!s.questItems.includes(id))s.questItems.push(id);
+  for(const id of Object.keys(REGIONS))for(const q of villageSidequests(id))if(s.sidequests[q.id]===2&&!s.questItems.includes(q.id))s.questItems.push(q.id);
+  if(save.expeditions?.fire===2&&!s.questItems.includes('fire:hong-lien'))s.questItems.push('fire:hong-lien');
   s.villageOrder=[...new Set((Array.isArray(raw.villageOrder)?raw.villageOrder:save.visited||[]).filter(id=>REGIONS[id]&&id!=='nameless'))];
   s.trackedQuest=validQuests.has(raw.trackedQuest)?raw.trackedQuest:null;
   for(const [id,step] of Object.entries(raw.villageEvents||{}))if(VILLAGE_EVENTS[id]&&Number.isInteger(step)&&step>=0&&step<=VILLAGE_EVENTS[id].stages.length)s.villageEvents[id]=step;
@@ -92,10 +98,10 @@ const taskByActivity={
   lookout:['Đường gác yên bình','Hạ kẻ phá hoại đang rình rập để người dân an tâm đi qua.','Kẻ phá hoại'],
   offering:['Đèn cho người trở về','Tìm chiếc đèn nghi lễ để thắp sáng lối về cho người xa quê.','Đèn nghi lễ']
 };
-export function villageSidequests(id){
+export function villageSidequests(id,includeSuperseded=false){
   const r=REGIONS[id];if(!r)return [];
   const people=[...r.npcs,{id:`${id}-chief`,name:'Trưởng làng',activity:'lookout'},{id:`${id}-merchant`,name:'Chủ thương hội',activity:'market'},...(['earth','wind','light','ice','wood'].includes(id)?[{id:`${id}-envoy`,name:'Đại diện làng',activity:'reading'}]:[])];
-  return people.map((person,i)=>{
+  const all=people.map((person,i)=>{
     const zones=r.zones.filter(z=>!z.platform&&z.id!=='summit-lotus'),zone=zones[(i+1)%zones.length],template=taskByActivity[person.activity]||['Dấu vết cuộc sống','Tìm vật dụng thất lạc tại địa danh gần làng rồi mang trở về.','Vật dụng thất lạc'];
     const type=person.activity==='mourning'?'retrieve':i%3===1||person.activity==='lookout'?'combat':i%4===3?'survey':'retrieve',element=id==='nameless'?'wind':id;
     const scroll=r.questSpells[i]||null;
@@ -104,14 +110,26 @@ export function villageSidequests(id){
       targetName:type==='combat'?'Kẻ phá hoại · '+zone.name:template[2],targetModel:type==='survey'?'notes':QUEST_ITEM_MODELS[person.activity]||'satchel',x:zone.x+(i%2?2.5:-2.5),z:zone.z+3.5,
       rewardGold:scroll?0:65+i*9,rewardScroll:scroll,rewardXp:id==='nameless'?0:45+i*3};
   });
+  if(includeSuperseded)return all;
+  const quests=all.filter(q=>q.giver!=='fire-khoi'&&q.giver!=='nameless-trac'&&!(id==='nameless'&&q.type==='combat'&&q.zone==='old-bridge')&&q.giver!==MOTHER_ID&&q.giver!==r.mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy'));
+  const moved=all.filter(q=>!quests.includes(q)&&q.rewardScroll).map(q=>q.rewardScroll);
+  for(const q of quests)if(!q.rewardScroll&&moved.length){q.rewardScroll=moved.shift();q.rewardGold=0;}
+  if(moved.length)throw Error('No quest source for '+id);
+  return quests;
 }
 export function questForNPC(id,item){const giver=item.kind==='npc'?`${id}-chief`:item.kind==='shop'?`${id}-merchant`:item.kind==='envoy'?`${id}-envoy`:item.kind==='expedition-giver'?'fire-khoi':item.id;return villageSidequests(id).find(q=>q.giver===giver);}
-export function acceptSidequest(save,q){if(save.story.sidequests[q.id])return false;save.story.sidequests[q.id]=1;return true;}
-export function completeSidequestTarget(save,q){if(save.story.sidequests[q.id]!==1)return false;save.story.sidequests[q.id]=2;return true;}
+export const sidequestDone=(save,q)=>(save.story.sidequests[q.id]||0)>=2||save.story.earlyTargets?.includes(q.id)===true;
+export function acceptSidequest(save,q){if(save.story.sidequests[q.id])return false;save.story.sidequests[q.id]=save.story.earlyTargets?.includes(q.id)?2:1;return true;}
+export function completeSidequestTarget(save,q){
+  if(sidequestDone(save,q))return false;
+  save.story.questItems??=[];save.story.questItems.push(q.id);
+  if(save.story.sidequests[q.id]===1)save.story.sidequests[q.id]=2;
+  else{save.story.earlyTargets??=[];save.story.earlyTargets.push(q.id);}return true;
+}
 export function sidequestReward(save,q){
   if(!q.rewardScroll)return {gold:q.rewardGold,scroll:null};
   const owned=id=>save.learnedSpells.includes(id)||save.progression.books.includes(id);
   const scroll=owned(q.rewardScroll)?null:q.rewardScroll;
   return scroll?{gold:0,scroll}:{gold:100,scroll:null};
 }
-export function claimSidequest(save,q){if(save.story.sidequests[q.id]!==2)return false;const reward=sidequestReward(save,q);save.story.sidequests[q.id]=3;save.gold+=reward.gold;save.xp+=q.rewardXp;gainExperience(save.progression,q.element,q.rewardXp);if(reward.scroll)addBooks(save,[reward.scroll]);if(save.story.trackedQuest===q.id)save.story.trackedQuest=null;return true;}
+export function claimSidequest(save,q){if(save.story.sidequests[q.id]!==2)return false;const reward=sidequestReward(save,q);save.story.sidequests[q.id]=3;save.story.questItems=(save.story.questItems||[]).filter(id=>id!==q.id);save.story.earlyTargets=(save.story.earlyTargets||[]).filter(id=>id!==q.id);save.gold+=reward.gold;save.xp+=q.rewardXp;gainExperience(save.progression,q.element,q.rewardXp);if(reward.scroll)addBooks(save,[reward.scroll]);if(save.story.trackedQuest===q.id)save.story.trackedQuest=null;return true;}

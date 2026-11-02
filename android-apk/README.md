@@ -18,12 +18,12 @@ Cũng có thể mở thư mục `android-apk` bằng Android Studio và chọn *
 ## Điều khiển
 
 - Màn hình ngang, toàn màn hình; xoay ngược ngang vẫn được hỗ trợ. Màn hình dọc hiện hướng dẫn xoay máy.
-- Hai mép có sáu nút kết ấn mỗi bên: trái **Q W E R A S**, phải **D F Z X C V**. Chạm lần lượt để kết ấn; **⌫** xóa chuỗi.
+- Chạm biểu tượng chiêu trên quyển trục bên trái để kết **một ấn mỗi lần chạm**; chạm tiếp sau khi đủ chuỗi sẽ bắt đầu lại từ ấn đầu. **⌫** xóa chuỗi. Các ấn dùng chung: có **Q W** từ Hỏa Liên Đạn thì chạm Hỏa Long sẽ nối ấn thứ ba, vì hai chiêu có cùng phần đầu **Q W**.
 - Trong chiến đấu, tâm ngắm tự bám thẳng vào đối thủ còn sống. Có thể dùng nhiều ngón cùng lúc.
-- **SPACE** thi triển nếu đủ ấn, hoặc ném phi tiêu nếu chưa kết xong chiêu. **‹ / ›** né trái/phải; **G** tăng lực 3 giây để lướt 2 m, hồi 12 giây và giữ nguyên chuỗi ấn.
-- Năm chiêu nằm bên phải, tự co thành năm hàng vừa chiều cao màn hình, kể cả chuỗi 10 ấn; có tranh, kết ấn, hồi chiêu quét vòng tròn và lớp xanh khi thiếu chakra. Chạm mũi tên trên bảng để thu gọn/mở rộng.
+- **SPACE** thi triển nếu đủ ấn, hoặc ném phi tiêu nếu chưa kết xong chiêu. **‹ / ›** né trái/phải; **G** tăng lực 3 giây để lướt 3 m, hồi 6 giây và giữ nguyên chuỗi ấn.
+- Quyển trục năm chiêu nằm bên trái, mỗi hàng giữ icon bên trái và tên/chuỗi kết ấn bên phải; chuỗi kết ấn và máu/mana ở bên phải. Nút thi triển/chọn phi tiêu ở góc dưới trái; né trái/tăng lực/né phải ở góc dưới phải. Biểu tượng chiêu giữ hồi chiêu quét vòng tròn và lớp xanh khi thiếu chakra. Chạm tiêu đề quyển trục để thu gọn/mở rộng.
 - Bộ chọn **Phi tiêu** liệt kê bốn loại cùng số lượng; loại không còn trong túi bị vô hiệu hóa. Luật tự đổi loại khi ném hết được giữ nguyên.
-- **⚙** tạm dừng, đổi chất lượng và bật/tắt âm thanh. Mặc định Android dùng mức Thấp.
+- **Ⅱ** tạm dừng, đổi chất lượng và bật/tắt âm thanh. Mặc định Android dùng mức Thấp.
 - **Tùy chỉnh giao diện** nằm ở màn hình đầu, menu tạm dừng khám phá và menu cài đặt chiến đấu. Chọn riêng Khám phá/Chiến đấu, kéo từng nút hoặc bảng, chỉnh vị trí/kích thước/độ rõ rồi **Lưu bố cục**. Có Hủy, đặt lại từng thành phần và khôi phục toàn bộ mặc định; bố cục được lưu trên máy và giữ các thành phần trong mép màn hình khi đổi kích thước.
 - Cần di chuyển lấy chỗ đặt ngón tay làm tâm trong vùng gần vị trí đã chọn, có thể chạm cả phần cảnh bên cạnh cần. Tâm được giới hạn trong màn hình; nhấc tay sẽ trả cần về vị trí đã đặt. Nút khóa chạy đi theo cần đang dùng.
 - Khi khám phá: cần tròn bên trái lớn hơn 15%; kéo lên khỏi mép trên cần để hiện nút **Chạy nhanh**, rồi thả tay ngay trên nút đó để ghim chạy thẳng. Thả ngoài nút sẽ dừng. Chạm lại cần hoặc nút đang chạy, tương tác hay mở bảng để hủy chạy. Bên phải là nút nhảy tròn lớn, với **C** và **E** thành cột bên phải nút nhảy. Nhảy giữ nguyên cần đang kéo và trạng thái chạy đã ghim. Kéo trên cảnh để xoay camera.

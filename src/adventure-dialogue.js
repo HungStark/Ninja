@@ -47,8 +47,9 @@ export function sidequestThanks(quest){
   return 'Đúng là thứ tôi đang tìm! Nhờ bạn mang về, công việc của tôi có thể tiếp tục. Cảm ơn bạn.';
 }
 
-export function sidequestLines(quest,status,{hero,npc},body){
-  if(status>=2)return [{speaker:npc,text:body}];
+export function sidequestLines(quest,status,{hero,npc},body,early=false){
+  if(status>=2)return early&&status===2?[{speaker:hero,text:'Tôi đã vô tình hoàn thành việc này trên đường đi. Đây là những gì tôi mang về.'},{speaker:npc,text:body}]:[{speaker:npc,text:body}];
+  if(early)return [{speaker:npc,text:body}];
   const reply=status===1?'Tôi đang theo dấu việc này. Khi có kết quả, tôi sẽ trở lại.':quest.type==='combat'?'Tôi sẽ tới đó xem xét. Nếu có kẻ đe dọa dân làng, tôi sẽ ngăn chúng.':quest.type==='survey'?'Tôi sẽ kiểm tra khu vực và ghi lại những gì tìm thấy.':'Tôi sẽ tìm quanh khu vực đó và mang đồ về cho bạn.';
   return [{speaker:npc,text:body},{speaker:hero,text:reply}];
 }

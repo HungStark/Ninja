@@ -8,7 +8,7 @@ export const BAGS=[
   {id:'pouch-30',name:'Túi hành trang',capacity:10,price:0},
   {id:'pouch-60',name:'Túi phi tiêu vừa',capacity:20,price:80},
   {id:'pouch-120',name:'Túi phi tiêu lớn',capacity:30,price:220},
-  {id:'pouch-240',name:'Túi nhẫn cụ đại',capacity:50,price:600}
+  {id:'pouch-240',name:'Túi nhẫn cụ đại',capacity:50,price:400}
 ];
 const regions=[
   ['nameless','Biên Địa','#65715a','vest',{water:.15,fire:.15,lightning:.1}],
@@ -73,18 +73,26 @@ export const ammoCount=equipment=>Object.values(equipment.ammo).reduce((a,b)=>a+
 export function equipmentState(save){const e=save.equipment;return {hero:{...save.hero},armor:armorById(e.armor),armguard:armguardById(e.armguard)||ARM_GUARDS[0],bag:bagById(e.bag),shuriken:shurikenById(e.shuriken),ammo:{...e.ammo},count:ammoCount(e),available:e.ammo[e.shuriken]||0};}
 export function damageMultiplierFor(stats,element){return (stats.damageMultiplier||1)+(element==='weapon'?0:stats.elementBonuses?.[element]||0);}
 export function shopStock(village){return [...SHURIKEN_TYPES.filter(s=>village!=='nameless'||s.id!=='chakra').map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village&&(village!=='nameless'||a.intro)).map(a=>({...a,kind:'armor'})),...ARM_GUARDS.filter(a=>a.village===village&&(village!=='nameless'||a.intro)).map(a=>({...a,kind:'armguard'})),...BAGS.filter(b=>b.price>0&&(village!=='nameless'||b.capacity<=20)).map(b=>({...b,kind:'bag'}))];}
-export function buyEquipment(save,id){
+// Keep the former ten-piece price, rounded up once for the selected quantity.
+export const shurikenPrice=(item,quantity)=>Math.ceil(item.price*quantity/item.quantity);
+export function maxShurikenPurchase(save,id){
+  const item=shopStock(save.village).find(i=>i.kind==='shuriken'&&i.id===id);if(!item)return 0;
+  return Math.max(0,Math.min(50,bagById(save.equipment.bag).capacity-ammoCount(save.equipment),Math.floor(save.gold*item.quantity/item.price)));
+}
+export function buyEquipment(save,id,quantity=10){
   const item=shopStock(save.village).find(item=>item.id===id),e=save.equipment;if(!item)return {ok:false,reason:'Món hàng không bán tại cửa hàng này.'};
   if(item.kind==='armor'&&e.ownedArmor.includes(id)||item.kind==='armguard'&&e.ownedArmguards.includes(id)||item.kind==='bag'&&e.ownedBags.includes(id))return {ok:false,reason:'Bạn đã sở hữu món này.'};
-  if(save.gold<item.price)return {ok:false,reason:'Không đủ xu.'};
-  if(item.kind==='shuriken'&&ammoCount(e)+item.quantity>bagById(e.bag).capacity)return {ok:false,reason:'Túi không đủ chỗ. Hãy mua hoặc đeo túi lớn hơn.'};
+  if(item.kind==='shuriken'&&(!Number.isSafeInteger(quantity)||quantity<1||quantity>50))return {ok:false,reason:'Chọn từ 1 đến 50 phi tiêu.'};
+  const price=item.kind==='shuriken'?shurikenPrice(item,quantity):item.price;
+  if(save.gold<price)return {ok:false,reason:'Không đủ xu.'};
+  if(item.kind==='shuriken'&&ammoCount(e)+quantity>bagById(e.bag).capacity)return {ok:false,reason:'Túi không đủ chỗ. Hãy mua hoặc đeo túi lớn hơn.'};
   if(item.kind==='bag'&&item.capacity<ammoCount(e))return {ok:false,reason:'Túi này không chứa hết số phi tiêu đang mang.'};
-  save.gold-=item.price;
+  save.gold-=price;
   if(item.kind==='armor'){e.ownedArmor.push(id);e.armor=id;}
   if(item.kind==='armguard'){e.ownedArmguards.push(id);e.armguard=id;}
   if(item.kind==='bag'){e.ownedBags.push(id);e.bag=id;}
-  if(item.kind==='shuriken'){e.ammo[id]+=item.quantity;if(!e.ammo[e.shuriken])e.shuriken=id;}
-  return {ok:true,item};
+  if(item.kind==='shuriken'){e.ammo[id]+=quantity;if(!e.ammo[e.shuriken])e.shuriken=id;}
+  return {ok:true,item,quantity:item.kind==='shuriken'?quantity:1,price};
 }
 export function equipItem(save,kind,id){
   const e=save.equipment;

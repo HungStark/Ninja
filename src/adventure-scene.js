@@ -5,7 +5,7 @@ import {createVillageStoryActors} from './village-story-actors.js';
 import {placeVillageGuards} from './guard-placement.js';
 import {createGuardAmbush} from './guard-ambush.js';
 import {createTransformationSmoke} from './transformation-smoke.js';
-import {HOME,INTRO_SQUAD,villageGuards,villageSidequests} from './journey-story.js';
+import {HOME,INTRO_SQUAD,villageGuards,villageSidequests,sidequestDone} from './journey-story.js';
 import {createVandalFireworks} from './vandal-fireworks.js';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -222,18 +222,19 @@ export function createAdventureScene(){
   function addSidequestActor(entry){
     let chosen=null;
     for(const radius of [0,2,4,6,9,13]){for(let k=0;k<16;k++){const a=k*Math.PI/8,x=entry.x+Math.sin(a)*radius,z=entry.z+Math.cos(a)*radius,y=physics.floorAt(x,z,heightAt(x,z)+.5);if(!blocked(x,z)&&!physics.overlaps(x,z,y,2.9,.6,true)&&!citizens.some(c=>Math.hypot(c.root.position.x-x,c.root.position.z-z)<2.1)){chosen={x,z,y};break;}}if(chosen)break;}
-    if(chosen)Object.assign(entry,chosen);else entry.y=physics.floorAt(entry.x,entry.z,heightAt(entry.x,entry.z)+.5);
+    if(entry.kind==='expedition-goal')entry.y=36;else if(chosen)Object.assign(entry,chosen);else entry.y=physics.floorAt(entry.x,entry.z,heightAt(entry.x,entry.z)+.5);
     let root,char=null;
     if(entry.questType==='combat'){char=createNinja(encounterAppearance({kind:entry.kind,village:current}));root=char.root;root.position.set(entry.x,entry.y,entry.z);root.rotation.y=Math.atan2(-entry.x,-entry.z);citizens.push(char);}
     else{root=createQuestItem({model:entry.targetModel,name:entry.label});root.position.set(entry.x,entry.y+.04,entry.z);}
-    land.add(root);questActors.set(entry.id,{root,char});
+    root.userData.questActor=true;land.add(root);questActors.set(entry.id,{root,char});
   }
   function syncSidequests(save){if(room)return;
-    const active=new Map(villageSidequests(current).filter(q=>save.story?.sidequests[q.id]===1).map(q=>[q.id,q]));
-    for(let i=interactives.length-1;i>=0;i--){const entry=interactives[i];if(entry.kind!=='sidequest-target'||active.has(entry.id))continue;
+    const active=new Map(villageSidequests(current).filter(q=>!sidequestDone(save,q)).map(q=>[q.id,q]));
+    if(current==='fire'&&(save.expeditions.fire||0)<2&&!save.story.questItems?.includes('fire:hong-lien'))active.set('fire:hong-lien',{id:'fire:hong-lien',kind:'expedition-goal',type:'retrieve',targetModel:'lotus',x:88,z:-96,y:36,targetName:'Hái Hồng Liên trên đỉnh núi'});
+    for(let i=interactives.length-1;i>=0;i--){const entry=interactives[i];if(!['sidequest-target','expedition-goal'].includes(entry.kind)||active.has(entry.id))continue;
       const actor=questActors.get(entry.id);if(actor){actor.root.removeFromParent();if(actor.char){const index=citizens.indexOf(actor.char);if(index>=0)citizens.splice(index,1);actor.char.dispose();}else disposeObject(actor.root);questActors.delete(entry.id);}interactives.splice(i,1);
     }
-    for(const q of active.values())if(!questActors.has(q.id)){const entry={kind:'sidequest-target',id:q.id,questType:q.type,targetModel:q.targetModel,x:q.x,z:q.z,label:q.targetName};addSidequestActor(entry);interactives.push(entry);}
+    for(const q of active.values())if(!questActors.has(q.id)){let entry=interactives.find(i=>i.id===q.id);if(!entry){entry={kind:q.kind||'sidequest-target',id:q.id,questType:q.type,targetModel:q.targetModel,x:q.x,z:q.z,label:q.targetName};interactives.push(entry);}addSidequestActor(entry);}
   }
   function syncJailers(save){
     jailerCombatEnabled=current!=='fire'||save.story?.villageEvents?.fire===1;
@@ -262,7 +263,6 @@ export function createAdventureScene(){
       if(!save.story?.guardianRestored)interactives.push({kind:'intro-guardian',id:'broken-guardian',x:region.boss.x,z:region.boss.z+5,label:'Hộ vệ bị phá hỏng · Ba ninja đột kích'});
     }
     const guardDefinitions=villageGuards(id).filter(g=>!(id==='fire'&&g.guardRole==='jailer'&&(save.story?.villageEvents?.fire||0)>=2));if(civicPlan)gates.forEach((gate,index)=>{const g=guardDefinitions[index];if(!g)return;const a=Math.atan2(gate.x,gate.z);Object.assign(g,{label:'Lính gác cổng · '+village(gate.id).name,name:'Lính gác cổng',guardRole:'gate',disguise:null,x:gate.x-Math.sin(a)*6+Math.cos(a)*5,z:gate.z-Math.cos(a)*6-Math.sin(a)*5});});if(civicPlan){let guardianIndex=0,jailerIndex=0;for(const g of guardDefinitions){if(g.guardRole==='guardian')Object.assign(g,civicPlan.guardianPosts[guardianIndex++],{courtBounds:civicPlan.campuses.hall});if(g.guardRole==='jailer')Object.assign(g,civicPlan.military.jailers[jailerIndex++],{courtBounds:civicPlan.military});}}for(const g of guardDefinitions)if(!save.story?.defeatedGuards.includes(g.id))interactives.push({...g});
-    for(const q of villageSidequests(id))if(save.story?.sidequests[q.id]===1)interactives.push({kind:'sidequest-target',id:q.id,questType:q.type,targetModel:q.targetModel,x:q.x,z:q.z,label:q.targetName});
     if(id==='nameless'&&treatyReady){interactives.push({kind:'treaty',x:3,z:7,label:'Bàn ký hiệp ước'});['water','fire','lightning'].forEach((key,index)=>interactives.push({kind:'treaty',id:key,x:1+index*2,z:9.5,label:REGIONS[key].boss.name}));}
     if(['wind','earth','ice','wood','light'].includes(id))interactives.push({kind:'envoy',x:-3,z:8,label:`Đại diện ${v.name}`});
     shopPlot=shopPlot||planVillageShop(id,[...interactives,...(id==='wood'?routes.flatMap(r=>[{x:r.from[0],z:r.from[1]},{x:r.to[0],z:r.to[1]}]):[]),...guardDefinitions.filter(g=>save.story?.defeatedGuards.includes(g.id))]);interactives.push({kind:'shop',id:'village-shop',...shopPlot.entry,area:{x1:shopPlot.x-6.5,x2:shopPlot.x+6.5,z1:shopPlot.z+4.5,z2:shopPlot.z+12,y:shopPlot.base+.45},label:'Thương hội · '+v.name});
@@ -288,7 +288,7 @@ export function createAdventureScene(){
     const halo=mesh(new T.RingGeometry(1.7,1.78,48),M('#a7ead6',.6),shrine,0,.08,0);halo.rotation.x=-Math.PI/2;
     if(id==='nameless'){npc=createVillager(villagerAppearance(id,{kind:'chief'}));npc.root.position.set(-4,heightAt(-4,4),4);npc.root.rotation.y=.4;land.add(npc.root);citizens.push(npc);}
     region.npcs.filter(p=>p.platform!=='earth-cave').forEach((source,index)=>{const person=civicPlan&&source.kind==='healer'?{...source,x:civicPlan.clinic.healer.x,z:civicPlan.clinic.healer.z}:source;const char=createVillager(villagerAppearance(id,person,index));char.root.position.set(person.x,person.platform?platformFor(person.platform)?.toY??heightAt(person.x,person.z):person.elevation??heightAt(person.x,person.z),person.z);char.root.rotation.y=person.yaw??Math.atan2(-person.x,-person.z);land.add(char.root);citizens.push(char);if(civicPlan&&person.kind==='healer'){const entry=interactives.find(i=>i.id===person.id);Object.assign(entry,{x:person.x,z:person.z,y:char.root.position.y});}if(person.activity)residents.push({person,char});if(person.kind==='mentor'){const rune=mesh(new T.TorusGeometry(.8,.04,4,24),M(v.color,.7),char.root,0,3.5,0);rune.rotation.x=Math.PI/2;animated.push({kind:'halo',mesh:rune});}});
-    const guardLook=encounterAppearance({kind:'quest',village:id});guard=createNinja(guardLook);guard.root.position.set(quest.x??8,heightAt(quest.x??8,quest.z??-11),quest.z??-11);guard.root.rotation.y=Math.PI;guard.root.visible=save.quests[id]===1;land.add(guard.root);citizens.push(guard);
+    const guardLook=encounterAppearance({kind:'quest',village:id});guard=createNinja(guardLook);guard.root.position.set(quest.x??8,heightAt(quest.x??8,quest.z??-11),quest.z??-11);guard.root.rotation.y=Math.PI;guard.root.visible=(save.quests[id]||0)<2;land.add(guard.root);citizens.push(guard);
     if(id==='nameless'||civicPlan||!save.bosses?.[id]){
       boss=buildBoss(c,region.boss);if(civicPlan){boss.root.rotation.y=civicPlan.hall.yaw;boss.root.userData.pacified=!!save.bosses?.[id];}
       if(id==='nameless'&&!save.story?.guardianRestored){boss.body.rotation.z=-.48;boss.body.position.y=-1.3;const motion=animated.find(a=>a.kind==='boss'&&a.mesh===boss.body);if(motion){motion.kind='broken-guardian';motion.base=-1.3;}boss.body.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.color?.multiplyScalar(.55);if(o.material.emissive)o.material.emissive.set('#000000');}});}
@@ -318,7 +318,7 @@ export function createAdventureScene(){
       });
       if(chosen)char.root.position.set(chosen.x,chosen.y,chosen.z);
       char.root.userData.landmark=person.landmark;char.update(0,false);char.root.updateMatrixWorld(true);
-      const entry=interactives.find(i=>i.id===person.id);Object.assign(entry,{x:char.root.position.x,z:char.root.position.z,y:char.root.position.y});
+      const entry=interactives.find(i=>i.id===person.id);Object.assign(entry,{x:char.root.position.x,z:char.root.position.z,y:char.root.position.y});if(person.id==='fire-khoi'){const giver=interactives.find(i=>i.kind==='expedition-giver');if(giver)Object.assign(giver,{x:entry.x,z:entry.z,y:entry.y});}
       if(char.workstation){land.attach(char.workstation);registerSceneryColliders(char.workstation,physics,{limit:metrics().limit});}
     }
     if(civicPlan){
@@ -330,9 +330,8 @@ export function createAdventureScene(){
       buildCivicLanes(c,civicPlan,(a,b)=>findPath(a,b,blocked));
     }
     const guardPositions=placeVillageGuards(guardDefinitions,{limit:metrics().limit,boss:region.boss,campuses:civicPlan?Object.values(civicPlan.campuses):[],heightAt:(x,z)=>physics.floorAt(x,z,heightAt(x,z)+.5),valid:(x,z,y)=>!blocked(x,z)&&!physics.overlaps(x,z,y,2.9,.6,true)&&!citizens.some(c=>Math.hypot(c.root.position.x-x,c.root.position.z-z)<2.1)});
-    for(const entry of interactives.filter(i=>['village-guard','sidequest-target'].includes(i.kind))){
-      if(entry.kind==='village-guard')Object.assign(entry,guardPositions.get(entry.id));
-      else {addSidequestActor(entry);continue;}
+    for(const entry of interactives.filter(i=>i.kind==='village-guard')){
+      Object.assign(entry,guardPositions.get(entry.id));
       const char=createNinja(encounterAppearance({kind:entry.kind,village:id}));char.root.position.set(entry.x,entry.y,entry.z);char.root.rotation.y=Math.atan2(-entry.x,-entry.z);land.add(char.root);citizens.push(char);guardCharacters.add(char);roadGuards.push(createGuardAmbush({entry,char,land,physics,heightAt:(x,z)=>physics.floorAt(x,z,standingHeightAt(x,z)+.55),blocked,findPath,smoke:guardSmoke}));
     }
     surface=platformFor(save.surface)?.platform?.id||null;
@@ -358,7 +357,7 @@ export function createAdventureScene(){
       const river=riverAt(current,z);
       return Math.abs(x-river.x)>river.width+.6+pad&&(current!=='water'||!isDeepWater(x,z));
     }});land.add(groundCover.root);
-    batchScenery();focusSun();contacts.update([hero,...citizens,...party.map(p=>p.char),...storyActors.actors()],contactFloor);
+    syncSidequests(save);batchScenery();focusSun();contacts.update([hero,...citizens,...party.map(p=>p.char),...storyActors.actors()],contactFloor);
     scene.updateMatrixWorld(true);camera.far=340*metrics().scale;camera.fov=68;camera.updateProjectionMatrix();followCamera(1,true,false);groundCover?.update(camera,visualQuality,time);
     loadedKey=mapKey(id,save);
   }
@@ -377,7 +376,7 @@ export function createAdventureScene(){
       followCamera(1,true,false);
     }
     hero.setEquipment(equipmentState(save));hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);
-    if(guard)guard.root.visible=save.quests[id]===1;
+    if(guard)guard.root.visible=(save.quests[id]||0)<2;
     syncSidequests(save);syncMines(save);storyActors.sync(save,id,interactives,!!room);syncJailers(save);
     focusSun();contacts.update([hero,...citizens,...party.map(p=>p.char),...storyActors.actors()],contactFloor);return true;
   }
