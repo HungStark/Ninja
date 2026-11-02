@@ -17,7 +17,7 @@ import {equipmentPanel,inventoryPanel,describeGear,shopContent} from './equipmen
 import {fillGearIcons} from './gear-icons.js';
 import {createHeroPreview} from './hero-preview.js';
 import * as T from 'three';
-import {VILLAGES,QUESTS,village,newJourney,readJourney,resolveBattle,findPath,SAVE_KEY,discoverZone,mentorReady,completeLesson,canTravel,canSignTreaty,signTreaty,deliverTreaty,campaignStage,campaignObjective} from './adventure-data.js';
+import {VILLAGES,QUESTS,INTERACTION_RANGE,village,newJourney,readJourney,resolveBattle,findPath,SAVE_KEY,discoverZone,mentorReady,completeLesson,canTravel,canSignTreaty,signTreaty,deliverTreaty,campaignStage,campaignObjective} from './adventure-data.js';
 import {REGIONS,regionMetrics,riverAt} from './adventure-world.js';
 import {planExpedition} from './adventure-biomes.js';
 import {planVillageCivic,civicGatePosition} from './village-civic.js';
@@ -467,7 +467,11 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   $('questTrack').onclick=()=>{const pinned=save.story.trackedQuest&&sidequestById(save.story.trackedQuest),q=pinned&&[0,1,2].includes(save.story.sidequests[pinned.id]||0)?pinned:villageSidequests(save.village).find(q=>[1,2].includes(save.story.sidequests[q.id]));if(q)markSidequest(q);else openJournal();};
   $('nearbyAction').onclick=()=>{const item=nearest();if(item)interact(item);};
   root.querySelectorAll('[data-region]').forEach(g=>{const select=()=>{atlasSelection=g.dataset.region;renderAtlas();};g.onclick=select;g.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();select();}};});
-  function nearest(){if(world.riding)return null;return world.interactives.filter(i=>!i.depleted&&i.kind!=='landmark'&&(i.kind!=='village-guard'||i.revealed)&&(i.kind!=='quest'||save.quests[save.village]===1)&&(i.kind!=='boss'||admin.active||!save.bosses[save.village])).map(i=>({i,d:itemDistance(i)})).filter(o=>o.d<2.1).sort((a,b)=>Number(a.i.kind==='companion')-Number(b.i.kind==='companion')||a.d-b.d)[0]?.i;}
+  function nearest(){
+    if(world.riding)return null;
+    const candidates=world.interactives.filter(i=>!i.depleted&&i.kind!=='landmark'&&(i.kind!=='village-guard'||i.revealed)&&(i.kind!=='quest'||save.quests[save.village]===1)&&(i.kind!=='boss'||admin.active||!save.bosses[save.village])).map(i=>({i,d:itemDistance(i)}));
+    return candidates.filter(({d})=>d<=INTERACTION_RANGE).sort((a,b)=>Number(a.i.kind==='companion')-Number(b.i.kind==='companion')||a.d-b.d)[0]?.i;
+  }
   canvas.addEventListener('pointerdown',e=>{if(phase!=='explore'||cameraDrag||![0,2].includes(e.button))return;focusGame();world.unlockAudio();e.preventDefault();cameraDrag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);canvas.classList.add('camera-dragging');});
   canvas.addEventListener('contextmenu',e=>{if(phase==='explore')e.preventDefault();});
   canvas.addEventListener('pointermove',e=>{if(!cameraDrag||phase!=='explore'||e.pointerId!==cameraDrag.id)return;if(e.pointerType!=='touch'&&!(e.buttons&3)){releaseLook();return;}world.orbit(e.clientX-cameraDrag.x,e.clientY-cameraDrag.y);cameraDrag.x=e.clientX;cameraDrag.y=e.clientY;});

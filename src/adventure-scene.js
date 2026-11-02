@@ -10,7 +10,7 @@ import {createVandalFireworks} from './vandal-fireworks.js';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {buildHouse,buildDistrict,buildBoss} from './adventure-landmarks.js';
-import {village,VILLAGES,QUESTS,findPath} from './adventure-data.js';
+import {village,VILLAGES,QUESTS,INTERACTION_RANGE,findPath} from './adventure-data.js';
 import {REGIONS,regionMetrics,terrainHeight,riverAt,isDeepWater,waterwayAt,waterDepthAt} from './adventure-world.js';
 import {traversalDefinitions,buildBiome,createStorm,traversalComponent} from './adventure-biomes.js';
 import {addWarVegetation} from './adventure-ruins.js';
@@ -82,7 +82,7 @@ export function createAdventureScene(){
     return outside||notch||(p.ellipse||p.customLayout?(p.obstacles||[]).some(o=>Math.hypot(x-o.x,z-o.z)<o.r+padding):Math.abs(dx)<2.65+padding&&Math.abs(dz)<2.15+padding);}
   function canHeroMove(x,z){return physics.canMoveTo(x,z);}
   function navigationBlocked(key=null){return key?(x,z)=>platformBlocked(key,x,z,.3)||physics.overlaps(x,z,platformFor(key)?.toY??0,2.85,.65,true):blocked;}
-  function startTraversal(id,side=0){if(ride||!physics.state().grounded)return false;const route=routes.find(r=>r.id===id);if(!route)return false;const p=side?route.to:route.from,y=side?route.toY:route.fromY;if(Math.hypot(hero.root.position.x-p[0],hero.root.position.z-p[1])>2.5||Math.abs(hero.root.position.y-y)>4)return false;physics.reset();ride={route,side,progress:side?1:0,moved:false};if(route.carved){const point=side?route.carved.path.at(-1):route.carved.path[0];hero.root.position.set(point.x,point.y,point.z);physics.reset(point.y);}if(route.ledges){ride.rock=true;ride.index=side?route.ledges.length-1:0;ride.mode='perch';ride.axis=1;const point=route.ledges[ride.index];hero.root.position.set(point.x,point.y,point.z);physics.reset(point.y);}if(route.boat){route.boat.visible=true;for(const boat of route.idleBoats||[])boat.visible=false;}return true;}
+  function startTraversal(id,side=0){if(ride||!physics.state().grounded)return false;const route=routes.find(r=>r.id===id);if(!route)return false;const p=side?route.to:route.from,y=side?route.toY:route.fromY;if(Math.hypot(hero.root.position.x-p[0],hero.root.position.z-p[1])>INTERACTION_RANGE||Math.abs(hero.root.position.y-y)>4)return false;physics.reset();ride={route,side,progress:side?1:0,moved:false};if(route.carved){const point=side?route.carved.path.at(-1):route.carved.path[0];hero.root.position.set(point.x,point.y,point.z);physics.reset(point.y);}if(route.ledges){ride.rock=true;ride.index=side?route.ledges.length-1:0;ride.mode='perch';ride.axis=1;const point=route.ledges[ride.index];hero.root.position.set(point.x,point.y,point.z);physics.reset(point.y);}if(route.boat){route.boat.visible=true;for(const boat of route.idleBoats||[])boat.visible=false;}return true;}
   function rockJump(){if(!ride?.rock)return false;if(ride.mode==='hang'){ride.mode='mantle';ride.jumpFrom=hero.root.position.clone();ride.jumpTime=0;return true;}if(ride.mode!=='perch')return false;const direction=(ride.side?-1:1)*(ride.axis<0?-1:1),target=ride.index+direction;if(target<0||target>=ride.route.ledges.length)return false;ride.target=target;ride.jumpFrom=hero.root.position.clone();ride.jumpTime=0;ride.mode='jump';return true;}
   function releaseCliff(){if(!ride?.rock)return false;ride=null;physics.reset(hero.root.position.y);previousHeroPosition.copy(hero.root.position);return true;}
   function tryGrabLedge(){

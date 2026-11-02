@@ -108,6 +108,7 @@ export function campaignObjective(save,{localOnly=false}={}) {
   return {title:'Hòa ước của chín miền',description:'Vô Nguyệt đã thất bại. Chín làng nối lại thủy lộ và đường núi; những người thầy vẫn chờ bạn trên hành trình tự do.',targetVillage:'nameless',targetKind:'complete'};
 }
 
+export const INTERACTION_RANGE = 3;
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
   return {version:1,worldRevision:3,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},arena:{round:1},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
