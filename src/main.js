@@ -113,7 +113,7 @@ async function main() {
   const sidestepSpeed = sidestepDistance / sidestepDuration;
   const dragonFormation = 1.1, dragonUncoil = .32;
   let dragonView = null;
-  const meteorSkyTime = 1.4, meteorReturnTime = .4;
+  const meteorSkyTime = 1.3, meteorReturnTime = .4;
   const meteorZoomInTime = .24, meteorZoomAmount = 14;
   let meteorView = null;
   let waveView = null;
