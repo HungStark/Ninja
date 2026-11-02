@@ -73,13 +73,26 @@ export function deliverTreaty(save,id) {
   if(!save.campaign?.treatySigned||save.village!==id||!CAMPAIGN_REGIONS.includes(id)||treatyDelivered(save,id))return false;
   save.campaign.deliveries??=[];save.campaign.deliveries.push(id);return true;
 }
-export function campaignObjective(save) {
-  const opening=openingObjective(save);if(opening)return opening;
-  const local=villageEventObjective(save);if(local&&(FIRST_VILLAGES.includes(save.village)||save.village==='dark'||treatyDelivered(save,save.village)||save.bosses[save.village]))return local;
-  const stage=campaignStage(save);
+export function campaignObjective(save,{localOnly=false}={}) {
   const lesson=id=>({title:`Học thuật tại ${village(id).name}`,description:REGIONS[id].mentor.clue,targetVillage:id,targetKind:'mentor'});
   const challenge=id=>({title:`Đối mặt ${REGIONS[id].boss.name}`,description:`Tìm hộ vệ tại sân nhà họp của làng. Chiến thắng để nhận bí thuật và tiếp tục hành trình.`,targetVillage:id,targetKind:'boss'});
   const infiltrate=id=>!save.bosses[id]&&!villageEventComplete(save,id)?villageEventObjective(save,id):save.bosses[id]?{title:'Thương lượng dấu ấn hòa bình',description:'Hộ vệ đã bị khuất phục. Gặp trưởng '+village(id).name+' để đối thoại và nhận dấu ấn hòa bình.',targetVillage:id,targetKind:'npc'}:{title:'Khuất phục hộ vệ '+village(id).name,description:'Thâm nhập làng, đánh bại cảnh vệ trên đường và đối mặt '+REGIONS[id].boss.name+'. Có thể tìm cao nhân và giúp cư dân để chuẩn bị.',targetVillage:id,targetKind:'boss'};
+  if(localOnly){
+    const id=save.village;
+    if(id==='nameless'){
+      const opening=openingObjective(save);if(opening)return opening;
+      if(canSignTreaty(save))return campaignObjective(save);
+      if(save.campaign?.treatySigned&&!save.mentors[id])return lesson(id);
+    }else{
+      const event=villageEventObjective(save);if(event)return event;
+      if(!save.bosses[id]||!save.story.peaceSeals.includes(id))return infiltrate(id);
+      if(!save.mentors[id])return lesson(id);
+    }
+    return {title:'Đã hoàn thành nhiệm vụ tại '+village(id).name,description:'Bạn có thể tiếp tục khám phá hoặc dịch chuyển tới làng khác để thử tuyến nhiệm vụ tại đó.',targetVillage:id,targetKind:'complete'};
+  }
+  const opening=openingObjective(save);if(opening)return opening;
+  const local=villageEventObjective(save);if(local&&(FIRST_VILLAGES.includes(save.village)||save.village==='dark'||treatyDelivered(save,save.village)||save.bosses[save.village]))return local;
+  const stage=campaignStage(save);
   if(stage==='water'||stage==='fire-lightning'){
     const id=FIRST_VILLAGES.includes(save.village)&&!save.story.peaceSeals.includes(save.village)?save.village:FIRST_VILLAGES.find(id=>!save.story.peaceSeals.includes(id));return infiltrate(id);
   }

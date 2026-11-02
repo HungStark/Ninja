@@ -18,17 +18,17 @@ export function attachHaLy(root,profile,fallback){
   function arm(i,pitch,spread,flex){const side=i===0?1:-1,upper=bones.arms[i],lower=bones.elbows[i];upper.quaternion.copy(rest.get(upper)).premultiply(rotation(0,0,-side*1.55)).premultiply(rotation(pitch,0,spread));lower.quaternion.copy(rest.get(lower)).multiply(rotation(0,-side*flex,0));}
   function pose(state,time){
     if(!bones)return;
-    const wounded=storyPose!=='standing',breath=Math.sin(time*1.8)*.008;
+    const wounded=storyPose!=='standing',airborne=!wounded&&state.airborne,breath=Math.sin(time*1.8)*.008;
     visual.traverse(o=>{if(o.isBone&&rest.has(o))o.quaternion.copy(rest.get(o));});
-    bones.hips.position.y=hipsY-(wounded?.68:state.gait.drop*bones.legLength*scale)/scale;
-    apply(bones.hips,rotation(wounded?.10:state.sprintLean));
+    bones.hips.position.y=hipsY-(wounded?.68:airborne?0:state.gait.drop*bones.legLength*scale)/scale;
+    apply(bones.hips,rotation(wounded?.10:airborne?-.04:state.sprintLean));
     apply(bones.spine,rotation(wounded?.16+breath:0));apply(bones.chest,rotation(wounded?.10+breath:breath));
     apply(bones.head,rotation(wounded?.24+breath:Math.sin(time*.9)*.012,wounded?-.12:Math.sin(time*.5)*.025,wounded?-.09:0));
     for(let i=0;i<2;i++){
       const step=state.gait.legs[i],a=state.arms[i],side=i===0?1:-1;
-      apply(bones.legs[i],rotation(wounded?-1.70:step.hip-state.sprintLean,0,wounded?side*.07:step.side));
-      apply(bones.knees[i],rotation(wounded?1.48:step.knee));apply(bones.feet[i],rotation(wounded?-.08:step.ankle));
-      arm(i,wounded?-.2:a.pitch,wounded?side*.1+side*REST_ARM_OPEN:a.spread+side*REST_ARM_OPEN,wounded?1.2:a.flex);
+      apply(bones.legs[i],rotation(wounded?-1.70:airborne?-.3:step.hip-state.sprintLean,0,wounded?side*.07:airborne?0:step.side));
+      apply(bones.knees[i],rotation(wounded?1.48:airborne?(state.verticalSpeed>0?.48:.62):step.knee));apply(bones.feet[i],rotation(wounded?-.08:airborne?-.22:step.ankle));
+      arm(i,wounded?-.2:airborne?-.6:a.pitch,wounded?side*.1+side*REST_ARM_OPEN:airborne?side*.22:a.spread+side*REST_ARM_OPEN,wounded?1.2:airborne?.35:a.flex);
     }
     for(const bone of bones.skirt){
       const front=/Front/.test(bone.name),side=/Side/.test(bone.name),i=bone.name.includes('_L_')?0:1;
@@ -42,7 +42,7 @@ export function attachHaLy(root,profile,fallback){
     bonds.visible=storyPose==='captive';
     visual.traverse(o=>{const d=o.morphTargetDictionary,v=o.morphTargetInfluences;if(!d||!v)return;const blink=time%4.8;for(const [name,value]of [['Fcl_EYE_Close',blink<.16?Math.sin(blink/.16*Math.PI):wounded?.12:0],['Fcl_BRW_Sorrow',wounded?.45:0],['Fcl_MTH_Small',wounded?.12:0]])if(d[name]!==undefined)v[d[name]]=value;});
   }
-  function update(time,moving,velocity=null,dt=1/60){lastTime=time;lastState=motion.update(time,moving,velocity,dt,moving&&Math.hypot(velocity?.x||0,velocity?.z||0)>5.1,root.rotation.y);pose(lastState,time);}
+  function update(time,moving,velocity=null,dt=1/60,locomotion={}){lastTime=time;lastState={...motion.update(time,moving,velocity,dt,locomotion.sprinting??(moving&&Math.hypot(velocity?.x||0,velocity?.z||0)>5.1),root.rotation.y,!!locomotion.airborne),airborne:!!locomotion.airborne,verticalSpeed:locomotion.verticalSpeed||0};pose(lastState,time);}
   const ready=typeof document==='undefined'?Promise.resolve(false):(sourcePromise??=new GLTFLoader().loadAsync(new URL('assets/ha-ly-simple.glb',document.baseURI).href).then(g=>prepareCharacterSource(g.scene))).then(source=>{
     if(!alive)return false;
     visual=clone(source);visual.name='ha-ly-rigged-appearance';

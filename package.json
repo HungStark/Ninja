@@ -100,7 +100,8 @@
     "test:loading": "node tests/loading-browser.cjs",
     "test:journey-fixes": "node tests/journey-fixes-core.mjs && node tests/adventure-resume-core.mjs && node tests/journey-fixes-browser.cjs",
     "test:elder-faces": "node tests/elder-faces-browser.cjs && node tests/model-portraits-core.mjs",
-    "test:civic": "node tests/village-civic-core.mjs && node tests/village-civic-browser.cjs"
+    "test:civic": "node tests/village-civic-core.mjs && node tests/village-civic-browser.cjs",
+    "test:companion": "node tests/companion-follow-core.mjs && node tests/companion-follow-scene-core.mjs && node tests/adventure-access-core.mjs && node tests/companion-admin-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

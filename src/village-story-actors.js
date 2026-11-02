@@ -4,14 +4,15 @@ import {createVillager} from './villager.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {HA_LY,HA_LY_MOTHER,FIRE_PRISON,currentVillageEvent,eventSpot,villageEventStep} from './village-events.js';
 import {createFirePrison} from './fire-prison.js';
+import {createCompanionFollow,FOLLOW_GAP} from './companion-follow.js';
 
-export function createVillageStoryActors({scene,hero,blocked,floor,addSolid,removeSolid=()=>{}}){
+export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>!blocked(p.x,p.z),addSolid,removeSolid=()=>{}}){
   const root=new T.Group();root.name='village-story-actors';scene.add(root);
-  let follower=null,entry=null,activeEvent=null,current='nameless',list=[],trail=[],moving=false,catchups=0,clock=0;
+  let follower=null,follow=null,entry=null,activeEvent=null,current='nameless',list=[],moving=false,clock=0;
   let stationary=[],prison=null,captive=null,mother=null;
   let syncedKey=null,syncedList=null;
   const dispose=g=>{const gs=new Set(),ms=new Set();g.traverse(o=>{if(o.geometry)gs.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])ms.add(m);});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());g.removeFromParent();};
-  function safePoint(p){for(const radius of [0,1.2,2.5,4,6,8])for(let i=0;i<(radius?16:1);i++){const a=i*Math.PI/8,x=p.x+Math.cos(a)*radius,z=p.z+Math.sin(a)*radius;if(!blocked(x,z))return {x,z,y:floor(x,z)};}return {...p,y:floor(p.x,p.z)};}
+  function safePoint(p){for(const radius of [0,1.2,2.5,4,6,8])for(let i=0;i<(radius?16:1);i++){const a=i*Math.PI/8,x=p.x+Math.cos(a)*radius,z=p.z+Math.sin(a)*radius,y=floor(x,z,Number.isFinite(p.y)?p.y+.55:undefined);if(Number.isFinite(p.y)?Math.abs(y-p.y)<1.3&&canFollow({...p,x,y,z}):!blocked(x,z))return {x,z,y};}return {...p,y:floor(p.x,p.z,Number.isFinite(p.y)?p.y+.55:undefined)};}
   function mesh(parent,geometry,color,p,scale=[1,1,1]){const m=new T.Mesh(geometry,new T.MeshStandardMaterial({color,roughness:.8,emissive:color,emissiveIntensity:.06}));m.position.fromArray(p);m.scale.fromArray(scale);m.castShadow=true;parent.add(m);return m;}
   function props(parent,style){
     const color={water:'#67bbd5',lightning:'#b4a0e7',earth:'#b09a73',wind:'#a3c9ac',light:'#e1ca85',ice:'#c4ebec',wood:'#82a76a',dark:'#9682b2'}[style]||'#b5a079';
@@ -23,7 +24,7 @@ export function createVillageStoryActors({scene,hero,blocked,floor,addSolid,remo
     for(let i=0;i<3;i++){const x=(i-1)*.85;mesh(parent,style==='earth'?new T.DodecahedronGeometry(.65):new T.CylinderGeometry(.16,.25,1.6,7),color,[x,.8,-.4],[1,1+i*.12,1]);}
   }
   function addActor(id,p,wounded=false){const model=createNinja(HA_LY);model.root.name=wounded?'ha-ly-wounded':'ha-ly-companion';model.root.position.set(p.x,p.y,p.z);root.add(model.root);if(wounded)stationary.push(model);return model;}
-  function reset(keepFollower=false){syncedKey=null;syncedList=null;for(const s of prison?.colliders||[])removeSolid(s);prison=null;for(const actor of stationary){actor.dispose?.();actor.root.userData.villager=null;dispose(actor.root);}stationary=[];captive=null;mother=null;if(!keepFollower)follower?.dispose();for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;entry=null;trail=[];}activeEvent=null;moving=false;}
+  function reset(keepFollower=false){syncedKey=null;syncedList=null;for(const s of prison?.colliders||[])removeSolid(s);prison=null;for(const actor of stationary){actor.dispose?.();actor.root.userData.villager=null;dispose(actor.root);}stationary=[];captive=null;mother=null;if(!keepFollower)follower?.dispose();for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;follow=null;entry=null;}activeEvent=null;moving=false;}
   function sync(save,id,interactives,inInterior=false){
     const key=JSON.stringify([id,inInterior,villageEventStep(save,id),!!save.story?.companion?.recruited]);
     if(key===syncedKey&&interactives===syncedList)return;
@@ -45,18 +46,13 @@ export function createVillageStoryActors({scene,hero,blocked,floor,addSolid,remo
       const mark=mesh(g,new T.OctahedronGeometry(.18),'#f4d88d',[0,3.6,0]);mark.name='story-event-marker';
       list.push({kind:'village-event',id:`story-${id}-${activeEvent.step}`,eventVillage:id,step:activeEvent.step,x:p.x,z:p.z,y:p.y,label:activeEvent.title});
     }
-    if(save.story?.companion?.recruited){if(!follower){const hp=hero.root.position,p=safePoint({x:hp.x+1.3,z:hp.z+1});follower=addActor(HA_LY.id,p);entry={kind:'companion',id:HA_LY.id,label:'Hạ Ly · Bạn đồng hành',x:p.x,z:p.z,y:p.y};trail=[hp.clone()];}list.push(entry);}
+    if(save.story?.companion?.recruited){if(!follower){const hp=hero.root.position,yaw=hero.root.rotation.y,p=safePoint({x:hp.x-Math.sin(yaw)*FOLLOW_GAP,y:hp.y,z:hp.z-Math.cos(yaw)*FOLLOW_GAP});follower=addActor(HA_LY.id,p);follower.root.rotation.y=yaw;entry={kind:'companion',id:HA_LY.id,label:'Hạ Ly · Bạn đồng hành',x:p.x,z:p.z,y:p.y};follow=createCompanionFollow({position:follower.root.position,canOccupy:canFollow,safePoint});follow.reset(hp,{yaw});}list.push(entry);}
     syncedKey=key;syncedList=interactives;
   }
-  function update(dt,time,paused=false,riding=false,budget=null){
-    clock=time;for(const actor of stationary){const slot=budget?.prepare(actor,hero.root.position,dt);if(!slot||slot.tick)actor.update(time,false,null,paused?0:slot?.dt||dt);}if(!follower)return;const hp=hero.root.position,p=follower.root.position,previous=p.clone();moving=false;
-    if(!paused){const last=trail.at(-1);if(!last||last.distanceTo(hp)>.32)trail.push(hp.clone());if(trail.length>160)trail.shift();
-      if(p.distanceTo(hp)>22||(!riding&&Math.abs(hp.y-p.y)>6)){const safe=safePoint({x:hp.x+1.3,z:hp.z+1});p.set(safe.x,safe.y,safe.z);trail=[hp.clone()];catchups++;}
-      let target=trail[0];while(trail.length>1&&p.distanceTo(trail[0])<.5){trail.shift();target=trail[0];}
-      if(target&&p.distanceTo(hp)>1.65&&!riding){const dx=target.x-p.x,dz=target.z-p.z,d=Math.hypot(dx,dz),step=Math.min(d,dt*(p.distanceTo(hp)>5?7.2:4.9));if(d>.02){const nx=p.x+dx/d*step,nz=p.z+dz/d*step;if(!blocked(nx,nz)){const y=floor(nx,nz);if(Math.abs(y-p.y)<1.3){p.set(nx,y,nz);follower.root.rotation.y=Math.atan2(dx,dz);moving=step>.001;}}}}
-    }
-    const velocity=moving&&dt>0?{x:(p.x-previous.x)/dt,z:(p.z-previous.z)/dt}:null;
-    follower.root.visible=!riding;follower.update(paused?clock:time,moving,velocity,paused?0:dt);Object.assign(entry,{x:p.x,z:p.z,y:p.y});
+  function update(dt,time,paused=false,riding=false,budget=null,leader={}){
+    clock=time;for(const actor of stationary){const slot=budget?.prepare(actor,hero.root.position,dt);if(!slot||slot.tick)actor.update(time,false,null,paused?0:slot?.dt||dt);}if(!follower)return;
+    const p=follower.root.position,state=paused?follow.state():follow.update(dt,hero.root.position,{...leader,yaw:hero.root.rotation.y,riding,groundAt:(x,z,y)=>floor(x,z,y+.03)});moving=!paused&&state.moving;
+    follower.root.rotation.y=state.pose.yaw??follower.root.rotation.y;follower.root.visible=true;follower.update(clock,moving,paused?null:state.velocity,paused?0:dt,state.pose);Object.assign(entry,{x:p.x,z:p.z,y:p.y});
   }
-  return {sync,reset,update,actors:()=>[...stationary,...(follower?[follower]:[])],state:()=>({event:activeEvent?{village:current,step:activeEvent.step,title:activeEvent.title}:null,prison:prison?{opened:prison.opened,position:[prison.point.x,prison.point.y,prison.point.z]}:null,captive:captive?{pose:captive.root.userData.storyPose,modelReady:captive.modelReady,position:captive.root.position.toArray()}:null,mother:mother?{id:HA_LY_MOTHER.id,position:mother.root.position.toArray()}:null,recruited:!!follower,visible:!!follower?.root.visible,position:follower?.root.position.toArray()||null,female:follower?.profile.female||false,moving,distance:follower?follower.root.position.distanceTo(hero.root.position):null,catchups})};
+  return {sync,reset,update,actors:()=>[...stationary,...(follower?[follower]:[])],state:()=>({event:activeEvent?{village:current,step:activeEvent.step,title:activeEvent.title}:null,prison:prison?{opened:prison.opened,position:[prison.point.x,prison.point.y,prison.point.z]}:null,captive:captive?{pose:captive.root.userData.storyPose,modelReady:captive.modelReady,position:captive.root.position.toArray()}:null,mother:mother?{id:HA_LY_MOTHER.id,position:mother.root.position.toArray()}:null,recruited:!!follower,visible:!!follower?.root.visible,position:follower?.root.position.toArray()||null,female:follower?.profile.female||false,moving,distance:follower?follower.root.position.distanceTo(hero.root.position):null,catchups:follow?.state().catchups||0,following:follow?{...follow.state(),pose:{...follow.state().pose}}:null})};
 }

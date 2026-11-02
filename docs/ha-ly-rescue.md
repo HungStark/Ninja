@@ -22,9 +22,9 @@ her hips, knees, ankles and arms while following the player.
 
 The Fire chapter keeps four save-compatible stages:
 
-1. Meet **Bà Hồng**, Hạ Ly's adoptive mother, by Fire Village's gate and accept
+1. Meet **Bà Hồng**, Hạ Ly's adoptive mother, outside the military gate and accept
    the rescue mission.
-2. Go to the prison west of the gate (world center `-12,20`) and defeat both
+2. Go to the military prison beside the council courtyard and defeat both
    Black Robe jailers. Hạ Ly is already visible inside, wounded and bound.
 3. Victory opens the physical cell gate and removes her wrist bonds. Retrieve
    Fireheart medicine from the marked residential approach.
@@ -41,3 +41,24 @@ gate collision/unlocking, refresh and travel cleanup, rewards and saved progress
 Browser tests load the actual GLB, verify lit materials and seated joints, render
 all prison stages and play the full rescue through combat, medicine, reload,
 recruitment, walking and cross-village travel. Captures: `test-results/ha-ly-rescue`.
+
+Companion movement is driven by `src/companion-follow.js`. Hạ Ly replays the
+player's route about 1.8 units behind, including corners, height changes,
+heading, strafing, sprinting and jumping. Movement consumes every required
+segment in a frame instead of waiting at the oldest point. Collision tests use
+the recorded foot height, so stairs, decks and jumps do not look like walls at
+ground level. She remains visible during traversal. In-place jumps use a short
+delayed height sample; her rig switches to the shared airborne pose.
+
+Only a route blocked for 1.25 seconds allows a recovery teleport to a safe
+recent route position. Distance from the player and a fixed history count no
+longer trigger warps. Consumed route points and old straight/idle samples are
+discarded without removing corners or changing the pending route. Story refresh
+and combat return keep the existing companion and route.
+
+`npm run test:companion` checks multiple frame rates, long/slow routes, blocked
+recovery, actual scenery/stairs/deck saves, the live rig and admin quest entry.
+Admin uses the current village's chapter for the main objective, independent of
+opening/treaty prerequisites in other villages. Local chapter, guardian, chief
+and mentor progress remains in the disposable admin session; normal play keeps
+its campaign order and the original save is restored when admin exits.

@@ -68,12 +68,12 @@ export function createNinja(look){
     scarf=new T.Group();body.add(scarf);for(let i=0;i<2;i++){const shoulder=new T.Group(),bracer=new T.Group();arms[i].pivot.add(shoulder);base.forearms[i].add(bracer);shoulderGuards.push(shoulder);bracers.push(bracer);}
   }
   let stride=0;
-  function update(time,moving,velocity=null,dt=1/60){
+  function update(time,moving,velocity=null,dt=1/60,locomotion={}){
     base.update(time,false,null,dt);const yaw=root.rotation.y,vx=moving?(velocity?.x??Math.sin(yaw)*2):0,vz=moving?(velocity?.z??Math.cos(yaw)*2):0,speed=Math.hypot(vx,vz),weight=Math.min(1,speed/2),x=(Math.cos(yaw)*vx-Math.sin(yaw)*vz)/(speed||1),z=(Math.sin(yaw)*vx+Math.cos(yaw)*vz)/(speed||1);stride+=speed*dt*3.6;
     legs.forEach((l,i)=>{const step=Math.sin(stride+i*Math.PI)*weight;l.pivot.rotation.x=-step*z*.35;l.pivot.rotation.z=step*x*.25;});
     arms.forEach((a,i)=>{a.pivot.rotation.x=Math.sin(stride+i*Math.PI)*weight*z*.24;a.pivot.rotation.z=-Math.sin(stride+i*Math.PI)*weight*x*.13;});
     body.rotation.z=-x*weight*.035;body.rotation.x=z*weight*.025;scarf.rotation.x=Math.sin(time*2)*.025-weight*.08;
-    avatar?.update(time,moving,velocity,dt);
+    avatar?.update(time,moving,velocity,dt,locomotion);
   }
   function combatPose(attack=0,block=0,bounce=0){
     body.rotation.x=.12+attack*.16-block*.12;body.rotation.y=-attack*.28;body.position.y=-.1+Math.abs(bounce)*.35;
