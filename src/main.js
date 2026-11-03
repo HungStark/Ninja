@@ -8,7 +8,7 @@ import {createNamelessGuardianAlly} from './nameless-guardian-ally.js';
 import {createEncounterSquad} from './encounter-squad.js';
 import {createGuardianPhases} from './guardian-phases.js';
 import {createEnemyMovement} from './enemy-movement.js';
-import {createDashBoost,STEP_DISTANCE,STEP_DURATION,DASH_DISTANCE,DASH_DURATION} from './dash-boost.js';
+import {createDashBoost,STEP_DISTANCE,STEP_DURATION,DASH_DISTANCE,DASH_DURATION,DASH_MANA_COST} from './dash-boost.js';
 import {createDashAura} from './dash-aura.js';
 import {damageMultiplierFor} from './equipment.js';
 import * as T from "three";
@@ -1106,8 +1106,8 @@ async function main() {
     if(activeBoss()&&guardianPhases.state().armor>0)$('enemyShield').textContent+=' · Giáp hộ vệ −35% sát thương · '+guardianPhases.state().armor.toFixed(1)+'s';
     const boost=dashBoost.state();
     $('moveHint').textContent = boost.ready>0?'TĂNG LỰC '+boost.ready.toFixed(1)+'s · CLICK TRÁI / PHẢI ĐỂ LƯỚT 3 M':moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'GIỮ TRÁI / PHẢI ĐỂ DI CHUYỂN LIÊN TỤC';
-    $('dashBoostButton').disabled=cinematicActive()||!started||paused||won||player.controlTime>0||lightArts.blocksDash('player',playerPos())||boost.ready>0||boost.cooldown>0;
-    $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':'Tăng lực · lướt 3 m';
+    $('dashBoostButton').disabled=cinematicActive()||!started||paused||won||player.controlTime>0||natureArts.buried('player')||lightArts.blocksDash('player',playerPos())||boost.ready>0||boost.cooldown>0||rules.chakra+1e-8<DASH_MANA_COST;
+    $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':rules.chakra+1e-8<DASH_MANA_COST?'Thiếu mana · cần 15':'Tăng lực · 15 mana';
     $('flash').style.opacity = flashTimer * .32; $('hitMarker').style.opacity = hitTimer > 0 ? 1 : 0;
     const targetEntity=aimedEnemy(),delta = vsub(adventure?.encounter?.squad?targetEntity.pos:natureArts.perceivedPosition('player',windActors()), playerPos()), d = aim(), onTarget = vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7;
     $('reticle').classList.toggle('on-target', onTarget && targetEntity.fighter.hp > 0 && !waveView);
@@ -1388,8 +1388,9 @@ async function main() {
   }
   function releaseStep(source){heldStepSources.delete(source);}
   function armDash(){if(cinematicActive())return;
-    if(!started||paused||won)return;
+    if(!started||paused||won||rules.chakra+1e-8<DASH_MANA_COST)return;
     if(dashBoost.arm(player.controlTime>0||natureArts.buried('player')||lightArts.blocksDash('player',playerPos()))){
+      rules.chakra=Math.max(0,rules.chakra-DASH_MANA_COST);
       dashAura.update(0,[camera.p[0],earthFloor('player',camera.p[0],camera.p[2])+darkDomain.depth('player'),camera.p[2]],true,reducedMotion);
       announce(androidInterface()?'Tăng lực · chạm nút né trong 3 giây để lướt 3 m.':'Tăng lực · trong 3 giây, click trái / phải để lướt 3 m.');updateUI();
     }
