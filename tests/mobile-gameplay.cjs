@@ -17,9 +17,9 @@ const path=require('node:path');
     await page.goto(url+'?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');
     await page.locator('#heroForm button[type=submit]').tap();await page.waitForFunction(()=>__AN_HOA__.adventure().phase==='explore'&&!__AN_HOA__.adventure().loading);await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await advance(.01);
     assert.ok(await page.locator('body').evaluate(el=>el.classList.contains('android-ui')));
-    const pad=await page.locator('#androidJoystick').boundingBox(),jump=await page.locator('[data-mobile-key=" "]').boundingBox(),e=await page.locator('[data-mobile-key="e"]').boundingBox(),c=await page.locator('[data-mobile-key="c"]').boundingBox();
+    const pad=await page.locator('#androidJoystick').boundingBox(),jump=await page.locator('[data-mobile-key=" "]').boundingBox(),v=await page.locator('[data-mobile-key="v"]').boundingBox(),c=await page.locator('[data-mobile-key="c"]').boundingBox();
     assert.ok(pad.x<915/2&&jump.x>915/2);assert.ok(Math.abs(pad.width-118.45)<.1,'joystick is 15% larger');
-    assert.ok(Math.abs(jump.width-e.width)<1);assert.ok(e.x>jump.x&&Math.abs(jump.x-c.x)<1&&c.y+c.height<=jump.y+1);
+    assert.ok(Math.abs(jump.width-jump.height)<1&&jump.width>c.width*1.5);assert.ok(c.x>=jump.x+jump.width+8&&Math.abs(c.x-v.x)<1&&c.y+c.height<v.y);assert.equal(await page.locator('[data-mobile-key=" "]').evaluate(el=>getComputedStyle(el).borderRadius),'50%');assert.equal(await page.locator('[data-mobile-key="e"]').isVisible(),false);
     assert.equal(await page.locator('.android-explore-actions button').count(),4);
     assert.equal(await page.locator('#campaignToggle').getAttribute('aria-expanded'),'false');
     const story=await page.locator('#campaignToggle').boundingBox(),journal=await page.locator('#openJournal').boundingBox();assert.ok(story.x+story.width<journal.x+1);
@@ -63,6 +63,6 @@ const path=require('node:path');
     }
     await page.locator('[data-spell="0"] .spell-picture').tap();await page.locator('#castButton').tap();assert.equal((await state()).casts,1);assert.deepEqual((await state()).sequence,[]);
     await page.screenshot({path:out+'/combat.png'});assert.deepEqual(errors,[]);
-    console.log('PASS: mobile web layout, story overlay, 15% larger left joystick, four right actions, drag/release sprint lock, cancellation, automatic aim, shuriken/timeout/control seal retention and resumed casting.');
+    console.log('PASS: mobile web layout, story overlay, 15% larger left joystick, large circular jump with C/V to its right and hidden standalone E, drag/release sprint lock, cancellation, automatic aim, shuriken/timeout/control seal retention and resumed casting.');
   }catch(error){await page.screenshot({path:out+'/failure.png'}).catch(()=>{});error.message=checkpoint+': '+error.message;throw error;}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

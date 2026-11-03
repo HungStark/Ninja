@@ -66,7 +66,7 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 }
 
 /* Exploration reserves separate regions for navigation, quests and thumb controls. */
-.android-ui{--explore-quest:clamp(180px,25vw,240px);--explore-map:clamp(100px,13vw,130px);--explore-joystick:clamp(101.2px,28.75vh,124.2px);--explore-button:clamp(52px,14vh,60px);--explore-actions-width:calc(2 * var(--explore-button) + 10px);--explore-top:calc(var(--safe-top) + 88px)}
+.android-ui{--explore-quest:clamp(180px,25vw,240px);--explore-map:clamp(100px,13vw,130px);--explore-joystick:clamp(101.2px,28.75vh,124.2px);--explore-button:clamp(52px,14vh,60px);--explore-actions-width:calc(2.6 * var(--explore-button) + 10px);--explore-top:calc(var(--safe-top) + 88px)}
 .android-ui .journey-controls,.android-ui .journey-character,.android-ui .journey-progression-launch{display:none!important}
 .android-ui .journey-top{position:relative;z-index:2;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:18px;min-height:calc(var(--safe-top) + 62px);padding:calc(var(--safe-top) + 8px) calc(var(--safe-right) + 12px) 8px calc(var(--safe-left) + 12px);box-sizing:border-box}
 .android-ui .journey-brand{min-width:0;gap:8px}.android-ui .journey-brand>b{font-size:28px;line-height:36px;padding:0 5px}.android-ui .journey-brand>span{font-size:13px;letter-spacing:2px}.android-ui .journey-brand small{font-size:6px;letter-spacing:2px}
@@ -205,12 +205,13 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 .android-ui .android-explore-messages>.journey-waypoint>span{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .android-ui .android-explore-messages>.journey-waypoint small{font-size:8px;margin-top:2px}
 
-/* Four exploration actions share the same two-by-two footprint. */
+/* Large jump button with training and equipment to its right. */
 .android-ui .journey-equipment-launch{display:none!important}
-.android-explore-actions>[data-mobile-key="c"]{grid-column:1;grid-row:1}
-.android-explore-actions>[data-mobile-key="v"]{grid-column:2;grid-row:1}
-.android-explore-actions>[data-mobile-key=" "]{grid-column:1;grid-row:2;width:100%;height:100%;border-radius:6px;font-size:24px}
-.android-explore-actions{grid-template-columns:repeat(2,var(--explore-button))}
+.android-explore-actions>[data-mobile-key="c"]{grid-column:2;grid-row:1}
+.android-explore-actions>[data-mobile-key="v"]{grid-column:2;grid-row:2}
+.android-explore-actions>[data-mobile-key="e"]{display:none!important}
+.android-explore-actions>[data-mobile-key=" "]{grid-column:1;grid-row:1 / 3;width:calc(var(--explore-button) * 1.6);height:calc(var(--explore-button) * 1.6);border-radius:50%;font-size:30px}
+.android-explore-actions{grid-template-columns:calc(var(--explore-button) * 1.6) var(--explore-button)}
 .android-ui .purchase-dialog input[type=range]{touch-action:pan-x!important}
 
 /* Combat defaults: scroll on the left, shared seals and vitals on the right. */

@@ -1,6 +1,6 @@
 import {REGIONS} from './adventure-world.js';
 import {gainExperience,regionElement,GUARD_ARSENALS} from './progression.js';
-import {FIRE_PRISON_SITE,FIRE_MOTHER_SITE,FIRE_MEDICINE_SITE} from './village-zoning.js';
+import {FIRE_PRISON_SITE,FIRE_MOTHER_SITE} from './village-zoning.js';
 import {botHealth} from './enemy-balance.js';
 
 export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
@@ -18,8 +18,8 @@ export const VILLAGE_EVENTS={
   fire:{title:'Người con gái giữa tro tàn',speaker:'Hạ Ly',stages:[
     stage('Lời nhờ cậy của mẹ nuôi','Bà Hồng, mẹ nuôi của Hạ Ly, đang đợi bên cổng khu quân sự Làng Hỏa. Bà kể con gái bị Hắc Y bắt giữ sau khi tìm ra chứng cứ giả danh các làng. Hạ Ly bị thương, bị trói trong nhà lao thuộc khu quân sự cạnh nhà họp. Bà nhờ bạn giải cứu nàng trước khi chúng chuyển tù.','entrance','mother',{speaker:'Bà Hồng',speakerId:HA_LY_MOTHER.id}),
     stage('Phá khóa nhà lao','Qua song sắt, bạn thấy Hạ Ly ngồi gục trên ghế, hai tay bị trói trước bụng. Hai cai ngục Hắc Y giữ chìa khóa và chặn cửa. Đánh bại cả hai để mở nhà lao và tháo dây trói cho nàng.','prison-gate','captive',{battle:true,enemy:'Cai ngục Hắc Y'}),
-    stage('Thuốc cho vết thương','Cửa lao đã mở, dây trói đã được tháo nhưng Hạ Ly vẫn chưa thể đi lại. Nàng nhờ bạn lấy túi thuốc Hỏa Tâm được giấu cạnh khu dân cư. Mang thuốc trở lại nhà lao để băng bó vết thương.',0,'medicine'),
-    stage('Một người cùng đường','Bạn trở lại nhà lao, dùng thuốc Hỏa Tâm băng bó cho Hạ Ly. Nàng trao cho bạn mảnh mật thư có dấu trăng khuyết và cảm ơn vì đã giữ lời với mẹ nuôi. Sau khi hồi sức, nàng muốn cùng bạn tìm ra kẻ đứng sau cuộc chiến.','prison','injured',{recruit:true})
+    stage('Hồng Liên cứu Hạ Ly','Hạ Ly đã được cởi trói nhưng vết thương khiến nàng không thể rời nhà lao. Hãy gặp Thợ Khôi, hái hoa Hồng Liên trên đỉnh Vách Tro Hồng và nhờ ông điều chế thuốc. Mang thuốc về ngục để cứu nàng.',0,'medicine'),
+    stage('Một người cùng đường','Bạn trở lại nhà lao, dùng thuốc Hồng Liên băng bó cho Hạ Ly. Nàng trao cho bạn mảnh mật thư có dấu trăng khuyết và cảm ơn vì đã giữ lời với mẹ nuôi. Sau khi hồi sức, nàng muốn cùng bạn tìm ra kẻ đứng sau cuộc chiến.','prison','injured',{recruit:true})
   ]},
   lightning:{title:'Đêm cao nguyên tắt sáng',speaker:'Kỹ sư Tử Khang',stages:[
     stage('Trạm tiếp lôi mất tín hiệu','Ba cột dẫn sét bị nối sai khiến khu dân cư tối đen. Tử Khang phát hiện một cầu chì bị đổi thành tinh thể tím lạ. Cần cô lập nguồn trước khi sửa mạch.',0,'lightning'),
@@ -71,6 +71,8 @@ export function currentVillageEvent(save,id=save.village){const chapter=VILLAGE_
 export function villageEventObjective(save,id=save.village){const e=currentVillageEvent(save,id);return e?{title:e.title,description:e.body,targetVillage:id,targetKind:'village-event',targetId:`story-${id}-${e.step}`} : null;}
 export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=false}={}){
   const e=currentVillageEvent(save,id);if(!e||save.village!==id||e.step!==expectedStep)return {ok:false,reason:'stage'};
+  if(id==='fire'&&[2,3].includes(e.step)&&!save.story.questItems?.includes('fire:lotus-medicine'))return {ok:false,reason:'medicine',message:'Hãy mang Hồng Liên trên đỉnh Vách Tro Hồng về cho Thợ Khôi điều chế thuốc cứu Hạ Ly.'};
+  if(id==='fire'&&e.step===3)save.story.questItems=save.story.questItems.filter(item=>item!=='fire:lotus-medicine');
   if(e.battle&&!victory)return {ok:false,reason:'battle'};
   if(e.choices&&!e.choices[choiceIndex]?.correct)return {ok:false,reason:'choice',message:e.choices[choiceIndex]?.feedback||'Hãy xem lại những dấu vết vừa tìm được.'};
   save.story.villageEvents??={};save.story.villageEvents[id]=e.step+1;
@@ -82,7 +84,7 @@ export function eventSpot(id,event){
   if(id==='fire'&&event.spot==='prison-gate')return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+3.25};
   if(id==='fire'&&event.spot==='prison')return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+.65};
   if(id==='fire'&&event.spot==='entrance')return {...FIRE_MOTHER_SITE};
-  if(id==='fire'&&event.style==='medicine')return {...FIRE_MEDICINE_SITE};
+  if(id==='fire'&&event.style==='medicine'){const khoi=REGIONS.fire.npcs.find(n=>n.id==='fire-khoi');return {x:khoi.x,z:khoi.z};}
   if(event.spot==='entrance')return {x:2.4,z:17};
   const zones=REGIONS[id].zones.filter(z=>!z.platform&&!['summit-lotus','red-cliff'].includes(z.id)),zone=zones[(Number(event.spot)||0)%zones.length];
   // Use the district approach, already connected to the village road network.
@@ -96,4 +98,11 @@ export function villageEventEncounter(id){
   }
   if(id==='dark')return {name:'Kẻ giữ màn sương',element:'dark',hp:botHealth(230),spellIds:['dark-orb','dark-lance','dark-domain'],damageMultiplier:.8,sealDelay:.6,restTime:2.8,weaponInterval:2.7,eventStep:2};
   return null;
+}
+
+// Flowers collected before accepting the rescue are equally usable, once only.
+export function brewHongLienMedicine(save){
+  if(save.expeditions.fire===3||!save.story.questItems?.includes('fire:hong-lien'))return false;
+  save.story.questItems=save.story.questItems.filter(id=>id!=='fire:hong-lien');
+  save.story.questItems.push('fire:lotus-medicine');save.expeditions.fire=3;return true;
 }

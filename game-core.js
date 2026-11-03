@@ -211,7 +211,7 @@
     receive(damage, reflected = false, ignoreShield=false, element=null) {
       if(this.invulnerableTime>0)return {damage:0,absorbed:0,reflected:false,restored:false,immune:true};
       if (this.reflect && !reflected) { this.reflect--; return { damage: 0, reflected: true }; }
-      const resistance=Math.max(0,Math.min(.8,Number(this.resistances?.[element])||0));damage=Math.max(0,damage)*(1-resistance);
+      const resistance=Math.max(0,Math.min(.8,Number(this.resistances?.[element])||0));damage=Math.max(0,damage)*(1-resistance)*(this.incomingElementMultipliers?.[element]??1);
       const absorbed = ignoreShield?0:Math.min(this.shield, damage); this.shield -= absorbed;
       if(absorbed>0&&this.shield<=1e-7){this.shield=0;this.shieldTime=0;this.reflect=0;}
       const actual = Math.min(this.hp, Math.max(0, damage - absorbed)); this.hp -= actual;

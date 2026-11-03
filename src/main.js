@@ -7,6 +7,7 @@ import {setupAudioSettings} from './audio-settings.js';
 import {createNamelessGuardianAlly} from './nameless-guardian-ally.js';
 import {createEncounterSquad} from './encounter-squad.js';
 import {createGuardianPhases} from './guardian-phases.js';
+import {guardianElementMultipliers} from './guardian-element-balance.js';
 import {createEnemyMovement} from './enemy-movement.js';
 import {createDashBoost,STEP_DISTANCE,STEP_DURATION,DASH_DISTANCE,DASH_DURATION} from './dash-boost.js';
 import {createDashAura} from './dash-aura.js';
@@ -1422,7 +1423,7 @@ async function main() {
     clearMeteorView();
     battlePlayerStats=adventure?.encounter?{...adventure.combatStats}:{maxHp:300,maxChakra:100,damageMultiplier:1};
     const cooldownOverrides=introductoryCooldowns(adventure?.state().save.learnedSpells,!!adventure?.encounter);
-    rules = new GameRules(loadout,{maxChakra:battlePlayerStats.maxChakra,chakraRegen:battlePlayerStats.chakraRegen,cooldownOverrides}); player = new Fighter(battlePlayerStats.maxHp); enemy = new Fighter(adventure?.encounter?.hp||PRACTICE_BOT_HP);player.resistances={...(battlePlayerStats.resistances||{})};playerAvatar.setEquipment(adventure?.encounter?adventure.equipment:null);hands.setArmguard(adventure?.encounter?adventure.equipment.armguard:null);bossEnraged=false;aiWeaponTimer=4;
+    rules = new GameRules(loadout,{maxChakra:battlePlayerStats.maxChakra,chakraRegen:battlePlayerStats.chakraRegen,cooldownOverrides}); player = new Fighter(battlePlayerStats.maxHp); enemy = new Fighter(adventure?.encounter?.hp||PRACTICE_BOT_HP);enemy.incomingElementMultipliers=(adventure?.encounter?.kind==='boss'||adventure?.encounter?.guardRole==='guardian')?guardianElementMultipliers(adventure.encounter.village):{};player.resistances={...(battlePlayerStats.resistances||{})};playerAvatar.setEquipment(adventure?.encounter?adventure.equipment:null);hands.setArmguard(adventure?.encounter?adventure.equipment.armguard:null);bossEnraged=false;aiWeaponTimer=4;
     if(adventure?.encounter){adventure.beginCombat();player.autoRestore=false;enemy.autoRestore=false;}
     darkDomain.reset();world.setArena(adventure?.inBattle&&adventure.encounter.kind==='arena');
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);

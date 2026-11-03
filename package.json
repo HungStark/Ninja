@@ -103,7 +103,8 @@
     "test:civic": "node tests/village-civic-core.mjs && node tests/village-civic-browser.cjs",
     "test:companion": "node tests/companion-follow-core.mjs && node tests/companion-follow-scene-core.mjs && node tests/adventure-access-core.mjs && node tests/companion-admin-browser.cjs",
     "test:inventory-quests": "node tests/inventory-quest-core.mjs && node tests/skill-sources-core.mjs && node tests/quest-refresh-core.mjs && node tests/inventory-quest-browser.cjs",
-    "test:mobile-scroll": "node tools/build-android.mjs && node tests/mobile-scroll-seals.cjs"
+    "test:mobile-scroll": "node tools/build-android.mjs && node tests/mobile-scroll-seals.cjs",
+    "test:village-revision": "node tests/guardian-lotus-core.mjs && node tests/skill-sources-core.mjs && node tools/build-android.mjs && node tests/mobile-gameplay.cjs && node tests/village-revision-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

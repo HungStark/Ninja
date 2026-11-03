@@ -14,7 +14,7 @@ export function fitMobileWidget(base,pref,width,height,safe={left:8,right:8,top:
 export function setupMobileLayout({getState,pause,release}){
   const specs=[
     ['joystick','explore','#androidJoystick','Cần di chuyển','◎'],
-    ['jump','explore','[data-mobile-key=" "]','Nhảy','↑'],['interact','explore','[data-mobile-key="e"]','Tương tác','E'],['training','explore','[data-mobile-key="c"]','Tu luyện','C'],['equipment','explore','[data-mobile-key="v"]','Trang bị','V'],
+    ['jump','explore','[data-mobile-key=" "]','Nhảy','↑'],['training','explore','[data-mobile-key="c"]','Tu luyện','C'],['equipment','explore','[data-mobile-key="v"]','Trang bị','V'],
     ['story','explore','.journey-quest','Tuyến truyện chính','▤'],['map','explore','.journey-minimap','Bản đồ khu vực','◎'],
     ['journal','explore','#openJournal','Nhật ký','▤'],['atlas','explore','#openAtlas','Bản đồ thế giới','◎'],['menu','explore','#journeyMenu','Tạm dừng','Ⅱ'],
     ['location','explore','.journey-location','Tên vùng đất','◇'],['messages','explore','.android-explore-messages','Thông báo khám phá','!'],['nearby','explore','#nearbyAction','Gợi ý tương tác','E'],

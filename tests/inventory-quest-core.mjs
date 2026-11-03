@@ -21,13 +21,13 @@ const world=createAdventureScene();
 assert.equal(REGIONS.nameless.mentor,null);
 assert.equal(REGIONS.nameless.npcs.find(n=>n.id==='nameless-trac').kind,'lore');
 const obsolete=newJourney();obsolete.story.stage='infiltrate';obsolete.campaign.treatySigned=true;obsolete.lessons.nameless=1;obsolete.mentors.nameless=true;obsolete.story.sidequests['nameless:npc:nameless-sen']=2;obsolete.story.questItems=['nameless:npc:nameless-sen'];
-const migrated=reload(obsolete);assert.equal(migrated.lessons.nameless,undefined);assert.equal(migrated.mentors.nameless,undefined);assert.equal(migrated.story.sidequests['nameless:npc:nameless-sen'],undefined);assert.ok(!migrated.story.questItems.includes('nameless:npc:nameless-sen'));assert.ok(migrated.progression.books.includes('wind-barrier'),'keep an already earned book');assert.notEqual(campaignObjective(migrated,{localOnly:true}).targetKind,'mentor');
+const migrated=reload(obsolete);assert.equal(migrated.lessons.nameless,undefined);assert.equal(migrated.mentors.nameless,undefined);assert.equal(migrated.story.sidequests['nameless:npc:nameless-sen'],2);assert.ok(migrated.story.questItems.includes('nameless:npc:nameless-sen'));assert.ok(migrated.progression.books.includes('wind-barrier'),'keep an already earned book');assert.notEqual(campaignObjective(migrated,{localOnly:true}).targetKind,'mentor');
 assert.ok(villageSidequests('wind').some(q=>q.rewardScroll==='wind-barrier'),'wind village retains the skill source');
 for(const v of VILLAGES){
   let s=newJourney();s.village=v.id;world.load(v.id,s);const quests=villageSidequests(v.id);
   if(v.id==='nameless'){assert.equal(world.interactives.filter(i=>i.kind==='quest').length,1);assert.equal(world.interactives.filter(i=>i.kind==='mentor').length,0);assert.ok(!quests.some(q=>q.type==='combat'&&q.zone==='old-bridge'));}
   assert.equal(new Set(quests.map(q=>q.giver)).size,quests.length);
-  assert.ok(quests.every(q=>q.giver!==REGIONS[v.id].mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy')&&q.giver!=='fire-khoi'));
+  assert.ok(quests.every(q=>q.giver!==REGIONS[v.id].mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy')&&q.giver!=='fire-khoi'&&!q.giver.endsWith('-merchant')));
   for(const q of quests){
     assert.ok(world.interactives.some(i=>i.id===q.id),'targets exist before accepting');
     assert.ok(completeSidequestTarget(s,q));assert.equal(completeSidequestTarget(s,q),false);assert.equal(s.story.sidequests[q.id],undefined);

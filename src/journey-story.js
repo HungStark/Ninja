@@ -18,7 +18,7 @@ export function readStory(raw,save){
   if(raw?.revision!==1){
     // Existing journeys keep their unlocked campaign and all learned techniques.
     s.stage='infiltrate';s.guardianRestored=true;s.starter=save.learnedSpells.find(id=>STARTER_CHOICES.some(c=>c.id===id))||'water-barrier';
-    s.peaceSeals=Object.keys(save.bosses).filter(id=>id!=='nameless');return s;
+    s.peaceSeals=Object.keys(save.bosses).filter(id=>id!=='nameless');if(save.expeditions?.fire===3)s.questItems.push('fire:lotus-medicine');return s;
   }
   s.stage=STAGES.includes(raw.stage)?raw.stage:'mother';
   s.starter=STARTER_CHOICES.some(c=>c.id===raw.starter)?raw.starter:null;
@@ -30,13 +30,16 @@ export function readStory(raw,save){
   for(const [id,status] of Object.entries(raw.sidequests||{}))if(validQuests.has(id)&&[1,2,3].includes(status))s.sidequests[id]=status;
   s.earlyTargets=[...new Set((Array.isArray(raw.earlyTargets)?raw.earlyTargets:[]).filter(id=>validQuests.has(id)&&(!s.sidequests[id]||s.sidequests[id]===2)))];
   s.earlyVillageQuests=[...new Set((Array.isArray(raw.earlyVillageQuests)?raw.earlyVillageQuests:[]).filter(id=>REGIONS[id]&&save.quests[id]===2))];
-  s.questItems=[...new Set((Array.isArray(raw.questItems)?raw.questItems:[]).filter(id=>(validQuests.has(id)&&(s.earlyTargets.includes(id)||s.sidequests[id]===2))||(id==='fire:hong-lien'&&save.expeditions?.fire!==3)))];
+  s.questItems=[...new Set((Array.isArray(raw.questItems)?raw.questItems:[]).filter(id=>(validQuests.has(id)&&(s.earlyTargets.includes(id)||s.sidequests[id]===2))||(id==='fire:hong-lien'&&save.expeditions?.fire!==3)||(id==='fire:lotus-medicine'&&raw.villageEvents?.fire!==4)))];
   for(const id of s.earlyTargets)if(!s.questItems.includes(id))s.questItems.push(id);
   for(const id of Object.keys(REGIONS))for(const q of villageSidequests(id))if(s.sidequests[q.id]===2&&!s.questItems.includes(q.id))s.questItems.push(q.id);
   if(save.expeditions?.fire===2&&!s.questItems.includes('fire:hong-lien'))s.questItems.push('fire:hong-lien');
   s.villageOrder=[...new Set((Array.isArray(raw.villageOrder)?raw.villageOrder:save.visited||[]).filter(id=>REGIONS[id]&&id!=='nameless'))];
   s.trackedQuest=validQuests.has(raw.trackedQuest)?raw.trackedQuest:null;
   for(const [id,step] of Object.entries(raw.villageEvents||{}))if(VILLAGE_EVENTS[id]&&Number.isInteger(step)&&step>=0&&step<=VILLAGE_EVENTS[id].stages.length)s.villageEvents[id]=step;
+  // Previously turned-in flowers already produced medicine; keep that progress.
+  if(s.villageEvents.fire!==4&&save.expeditions?.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.questItems.push('fire:lotus-medicine');
+  if(s.villageEvents.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.villageEvents.fire=2;
   s.companion.recruited=s.villageEvents.fire===VILLAGE_EVENTS.fire.stages.length;return s;
 }
 export function promiseMother(save){if(save.story.stage!=='mother')return false;save.story.stage='chief';return true;}
@@ -111,7 +114,15 @@ export function villageSidequests(id,includeSuperseded=false){
       rewardGold:scroll?0:65+i*9,rewardScroll:scroll,rewardXp:id==='nameless'?0:45+i*3};
   });
   if(includeSuperseded)return all;
-  const quests=all.filter(q=>q.giver!=='fire-khoi'&&q.giver!=='nameless-trac'&&!(id==='nameless'&&q.type==='combat'&&q.zone==='old-bridge')&&q.giver!==MOTHER_ID&&q.giver!==r.mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy'));
+  for(const q of all){
+    if(!['nameless-trac','nameless-sen'].includes(q.giver))continue;
+    const trac=q.giver==='nameless-trac',zone=r.zones.find(z=>z.id===(trac?'terraces':'tea-road'))||r.zones.find(z=>z.id!=='old-bridge'&&!z.platform);
+    Object.assign(q,{type:'retrieve',zone:zone.id,x:zone.x+2.5,z:zone.z+3.5,
+      title:trac?'Dụng cụ giữ cầu':'Thuốc cho người qua đường',
+      description:trac?'Lão Trác nhờ bạn tìm hộp dụng cụ tại '+zone.name+' để sửa lan can cầu, rồi mang về cho ông.':'Dược sư Sen nhờ bạn tìm túi dược liệu tại '+zone.name+' để chữa thương cho người qua đường.',
+      targetName:trac?'Hộp dụng cụ sửa cầu':'Túi dược liệu',targetModel:trac?'tools':'medicine'});
+  }
+  const quests=all.filter(q=>q.giver!=='fire-khoi'&&q.giver!==MOTHER_ID&&q.giver!==r.mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy')&&!q.giver.endsWith('-merchant'));
   const moved=all.filter(q=>!quests.includes(q)&&q.rewardScroll).map(q=>q.rewardScroll);
   for(const q of quests)if(!q.rewardScroll&&moved.length){q.rewardScroll=moved.shift();q.rewardGold=0;}
   if(moved.length)throw Error('No quest source for '+id);

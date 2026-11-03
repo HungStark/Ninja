@@ -40,9 +40,9 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
         if(step===0||step===2)list.push({kind:'story-witness',id:'ha-ly-wounded',x:p.x,z:p.z+3.25,y:p.y,label:'Hạ Ly · Nhà lao'});
       }
     }
-    if(activeEvent){const p=safePoint(eventSpot(id,activeEvent));const g=new T.Group();g.position.set(p.x,p.y,p.z);root.add(g);
+    if(activeEvent){const giver=id==='fire'&&activeEvent.style==='medicine'?list.find(i=>i.kind==='expedition-giver'):null,p=safePoint(giver||eventSpot(id,activeEvent));const g=new T.Group();g.position.set(p.x,p.y,p.z);root.add(g);
       if(id!=='fire'){props(g,activeEvent.style);if(!['medicine','letter','crate','rope'].includes(activeEvent.style)){const actor=createVillager(villagerAppearance(id,{id:'story-guide-'+id,kind:'lore'}));actor.root.position.set(1.8,0,0);g.add(actor.root);stationary.push(actor);}}
-      else if(activeEvent.style==='medicine')props(g,activeEvent.style);
+
       const mark=mesh(g,new T.OctahedronGeometry(.18),'#f4d88d',[0,3.6,0]);mark.name='story-event-marker';
       list.push({kind:'village-event',id:`story-${id}-${activeEvent.step}`,eventVillage:id,step:activeEvent.step,x:p.x,z:p.z,y:p.y,label:activeEvent.title});
     }

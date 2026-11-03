@@ -33,7 +33,7 @@ export function conversationLines(item,save,cast,body){
   if(['village-event','companion','story-witness'].includes(item.kind))return [line(npc,body)];
   if(item.id==='nameless-resident-war-cemetery'&&save.story?.stage==='mother')return [line(hero,'Mẹ, con nhớ cha và em. Con muốn làm điều gì đó để cuộc chiến này chấm dứt.'),line(npc,body),line(npc,'Mẹ chỉ mong con trở về bình an. Nếu con quyết tâm lên đường, hãy hứa với mẹ: đừng để lòng thù hận dẫn lối. Hãy đem hòa bình về cho những người còn sống.')];
   if(item.kind==='npc')return save.quests[save.village]===2?[line(hero,'Kẻ phá hoại đã bị chặn lại. Tôi trở về báo tin để mọi người yên tâm.'),line(npc,body)]:[line(npc,body)];
-  if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire>=2?'Tôi đã trở lại. Những bông Hồng Liên này có giúp được người bị thương không?':'Thuốc chữa bỏng cần loại dược liệu nào? Tôi có thể tìm trên Vách Tro.'),line(npc,body)];
+  if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire===3?'Thuốc Hồng Liên đã sẵn sàng để chữa thương cho Hạ Ly chưa?':save.story.questItems?.includes('fire:hong-lien')?'Tôi đã mang Hồng Liên về. Ông có thể điều chế thuốc cứu Hạ Ly không?':'Hạ Ly đang bị thương trong ngục. Tôi có thể tìm Hồng Liên trên đỉnh núi để cứu nàng không?'),line(npc,body)];
   if(item.kind==='envoy')return [line(hero,'Tôi đến để chuyển lời từ ba làng Thủy, Hỏa và Lôi.'),line(npc,body)];
   if(['quest','boss'].includes(item.kind))return [line(hero,'Ta tới để chấm dứt chuyện này.'),line(npc,body)];
   const quest=questForNPC(save.village,item);
