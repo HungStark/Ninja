@@ -32,12 +32,12 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),path
     await reset();await enemy('water-volley',[0,1.72,-7],[0,0,1]);await advance(1.95);s=await state();close(s.health,892);assert.ok(s.elemental.player.boatControlTime>.7&&s.elemental.player.boatControlTime<=1);assert.equal(s.waterArt.prisons,0);await advance(1);close((await state()).controlTime,0);
     await reset();await enemy('water-lance',[0,1.72,3],[0,0,1]);await advance(.6);close((await state()).health,985.6);
     await reset();await enemy('water-tsunami');await advance(3);close((await state()).health,964);
-    await reset();await enemy('lightning-reflect');close((await state()).lightningArt.fields[0].slowFactor,.15);
+    await reset();await enemy('lightning-reflect');close((await state()).lightningArt.fields[0].slowFactor,.05);
     // AI uses its new activator and throws infused weapons while waiting to cast.
     await reset();await enemy('fire-volley');await advance(1.7);assert.equal((await state()).elemental.player.burnStacks,3);await page.evaluate(()=>__AN_HOA__.setAIEnabled(true));await advance(4);s=await state();assert.ok(s.enemyCooldowns['fire-barrier']>0);assert.equal(s.elemental.player.burnStacks,0);close(s.health,941.2);
     await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));await reset();await enemy('water-barrier');await page.evaluate(()=>__AN_HOA__.setAIEnabled(true));await advance(.05);shot=(await state()).projectiles.find(p=>p.style==='shuriken'&&p.owner==='enemy');assert.ok(shot?.waterInfused);close(shot.damage,15);close(Math.hypot(...shot.velocity),72);await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));
     await reset();await click('qualityButton');await cast('fire-volley');await advance(1.7);s=await state();assert.equal(s.elemental.visuals.find(v=>v.owner==='enemy').flames,5);await screenshot('low-quality-burn');
     await cast('lightning-lance');await advance(.9);assert.equal((await state()).elemental.enemy.staticStacks,1);await advance(10.1);s=await state();assert.equal(s.elemental.enemy.staticStacks,0);assert.equal(s.elemental.visuals.find(v=>v.owner==='enemy').staticCounter,0);assert.equal(s.elemental.visuals.find(v=>v.owner==='enemy').arcs,false);await screenshot('stacks-expired');
-    assert.deepEqual(errors,[]);console.log('PASS: real burn/static hits and counters, ignition, empty cast gating, water weapon VFX/speed/damage/expiry, pause/reset, electric stun then homing through dodge, water damage, boat stun and 15% field.');
+    assert.deepEqual(errors,[]);console.log('PASS: real burn/static hits and counters, ignition, empty cast gating, water weapon VFX/speed/damage/expiry, pause/reset, electric stun then homing through dodge, water damage, boat stun and 5% field.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

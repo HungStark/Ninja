@@ -3,8 +3,8 @@ import '../game-core.js';
 import {aimMagneticShots} from '../src/elemental-combat.js';
 const {Fighter,GameRules,spells,shuriken,projectileTimeStep}=SealGameCore,spell=id=>spells.find(s=>s.id===id),close=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
 for(const [id,damage] of [['water-lance',14.4],['water-volley',108],['water-tsunami',79]])close(spell(id).damage,damage);
-assert.equal(spell('water-volley').controlDuration,1);assert.equal(spell('lightning-reflect').slowFactor,.15);
-close(projectileTimeStep([0,2,0],[0,0,20],.1,'enemy',[{owner:'player',p:[0,0,0],radius:9,height:8,life:10,slowFactor:spell('lightning-reflect').slowFactor}]).travelTime,.015);
+assert.equal(spell('water-volley').controlDuration,1);assert.equal(spell('lightning-reflect').slowFactor,.05);
+close(projectileTimeStep([0,2,0],[0,0,20],.1,'enemy',[{owner:'player',p:[0,0,0],radius:9,height:8,life:10,slowFactor:spell('lightning-reflect').slowFactor}]).travelTime,.005);
 for(const element of ['fire','lightning']){
   const f=new Fighter();for(const r of [{damage:0},{damage:0,immune:true},{damage:0,reflected:true}])f.applyElementHit(element,r,'lance');assert.equal(f.burns.length+f.staticStacks,0);
 }
@@ -34,4 +34,4 @@ actors[1].pos[0]=-3;aimMagneticShots([shot],actors);assert.ok(shot.v[0]<0,'Homin
 victim.magneticTime=0;const old=[...shot.v];actors[1].pos[0]=4;aimMagneticShots([shot],actors);assert.deepEqual(shot.v,old,'Expiry stops tracking');
 victim.magneticTime=3;const fire={...shot,element:'fire'},weapon={...shot,element:'weapon'};aimMagneticShots([fire,weapon],actors);assert.deepEqual(fire.v,old);assert.deepEqual(weapon.v,old);
 shot.owner='enemy';aimMagneticShots([shot],actors);assert.deepEqual(shot.v,old,'Reflected lightning follows the new victim only if magnetized');
-console.log('PASS: water balance, 15% field, individual capped burn timers, all ignition/discharge tiers, immunity, cast gating, overlapping control, delayed magnetism and live homing.');
+console.log('PASS: water balance, 5% field, individual capped burn timers, all ignition/discharge tiers, immunity, cast gating, overlapping control, delayed magnetism and live homing.');

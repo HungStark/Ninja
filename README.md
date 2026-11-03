@@ -173,7 +173,7 @@ Hệ Lôi có năm chiêu với hiệu ứng điện riêng:
 | Lôi điểu | 6 | E R C V Z X | 56 | Cầu sét tụ trước mặt, chim hiện ra và dang cánh trong 1,1 giây rồi lao tới; camera chuyển lên cao như Rồng lửa, 102 sát thương |
 | Thiên lôi | 8 | E R C V Z X E R | 82 | Ngước nhìn mây chớp điện 1,4 giây, trả góc nhìn trong 0,4 giây rồi sét đánh xuống điểm ngắm, 150 sát thương trong bán kính 4,5 m |
 | Điện giật | 3 | E R A | 26 | Tiêu thụ 1–3 tĩnh điện; choáng 0,5 / 1 / 2 giây, hết choáng bắt đầu từ tính 3 / 5 / 7 giây |
-| Lôi trận | 5 | E R Z X C | 36 | Vùng điện bán kính 9 m, cao 8 m, tồn tại 5 giây; đạn đối phương còn 15% tốc độ trong vùng |
+| Lôi trận | 5 | E R Z X C | 36 | Vùng điện bán kính 9 m, cao 8 m, tồn tại 5 giây; đạn đối phương còn 5% tốc độ trong vùng |
 
 Thiên lôi ngước camera lên đám mây chớp điện, trả về góc ngắm ban đầu trước khi tia sét đánh xuống; chiêu của máy không điều khiển camera người chơi. Vòng báo trên đất cho phép né trước khi sét đánh; sét không bị phản đòn. Lôi trận đứng tại vị trí thi triển, giữ nguyên sát thương và vận tốc gốc của đạn: đạn rời vùng sẽ nhanh trở lại, đạn cùng bên không bị làm chậm, vùng chồng nhau không nhân độ chậm. Thi triển lại thay vùng cũ của cùng người chơi. Tĩnh điện, từ tính và trận có thể tồn tại cùng nhau; hiệu ứng, thời gian và camera dừng khi tạm dừng, được xóa khi đấu lại. Giữ các ID Lôi cũ để bộ chiêu đã lưu vẫn dùng được.
 
@@ -335,7 +335,7 @@ Node.js 20 trở lên; **npm ci** để cài dependency.
 - **npm run test:light:** luật và trình duyệt cho laser trắng–vàng, cầu thủy tinh 8 giây/7 sắc, mái vòm 10 giây/laser nảy/sát thương mỗi giây, gương 2,5 giây/phản đòn, Jacob và góc máy; kiểm tra hai bên, AI, ngắm trượt/tường/khiên/miễn nhiễm, tạm dừng/reset, đồ họa thấp và giảm chuyển động; ảnh tại `test-results/light/`.
 - **npm run test:fire:** kiểm tra năm chiêu Hỏa, ba viên liên đạn giữ 0,5 giây, rồng lửa, thiên thạch trúng/trượt/vụ nổ lan, khiên, tường chặn đạn, tạm dừng và reset; chụp hiệu ứng và kiểm tra giao diện tám ấn.
 - **npm run test:water:** kiểm tra năm chiêu Thủy, khống chế hai bên, thuyền trúng/trượt điểm ngắm, sóng cuốn chiêu, hai kiểu khiên, tạm dừng/reset và hiệu ứng ở ba mức đồ họa.
-- **npm run test:elemental:** sát thương Thủy, buff phi tiêu, choáng thuyền, Lôi trận 15%, từng tầng bỏng/tĩnh điện hết hạn riêng sau 10 giây, các mức kích hoạt, từ tính sau choáng, đổi hướng khi mục tiêu né, hiệu ứng/số tầng, AI, tạm dừng và reset.
+- **npm run test:elemental:** sát thương Thủy, buff phi tiêu, choáng thuyền, Lôi trận 5%, từng tầng bỏng/tĩnh điện hết hạn riêng sau 10 giây, các mức kích hoạt, từ tính sau choáng, đổi hướng khi mục tiêu né, hiệu ứng/số tầng, AI, tạm dừng và reset.
 - **npm run test:impact-motion:** kiểm tra hàng ba viên đạn, điểm ngắm cố định, quỹ đạo thiên thạch thẳng và phản ứng camera khi tích lực/phóng/trúng/chặn đòn, tạm dừng, reset và giảm chuyển động.
 - **npm run test:incantation:** kiểm tra đọc tên đồng thời tung chiêu công/thủ, trừ chakra ngay, hồi chiêu, nhập chuỗi tiếp khi đang đọc, tạm dừng/hủy giọng đọc, lỗi giọng nói, hiện đủ 5 chiêu ở 8 kích thước màn hình và ẩn banner hình ấn.
 - **npm run test:controls:** kiểm tra khóa con trỏ, hướng bắn trùng tâm ngắm, click trái/phải độc lập vị trí chuột, giữ nút không đi tiếp và giới hạn sân đấu.
@@ -383,8 +383,14 @@ Trong bảng **C**, nhân vật, hành trang dạng ô ảnh và thuộc tính/t
 
 Trong giao chiến, nhấn **G** tốn **15 mana** để tăng lực trong **3 giây**, có gió nhẹ từ chân đi lên; thiếu mana thì không bật được. Click trái/phải trong thời gian đó dùng một lượt lướt **3 m trong 0,2 giây**; hồi **1 giây** tính từ lúc lướt. Không dùng thì trạng thái tự hết, không tốn hồi chiêu và không hoàn lại mana. G và thao tác né/lướt không xóa chuỗi kết ấn. Tạm dừng đóng băng thời gian tăng lực/hồi chiêu, hủy phần di chuyển còn lại; đấu lại xóa trạng thái. Bước né thường của người chơi và bot đều là **0,2 m trong 0,2 giây** trên đất bằng, bot có thể chậm hơn khi thi triển, bị làm chậm hoặc là thủ lĩnh nặng. Lôi trận tồn tại **5 giây**, hồi chiêu vẫn **8 giây**. Chạy `npm run test:dash` để kiểm tra các cơ chế này.
 
+**Tập luyện trên web:** tạm ẩn bước chọn góc nhìn; xác nhận đối thủ sẽ vào trận ở góc nhìn thứ nhất. Các chức năng góc nhìn từ trên xuống được giữ trong mã nguồn để dùng lại sau.
+
 Mỗi địa danh trong 10 làng có một cư dân cố định: **64 NPC mới**, có tên, nghề nghiệp, lời thoại, chân dung và hoạt động riêng. Nghĩa trang Vô Danh có bà Liên viếng hoa; Xóm Lò Đỏ có thợ rèn Lâm gõ sắt trên đe và tia lửa; các bến, vườn, hang và nhà trên cao có ngư dân, người vá lưới, thợ gốm, thợ sửa chữa, người chăm cây, người ghi chép hoặc gác đường. Tìm họ trong nhật ký **B**, tới gần rồi nhấn **E** để trò chuyện. Vị trí cố định được kiểm tra với địa hình, nước sâu, lối đi và sàn trên cao; bàn làm việc có va chạm. Các phần tĩnh được gộp theo khớp để giảm lượt vẽ. Chạy `npm run test:residents` để kiểm tra hoạt ảnh, đường tới NPC, đối thoại và tải lại làng.
 
 Asset nhân vật và môi trường được dựng từ mã nguồn của dự án. Giấy phép Three.js trong THIRD_PARTY_NOTICES.md.
 
 Kiểm tra thay đổi hành trang/nhiệm vụ/cửa hàng: `npm run test:inventory-quests` (kiểm tra dữ liệu 10 làng và thao tác trình duyệt, gồm Android chạm).
+
+Kẻ địch không dùng G. Trong giao chiến, chúng di chuyển ngang liên tục, cứ mỗi 2 giây chọn ngẫu nhiên lại trái/phải (có thể giữ nguyên hướng); chạm biên thì quay đầu ngay. Khống chế dừng di chuyển, các hiệu ứng làm chậm vẫn áp dụng. Lôi Đình Kết Giới giữ đạn đối phương ở 5% tốc độ trong vùng.
+
+**Chọn đối thủ tập luyện trên web và Android app:** sau khi chọn chiêu của bạn, chọn **Ninja** và đúng **5 chiêu** cho đối thủ, hoặc chọn **Linh thú hộ vệ** và một trong chín linh thú của Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc, Băng. Linh thú xuất hiện ngay ở dạng thú, dùng bộ đòn hộ vệ của làng và giữ nguyên dạng trong trận tập luyện. Cả web và Android dùng giao diện quyển trục với nút Trở lại và hai tab Ninja / Linh thú ở header. Ninja chọn đúng 5 chiêu bằng cùng giao diện chọn chiêu của bạn; Linh thú chỉ chọn một trong 9 hệ. Xác nhận đối thủ sẽ vào trận ngay. Đấu lại giữ lựa chọn, về chọn chiêu cho phép chọn lại đối thủ. Chạy `npm run test:practice-opponent` để kiểm tra bộ 5 chiêu, chín linh thú và thao tác cảm ứng Android.

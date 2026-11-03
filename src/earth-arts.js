@@ -59,7 +59,7 @@ export class EarthArts {
     if(victim){const delta=sub(victim.pos,pos),along=delta.reduce((sum,v,i)=>sum+v*axis[i],0),off=Math.hypot(...sub(delta,mul(axis,along)));if(along>0&&along<55&&off<1.2)return [victim.pos[0],this.heightAt(victim.pos[0],victim.pos[2]),victim.pos[2]];}
     const reach=axis[1]<-.025?clamp(-pos[1]/axis[1],6,55):31,p=add(pos,mul(axis,reach));p[1]=this.heightAt(p[0],p[2]);return p;
   }
-  cast(owner,spell,pos,dir,actors,walls=[]){
+  cast(owner,spell,pos,dir,actors,walls=[],aimPoint){
     const kind={earthspikes:'spikes',earthcraterspikes:'craterspikes',earthquake:'quake',earthwall:'wall',earthgravity:'gravity'}[spell.style];
     if(!kind)throw new Error('Unknown Earth spell: '+spell.style);
     const crater=kind==='craterspikes'?this.crater(owner):null;
@@ -67,7 +67,7 @@ export class EarthArts {
     // Replace the caster's old field of this kind, but allow different terrain arts to combine.
     for(const e of [...this.effects])if(e.owner===owner&&e.kind===kind)this.remove(e,walls);
     let axis=unit([dir[0],0,dir[2]]);if(Math.hypot(...axis)<.5)axis=[0,0,-1];
-    const center=crater?[...crater.center]:kind==='wall'?add(pos,mul(axis,3)):this.target(owner,pos,dir,actors);center[1]=this.heightAt(center[0],center[2]);
+    const center=crater?[...crater.center]:kind==='wall'?add(pos,mul(axis,3)):aimPoint?[...aimPoint]:this.target(owner,pos,dir,actors);center[1]=this.heightAt(center[0],center[2]);
     const root=this.group(),e={id:++this.serial,owner,spell,kind,root,center,axis,age:0,life:spell.duration||0,baseHeight:center[1],phase:'forming',hitOwners:new Set(),materials:[],geometries:[],nodes:[],capture:null};
     if(kind==='spikes'){
       e.life=spell.range/spell.speed+spell.duration+.95;e.phase='tunneling';e.travel=0;e.origin=[...pos];e.headPosition=[...pos];

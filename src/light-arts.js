@@ -81,9 +81,10 @@ export class LightArts {
     }else{center=add(pos,mul(normal,kind==='sphere'?3:2.4));radius=kind==='sphere'?.8:1.4;}
     return {owner,kind,center,normal,radius};
   }
-  place(owner,spell,pos,dir,actors=[]){
+  place(owner,spell,pos,dir,actors=[],aimPoint){
     const kind={lightsphere:'sphere',lightdome:'dome',lightmirror:'mirror'}[spell.style];if(!kind)throw new Error('Unknown light optic: '+spell.style);
     const data=this.placement(owner,kind,pos,dir,actors);if(kind==='dome')data.radius=spell.domeRadius;
+    if(kind==='dome'&&aimPoint)data.center=[aimPoint[0],.03,aimPoint[2]];
     for(const o of [...this.optics])if(o.owner===owner&&o.kind===kind)this.remove(this.optics,o);
     const root=this.rayRoot(),buildTime=kind==='dome'?spell.domeBuildTime:0,assembly=kind==='dome'?this.domeModel(root,data.radius,buildTime):null;if(!assembly)this.model(root,kind,data.radius);root.position.fromArray(data.center);
     if(kind==='mirror')root.quaternion.setFromUnitVectors(forward,new T.Vector3(...data.normal));

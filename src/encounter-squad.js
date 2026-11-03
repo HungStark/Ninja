@@ -4,7 +4,7 @@ import {encounterAppearance} from './encounter-appearance.js';
 import {createEnemyMovement} from './enemy-movement.js';
 import {createDashAura} from './dash-aura.js';
 
-export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwWeapon,getPlayer,getShots,random}){
+export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwWeapon,getPlayer,getShots,random,constrainMovement=(a,b)=>b,movementSlow=()=>1}){
   const members=[];
   function reset(){for(const m of members){m.rig.root.removeFromParent();m.rig.dispose();m.aura.dispose();}members.length=0;}
   const pos=m=>[m.rig.root.position.x,m.rig.root.position.y+1.72,m.rig.root.position.z];
@@ -24,7 +24,7 @@ export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwW
         if(!alive){m.spell=null;m.pose=-1;m.moving=false;m.trace=[];m.traceCast=false;}
         if(enabled&&alive){
           m.fighter.tick(dt);m.rules.tick(dt);m.weaponTimer-=dt;
-          const old=pos(m),next=m.movement.update(dt,{position:old,shots:getShots(),beginner:true,casting:!!m.spell,blocked:m.fighter.controlTime>0});m.rig.root.position.x=next[0];m.moving=Math.abs(next[0]-old[0])>.0001;
+          const old=pos(m),next=m.movement.update(dt,{position:old,shots:getShots(),beginner:true,casting:!!m.spell,blocked:m.fighter.controlTime>0,slow:movementSlow(old),constrain:goal=>constrainMovement(old,goal)});m.rig.root.position.x=next[0];m.moving=Math.abs(next[0]-old[0])>.0001;
           if(m.fighter.controlTime<=0){
             if(m.weaponTimer<=0&&!m.spell){const result=m.rules.throwShuriken();if(result.ok)throwWeapon(m,result.weapon,pos(m),direction(pos(m),getPlayer()));m.weaponTimer=m.profile.weaponInterval;}
             m.timer-=dt;

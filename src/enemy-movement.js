@@ -20,45 +20,31 @@ export function incomingThreat(shots,position,horizon=1.3){
   return nearest;
 }
 
+export const ENEMY_DIRECTION_INTERVAL=2,ENEMY_MOVEMENT_LIMIT=5.3;
 export function createEnemyMovement(random=Math.random){
-  let target=0,cooldown=0,reaction=0,pending=null,idle=1.5,mode='idle',direction=1,velocity=0,dodges=0;
+  const choose=()=>random()<.5?-1:1;
+  let direction=choose(),directionTime=ENEMY_DIRECTION_INTERVAL,velocity=0,mode='circling',target=direction*ENEMY_MOVEMENT_LIMIT;
   return {
-    reset(x=0){target=x;cooldown=0;reaction=0;pending=null;idle=1.5;mode='idle';direction=1;velocity=0;dodges=0;},
-    update(dt,{position,shots=[],beginner=false,heavy=false,blocked=false,casting=false,slow=1,constrain=p=>p}){
+    reset(x=0){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;velocity=0;mode='circling';target=direction*ENEMY_MOVEMENT_LIMIT;},
+    update(dt,{position,heavy=false,blocked=false,slow=1,constrain=p=>p}){
       velocity=0;
-      if(blocked){pending=null;target=position[0];mode='idle';return position;}
-      cooldown=Math.max(0,cooldown-dt);idle-=dt;
-      const threat=incomingThreat(shots,position);
-      if(!pending&&cooldown<=0&&threat){pending=threat.shot;reaction=beginner?.32:.18;mode='reacting';}
-      if(pending){
-        reaction-=dt;
-        if(!shots.includes(pending)){pending=null;mode='idle';}
-        else if(reaction<=0){
-          const prediction=incomingThreat([pending],position);
-          if(prediction){
-            // AI keeps ordinary sidesteps; G is reserved for the player.
-            const distance=STEP_DISTANCE;
-            // Prefer moving away from the line of fire, and turn inward at arena edges.
-            direction=Math.abs(position[0]-prediction.x)>.08?Math.sign(position[0]-prediction.x):direction;
-            if(Math.abs(position[0]+direction*distance)>5.3)direction*=-1;
-            target=clamp(position[0]+direction*distance,-5.3,5.3);mode='dodging';dodges++;
-          }else mode='idle';
-          pending=null;cooldown=beginner?2.6:1.5;idle=2+random();
-        }
+      if(blocked){mode='idle';target=position[0];return position;}
+      mode='circling';
+      const speed=(STEP_DISTANCE/STEP_DURATION)*(heavy?.8:1)*clamp(slow,0,1);
+      let remaining=dt,x=clamp(position[0],-ENEMY_MOVEMENT_LIMIT,ENEMY_MOVEMENT_LIMIT);
+      while(remaining>1e-8){
+        if(directionTime<=1e-8){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;}
+        if(x>=ENEMY_MOVEMENT_LIMIT-1e-8&&direction>0||x<=-ENEMY_MOVEMENT_LIMIT+1e-8&&direction<0)direction*=-1;
+        const edge=direction*ENEMY_MOVEMENT_LIMIT,edgeTime=speed>0?Math.abs(edge-x)/speed:Infinity,step=Math.min(remaining,directionTime,edgeTime);
+        const next=constrain([x+direction*speed*step,position[1],position[2]]);
+        x=clamp(next[0],-ENEMY_MOVEMENT_LIMIT,ENEMY_MOVEMENT_LIMIT);remaining-=step;directionTime=Math.max(0,directionTime-step);
+        if(Math.abs(x)>=ENEMY_MOVEMENT_LIMIT-1e-8&&Math.sign(x)===direction)direction*=-1;
+        if(directionTime<=1e-8){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;}
+        if(Math.abs(x)>=ENEMY_MOVEMENT_LIMIT-1e-8&&Math.sign(x)===direction)direction*=-1;
       }
-      if(!pending&&mode!=='dodging'&&idle<=0){
-        direction=position[0]>.8?-1:position[0]<-.8?1:-direction;
-        target=clamp(position[0]+direction*(.8+random()*.4),-5.3,5.3);mode='circling';idle=2.4+random()*1.8;
-      }
-      if(['dodging','circling'].includes(mode)){
-        const speed=(STEP_DISTANCE/STEP_DURATION)*(heavy?.8:1)*clamp(slow,0,1),travel=speed*dt;
-        const x=position[0]+clamp(target-position[0],-travel,travel),next=constrain([x,position[1],position[2]]);
-        velocity=dt>0?(next[0]-position[0])/dt:0;
-        if(Math.abs(target-next[0])<1e-6||Math.abs(x-position[0])>.001&&Math.abs(velocity)<.01){mode='idle';target=next[0];}
-        return next;
-      }
-      return position;
+      target=direction*ENEMY_MOVEMENT_LIMIT;velocity=dt>0?(x-position[0])/dt:0;
+      return [x,position[1],position[2]];
     },
-    state:()=>({mode,target,velocity,dodges,reaction,cooldown,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION,dashBoost:{ready:0,cooldown:0,dashing:0,uses:0}})
+    state:()=>({mode,target,direction,directionTime,velocity,dodges:0,reaction:0,cooldown:0,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION,dashBoost:{ready:0,cooldown:0,dashing:0,uses:0}})
   };
 }

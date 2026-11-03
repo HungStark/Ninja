@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import '../game-core.js';
+const {spells,projectileTimeStep}=SealGameCore,spell=spells.find(s=>s.id==='lightning-reflect');
+assert.equal(spell.slowFactor,.05);assert.equal(spell.duration,5);assert.equal(spell.cooldown,8);
+const fields=[{owner:'player',p:[0,0,0],radius:9,height:8,life:5,slowFactor:spell.slowFactor}];
+const step=(p,dt,owner='enemy')=>projectileTimeStep(p,[0,0,20],dt,owner,fields).travelTime;
+const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
+close(step([0,2,0],.1),.005);close(step([0,2,0],.1,'player'),.1);close(step([12,2,0],.1),.1);
+close(step([0,2,-10],.2),.0575);close(step([0,2,8.99],.1),.0905);
+console.log('PASS: storm field slows hostile projectiles to 5%, preserves friendly/outside speed, and handles entry/exit.');

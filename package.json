@@ -104,7 +104,10 @@
     "test:companion": "node tests/companion-follow-core.mjs && node tests/companion-follow-scene-core.mjs && node tests/adventure-access-core.mjs && node tests/companion-admin-browser.cjs",
     "test:inventory-quests": "node tests/inventory-quest-core.mjs && node tests/skill-sources-core.mjs && node tests/quest-refresh-core.mjs && node tests/inventory-quest-browser.cjs",
     "test:mobile-scroll": "node tools/build-android.mjs && node tests/mobile-scroll-seals.cjs",
-    "test:village-revision": "node tests/guardian-lotus-core.mjs && node tests/guardian-phases-core.mjs && node tests/skill-sources-core.mjs && node tools/build-android.mjs && node tests/mobile-gameplay.cjs && node tests/village-revision-browser.cjs"
+    "test:village-revision": "node tests/guardian-lotus-core.mjs && node tests/guardian-phases-core.mjs && node tests/skill-sources-core.mjs && node tools/build-android.mjs && node tests/mobile-gameplay.cjs && node tests/village-revision-browser.cjs",
+    "test:practice-view": "node tests/practice-overhead-core.mjs && node tools/build.mjs && node tests/practice-overhead-browser.cjs",
+    "test:enemy-patrol": "node tests/enemy-movement-core.mjs && node tests/storm-field-speed.mjs && node tools/build.mjs && node tests/enemy-patrol-browser.cjs",
+    "test:practice-opponent": "node tests/practice-opponent-core.mjs && node tools/build.mjs && node tests/practice-opponent-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"
