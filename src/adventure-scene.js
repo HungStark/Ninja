@@ -318,9 +318,10 @@ export function createAdventureScene(){
       });
       if(chosen)char.root.position.set(chosen.x,chosen.y,chosen.z);
       char.root.userData.landmark=person.landmark;char.update(0,false);char.root.updateMatrixWorld(true);
-      const entry=interactives.find(i=>i.id===person.id);Object.assign(entry,{x:char.root.position.x,z:char.root.position.z,y:char.root.position.y});if(person.id==='fire-khoi'){const giver=interactives.find(i=>i.kind==='expedition-giver');if(giver)Object.assign(giver,{x:entry.x,z:entry.z,y:entry.y});}
+      const entry=interactives.find(i=>i.id===person.id);Object.assign(entry,{x:char.root.position.x,z:char.root.position.z,y:char.root.position.y});
       if(char.workstation){land.attach(char.workstation);registerSceneryColliders(char.workstation,physics,{limit:metrics().limit});}
     }
+    if(id==='fire'){const nurse=interactives.find(i=>i.id==='fire-dan'),giver=interactives.find(i=>i.kind==='expedition-giver');if(nurse&&giver)Object.assign(giver,{x:nurse.x,z:nurse.z,y:nurse.y});}
     if(civicPlan){
       const target=interactives.find(i=>i.kind==='quest');
       if(target&&blocked(target.x,target.z)){

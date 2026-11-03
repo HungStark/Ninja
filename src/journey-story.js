@@ -122,13 +122,15 @@ export function villageSidequests(id,includeSuperseded=false){
       description:trac?'Lão Trác nhờ bạn tìm hộp dụng cụ tại '+zone.name+' để sửa lan can cầu, rồi mang về cho ông.':'Dược sư Sen nhờ bạn tìm túi dược liệu tại '+zone.name+' để chữa thương cho người qua đường.',
       targetName:trac?'Hộp dụng cụ sửa cầu':'Túi dược liệu',targetModel:trac?'tools':'medicine'});
   }
-  const quests=all.filter(q=>q.giver!=='fire-khoi'&&q.giver!==MOTHER_ID&&q.giver!==r.mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy')&&!q.giver.endsWith('-merchant'));
+  // Keep the task ID, progress and reward when moving Dan's old task to Khoi.
+  if(id==='fire'){const task=all.find(q=>q.giver==='fire-dan'),smith=r.npcs.find(n=>n.id==='fire-khoi');task.description=task.description.replace(task.giverName,smith.name);task.giver=smith.id;task.giverName=smith.name;}
+  const quests=all.filter(q=>q.id!=='fire:npc:fire-khoi'&&q.giver!==MOTHER_ID&&q.giver!==r.mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy')&&!q.giver.endsWith('-merchant'));
   const moved=all.filter(q=>!quests.includes(q)&&q.rewardScroll).map(q=>q.rewardScroll);
   for(const q of quests)if(!q.rewardScroll&&moved.length){q.rewardScroll=moved.shift();q.rewardGold=0;}
   if(moved.length)throw Error('No quest source for '+id);
   return quests;
 }
-export function questForNPC(id,item){const giver=item.kind==='npc'?`${id}-chief`:item.kind==='shop'?`${id}-merchant`:item.kind==='envoy'?`${id}-envoy`:item.kind==='expedition-giver'?'fire-khoi':item.id;return villageSidequests(id).find(q=>q.giver===giver);}
+export function questForNPC(id,item){const giver=item.kind==='npc'?`${id}-chief`:item.kind==='shop'?`${id}-merchant`:item.kind==='envoy'?`${id}-envoy`:item.kind==='expedition-giver'?'fire-dan':item.id;return villageSidequests(id).find(q=>q.giver===giver);}
 export const sidequestDone=(save,q)=>(save.story.sidequests[q.id]||0)>=2||save.story.earlyTargets?.includes(q.id)===true;
 export function acceptSidequest(save,q){if(save.story.sidequests[q.id])return false;save.story.sidequests[q.id]=save.story.earlyTargets?.includes(q.id)?2:1;return true;}
 export function completeSidequestTarget(save,q){

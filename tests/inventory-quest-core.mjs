@@ -27,7 +27,7 @@ for(const v of VILLAGES){
   let s=newJourney();s.village=v.id;world.load(v.id,s);const quests=villageSidequests(v.id);
   if(v.id==='nameless'){assert.equal(world.interactives.filter(i=>i.kind==='quest').length,1);assert.equal(world.interactives.filter(i=>i.kind==='mentor').length,0);assert.ok(!quests.some(q=>q.type==='combat'&&q.zone==='old-bridge'));}
   assert.equal(new Set(quests.map(q=>q.giver)).size,quests.length);
-  assert.ok(quests.every(q=>q.giver!==REGIONS[v.id].mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy')&&q.giver!=='fire-khoi'&&!q.giver.endsWith('-merchant')));
+  assert.ok(quests.every(q=>q.giver!==REGIONS[v.id].mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy')&&q.giver!=='fire-dan'&&!q.giver.endsWith('-merchant')));
   for(const q of quests){
     assert.ok(world.interactives.some(i=>i.id===q.id),'targets exist before accepting');
     assert.ok(completeSidequestTarget(s,q));assert.equal(completeSidequestTarget(s,q),false);assert.equal(s.story.sidequests[q.id],undefined);

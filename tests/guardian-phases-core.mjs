@@ -11,12 +11,12 @@ const scene=new T.Scene(),g=createGuardianPhases(scene),p=[0,1.72,7],b=[0,2.4,-1
 const step=(seconds,f,player=p,opts={})=>{for(let t=0;t<seconds-1e-7;t+=1/60)g.update(1/60,f,player,b,(shot,pos)=>hits.push({shot,pos}),opts);};
 function next(f){f.hp=0;assert.equal(g.beginTransition(f),true);g.advanceTransition(1.34,f,()=>assert.fail('early swap'));assert.equal(f.hp,0);g.advanceTransition(.02,f,()=>{});assert.ok(f.hp>0);g.advanceTransition(1.85,f,()=>{});assert.equal(g.transitioning,false);}
 for(const village of Object.keys(GUARDIAN_ARTS)){
-  const total=1001,parts=guardianPhaseHealth(total,village),f=new Fighter(total);g.reset({village,element:village,hp:total},f);assert.equal(parts.reduce((a,b)=>a+b),total);assert.equal(parts.length,village==='dark'?3:2);assert.equal(f.hp,parts[0]);
-  f.hp=1;assert.equal(g.beginTransition(f),false,'must deplete whole HP bar');next(f);assert.equal(g.form,'beast');assert.equal(f.hp,parts[1]);
+  const total=1001,parts=guardianPhaseHealth(total,village),f=new Fighter(total);g.reset({village,element:village,hp:total},f);assert.equal(parts.reduce((a,b)=>a+b),total);assert.equal(parts.length,village==='dark'?3:2);assert.equal(f.hp,parts[0]);assert.equal(f.receive(10,false,false,village).damage,10,'human form has no elemental weakness');f.hp=f.maxHp;
+  f.hp=1;assert.equal(g.beginTransition(f),false,'must deplete whole HP bar');next(f);assert.equal(g.form,'beast');assert.equal(f.hp,parts[1]);assert.ok(Math.abs(f.receive(10,false,false,village).damage-(village==='nameless'?10:11))<1e-8,'beast form takes more own-element damage');assert.ok(Math.abs(f.receive(10,false,false,village==='fire'?'water':'fire').damage-(village==='nameless'?10:9))<1e-8);f.hp=f.maxHp;
   hits=[];g.trigger(0,p,b,f);step(.9,f);assert.equal(g.offset.y,0,'full one-second windup before takeoff');const warning=scene.children[0].children.find(m=>m.geometry.type==='CircleGeometry');assert.equal(warning.material.color.getHexString(),'ff2626');assert.equal(hits.length,0);step(1.1,f,[5,1.72,7]);assert.equal(hits.length,0,'all villages can dodge the snapshotted warning');
   for(const index of (village==='nameless'?[0,1,2,4]:[0,1,2,3,4])){hits=[];assert.ok(g.trigger(index,p,b,f));step(6,f);assert.ok(scene.children[0].children.every(m=>m.matrix.elements.every(Number.isFinite)));}
   assert.equal(new Set(g.state().history.map(a=>a.name)).size,village==='nameless'?4:5,village+' distinct direct arts');
-  if(village==='dark'){next(f);assert.equal(g.form,'avatar');assert.equal(f.hp,parts[2]);}
+  if(village==='dark'){next(f);assert.equal(g.form,'avatar');assert.equal(f.hp,parts[2]);assert.equal(f.receive(10,false,false,'dark').damage,10,'human avatar form clears beast weakness');f.hp=f.maxHp;}
   f.hp=0;assert.equal(g.beginTransition(f),false,'last phase ends encounter');g.reset();assert.equal(scene.children[0].children.length,0,'reset removes every visual');
 }
 function beast(village='water'){const f=new Fighter(1000);g.reset({village,element:village,hp:1000},f);next(f);hits=[];return f;}

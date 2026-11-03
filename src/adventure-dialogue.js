@@ -20,7 +20,7 @@ export function dialogueCast(item,save,region,biome){
     const girl=item.kind!=='village-event'||biome.id==='fire',appearance=girl?ninjaProfile(HA_LY):villagerAppearance(biome.id,{id:'story-guide-'+biome.id,kind:'lore'});
     return {hero,npc:{id:girl?HA_LY.id:'story-guide-'+biome.id,name:girl?HA_LY.name:e?.speaker||'Người làm chứng',role:girl?(save.story.companion.recruited?HA_LY.role:'Nữ ninja Làng Hỏa · Đang bị thương'):'Câu chuyện của '+biome.name,portraitPose:girl&&!save.story.companion.recruited?'wounded':'standing',appearance,coat:appearance.coat,hair:appearance.hair}};
   }
-  const n=region.npcs.find(n=>n.id===(item.kind==='expedition-giver'?'fire-khoi':item.id)),index=region.npcs.indexOf(n);
+  const n=region.npcs.find(n=>n.id===(item.kind==='expedition-giver'?'fire-dan':item.id)),index=region.npcs.indexOf(n);
   const npc=n?{name:n.name,role:n.role,coat:n.kind==='mentor'?biome.color:n.kind==='healer'?'#d0d9c0':'#8a7962',hair:index%2?'#ddd0b5':'#3c4243',elder:n.kind==='mentor',id:n.id}:{name:item.kind==='npc'?'Trưởng làng':item.kind==='envoy'?'Đại diện '+biome.name:item.kind==='boss'?region.boss.name:item.kind==='quest'?item.label:'Đại diện các làng',role:biome.name,coat:item.kind==='npc'?'#77725c':biome.color,hair:item.kind==='npc'?'#b2b9a9':'#30333c',elder:item.kind==='npc',id:item.kind};
   if(n||['npc','envoy','treaty'].includes(item.kind)){const appearance=villagerAppearance(biome.id,n||{kind:item.kind==='npc'?'chief':'envoy'});Object.assign(npc,{appearance,coat:appearance.coat,hair:appearance.hair,elder:appearance.age==='elder'});}
   else if(['quest','village-guard'].includes(item.kind))npc.appearance=ninjaProfile(encounterAppearance({kind:item.kind,village:biome.id}));
@@ -33,7 +33,7 @@ export function conversationLines(item,save,cast,body){
   if(['village-event','companion','story-witness'].includes(item.kind))return [line(npc,body)];
   if(item.id==='nameless-resident-war-cemetery'&&save.story?.stage==='mother')return [line(hero,'Mẹ, con nhớ cha và em. Con muốn làm điều gì đó để cuộc chiến này chấm dứt.'),line(npc,body),line(npc,'Mẹ chỉ mong con trở về bình an. Nếu con quyết tâm lên đường, hãy hứa với mẹ: đừng để lòng thù hận dẫn lối. Hãy đem hòa bình về cho những người còn sống.')];
   if(item.kind==='npc')return save.quests[save.village]===2?[line(hero,'Kẻ phá hoại đã bị chặn lại. Tôi trở về báo tin để mọi người yên tâm.'),line(npc,body)]:[line(npc,body)];
-  if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire===3?'Thuốc Hồng Liên đã sẵn sàng để chữa thương cho Hạ Ly chưa?':save.story.questItems?.includes('fire:hong-lien')?'Tôi đã mang Hồng Liên về. Ông có thể điều chế thuốc cứu Hạ Ly không?':'Hạ Ly đang bị thương trong ngục. Tôi có thể tìm Hồng Liên trên đỉnh núi để cứu nàng không?'),line(npc,body)];
+  if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire===3?'Thuốc Hồng Liên đã sẵn sàng để chữa thương cho Hạ Ly chưa?':save.story.questItems?.includes('fire:hong-lien')?'Tôi đã mang Hồng Liên về. Cô có thể điều chế thuốc cứu Hạ Ly không?':'Hạ Ly đang bị thương trong ngục. Tôi có thể tìm Hồng Liên trên đỉnh núi để cứu nàng không?'),line(npc,body)];
   if(item.kind==='envoy')return [line(hero,'Tôi đến để chuyển lời từ ba làng Thủy, Hỏa và Lôi.'),line(npc,body)];
   if(['quest','boss'].includes(item.kind))return [line(hero,'Ta tới để chấm dứt chuyện này.'),line(npc,body)];
   const quest=questForNPC(save.village,item);

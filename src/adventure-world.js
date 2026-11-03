@@ -41,7 +41,7 @@ export const REGIONS = {
     ],
     npcs:[
       {id:'fire-khoi',name:'Thợ cả Khôi',role:'Chủ lò rèn',kind:'lore',x:-6,z:5,dialogue:'Hỏa làng được xây quanh lòng núi, không phải trên một đồng bằng. Cột bazan phía tây còn già hơn tất cả chúng ta.'},
-      {id:'fire-dan',name:'Y nữ Đan',role:'Người hái hồng liên',kind:'healer',x:23,z:21,dialogue:'Hồng liên vẫn mọc ở nơi nóng nhất. Khi mỏi chân, cứ tìm ta dưới những cây phong.'},
+      {id:'fire-dan',name:'Y nữ Đan',role:'Y tá bệnh viện',kind:'healer',x:23,z:21,dialogue:'Ta chăm sóc người bị thương tại bệnh viện. Hồng Liên trên đỉnh núi là dược liệu cần để chữa thương cho Hạ Ly trong ngục.'},
       {id:'fire-xich',name:'Xích Vân',role:'Ẩn sư hỏa long',kind:'mentor',x:-26,z:-25,dialogue:'Hãy quan sát nhịp búa ở Phố Lò Rèn và sự tĩnh lặng trong Vườn Phong Tro. Lửa phải có cả sức mạnh lẫn nhẫn nại.'}
     ],
     boss:{id:'fire-ashdragon',name:'Cửu Viêm Hồ',title:'Chúa tể lòng núi',x:36,z:-43,hp:1900,rewardGold:210,rewardXp:280,story:'Con rồng bọc vảy bazan trở mình dưới Hồng Liên. Mỗi hơi thở của nó làm những đường nham thạch trên thân sáng rực.'},

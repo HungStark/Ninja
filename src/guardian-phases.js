@@ -1,5 +1,6 @@
 ﻿import * as T from 'three';
 import {GUARDIAN_ARTS,guardianPhaseHealth,guardianLeap,guardianBreath,GUARDIAN_BASIC_TIMING as BASIC} from './guardian-arts.js';
+import {guardianElementMultipliers} from './guardian-element-balance.js';
 import {gameAudio} from './game-audio.js';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 export function createGuardianPhases(scene){
@@ -43,12 +44,12 @@ export function createGuardianPhases(scene){
     shell.position.set(boss[0]+pose.x,boss[1]+pose.y,boss[2]+pose.z);shell.rotation.y+=dt*.6;
   }
   const api={
-    reset(next=null,fighter=null){clear();config=next;phase=next?.basicOnly?2:1;health=next?guardianPhaseHealth(next.hp,next.village):[];transition=null;clock=cycle=attacks=totalDamage=armor=0;wait=next?.basicOnly?1.5:2;history.length=0;if(next&&fighter){fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;}},
+    reset(next=null,fighter=null){clear();config=next;phase=next?.basicOnly?2:1;health=next?guardianPhaseHealth(next.hp,next.village):[];transition=null;clock=cycle=attacks=totalDamage=armor=0;wait=next?.basicOnly?1.5:2;history.length=0;if(fighter)fighter.incomingElementMultipliers=phase===2&&next?guardianElementMultipliers(next.village):{};if(next&&fighter){fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;}},
     beginTransition(fighter,position=[0,0,-13]){if(!config||transition||phase>=health.length||fighter.hp>0)return false;clear();armor=0;transition={age:0,from:phase,to:phase+1,switched:false,position:[...position]};return true;},
     advanceTransition(dt,fighter,onPhase){if(!transition)return;transition.age+=dt;const t=transition.age;
       if(!transition.rings){transition.rings=Array.from({length:3},(_,i)=>{const m=mesh(ring,[0,0,0],[1,1,1],.6);m.rotation.x=-Math.PI/2+i*.6;return m;});transition.shell=mesh(sphere,[0,0,0],[1,1,1],.2);}
       transition.rings.forEach((m,i)=>{m.position.set(transition.position[0],.6+i*.9,transition.position[2]);m.rotation.z+=dt*(i+1);m.scale.setScalar(1.4+(t*(i+1))%3);m.material.opacity=Math.max(0,Math.sin(t/3.2*Math.PI))*.75;});transition.shell.position.set(transition.position[0],2.1,transition.position[2]);transition.shell.scale.setScalar(1+Math.sin(t/3.2*Math.PI)*2.5);transition.shell.material.opacity=Math.max(0,1-Math.abs(t-1.35)/.6)*.8;
-      if(t>=1.35&&!transition.switched){transition.switched=true;phase=transition.to;fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;fighter.shield=fighter.shieldTime=fighter.reflect=0;fighter.burns=[];fighter.staticCharges=[];fighter.snowBuried=false;for(const key of ['waterControlTime','darkControlTime','windControlTime','earthControlTime','iceControlTime','woodControlTime','lightningControlTime','boatControlTime','magneticTime','ignitionTime','invulnerableTime'])fighter[key]=0;onPhase(phase);}if(t>=3.2){for(const m of transition.rings)dispose(m);dispose(transition.shell);transition=null;wait=2;}},
+      if(t>=1.35&&!transition.switched){transition.switched=true;phase=transition.to;fighter.incomingElementMultipliers=phase===2?guardianElementMultipliers(config.village):{};fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;fighter.shield=fighter.shieldTime=fighter.reflect=0;fighter.burns=[];fighter.staticCharges=[];fighter.snowBuried=false;for(const key of ['waterControlTime','darkControlTime','windControlTime','earthControlTime','iceControlTime','woodControlTime','lightningControlTime','boatControlTime','magneticTime','ignitionTime','invulnerableTime'])fighter[key]=0;onPhase(phase);}if(t>=3.2){for(const m of transition.rings)dispose(m);dispose(transition.shell);transition=null;wait=2;}},
     damageMultiplier(){return armor>0?.65:1;},
     onDamage(amount){totalDamage+=Math.max(0,amount);},
     slowAt(p){return action?.type==='frost'&&action.age>1.6&&Math.hypot(p[0]-action.target[0],p[2]-action.target[2])<4?.65:1;},

@@ -21,10 +21,13 @@ normal.incomingElementMultipliers=guardianElementMultipliers('nameless');assert.
 for(const [village,region]of Object.entries(REGIONS)){
   const quests=villageSidequests(village);assert.ok(quests.every(q=>!q.giver.endsWith('-merchant')));
   for(const npc of region.npcs){
-    const special=npc.id===MOTHER_ID||npc.id===region.mentor?.npcId||npc.id==='fire-khoi';
+    const special=npc.id===MOTHER_ID||npc.id===region.mentor?.npcId||npc.id==='fire-dan';
     assert.equal(quests.filter(q=>q.giver===npc.id).length,special?0:1,npc.id);
   }
 }
+const priorTask=newJourney();priorTask.story.sidequests['fire:npc:fire-dan']=2;priorTask.story.questItems.push('fire:npc:fire-dan');
+const restored=readJourney({getItem:()=>JSON.stringify(priorTask)}),smithTask=villageSidequests('fire').find(q=>q.giver==='fire-khoi');
+assert.equal(smithTask.id,'fire:npc:fire-dan');assert.equal(smithTask.title,'Bảo vệ Cổng Đá Bazan');assert.equal(restored.story.sidequests[smithTask.id],2);assert.ok(restored.story.questItems.includes(smithTask.id));assert.ok(!villageSidequests('fire').some(q=>q.giver==='fire-dan'));
 for(const early of [false,true]){
   let save=newJourney();save.village='fire';save.story.villageEvents.fire=2;
   assert.equal(advanceVillageEvent(save,'fire',2).reason,'medicine');
