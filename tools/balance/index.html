@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bảng cân bằng chiêu thức · Cửu Ấn</title>
+<link rel="stylesheet" href="/balance/editor.css"><script type="module" src="/balance/editor.js"></script>
+</head><body><main>
+<header><div class="brand">九印 <span>CỬU ẤN / CÔNG CỤ PHÁT TRIỂN</span></div>
+<div class="heading"><div><h1>Cân bằng chiêu thức</h1><p>Chỉnh số trong bảng. Lưu vào dự án. Tải lại game để thử.</p></div><span class="game-link">Web nội bộ riêng</span></div>
+<div class="overview"><span><strong>45</strong> chiêu thức</span><span><strong>9</strong> hệ</span><span id="changeCount">Chưa có thay đổi</span></div></header>
+<section class="controls" aria-label="Điều khiển bảng"><div class="filters">
+<label>Tìm chiêu<input id="search" type="search" placeholder="Tên chiêu hoặc mã chiêu…"></label>
+<label>Hệ<select id="element"><option value="all">Tất cả 9 hệ</option></select></label>
+<label class="check"><input id="changedOnly" type="checkbox"> Chỉ dòng đã chỉnh</label></div>
+<div class="actions"><button id="discard">Bỏ bản nháp</button><button id="reset">Khôi phục chỉ số gốc</button><button id="save" class="primary" disabled>Lưu vào dự án</button></div></section>
+<p id="status" role="status" aria-live="polite">Đang đọc dữ liệu game…</p>
+<div class="table-wrap" tabindex="0" aria-label="Bảng chiêu thức, cuộn ngang để xem đủ cột"><table><thead><tr>
+<th scope="col">Hệ / Chiêu thức</th><th scope="col">Hồi chiêu <small>giây</small></th><th scope="col">Mana</th><th scope="col">Khống chế <small>giây</small></th><th scope="col">Sát thương <small>giá trị gốc</small></th><th scope="col">Chống chịu <small>độ bền khiên / tường</small></th><th scope="col">Hiệu lực <small>giây</small></th><th scope="col">Cơ chế / Chi tiết</th>
+</tr></thead><tbody id="rows"></tbody></table><p id="empty" hidden>Không có chiêu phù hợp bộ lọc.</p></div>
+<footer><p><b>—</b> = chiêu không dùng chỉ số đó. Sát thương là giá trị trước hệ số nhân vật, trang bị và kháng. Chiêu Mộc còn tăng theo cây; khống chế và hiệu lực là hai cột riêng.</p>
+<div class="file-actions"><button id="export">Xuất JSON</button><label class="button">Nhập JSON<input id="import" type="file" accept="application/json,.json" hidden></label><span id="visibleCount"></span></div>
+<p>Dữ liệu lưu trong <code>game-core.js</code>, đồng bộ bản tiếng Anh và được đưa vào các bản build tiếp theo. Bản web đã triển khai và APK đã cài cần được build / phát hành lại.</p></footer>
+</main><dialog id="confirm"><form method="dialog"><h2>Khôi phục chỉ số gốc?</h2><p>Đưa cả 45 chiêu về chỉ số gốc trong bảng. Bấm “Lưu vào dự án” sau đó mới áp dụng vào game.</p><div class="actions"><button value="cancel">Hủy</button><button class="primary" value="restore">Khôi phục 45 chiêu</button></div></form></dialog></body></html>

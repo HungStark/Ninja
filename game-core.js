@@ -108,6 +108,35 @@
   const elementalDurations={burn:6,static:8};
   for(const spell of spells)spell.cooldown=spell.cooldown??cooldownByRank[spell.rank]??6;
   for(const spell of spells){if(spell.element==='fire'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tầng bỏng/viên, tối đa 5, mỗi tầng '+elementalDurations.burn+' giây';if(spell.element==='lightning'&&spell.kind==='attack')spell.subtitle+=' • trúng máu tích 1 tĩnh điện, tối đa 3, mỗi điểm '+elementalDurations.static+' giây';}
+  spells.find(s=>s.style==='ignite').ignitionDamages=[10,20,30,45,60];
+  Object.assign(spells.find(s=>s.style==='discharge'),{stunDurations:[.5,1,2],magneticDurations:[3,5,7]});
+  const balanceDefaults=JSON.parse(JSON.stringify(spells));
+  // Edited by the local balance table. Kept inside the core for offline builds.
+  const spellBalanceOverrides=/* spell-balance:start */{}/* spell-balance:end */;
+  for(const spell of spells){
+    const override=spellBalanceOverrides[spell.id];if(!override||!Object.keys(override).length)continue;
+    Object.assign(spell,override);
+    if(Object.hasOwn(override,'damage'))spell.baseDamage=spell.damage;
+    if(spell.style==='earthgravity')spell.damage=spell.captureDamage+spell.fallDamage;
+    if(spell.style==='waterbubbles'&&Object.hasOwn(override,'duration'))spell.detonationInterval=spell.duration/spell.count;
+    spell.balanceEdited=true;
+    const info=['MANA '+spell.cost,'CD '+spell.cooldown+'s'];
+    if(spell.ignitionDamages)info.push('DMG '+spell.ignitionDamages.join(' / '));
+    else if(spell.style==='earthgravity')info.push('DMG '+spell.captureDamage+' + '+spell.fallDamage);
+    else if(spell.damage>0)info.push('DMG '+spell.damage+(spell.count>1&&!['aircombo','bamboostab','shadowclone'].includes(spell.style)?' × '+spell.count:''));
+    if(spell.upgradeDamage)info.push('DMG+ '+spell.upgradeDamage);
+    if(spell.shield>0)info.push('HP '+spell.shield);
+    const control=spell.controlDuration??(['aircombo','shadowbind'].includes(spell.style)?spell.duration:spell.style==='earthgravity'?spell.holdTime:undefined);
+    if(control!==undefined)info.push('CC '+control+'s');
+    if(spell.stunDurations)info.push('CC '+spell.stunDurations.join(' / ')+'s');
+    if(spell.magneticDurations)info.push('MAG '+spell.magneticDurations.join(' / ')+'s');
+    if(spell.duration!==undefined)info.push('TIME '+spell.duration+'s');
+    if(spell.growthTime)info.push('GROW '+spell.growthTime+'s');
+    if(spell.snowTime)info.push('SNOW '+spell.snowTime+'s');
+    if(spell.amplification)info.push('DMG * '+spell.amplification);
+    if(spell.slowFactor!==undefined)info.push('SPEED * '+spell.slowFactor);
+    spell.balanceSummary=info.join(' · ');spell.subtitle=spell.balanceSummary;
+  }
   const shuriken={name:'Phi tiêu',damage:2,speed:36,size:.075,interval:.45};
   function validateLoadout(ids) {
     if (!Array.isArray(ids) || ids.length < 1 || ids.length > 5) return { ok: false, reason: 'Chọn từ 1 đến 5 chiêu.' };
@@ -198,11 +227,11 @@
     ignite(){
       if(!this.burns.length||this.invulnerableTime>0)return null;
       const stacks=this.burns.length;this.burns=[];this.ignitionLevel=stacks;this.ignitionTime=1.1;
-      return {stacks,damage:[10,20,30,45,60][stacks-1]};
+      return {stacks,damage:spells.find(s=>s.style==='ignite').ignitionDamages[stacks-1]};
     }
     discharge(){
       if(!this.staticStacks||this.invulnerableTime>0)return null;
-      const stacks=this.staticStacks,stun=[.5,1,2][stacks-1],magnetic=[3,5,7][stacks-1];this.staticCharges=[];
+      const spell=spells.find(s=>s.style==='discharge'),stacks=this.staticStacks,stun=spell.stunDurations[stacks-1],magnetic=spell.magneticDurations[stacks-1];this.staticCharges=[];
       this.lightningControlTime=Math.max(this.lightningControlTime,stun);this.magneticDelay=stun;this.magneticTime=magnetic;
       return {stacks,stun,magnetic};
     }
@@ -292,5 +321,5 @@
     }
     return { travelTime, slowFactor: travelTime/dt };
   }
-  root.SealGameCore = { keys, elements, spells, defaultLoadout, validateLoadout, GameRules, Fighter, chakraRegen, cooldownByRank, elementalDurations, shuriken, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep };
+  root.SealGameCore = { keys, elements, spells, balanceDefaults, spellBalanceOverrides, defaultLoadout, validateLoadout, GameRules, Fighter, chakraRegen, cooldownByRank, elementalDurations, shuriken, intersectFireWall, intersectsWave, meteorTarget, projectileTimeStep };
 })(globalThis);

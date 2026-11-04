@@ -5,6 +5,8 @@
   "description": "Third-person ninja exploration across ten villages, with hand-seal duels and checkpoint respawns",
   "scripts": {
     "start": "node server.cjs",
+    "balance": "node tools/balance-server.mjs",
+    "test:balance-editor": "node tests/spell-balance-editor.mjs",
     "build": "node tools/build.mjs",
     "build:vercel": "node tools/build-vercel.mjs",
     "assets": "node tools/build-hands.mjs",

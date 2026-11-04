@@ -233,7 +233,7 @@ export class EarthArts {
         if(e.age>=.25&&victim&&!e.hitOwners.has(victim.owner)&&distance(victim.pos,e.center)<e.spell.radius&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+3.5){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.owner);event('spike',e,victim);}
       }else if(e.kind==='quake'){
         e.phase=e.age<e.spell.duration?'shifting':'rubble';
-        const total=Math.min(e.spell.count,Math.floor(e.age+1e-6));e.ticks??=0;
+        const total=Math.min(e.spell.count,Math.floor((e.age+1e-6)*e.spell.count/e.spell.duration));e.ticks??=0;
         while(e.ticks<total){e.ticks++;event('quake',e,victim);blast(e.owner,e.center,e.spell.radius);if(victim&&distance(victim.pos,e.center)<e.spell.radius&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+2.8)this.hit(e,victim,e.spell.damage,damage,blast);}
       }else if(e.kind==='wall'){
         e.phase=e.hp/e.maxHp<.4?'cracked':'wall';if(e.hp<=0){this.burst(e.center,2);event('wallbreak',e);this.remove(e,walls);continue;}

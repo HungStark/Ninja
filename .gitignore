@@ -1,4 +1,5 @@
 .tools/
+.spell-balance-last.json
 .test-browser*/
 .publish-stage/
 node_modules/

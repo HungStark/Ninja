@@ -1,5 +1,7 @@
 # Cửu Ấn
 
+**Web nội bộ chỉnh 45 chiêu:** nhấp đúp `Mo-bang-can-bang.cmd`, hoặc chạy `npm run balance` rồi mở <http://127.0.0.1:4180/balance>. Đây là công cụ riêng, không gộp vào game. Xem [hướng dẫn bảng cân bằng](docs/spell-balance-editor.md).
+
 Chọn **Tiếng Việt / English** tại mục **Ngôn ngữ / Language** trên màn hình chính. Lựa chọn được lưu trên thiết bị; đổi ngôn ngữ giữ nguyên tiến trình và tên chiêu thức. Hội thoại dùng giọng của ngôn ngữ đã chọn, còn tên chiêu vẫn được đọc bằng tiếng Việt.
 
 Bản dịch nằm trong `src/locales/en.json`. `npm run build` tạo hai bản ngoại tuyến (`index.html` và `index.en.html`), đồng thời báo lỗi nếu thiếu bản dịch cho nội dung mới. Chạy `npm run test:localization` để kiểm tra bản dịch, giữ nguyên tên chiêu, đổi ngôn ngữ và dữ liệu lưu.
