@@ -112,7 +112,191 @@
   Object.assign(spells.find(s=>s.style==='discharge'),{stunDurations:[.5,1,2],magneticDurations:[3,5,7]});
   const balanceDefaults=JSON.parse(JSON.stringify(spells));
   // Edited by the local balance table. Kept inside the core for offline builds.
-  const spellBalanceOverrides=/* spell-balance:start */{}/* spell-balance:end */;
+  const spellBalanceOverrides=/* spell-balance:start */{
+  "dark-domain": {
+    "cooldown": 50,
+    "duration": 40
+  },
+  "dark-lance": {
+    "cooldown": 4
+  },
+  "dark-orb": {
+    "cooldown": 3,
+    "upgradeDamage": 32
+  },
+  "dark-volley": {
+    "cost": 50
+  },
+  "fire-lance": {
+    "cost": 50,
+    "damage": 110
+  },
+  "fire-meteor": {
+    "cost": 70
+  },
+  "water-barrier": {
+    "damage": 8,
+    "cooldown": 4
+  },
+  "water-lance": {
+    "damage": 15,
+    "cost": 30
+  },
+  "water-tsunami": {
+    "damage": 80,
+    "cost": 70
+  },
+  "water-volley": {
+    "damage": 110,
+    "cost": 55,
+    "cooldown": 21
+  },
+  "fire-volley": {
+    "damage": 7
+  },
+  "dark-reflect": {
+    "duration": 4,
+    "cost": 30
+  },
+  "water-reflect": {
+    "shield": 100,
+    "cost": 25
+  },
+  "fire-reflect": {
+    "shield": 100,
+    "duration": 8,
+    "cost": 25,
+    "cooldown": 12
+  },
+  "fire-barrier": {
+    "cost": 25
+  },
+  "lightning-reflect": {
+    "cooldown": 12,
+    "duration": 6,
+    "cost": 27
+  },
+  "lightning-barrier": {
+    "cost": 25
+  },
+  "lightning-lance": {
+    "damage": 24
+  },
+  "lightning-volley": {
+    "damage": 110,
+    "cost": 50
+  },
+  "lightning-thunder": {
+    "cost": 70
+  },
+  "wind-orb": {
+    "damage": 27,
+    "cost": 20
+  },
+  "wind-volley": {
+    "cost": 45,
+    "damage": 75,
+    "cooldown": 15
+  },
+  "wind-lance": {
+    "cost": 25,
+    "cooldown": 14,
+    "damage": 75
+  },
+  "wind-barrier": {
+    "cooldown": 12,
+    "duration": 8,
+    "shield": 100,
+    "cost": 25
+  },
+  "wind-reflect": {
+    "duration": 6,
+    "cost": 60
+  },
+  "wood-orb": {
+    "cooldown": 5,
+    "cost": 20,
+    "damage": 24
+  },
+  "wood-volley": {
+    "cost": 65,
+    "damage": 70
+  },
+  "wood-lance": {
+    "cost": 30,
+    "damage": 20
+  },
+  "wood-barrier": {
+    "cooldown": 12,
+    "cost": 25,
+    "shield": 70
+  },
+  "ice-lance": {
+    "cost": 25
+  },
+  "ice-reflect": {
+    "cooldown": 1
+  },
+  "wood-reflect": {
+    "cooldown": 1
+  },
+  "ice-volley": {
+    "cooldown": 12,
+    "duration": 6,
+    "cost": 30
+  },
+  "ice-barrier": {
+    "cost": 25,
+    "shield": 110
+  },
+  "light-reflect": {
+    "duration": 3,
+    "cooldown": 10,
+    "cost": 25,
+    "shield": 110
+  },
+  "light-orb": {
+    "cost": 20,
+    "damage": 25
+  },
+  "light-barrier": {
+    "duration": 9,
+    "cost": 30,
+    "amplification": 1.6
+  },
+  "light-lance": {
+    "cost": 70,
+    "cooldown": 35
+  },
+  "light-volley": {
+    "cost": 70
+  },
+  "earth-orb": {
+    "cost": 20,
+    "damage": 25
+  },
+  "earth-lance": {
+    "cooldown": 20,
+    "cost": 25,
+    "damage": 65
+  },
+  "earth-reflect": {
+    "cost": 75,
+    "cooldown": 35,
+    "fallDamage": 70
+  },
+  "earth-volley": {
+    "cost": 50,
+    "cooldown": 20,
+    "damage": 24
+  },
+  "earth-barrier": {
+    "shield": 110,
+    "cost": 25,
+    "duration": 9,
+    "cooldown": 13
+  }
+}/* spell-balance:end */;
   for(const spell of spells){
     const override=spellBalanceOverrides[spell.id];if(!override||!Object.keys(override).length)continue;
     Object.assign(spell,override);
