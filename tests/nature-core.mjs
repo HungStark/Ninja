@@ -48,15 +48,14 @@ setup();plant('player');cast('wood-barrier');assert.equal(walls.length,0);close(
 const w=walls[0];assert.ok(intersectFireWall([0,1.72,-10],[0,1.72,7],w));assert.equal(intersectFireWall([0,1.72,12],[0,1.72,7],w),null);const anchored=[...w.p];actors[0].pos[0]=-3;advance(.1);assert.deepEqual(w.p,anchored);w.hp=0;advance(.1);assert.equal(arts.wood.walnuts.length,0);walls.length=0;cast('wood-barrier');advance(1.2);assert.equal(walls.length,1);advance(8);assert.equal(arts.wood.walnuts.length,0);
 setup();plant('enemy');surroundsOpponent(arts.tree('enemy'));walnut=arts.tree('enemy').plants.find(p=>p.kind==='walnut');assert.ok(walnut.p[0]<0&&walnut.p[2]>-24);cast('wood-lance','enemy');advance(1);assert.ok(actors[0].fighter.woodControlTime>0);arts.reset(walls);close(actors[0].fighter.woodControlTime,0);assert.equal(arts.trees.length,0);
 
-// Support spells spend the owner's stored snow; an idle full storm cannot bank overflow.
+// Support spells work without a storm and never spend either owner's stored snow.
 for(const id of ['ice-lance','ice-volley','ice-barrier']){
-  const cost=id==='ice-lance'?1:2;setup();assert.equal(spell(id).snowCost,cost);assert.equal(cast(id),false);assert.equal(arts.snow.length,0);
-  const r=new GameRules([id,'ice-reflect']);spell(id).sequence.forEach(k=>r.seal(k));assert.equal(r.cast({snowAmount:cost-.01}).reason,'snowCost');close(r.chakra,100);assert.equal(r.casts,0);
-  cast('ice-reflect');advance(cost-.01);assert.equal(cast(id),false);close(arts.snowAmount('player'),cost-.01);advance(.01);cast(id);close(arts.snowAmount('player'),0);assert.equal(arts.canCast('player',spell(id)),false);
-  assert.equal(r.cast({snowAmount:cost}).ok,true);advance(89.99);assert.equal(arts.snowReady('player'),false);advance(.01);assert.equal(arts.snowReady('player'),true);close(arts.weather('player').age,90+cost);
-  advance(30);close(arts.snowAmount('player'),90);cast(id);close(arts.snowAmount('player'),90-cost);assert.equal(arts.snowReady('player'),false);assert.equal(cast('ice-orb'),false);advance(cost);assert.equal(arts.snowReady('player'),true);
+  for(const owner of ['player','enemy']){setup();assert.ok(!spell(id).snowCost);assert.equal(cast(id,owner),true);assert.equal(arts.snow.length,0);}
+  const r=new GameRules([id,'ice-reflect']);spell(id).sequence.forEach(k=>r.seal(k));assert.equal(r.cast({snowAmount:0}).ok,true);assert.equal(r.casts,1);
+  setup();cast('ice-reflect');advance(15);const before=arts.snowAmount('player');assert.equal(cast(id),true);close(arts.snowAmount('player'),before);advance(74.99);assert.equal(arts.snowReady('player'),false);advance(.01);assert.equal(arts.snowReady('player'),true);
+  assert.equal(cast(id),true);close(arts.snowAmount('player'),90);assert.equal(arts.snowReady('player'),true);
 }
-setup();cast('ice-reflect');cast('ice-reflect','enemy');advance(10);cast('ice-volley','enemy');close(arts.snowAmount('enemy'),8);close(arts.snowAmount('player'),10);const held=arts.snowAmount('enemy');arts.advance(0,actors);close(arts.snowAmount('enemy'),held);
+setup();cast('ice-reflect');cast('ice-reflect','enemy');advance(10);cast('ice-volley','enemy');close(arts.snowAmount('enemy'),10);close(arts.snowAmount('player'),10);const held=arts.snowAmount('enemy');arts.advance(0,actors);close(arts.snowAmount('enemy'),held);
 
 // Ice support has real formation stages and an anchored frontal wall.
 setup();cast('ice-reflect');advance(10);cast('ice-lance');assert.equal(shots.length,1);assert.equal(shots[0].phase,'blooming');close(shots[0].releaseAt,.75);arts.visuals(shots,actors,null);assert.equal(arts.state().iceGather[0].flakes,48);close(actors[1].fighter.controlTime,0);

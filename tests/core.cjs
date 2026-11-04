@@ -102,7 +102,7 @@ assert.equal(fireVolley.count, 3); assert.equal(fireVolley.holdTime, .5); assert
 assert.deepEqual(Array.from(fire.filter(s=>s.kind==='attack').map(s=>s.sequence.length)),[2,5,6]);
 for(const id of ['fire-volley','earth-orb','light-orb'])assert.equal(spells.find(s=>s.id===id).sequence.length,2);
 assert.equal(spells.find(s=>s.id==='lightning-lance').damage,22);
-assert.equal(spells.find(s=>s.id==='ice-lance').controlDuration,1.5);
+assert.equal(spells.find(s=>s.id==='ice-lance').controlDuration,3);
 assert.equal(spells.find(s=>s.id==='ice-volley').duration,5);
 assert.deepEqual(Array.from(fire.filter(s=>s.kind==='defense').map(s=>s.sequence.length)),[3,3]);
 const wall={p:[0,0,0],normal:[0,0,-1],width:7,height:4.2};

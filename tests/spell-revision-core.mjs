@@ -32,6 +32,7 @@ walls.push({owner:'player',p:[0,0,2],normal:[0,0,-1],width:8,height:5,hp:100,lif
 actors[0].pos=[0,1.72,-20];light.fire('enemy',spell('light-orb'),[0,1.72,-24],[0,0,1]);light.advance(.1,actors,walls,damage,s=>nature.intercept(s));close(actors[0].fighter.hp,974,'A target in front of the snowball still gets hit');actors[0].pos=[0,1.72,7];
 const caster=actors[1],victim=actors[0];domain.cast(spell('dark-volley'),'enemy',caster.pos,caster.dir,[0,1.72,-8],caster.fighter,victim);domain.updateDomainArts(.71,actors,undefined,s=>nature.intercept(s));assert.equal(domain.bindings.length,0,'Falling elephant is stopped by rolling snow');
 ball.phase='carrying';assert.equal(nature.intercept(incoming()),true,'Rolling with a buried victim still blocks');nature.balls=[];domain.reset();setup();
-for(const [id,cost] of [['ice-lance',1],['ice-volley',2],['ice-barrier',2]])assert.equal(spell(id).snowCost,cost);
+for(const id of ['ice-lance','ice-volley','ice-barrier'])assert.ok(!spell(id).snowCost);
+assert.equal(spell('ice-lance').controlDuration,3);
 assert.equal(new Set(spells.map(s=>s.id)).size,45);assert.equal(new Set(spells.map(s=>s.name)).size,45);
 console.log('PASS: revised earth damage, shared wall durability, gravity/spike combo, Jacob damage, both elephant owners inside/outside domains, submerged view and release, swept snowball blocking across projectile/laser/summon styles with misses and ownership.');
