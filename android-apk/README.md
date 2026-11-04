@@ -19,9 +19,10 @@ Cũng có thể mở thư mục `android-apk` bằng Android Studio và chọn *
 
 - Trong tập luyện, sau khi chọn chiêu của bạn sẽ có bước chọn đối thủ: **Ninja** cần đúng **5 chiêu**, hoặc **Linh thú hộ vệ** cho chọn một trong chín linh thú Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc, Băng. Chạm **Tiếp tục** để vào trận; đấu lại giữ lựa chọn, quay về chọn chiêu để đổi đối thủ.
 - Màn hình ngang, toàn màn hình; xoay ngược ngang vẫn được hỗ trợ. Màn hình dọc hiện hướng dẫn xoay máy.
-- Chạm biểu tượng chiêu trên quyển trục bên trái để kết **một ấn mỗi lần chạm**; chạm tiếp sau khi đủ chuỗi sẽ bắt đầu lại từ ấn đầu. **⌫** xóa chuỗi. Các ấn dùng chung: có **Q W** từ Hỏa Liên Đạn thì chạm Hỏa Long sẽ nối ấn thứ ba, vì hai chiêu có cùng phần đầu **Q W**.
-- Trong chiến đấu, tâm ngắm tự bám thẳng vào đối thủ còn sống. Có thể dùng nhiều ngón cùng lúc.
-- **SPACE** thi triển nếu đủ ấn, hoặc ném phi tiêu nếu chưa kết xong chiêu. **‹ / ›** né trái/phải; **G** tốn 15 mana để tăng lực 3 giây, sau đó lướt 3 m, hồi 1 giây và giữ nguyên chuỗi ấn.
+- Chạm biểu tượng chiêu trên quyển trục bên trái để kết **một ấn mỗi lần chạm**; chạm tiếp sau khi đủ chuỗi sẽ giữ nguyên chuỗi đã kết. **⌫** xóa chuỗi. Các ấn dùng chung: có **Q W** từ Hỏa Liên Đạn thì chạm Hỏa Long sẽ nối ấn thứ ba, vì hai chiêu có cùng phần đầu **Q W**.
+- Trong chiến đấu, kéo màn hình để ngắm; tâm giữ nguyên khi thả tay và không tự bám theo đối thủ. Có thể dùng nhiều ngón cùng lúc.
+- **Ghim và tấn công** đưa tâm về đối thủ còn sống gần nhất rồi thi triển hoặc ném phi tiêu; nếu đối thủ dùng Huyễn Sương thì ngắm vào ảo ảnh. Nút **Tấn công** nhỏ hơn ở bên trái đánh theo tâm hiện tại. Cả hai nút chỉ tấn công một lần mỗi lần chạm. Có thể chỉnh riêng vị trí hai nút trong tùy chỉnh giao diện.
+- **‹ / ›** né trái/phải; **G** tốn 15 mana để tăng lực 3 giây, sau đó lướt 3 m, hồi 1 giây và giữ nguyên chuỗi ấn.
 - Quyển trục năm chiêu nằm bên trái, mỗi hàng giữ icon bên trái và tên/chuỗi kết ấn bên phải; chuỗi kết ấn và máu/mana ở bên phải. Nút thi triển/chọn phi tiêu ở góc dưới trái; né trái/tăng lực/né phải ở góc dưới phải. Biểu tượng chiêu giữ hồi chiêu quét vòng tròn và lớp xanh khi thiếu chakra. Chạm tiêu đề quyển trục để thu gọn/mở rộng.
 - Bộ chọn **Phi tiêu** liệt kê bốn loại cùng số lượng; loại không còn trong túi bị vô hiệu hóa. Luật tự đổi loại khi ném hết được giữ nguyên.
 - **Ⅱ** tạm dừng, đổi chất lượng và bật/tắt âm thanh. Mặc định Android dùng mức Thấp.

@@ -32,10 +32,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
     checkpoint='default layout at phone sizes';await clear();
     for(const [width,height] of [[696,330],[915,412],[568,320],[540,405],[480,270]]){
       await page.setViewportSize({width,height});await advance(.01);await page.locator('#guide').evaluate(el=>el.getAnimations({subtree:true}).forEach(a=>a.finish()));
-      const bounds=await page.locator('#guide,.center-status,#hud>.status,#castButton,#androidAmmo,#androidStepLeft,#dashBoostButton,#androidStepRight,#androidSettings').evaluateAll(els=>Object.fromEntries(els.map(el=>{const r=el.getBoundingClientRect();return [el.id||el.classList[0],{x:r.x,y:r.y,right:r.right,bottom:r.bottom}];})));
+      const bounds=await page.locator('#guide,.center-status,#hud>.status,#androidAttack,#castButton,#androidAmmo,#androidStepLeft,#dashBoostButton,#androidStepRight,#androidSettings').evaluateAll(els=>Object.fromEntries(els.map(el=>{const r=el.getBoundingClientRect();return [el.id||el.classList[0],{x:r.x,y:r.y,right:r.right,bottom:r.bottom}];})));
       assert.ok(Object.values(bounds).every(r=>r.x>=0&&r.y>=0&&r.right<=width+.1&&r.bottom<=height+.1),JSON.stringify(bounds));
       assert.ok(bounds.guide.right<bounds['center-status'].x);assert.ok(bounds['center-status'].bottom<=bounds.status.y+2);assert.ok(bounds.status.bottom<bounds.androidStepLeft.y+2);
-      const controls=['castButton','androidAmmo','androidStepLeft','dashBoostButton','androidStepRight'].map(id=>bounds[id]);assert.ok(controls.slice(1).every((r,i)=>r.x>=controls[i].right-1),JSON.stringify(controls));
+      const controls=['androidAttack','castButton','androidAmmo','androidStepLeft','dashBoostButton','androidStepRight'].map(id=>bounds[id]);assert.ok(controls.slice(1).every((r,i)=>r.x>=controls[i].right-1),JSON.stringify(controls));
       const icons=await page.locator('#spellList .spell-picture').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {y:r.y,bottom:r.bottom,w:r.width,h:r.height};}));assert.ok(icons.every(r=>r.y>=bounds.guide.y&&r.bottom<=bounds.guide.bottom+1&&r.w>=27&&r.h>=27),JSON.stringify(icons));
       await page.screenshot({path:out+'/combat-'+width+'.png'});
     }

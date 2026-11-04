@@ -2,7 +2,7 @@ import {SHURIKEN_TYPES} from './equipment.js';
 import {setupMobileLayout} from './mobile-layout.js';
 import {sprintTargetOffset,sprintTargetClearance} from './mobile-sprint.js';
 export const androidInterface=()=>document.documentElement.dataset.android==='true'||(navigator.maxTouchPoints>0&&matchMedia('(pointer:coarse)').matches);
-export function setupAndroidControls({canvas,getState,seal,cast,holdStep,releaseStep,boost,look,pause,selectAmmo,toggleGuide,sprint,onAimRelease=()=>{}}){
+export function setupAndroidControls({canvas,getState,seal,cast,pinAndCast,holdStep,releaseStep,boost,look,pause,selectAmmo,toggleGuide,sprint}){
   if(!androidInterface())return null;
   if(!document.querySelector('link[href$="android.css"]')){const css=document.createElement('link');css.rel='stylesheet';css.href='android.css';document.head.append(css);}
   document.body.classList.add('android-ui');
@@ -13,6 +13,9 @@ export function setupAndroidControls({canvas,getState,seal,cast,holdStep,release
   document.getElementById('journeyHud').append(feedback);
   for(const id of ['openJournal','openAtlas','journeyMenu']){const b=document.getElementById(id);b.setAttribute('aria-label',b.title.replace(/ \(.*?\)/,''));}
   const castButton=document.getElementById('castButton'),dashButton=document.getElementById('dashBoostButton');combat.append(castButton,dashButton);castButton.classList.add('android-cast');dashButton.classList.add('android-boost');
+  castButton.querySelector('kbd').textContent='⌖';castButton.setAttribute('aria-label','Ghim vào đối thủ gần nhất và tấn công');castButton.title='Ghim vào đối thủ gần nhất và tấn công';
+  const castStatus=document.createElement('small');castStatus.id='androidCastStatus';castButton.append(castStatus);
+  const attackButton=document.createElement('button');attackButton.id='androidAttack';attackButton.className='android-action';attackButton.innerHTML='<b aria-hidden="true">✦</b><span>Tấn công</span>';attackButton.setAttribute('aria-label','Tấn công theo tâm hiện tại');attackButton.title='Tấn công theo tâm hiện tại';combat.append(attackButton);
   const settings=document.createElement('div');settings.className='android-pause-settings';for(const id of ['qualityButton','soundButton'])settings.append(document.getElementById(id));document.querySelector('#pauseScreen .pause-card').append(settings);
   const guide=document.getElementById('guide'),initialExpanded=true;document.getElementById('guideToggle').title='Chạm biểu tượng chiêu để kết từng ấn';guide.classList.toggle('is-expanded',initialExpanded);for(const id of ['guideToggle','helpButton'])document.getElementById(id).setAttribute('aria-expanded',String(initialExpanded));
   const quest=document.querySelector('.journey-quest');document.querySelector('.journey-top nav').prepend(quest);
@@ -43,7 +46,7 @@ export function setupAndroidControls({canvas,getState,seal,cast,holdStep,release
   }
   window.addEventListener('pointerup',endStep);window.addEventListener('pointercancel',endStep);
   // Use pointerdown exactly once; the synthesized click must not cast twice.
-  castButton.onclick=null;dashButton.onclick=null;tap(castButton,cast);tap(dashButton,boost);tap(root.querySelector('#androidSettings'),pause);tap(root.querySelector('#androidClearSeals'),()=>emit('backspace',true));
+  castButton.onclick=null;dashButton.onclick=null;tap(castButton,pinAndCast);tap(attackButton,cast);tap(dashButton,boost);tap(root.querySelector('#androidSettings'),pause);tap(root.querySelector('#androidClearSeals'),()=>emit('backspace',true));
   root.querySelectorAll('[data-touch-ammo]').forEach(b=>b.onclick=()=>{if(live()&&!b.disabled){selectAmmo(b.dataset.touchAmmo);ammo.open=false;}});
   canvas.addEventListener('pointerdown',e=>{if(!live()||drag)return;e.preventDefault();drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id||!live())return;look(e.clientX-drag.x,e.clientY-drag.y);drag.x=e.clientX;drag.y=e.clientY;});
@@ -59,7 +62,7 @@ export function setupAndroidControls({canvas,getState,seal,cast,holdStep,release
     pad.style.setProperty('--joystick-float-x',(cx-r.left-r.width/2)+'px');pad.style.setProperty('--joystick-float-y',(cy-r.top-r.height/2)+'px');pad.classList.add('floating-active');joystick=e.pointerId;pad.setPointerCapture(e.pointerId);syncSprintTarget();movePad(e);
   }
   const end=e=>{
-    if(drag?.id===e.pointerId){drag=null;onAimRelease();}
+    if(drag?.id===e.pointerId)drag=null;
     if(joystick!==e.pointerId)return;
     if(e.type==='pointerup')movePad(e);
     joystick=null;

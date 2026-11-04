@@ -19,7 +19,7 @@ export function setupMobileLayout({getState,pause,release}){
     ['journal','explore','#openJournal','Nhật ký','▤'],['atlas','explore','#openAtlas','Bản đồ thế giới','◎'],['menu','explore','#journeyMenu','Tạm dừng','Ⅱ'],
     ['location','explore','.journey-location','Tên vùng đất','◇'],['messages','explore','.android-explore-messages','Thông báo khám phá','!'],['nearby','explore','#nearbyAction','Gợi ý tương tác','E'],
     ['health','combat','#hud>.status','Máu và mana','♥'],['guide','combat','#guide','Quyển trục mang theo','▤'],['combo','combat','.center-status','Chuỗi kết ấn','印'],
-    ['cast','combat','#castButton','Thi triển / Phi tiêu','SPACE'],['boost','combat','#dashBoostButton','Tăng lực','G'],
+    ['cast','combat','#castButton','Ghim và tấn công','⌖'],['attack','combat','#androidAttack','Tấn công theo tâm hiện tại','✦'],['boost','combat','#dashBoostButton','Tăng lực','G'],
     ['dodge-left','combat','#androidStepLeft','Né trái','‹'],['dodge-right','combat','#androidStepRight','Né phải','›'],
     ['ammo','combat','#androidAmmo','Chọn phi tiêu','✦'],['settings','combat','#androidSettings','Tạm dừng / Cài đặt','⚙']
   ].map(([id,mode,selector,label,glyph])=>({id,mode,selector,label,glyph,el:document.querySelector(selector)})).filter(s=>s.el);
