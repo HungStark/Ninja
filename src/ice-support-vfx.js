@@ -4,6 +4,8 @@ import { vfxToon } from './vfx-materials.js';
 const clamp=x=>Math.max(0,Math.min(1,x)),ease=x=>{x=clamp(x);return x*x*(3-2*x);};
 const hash=i=>{const n=Math.sin(i*127.1+311.7)*43758.5453;return n-Math.floor(n);};
 const up=new T.Vector3(0,1,0);
+export const MIST_ARENA={minX:-16,maxX:16,minZ:-26,maxZ:12,midZ:-7};
+export function mistFieldBounds(owner){return {minX:MIST_ARENA.minX,maxX:MIST_ARENA.maxX,minZ:owner==='player'?MIST_ARENA.midZ:MIST_ARENA.minZ,maxZ:owner==='player'?MIST_ARENA.maxZ:MIST_ARENA.midZ};}
 
 export class IceSupportVfx {
   constructor(){
@@ -13,9 +15,22 @@ export class IceSupportVfx {
     this.glass=vfxToon('#83d7f1',{transparent:true,opacity:.58,depthWrite:false,side:T.DoubleSide,emissive:'#17465a',emissiveIntensity:.5});
     this.edge=new T.LineBasicMaterial({color:'#dbfaff',transparent:true,opacity:.8,depthWrite:false});
     this.plane=new T.PlaneGeometry(1,1);
-    this.fogMaterial=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uTime:{value:0},uOpacity:{value:.25},uInside:{value:0}},
-      vertexShader:'varying vec2 vUv;varying vec2 vScreen;void main(){vUv=uv;vec4 p=vec4(position,1.);\n#ifdef USE_INSTANCING\np=instanceMatrix*p;\n#endif\ngl_Position=projectionMatrix*modelViewMatrix*p;vScreen=gl_Position.xy/gl_Position.w*.5+.5;}',
-      fragmentShader:'uniform float uTime;uniform float uOpacity;uniform float uInside;varying vec2 vUv;varying vec2 vScreen;void main(){vec2 p=vUv-.5;float r=length(p)*2.;float billow=.9+.06*sin(p.x*19.+uTime)+.04*sin(p.y*23.-uTime*.7);float a=pow(1.-smoothstep(.12,billow,r),1.15)*uOpacity;float clearView=mix(1.,smoothstep(.12,.6,length(vScreen-.5)),uInside);gl_FragColor=vec4(.78,.9,.95,a*clearView);}'});
+    this.fogMaterial=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uTime:{value:0},uOpacity:{value:.3},uBounds:{value:new T.Vector4()},uHeight:{value:1.5}},
+      vertexShader:'attribute float mistGround;varying vec2 vUv;varying vec3 vWorld;varying float vGround;void main(){vUv=uv;vGround=mistGround;vec4 p=vec4(position,1.);\n#ifdef USE_INSTANCING\np=instanceMatrix*p;\n#endif\nvec4 world=modelMatrix*p;vWorld=world.xyz;gl_Position=projectionMatrix*viewMatrix*world;}',
+      fragmentShader:`
+        uniform float uTime;uniform float uOpacity;uniform vec4 uBounds;uniform float uHeight;
+        varying vec2 vUv;varying vec3 vWorld;varying float vGround;
+        void main(){
+          if(vWorld.x<uBounds.x||vWorld.x>uBounds.y||vWorld.z<uBounds.z||vWorld.z>uBounds.w)discard;
+          float height=vWorld.y-vGround;
+          float cloudTop=uHeight*(1.+.12*sin(vWorld.x*.9+vWorld.z*.12+uTime*.26)+.055*sin(vWorld.x*2.1-vWorld.z*.2-uTime*.19));
+          if(height<0.||height>cloudTop)discard;
+          vec2 p=vUv-.5;float r=length(p)*2.;
+          float billow=.93+.04*sin(p.x*19.+uTime)+.03*sin(p.y*23.-uTime*.7);
+          float a=pow(1.-smoothstep(.05,billow,r),.7)*uOpacity;
+          float top=1.-smoothstep(cloudTop-.16,cloudTop,height);
+          gl_FragColor=vec4(.78,.9,.95,a*top);
+        }`});
     this.dummy=new T.Object3D();
   }
   mesh(parent,geometry,material,p=[0,0,0],scale=[1,1,1]){
@@ -68,23 +83,27 @@ export class IceSupportVfx {
     }
     chips.instanceMatrix.needsUpdate=true;
   }
-  createMist(){
-    const root=new T.Group(),cover=new T.Group(),material=this.fogMaterial.clone(),clouds=new T.InstancedMesh(this.plane,material,36);
-    clouds.instanceMatrix.setUsage(T.DynamicDrawUsage);clouds.frustumCulled=false;clouds.userData.ownedMaterial=true;cover.add(clouds);root.add(cover);return {root,cover,clouds,material};
+  createMist(owner,height=1.5){
+    const bounds=mistFieldBounds(owner),root=new T.Group(),cover=new T.Group(),material=this.fogMaterial.clone(),geometry=this.plane.clone(),columns=11,rows=7,layers=3,count=columns*rows*layers;
+    geometry.setAttribute('mistGround',new T.InstancedBufferAttribute(new Float32Array(count),1));
+    material.uniforms.uBounds.value.set(bounds.minX,bounds.maxX,bounds.minZ,bounds.maxZ);material.uniforms.uHeight.value=height;
+    const clouds=new T.InstancedMesh(geometry,material,count);
+    clouds.instanceMatrix.setUsage(T.DynamicDrawUsage);clouds.frustumCulled=false;clouds.userData.ownedMaterial=clouds.userData.ownedGeometry=true;cover.add(clouds);root.add(cover);return {root,cover,clouds,material,bounds,height,columns,rows,layers};
   }
-  updateMist(fog,actor,camera,time,reducedMotion){
-    const inside=fog.owner==='player',expand=ease(fog.age/.4),fade=ease(fog.life/.6),ground=actor.pos[1]-1.72;
-    fog.cover.position.set(actor.pos[0],ground,actor.pos[2]);fog.material.uniforms.uTime.value=reducedMotion?0:time;
-    fog.material.uniforms.uOpacity.value=(inside?.075:.42)*expand*fade;fog.material.uniforms.uInside.value=Number(inside);
+  updateMist(fog,actor,camera,time,reducedMotion,floor=()=>0){
+    const inside=fog.owner==='player',expand=ease(fog.age/.4),fade=ease(fog.life/.6),{bounds,columns,rows,layers}=fog;
+    fog.cover.position.set(0,0,0);fog.material.uniforms.uTime.value=reducedMotion?0:time;
+    fog.material.uniforms.uOpacity.value=.12*expand*fade;
     fog.decoy.visible=!inside&&fog.age>.18;fog.decoy.position.fromArray(fog.p);fog.decoy.scale.setScalar(ease((fog.age-.18)/.22));
-    const turn=reducedMotion?0:time*.14;
-    for(let i=0;i<36;i++){
-      const a=i*2.399+turn,r=(.7+hash(i+41)*1.35)*expand;
-      this.dummy.position.set(Math.cos(a)*r,.25+i%6*.54+(reducedMotion?0:Math.sin(time*.7+i)*.13),Math.sin(a)*r);
+    const dx=(bounds.maxX-bounds.minX)/(columns-1),dz=(bounds.maxZ-bounds.minZ)/(rows-1),grounds=fog.clouds.geometry.getAttribute('mistGround');
+    for(let i=0;i<fog.clouds.count;i++){
+      const column=i%columns,row=Math.floor(i/columns)%rows,layer=Math.floor(i/(columns*rows)),drift=reducedMotion?0:Math.sin(time*.3+i)*.24;
+      const x=bounds.minX+column*dx+drift,z=bounds.minZ+row*dz+(reducedMotion?0:Math.cos(time*.25+i)*.22),ground=floor(x,z);
+      this.dummy.position.set(x,ground+fog.height*(.12+layer/(layers-1)*.6),z);grounds.setX(i,ground);
       if(camera)this.dummy.quaternion.copy(camera.quaternion);else this.dummy.quaternion.identity();
-      const s=(1.9+hash(i+29)*.8)*expand;this.dummy.scale.set(s*1.3,s,1);this.dummy.updateMatrix();fog.clouds.setMatrixAt(i,this.dummy.matrix);
+      this.dummy.scale.set(dx*(1.9+hash(i+29)*.2),fog.height*.95,1);this.dummy.updateMatrix();fog.clouds.setMatrixAt(i,this.dummy.matrix);
     }
-    fog.clouds.instanceMatrix.needsUpdate=true;
+    grounds.needsUpdate=true;fog.clouds.instanceMatrix.needsUpdate=true;
   }
   dispose(root){
     const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.userData.ownedGeometry&&o.geometry)geometries.add(o.geometry);if(o.userData.ownedMaterial&&o.material)materials.add(o.material);});

@@ -107,7 +107,8 @@
     "test:village-revision": "node tests/guardian-lotus-core.mjs && node tests/guardian-phases-core.mjs && node tests/skill-sources-core.mjs && node tools/build-android.mjs && node tests/mobile-gameplay.cjs && node tests/village-revision-browser.cjs",
     "test:practice-view": "node tests/practice-overhead-core.mjs && node tools/build.mjs && node tests/practice-overhead-browser.cjs",
     "test:enemy-patrol": "node tests/enemy-movement-core.mjs && node tests/storm-field-speed.mjs && node tools/build.mjs && node tests/enemy-patrol-browser.cjs",
-    "test:practice-opponent": "node tests/practice-opponent-core.mjs && node tools/build.mjs && node tests/practice-opponent-browser.cjs"
+    "test:practice-opponent": "node tests/practice-opponent-core.mjs && node tools/build.mjs && node tests/practice-opponent-browser.cjs",
+    "test:ice-mist": "node tests/nature-core.mjs && node tools/build-android.mjs && node tests/ice-mist-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"
