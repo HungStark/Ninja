@@ -5,7 +5,7 @@ import {createVillageStoryActors} from './village-story-actors.js';
 import {placeVillageGuards} from './guard-placement.js';
 import {createGuardAmbush} from './guard-ambush.js';
 import {createTransformationSmoke} from './transformation-smoke.js';
-import {HOME,INTRO_SQUAD,villageGuards,villageSidequests,sidequestDone} from './journey-story.js';
+import {HOME,INTRO_SQUAD,villageGuards,villageSidequests,sidequestTargetVisible} from './journey-story.js';
 import {createVandalFireworks} from './vandal-fireworks.js';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -226,10 +226,10 @@ export function createAdventureScene(){
     let root,char=null;
     if(entry.questType==='combat'){char=createNinja(encounterAppearance({kind:entry.kind,village:current}));root=char.root;root.position.set(entry.x,entry.y,entry.z);root.rotation.y=Math.atan2(-entry.x,-entry.z);citizens.push(char);}
     else{root=createQuestItem({model:entry.targetModel,name:entry.label});root.position.set(entry.x,entry.y+.04,entry.z);}
-    root.userData.questActor=true;land.add(root);questActors.set(entry.id,{root,char});
+    root.userData.questActor=true;root.userData.questId=entry.id;land.add(root);questActors.set(entry.id,{root,char});
   }
   function syncSidequests(save){if(room)return;
-    const active=new Map(villageSidequests(current).filter(q=>!sidequestDone(save,q)).map(q=>[q.id,q]));
+    const active=new Map(villageSidequests(current).filter(q=>sidequestTargetVisible(save,q)).map(q=>[q.id,q]));
     if(current==='fire'&&(save.expeditions.fire||0)<2&&!save.story.questItems?.includes('fire:hong-lien'))active.set('fire:hong-lien',{id:'fire:hong-lien',kind:'expedition-goal',type:'retrieve',targetModel:'lotus',x:88,z:-96,y:36,targetName:'Hái Hồng Liên trên đỉnh núi'});
     for(let i=interactives.length-1;i>=0;i--){const entry=interactives[i];if(!['sidequest-target','expedition-goal'].includes(entry.kind)||active.has(entry.id))continue;
       const actor=questActors.get(entry.id);if(actor){actor.root.removeFromParent();if(actor.char){const index=citizens.indexOf(actor.char);if(index>=0)citizens.splice(index,1);actor.char.dispose();}else disposeObject(actor.root);questActors.delete(entry.id);}interactives.splice(i,1);

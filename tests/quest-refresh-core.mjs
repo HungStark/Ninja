@@ -1,19 +1,32 @@
 import assert from 'node:assert/strict';
 import {createAdventureScene} from '../src/adventure-scene.js';
-import {newJourney,VILLAGES} from '../src/adventure-data.js';
+import {newJourney,VILLAGES,readJourney,SAVE_KEY,resolveBattle} from '../src/adventure-data.js';
 import {villageSidequests,acceptSidequest,completeSidequestTarget,claimSidequest} from '../src/journey-story.js';
 globalThis.innerWidth=915;globalThis.innerHeight=412;
 const world=createAdventureScene(),timings=[],types=new Set();
+const reload=save=>readJourney({getItem:key=>key===SAVE_KEY?JSON.stringify(save):null});
+function actorFor(id){let actor=null;world.scene.traverse(o=>{if(o.userData.questId===id)actor=o;});return actor;}
 for(const village of VILLAGES){
   const save=newJourney();save.village=village.id;const start=performance.now();world.load(village.id,save);const loadMs=performance.now()-start;
   const position=world.hero.root.position.toArray(),physics=world.physicsState(),residents=world.residentsState(),solids=[...world.solids],guards=world.guardsState();
+  for(const q of villageSidequests(village.id)){
+    assert.equal(world.interactives.some(i=>i.id===q.id),q.type!=='combat','only combat targets wait for acceptance');
+    assert.equal(!!actorFor(q.id),q.type!=='combat','hidden ninjas have no scene model');
+    if(q.type==='combat'){
+      const before=JSON.stringify(save);assert.equal(completeSidequestTarget(save,q),false);assert.equal(JSON.stringify(save),before);
+      const rejected=reload(save);resolveBattle(rejected,{kind:'sidequest',village:village.id,questId:q.id},true);assert.equal(rejected.wins,save.wins);assert.equal(rejected.story.sidequests[q.id],undefined);
+    }
+  }
   const questRoots=new Set();world.scene.traverse(o=>{if(o.name.startsWith('quest-item-')||o.userData.questActor)questRoots.add(o);});const meshes=[];world.scene.traverse(o=>{let quest=false;for(let p=o;p;p=p.parent)if(questRoots.has(p))quest=true;if(o.isMesh&&!quest)meshes.push(o);});let disposed=0;for(const geometry of new Set(meshes.map(m=>m.geometry)))geometry.addEventListener('dispose',()=>disposed++);
   let syncMs=0;
   for(const q of villageSidequests(village.id)){
     types.add(q.type);assert.equal(acceptSidequest(save,q),true);const at=performance.now();world.syncSidequests(save);syncMs+=performance.now()-at;
     const target=world.interactives.find(i=>i.kind==='sidequest-target'&&i.id===q.id);assert.ok(target);assert.ok(Number.isFinite(target.y));assert.equal(world.blocked(target.x,target.z),false,'target remains reachable');
+    const actor=actorFor(q.id);assert.ok(actor?.visible);assert.ok(actor.parent);
+    world.syncSidequests(reload(save));assert.ok(actorFor(q.id),'accepted targets survive saved-progress normalization');
     world.syncSidequests(save);assert.equal(world.interactives.filter(i=>i.id===q.id&&i.kind==='sidequest-target').length,1);
     assert.equal(completeSidequestTarget(save,q),true);world.syncSidequests(save);assert.ok(!world.interactives.some(i=>i.id===q.id&&i.kind==='sidequest-target'));
+    assert.equal(actor.parent,null,'completed target model is removed');assert.equal(actorFor(q.id),null);
     assert.equal(claimSidequest(save,q),true);world.syncSidequests(save);assert.deepEqual(world.hero.root.position.toArray(),position);assert.deepEqual(world.physicsState(),physics);
   }
   assert.deepEqual(world.residentsState(),residents);assert.deepEqual(world.guardsState(),guards);assert.deepEqual(world.solids,solids);assert.equal(disposed,0,'quest updates never dispose terrain, buildings, residents or other scenery');for(const mesh of meshes)assert.ok(mesh.parent,'original scenery remains attached');

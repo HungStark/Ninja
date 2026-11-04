@@ -132,9 +132,10 @@ export function villageSidequests(id,includeSuperseded=false){
 }
 export function questForNPC(id,item){const giver=item.kind==='npc'?`${id}-chief`:item.kind==='shop'?`${id}-merchant`:item.kind==='envoy'?`${id}-envoy`:item.kind==='expedition-giver'?'fire-dan':item.id;return villageSidequests(id).find(q=>q.giver===giver);}
 export const sidequestDone=(save,q)=>(save.story.sidequests[q.id]||0)>=2||save.story.earlyTargets?.includes(q.id)===true;
+export const sidequestTargetVisible=(save,q)=>!sidequestDone(save,q)&&(q.type!=='combat'||save.story.sidequests[q.id]===1);
 export function acceptSidequest(save,q){if(save.story.sidequests[q.id])return false;save.story.sidequests[q.id]=save.story.earlyTargets?.includes(q.id)?2:1;return true;}
 export function completeSidequestTarget(save,q){
-  if(sidequestDone(save,q))return false;
+  if(sidequestDone(save,q)||(q.type==='combat'&&save.story.sidequests[q.id]!==1))return false;
   save.story.questItems??=[];save.story.questItems.push(q.id);
   if(save.story.sidequests[q.id]===1)save.story.sidequests[q.id]=2;
   else{save.story.earlyTargets??=[];save.story.earlyTargets.push(q.id);}return true;

@@ -15,7 +15,7 @@ assert.equal(doc.rows.length,45);assert.equal(doc.elements.length,9);
 for(const element of doc.elements)assert.equal(doc.rows.filter(r=>r.element===element.id).length,5);
 for(const invalid of [null,[],{'unknown':{}},{'fire-volley':{name:'oops'}},{'fire-volley':{cost:-1}},{'fire-volley':{damage:null}},{'fire-barrier':{ignitionDamages:[1,2]}},{'lightning-barrier':{stunDurations:[0,1,Infinity]}}])assert.throws(()=>updatedSource(source,invalid));
 const runtime=text=>{const ctx={};vm.runInNewContext(text,ctx);return ctx.SealGameCore;};
-const settings={'fire-volley':{damage:9,cost:27,cooldown:6.25},'water-lance':{controlDuration:4.5},'earth-barrier':{shield:160,duration:12},'earth-reflect':{captureDamage:80,fallDamage:120,holdTime:4},'fire-barrier':{ignitionDamages:[11,22,33,44,55]},'lightning-barrier':{stunDurations:[.75,1.5,2.5],magneticDurations:[4,6,8]},'water-barrier':{duration:8},'wind-lance':{duration:3}};
+const settings={'fire-volley':{damage:9,cost:27,cooldown:6.25},'water-lance':{controlDuration:4.5},'earth-barrier':{shield:160,duration:12},'earth-reflect':{captureDamage:80,fallDamage:120,holdTime:4},'fire-barrier':{ignitionDamages:[11,22,33,44,55]},'lightning-barrier':{stunDurations:[.75,1.5,2.5],magneticDurations:[4,6,8]},'water-barrier':{duration:8},'wind-lance':{duration:3},'ice-barrier':{cooldown:16,cost:50}};
 const changedSource=updatedSource(source,settings),core=runtime(changedSource),spell=id=>core.spells.find(s=>s.id===id);
 assert.equal(spell('fire-volley').baseDamage,9);assert.equal(spell('earth-reflect').damage,200);assert.equal(spell('earth-reflect').holdTime,4);assert.equal(spell('water-barrier').detonationInterval,2);
 const rules=new core.GameRules(['fire-volley']);spell('fire-volley').sequence.forEach(k=>rules.seal(k));assert.equal(rules.cast().ok,true);assert.equal(rules.chakra,73);assert.equal(rules.remaining('fire-volley'),6.25);
@@ -35,7 +35,9 @@ const tempParent=path.resolve('.tools');await fs.mkdir(tempParent,{recursive:tru
 const fixture=await fs.mkdtemp(path.join(tempParent,'balance-test-'));
 await fs.writeFile(path.join(fixture,'game-core.js'),source);
 await fs.copyFile('game-core.en.js',path.join(fixture,'game-core.en.js'));
-const server=createBalanceServer({rootURL:pathToFileURL(fixture+path.sep)});
+const catalog=JSON.parse(await fs.readFile('src/locales/en.json','utf8')),catalogURL=pathToFileURL(path.join(fixture,'english.json')),staleCatalog={...catalog};delete staleCatalog['Bão Tuyết'];
+await fs.writeFile(catalogURL,JSON.stringify(staleCatalog));
+const server=createBalanceServer({rootURL:pathToFileURL(fixture+path.sep),catalogURL});
 let browser;
 try{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -48,6 +50,12 @@ try{
   const before=await get();assert.equal((await post(before.revision,settings,{Origin:'https://example.com'})).status,403);
   assert.equal((await post(before.revision,{'fire-volley':{cost:-3}})).status,400);
   assert.equal(await fs.readFile(path.join(fixture,'game-core.js'),'utf8'),source);
+  const englishBefore=await fs.readFile(path.join(fixture,'game-core.en.js'),'utf8');
+  const missingTranslation=await post(before.revision,settings);assert.equal(missingTranslation.status,400);assert.match((await missingTranslation.json()).error,/Bão Tuyết/);
+  assert.equal(await fs.readFile(path.join(fixture,'game-core.js'),'utf8'),source,'missing translations cannot partially save the Vietnamese core');
+  assert.equal(await fs.readFile(path.join(fixture,'game-core.en.js'),'utf8'),englishBefore,'missing translations cannot partially save the English core');
+  // Update the catalog with the same server instance still running.
+  await fs.writeFile(catalogURL,JSON.stringify(catalog));
   browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
   const page=await browser.newPage({viewport:{width:1600,height:1000}}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>dialog.accept());
@@ -68,6 +76,7 @@ try{
   await page.locator('tr[data-id="lightning-barrier"] summary').click();
   for(let i=0;i<3;i++)await fill('lightning-barrier','magneticDurations',settings['lightning-barrier'].magneticDurations[i],i);
   await fill('water-barrier','duration',8);await fill('wind-lance','duration',3);
+  await fill('ice-barrier','cooldown',16);await fill('ice-barrier','cost',50);
   const downloadPromise=page.waitForEvent('download');await page.click('#export');const download=await downloadPromise;assert.match(download.suggestedFilename(),/\.json$/);
   await page.click('#save');await page.waitForFunction(()=>document.getElementById('status').textContent.startsWith('Đã lưu vào dự án.'));
   const persisted=await get();assert.deepEqual(persisted.overrides,settings);
@@ -75,6 +84,8 @@ try{
   const savedCore=runtime(await fs.readFile(path.join(fixture,'game-core.js'),'utf8')),englishCore=runtime(await fs.readFile(path.join(fixture,'game-core.en.js'),'utf8'));
   for(const id of Object.keys(settings)){const vi=savedCore.spells.find(s=>s.id===id),en=englishCore.spells.find(s=>s.id===id);for(const [key,value]of Object.entries(settings[id]))assert.equal(JSON.stringify(vi[key]),JSON.stringify(en[key]));}
   await page.reload();await page.waitForSelector('#rows tr');assert.equal(await page.locator('tr[data-id="fire-volley"] input[data-key="cost"]').inputValue(),'27');
+  assert.equal(await page.locator('tr[data-id="ice-barrier"] input[data-key="cooldown"]').inputValue(),'16');
+  assert.equal(await page.locator('tr[data-id="ice-barrier"] input[data-key="cost"]').inputValue(),'50');
   await page.setInputFiles('#import',{name:'invalid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({version:1,overrides:{'unknown':{cost:5}}}))});assert.match(await page.locator('#status').textContent(),/không hợp lệ/);
   await page.click('#reset');await page.locator('#confirm button[value="restore"]').click();await page.click('#save');await page.waitForFunction(()=>document.getElementById('status').textContent.startsWith('Đã lưu vào dự án.'));
   assert.deepEqual((await get()).overrides,{});assert.equal(revisionOf(await fs.readFile(path.join(fixture,'game-core.js'),'utf8')),revisionOf(updatedSource(source,{})));

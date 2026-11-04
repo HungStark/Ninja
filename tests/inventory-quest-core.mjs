@@ -29,6 +29,13 @@ for(const v of VILLAGES){
   assert.equal(new Set(quests.map(q=>q.giver)).size,quests.length);
   assert.ok(quests.every(q=>q.giver!==REGIONS[v.id].mentor?.npcId&&!q.giver.endsWith('-chief')&&!q.giver.endsWith('-envoy')&&q.giver!=='fire-dan'&&!q.giver.endsWith('-merchant')));
   for(const q of quests){
+    if(q.type==='combat'){
+      assert.ok(!world.interactives.some(i=>i.id===q.id),'combat targets stay hidden before accepting');
+      assert.equal(completeSidequestTarget(s,q),false);assert.equal(s.story.sidequests[q.id],undefined);
+      assert.ok(acceptSidequest(s,q));world.syncSidequests(s);assert.ok(world.interactives.some(i=>i.id===q.id),'accepting spawns the ninja');
+      assert.ok(completeSidequestTarget(s,q));s=reload(s);assert.equal(s.story.sidequests[q.id],2);world.syncSidequests(s);assert.ok(!world.interactives.some(i=>i.id===q.id));
+      assert.ok(claimSidequest(s,q));assert.equal(claimSidequest(s,q),false);assert.ok(!s.story.questItems.includes(q.id));continue;
+    }
     assert.ok(world.interactives.some(i=>i.id===q.id),'targets exist before accepting');
     assert.ok(completeSidequestTarget(s,q));assert.equal(completeSidequestTarget(s,q),false);assert.equal(s.story.sidequests[q.id],undefined);
     s=reload(s);assert.ok(sidequestDone(s,q));assert.ok(s.story.questItems.includes(q.id));world.syncSidequests(s);
@@ -45,5 +52,5 @@ s.story.questItems.push('fire:hong-lien');s=reload(s);world.syncSidequests(s);as
 world.load('fire',s);assert.equal(world.scene.getObjectByName('quest-item-lotus'),undefined);
 s.expeditions.fire=3;s=reload(s);assert.ok(!s.story.questItems.includes('fire:hong-lien'));
 s=newJourney();resolveBattle(s,{kind:'quest',village:'water',element:'water'},true);assert.equal(s.quests.water,2);assert.ok(reload(s).story.earlyVillageQuests.includes('water'));
-const combatQuest=villageSidequests('water').find(q=>q.type==='combat');s=newJourney();resolveBattle(s,{kind:'sidequest',village:'water',questId:combatQuest.id,element:'water'},true);assert.ok(reload(s).story.earlyTargets.includes(combatQuest.id));const wins=s.wins;resolveBattle(s,{kind:'sidequest',village:'water',questId:combatQuest.id,element:'water'},true);assert.equal(s.wins,wins);
-console.log('PASS: exact variable purchases, atomic limits, 400-coin bag, every village pre-quest target, persisted loot and early combat/survey, one reward, unique NPC tasks, early mentor exploration, visible one-time summit lotus and pre-quest main opponent.');
+const combatQuest=villageSidequests('water').find(q=>q.type==='combat');s=newJourney();resolveBattle(s,{kind:'sidequest',village:'water',questId:combatQuest.id,element:'water'},true);assert.ok(!reload(s).story.earlyTargets.includes(combatQuest.id));assert.equal(s.wins,0);acceptSidequest(s,combatQuest);resolveBattle(s,{kind:'sidequest',village:'water',questId:combatQuest.id,element:'water'},true);assert.equal(s.story.sidequests[combatQuest.id],2);const wins=s.wins;resolveBattle(s,{kind:'sidequest',village:'water',questId:combatQuest.id,element:'water'},true);assert.equal(s.wins,wins);
+console.log('PASS: exact purchases, persisted early loot/survey, combat targets only after accepting, one reward, unique NPC tasks, early mentor exploration, one-time lotus and unchanged main opponent.');

@@ -1,11 +1,11 @@
 import fs from 'node:fs/promises';
 import {transform} from 'esbuild';
 import {balanceDocument,updatedSource,revisionOf} from './spell-balance-data.mjs';
-import {localizeSource} from './localize.mjs';
+import {localizeSource,readEnglishCatalog,englishCatalogURL} from './localize.mjs';
 
 function json(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));}
 async function body(req){let value='';for await(const chunk of req){value+=chunk;if(Buffer.byteLength(value)>128000)throw Error('Dữ liệu quá lớn.');}return JSON.parse(value);}
-export function createBalanceHandler({rootURL=new URL('../',import.meta.url)}={}){
+export function createBalanceHandler({rootURL=new URL('../',import.meta.url),catalogURL=englishCatalogURL}={}){
 const coreURL=new URL('game-core.js',rootURL),englishURL=new URL('game-core.en.js',rootURL);
 let saving=false;
 return async function handleBalance(req,res){
@@ -30,8 +30,10 @@ return async function handleBalance(req,res){
       const request=await body(req),source=await fs.readFile(coreURL,'utf8');
       if(request.revision!==revisionOf(source)){json(res,409,{error:'Dữ liệu dự án đã thay đổi. Xuất bản nháp JSON trước, rồi tải lại trang để tránh ghi đè.'});return true;}
       const next=updatedSource(source,request.overrides),missing=new Set();
-      const english=(await transform(localizeSource(next,'game-core.js',missing),{target:'es2020',minify:true,legalComments:'eof'})).code;
-      if(missing.size)throw Error('Thiếu bản dịch; chưa lưu thay đổi.');
+      // This server stays open while the game and its translations are updated.
+      const catalog=await readEnglishCatalog(catalogURL);
+      const english=(await transform(localizeSource(next,'game-core.js',missing,catalog),{target:'es2020',minify:true,legalComments:'eof'})).code;
+      if(missing.size)throw Error('Thiếu bản dịch: '+[...missing].join(' / ')+'; chưa lưu thay đổi.');
       const oldEnglish=await fs.readFile(englishURL,'utf8');
       // Recheck after compilation in case an external editor changed the core.
       if(await fs.readFile(coreURL,'utf8')!==source){json(res,409,{error:'Dữ liệu vừa thay đổi. Hãy tải lại bảng.'});return true;}

@@ -446,6 +446,10 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(!admin.active&&!villageEventComplete(save,id)){const e=currentVillageEvent(save,id);dialog('CÂU CHUYỆN CỦA '+village(id).name,e.title,'Trước khi đối mặt hộ vệ, hãy giúp những người đang gặp nạn và làm rõ chuyện xảy ra trong làng. '+e.body,[['Theo dấu sự kiện',()=>{closeDialog();moveToItem(findJourneyItem('village-event'));}],['Tiếp tục khám phá',closeDialog,true]]);return;}
     if(!admin.active&&id==='dark'&&!canTravel(save,'dark').allowed){dialog('TRẬN CHIẾN CUỐI CHƯA MỞ',r.boss.name,canTravel(save,'dark').reason,[['Tiếp tục sứ mệnh hòa bình',()=>{closeDialog();followCampaign();}],['Trở lại sau',closeDialog,true]]);return;}
   }
+    if(kind==='sidequest'){
+      const q=villageSidequests(id).find(q=>q.id===details.questId);
+      if(!q||q.type!=='combat'||save.story.sidequests[q.id]!==1||sidequestDone(save,q))return;
+    }
     if(!admin.active&&kind==='intro-trio'&&save.story.stage!=='guardian')return;
     const guardPost=kind==='village-guard'?world.interactives.find(i=>i.kind==='village-guard'&&i.id===details.guardId):null,guardRole=guardPost?.guardRole||details.guardRole;
     const profile=encounterProfile(save,guardRole==='guardian'?'guardian-guard':kind,details.element||id);
