@@ -109,7 +109,8 @@
     "test:enemy-patrol": "node tests/enemy-movement-core.mjs && node tests/storm-field-speed.mjs && node tools/build.mjs && node tests/enemy-patrol-browser.cjs",
     "test:practice-opponent": "node tests/practice-opponent-core.mjs && node tools/build.mjs && node tests/practice-opponent-browser.cjs",
     "test:ice-mist": "node tests/nature-core.mjs && node tools/build-android.mjs && node tests/ice-mist-browser.cjs",
-    "test:android-attack": "node tools/build-android.mjs && node tests/android-attack-browser.cjs"
+    "test:android-attack": "node tools/build-android.mjs && node tests/android-attack-browser.cjs",
+    "test:mobile-multitouch": "node tools/build-android.mjs && node tests/mobile-multitouch.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

@@ -2,7 +2,7 @@ import {SHURIKEN_TYPES} from './equipment.js';
 import {setupMobileLayout} from './mobile-layout.js';
 import {sprintTargetOffset,sprintTargetClearance} from './mobile-sprint.js';
 export const androidInterface=()=>document.documentElement.dataset.android==='true'||(navigator.maxTouchPoints>0&&matchMedia('(pointer:coarse)').matches);
-export function setupAndroidControls({canvas,getState,seal,cast,pinAndCast,holdStep,releaseStep,boost,look,pause,selectAmmo,toggleGuide,sprint}){
+export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAndCast,holdStep,releaseStep,boost,look,pause,selectAmmo,toggleGuide,sprint}){
   if(!androidInterface())return null;
   if(!document.querySelector('link[href$="android.css"]')){const css=document.createElement('link');css.rel='stylesheet';css.href='android.css';document.head.append(css);}
   document.body.classList.add('android-ui');
@@ -21,7 +21,7 @@ export function setupAndroidControls({canvas,getState,seal,cast,pinAndCast,holdS
   const quest=document.querySelector('.journey-quest');document.querySelector('.journey-top nav').prepend(quest);
   // Start collapsed on every mobile session, keeping the underlying toggle state in sync.
   if(document.getElementById('campaignToggle').getAttribute('aria-expanded')==='true')document.getElementById('campaignToggle').click();
-  let phase='',drag=null,joystick=null,sprintArmed=false,padBiasX=0,padBiasY=0,hudSampleAt=-Infinity;const held=new Set(),stepPointers=new Map();
+  let phase='',drag=null,joystick=null,sprintArmed=false,padBiasX=0,padBiasY=0,hudSampleAt=-Infinity;const held=new Set(),stepPointers=new Map(),actionPointers=new Map();
   // Hide an object's label while it passes under a fixed control or message.
   // Keep its dimensions so it can reappear without changing the projected position.
   function clearCoveredLabels(){
@@ -34,9 +34,17 @@ export function setupAndroidControls({canvas,getState,seal,cast,pinAndCast,holdS
   const emit=(key,down)=>{const code=key===' '?'Space':key==='backspace'?'Backspace':'Key'+key.toUpperCase();window.dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{key,code,bubbles:true,cancelable:true}));};
   const sprintButton=root.querySelector('#androidSprintLock');
   const cancelSprint=()=>{sprintArmed=false;sprint(false);root.querySelector('#androidJoystick').classList.remove('sprint-armed','sprint-locked');sprintButton.hidden=true;sprintButton.classList.remove('sprint-armed');sprintButton.setAttribute('aria-pressed','false');sprintButton.querySelector('small').textContent='Chạy nhanh';};
-  const release=()=>{releaseStepButtons();cancelSprint();resetFloating();for(const key of held)emit(key,false);held.clear();drag=null;joystick=null;root.querySelector('#androidJoystick i').style.transform='translate(0,0)';};
+  const release=()=>{releaseStepButtons();for(const button of actionPointers.values())button.classList.remove('pressed');actionPointers.clear();cancelSprint();resetFloating();for(const key of held)emit(key,false);held.clear();drag=null;joystick=null;root.querySelector('#androidJoystick i').style.transform='translate(0,0)';};
   const live=()=>{const s=getState();return s.started&&!s.paused&&!s.won;};
-  function tap(button,action){button.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(!live())return;button.classList.add('pressed');button.setPointerCapture(e.pointerId);action();});for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>button.classList.remove('pressed'));}
+  function press(button,e,action){
+    if(e.pointerType==='mouse'&&e.button!==0)return;e.preventDefault();e.stopPropagation();
+    if(!live()||mobileLayout.editing||button.disabled||actionPointers.has(e.pointerId))return;
+    actionPointers.set(e.pointerId,button);button.classList.add('pressed');try{button.setPointerCapture(e.pointerId);}catch{}action();
+  }
+  function endAction(e){const button=actionPointers.get(e.pointerId);if(!button)return;actionPointers.delete(e.pointerId);if(![...actionPointers.values()].includes(button))button.classList.remove('pressed');}
+  function keyboardClick(button,e,action){e.preventDefault();e.stopPropagation();if(e.detail===0&&live()&&!mobileLayout.editing&&!button.disabled)action();}
+  function tap(button,action){button.addEventListener('pointerdown',e=>press(button,e,action));button.addEventListener('click',e=>keyboardClick(button,e,action));}
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])window.addEventListener(event,endAction);
   function endStep(e){const button=stepPointers.get(e.pointerId);if(!button)return;stepPointers.delete(e.pointerId);releaseStep('touch-step-'+e.pointerId);if(![...stepPointers.values()].includes(button))button.classList.remove('pressed');}
   function releaseStepButtons(){for(const [id,button]of stepPointers){releaseStep('touch-step-'+id);button.classList.remove('pressed');}stepPointers.clear();}
   for(const [id,direction]of [['androidStepLeft',-1],['androidStepRight',1]]){
@@ -47,7 +55,13 @@ export function setupAndroidControls({canvas,getState,seal,cast,pinAndCast,holdS
   window.addEventListener('pointerup',endStep);window.addEventListener('pointercancel',endStep);
   // Use pointerdown exactly once; the synthesized click must not cast twice.
   castButton.onclick=null;dashButton.onclick=null;tap(castButton,pinAndCast);tap(attackButton,cast);tap(dashButton,boost);tap(root.querySelector('#androidSettings'),pause);tap(root.querySelector('#androidClearSeals'),()=>emit('backspace',true));
-  root.querySelectorAll('[data-touch-ammo]').forEach(b=>b.onclick=()=>{if(live()&&!b.disabled){selectAmmo(b.dataset.touchAmmo);ammo.open=false;}});
+  root.querySelectorAll('[data-touch-ammo]').forEach(b=>tap(b,()=>{selectAmmo(b.dataset.touchAmmo);ammo.open=false;}));
+  tap(ammo.querySelector('summary'),()=>{ammo.open=!ammo.open;});
+  const guideToggle=document.getElementById('guideToggle');guideToggle.onclick=null;tap(guideToggle,toggleGuide);
+  // Compatibility clicks are only emitted for the primary finger. Seal on each
+  // pointerdown so a second or third finger works while movement is held.
+  guide.addEventListener('pointerdown',e=>{const button=e.target.closest('[data-spell]');if(button&&guide.contains(button))press(button,e,()=>sealSpell(Number(button.dataset.spell)));});
+  guide.addEventListener('click',e=>{const button=e.target.closest('[data-spell]');if(button&&guide.contains(button))keyboardClick(button,e,()=>sealSpell(Number(button.dataset.spell)));});
   canvas.addEventListener('pointerdown',e=>{if(!live()||drag)return;e.preventDefault();drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id||!live())return;look(e.clientX-drag.x,e.clientY-drag.y);drag.x=e.clientX;drag.y=e.clientY;});
   const pad=root.querySelector('#androidJoystick'),knob=pad.querySelector('i');
@@ -95,7 +109,7 @@ export function setupAndroidControls({canvas,getState,seal,cast,pinAndCast,holdS
   window.addEventListener('resize',release);
   document.querySelector('.center-status').append(root.querySelector('#androidClearSeals'));
   const mobileLayout=setupMobileLayout({getState,pause,release});
-  return {enabled:true,get aiming(){return drag!==null;},update(){const s=getState();if(phase!==s.phase){release();phase=s.phase;hudSampleAt=-Infinity;}if(!live()&&stepPointers.size)releaseStepButtons();combat.hidden=!s.started||s.won||s.paused||s.phase==='explore';explore.hidden=s.phase!=='explore';if(s.phase==='explore')clearCoveredLabels();
+  return {enabled:true,get aiming(){return drag!==null;},update(){const s=getState();if(phase!==s.phase){release();phase=s.phase;hudSampleAt=-Infinity;}if(!live()&&(stepPointers.size||actionPointers.size||drag))release();combat.hidden=!s.started||s.won||s.paused||s.phase==='explore';explore.hidden=s.phase!=='explore';if(s.phase==='explore')clearCoveredLabels();
     root.querySelectorAll('[data-touch-ammo]').forEach(b=>{const n=s.equipment?.ammo[b.dataset.touchAmmo]??(b.dataset.touchAmmo==='iron'?Infinity:0);b.disabled=n<=0;b.querySelector('small').textContent=n===Infinity?'∞':n;b.classList.toggle('selected',s.equipment?s.equipment.shuriken.id===b.dataset.touchAmmo:b.dataset.touchAmmo==='iron');});
     root.querySelector('#androidAmmoCurrent').textContent=s.equipment?s.equipment.shuriken.name.replace('Phi tiêu ',''):'sắt';
   },release};

@@ -258,3 +258,6 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 .android-ui #practiceGuardianChoices button{min-height:52px;padding:6px;flex-direction:row;gap:8px}
 .android-ui #practiceGuardianChoices b{width:32px;height:32px;font-size:23px}
 .android-ui #practiceGuardianChoices strong{font-size:12px}
+/* Combat touches belong to the game, including secondary fingers on the scroll. */
+.android-ui #world,.android-ui #guide,.android-ui #guide *,.android-ui #androidCombatControls,.android-ui #androidCombatControls *,.android-ui .center-status,.android-ui .center-status *{touch-action:none!important}
+.android-ui #guide .spell.pressed .spell-picture{box-shadow:0 0 0 2px #edd49a,0 0 12px #efd29666}
