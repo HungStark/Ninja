@@ -22,7 +22,10 @@ export function describeSpell(spell,elements){
   if(spell.shield>0)columns.shield.push(f('shield','Độ bền khiên / tường'));
   if(spell.duration!==undefined&&!['aircombo','shadowbind'].includes(spell.style))columns.duration.push(f('duration','Hiệu lực (giây)',{min:.05,max:3600}));
   if(spell.growthTime)columns.duration.push(f('growthTime','Cây trưởng thành (giây)',{min:3,max:3600}));
-  if(spell.snowTime)columns.duration.push(f('snowTime','Tích đầy tuyết (giây)',{min:1,max:3600}));
+  if(spell.snowTime)extra.push(f('snowTime','Giới hạn tuyết tích lũy',{min:45,max:90}));
+  if(spell.snowCost)extra.push(f('snowCost','Tuyết tiêu hao mỗi lần',{min:1,max:90}));
+  if(spell.snowMultiplier)extra.push(f('snowMultiplier','Hệ số tốc độ tích tuyết',{min:1,max:10}));
+  if(spell.slowPerSnow!==undefined)extra.push(f('slowPerSnow','Làm chậm mỗi tuyết (0,005 = 0,5%)',{max:.005}));
   if(spell.magneticDurations)extra.push(f('magneticDurations','Từ tính theo 1–3 tĩnh điện (giây)',{max:3600}));
   if(spell.amplification)extra.push(f('amplification','Hệ số khuếch đại laser',{max:100}));
   if(spell.slowFactor!==undefined)extra.push(f('slowFactor','Tốc độ đạn còn lại (0–1)',{max:1}));
@@ -49,8 +52,9 @@ export function describeSpell(spell,elements){
     bamboostab:'Sát thương tổng của lá tre, không phải mỗi lá; cây trưởng thành tăng tới ×3.',
     walnutwall:'Cây trưởng thành: độ bền tới ×3, thời gian cộng tối đa 2 giây.',
     woodseed:'Một lần mỗi trận; thời gian tính từ lúc gieo tới khi cây trưởng thành.',
-    snowball:'Kết liễu theo cơ chế chôn vùi khi đủ tuyết; không có sát thương dạng số.',
-    snowstorm:'Một lần mỗi trận; chỉnh thời gian tích đủ tuyết để mở Tuyết táng.',
+    snowball:'Tiêu hao 45 tuyết; gây sát thương một lần rồi vỡ khi chạm, không cuốn đối thủ. Tuyết vẫn rơi, chỉ gom một phần tuyết gần cầu.',
+    blizzard:'Cần đã gọi tuyết. Tăng tốc độ tích tuyết ×2 trong thời gian hiệu lực; tuyết dày, nhanh và xiên hơn. Không tạo khiên hay tường.',
+    snowstorm:'Một lần mỗi trận; tích tối đa 90 tuyết. Mỗi tuyết làm đối thủ chậm 0,5%, tối đa 45%. Tuyết tiếp tục tích sau khi dùng Tuyết táng.',
     icefog:'Chống chịu bằng ẩn thân và tạo ảo ảnh; không có máu khiên.'
   };
   return {id:spell.id,name:spell.name,element:spell.element,elementName:elements.find(e=>e.id===spell.element).name,color:spell.color,rank:spell.rank,columns,extra,note:notes[spell.style]||'',description:spell.subtitle};

@@ -90,11 +90,11 @@
     {id:'wood-reflect',name:'Vạn Mộc Sinh Giới',kind:'attack',style:'woodseed',rank:'SS',sequence:[...'fzrerd'],cooldown:15,cost:50,damage:0,count:0,oncePerMatch:true,growthTime:60,subtitle:'6 ấn · gieo rừng hoa độc, dây leo và tre bao quanh đối thủ, cả trước, sau và hai bên, óc chó trước mặt bên phải · không gây sát thương, một lần mỗi trận · trưởng thành sau 60 giây, cây phía sau lớn nhỏ xen kẽ · cây phía trước cao tối đa nửa người đối thủ, phía sau cao tới 3/4 cổng cũ'}
   ].map(s=>({...s,element:'wood',glyph:'木',color:'#9ed26c',heal:0,shield:s.shield||0}));
   const iceSpells=[
-    {id:'ice-orb',name:'Tuyết táng',kind:'attack',style:'snowball',rank:'SS',sequence:[...'zx'],cooldown:45,cost:20,damage:0,count:0,requiresSnowFull:true,speed:3.1,radius:4.8,subtitle:'Chỉ mở sau 90 giây gọi tuyết · gom tuyết thành cầu khổng lồ tự đuổi địch, không thể cản · khi lăn chặn mọi chiêu lao tới · chôn vùi rồi lăn đi để kết thúc trận'},
+    {id:'ice-orb',name:'Tuyết táng',kind:'attack',style:'snowball',rank:'SS',sequence:[...'zx'],cooldown:45,cost:20,damage:250,count:1,snowCost:45,speed:3.1,radius:4.8,subtitle:'Tiêu hao 45 tuyết · gom một phần tuyết thành cầu tự đuổi địch, chặn chiêu khi lăn · chạm đối thủ gây 250 sát thương rồi vỡ, không cuốn người đi · tuyết vẫn tiếp tục rơi'},
     {id:'ice-lance',name:'Hàn Băng Phong Tỏa',kind:'attack',style:'icebind',rank:'B',sequence:[...'zxs'],cooldown:8,cost:28,damage:0,count:1,size:.38,speed:27,controlDuration:3,subtitle:'Gom tuyết trong không khí trong 0,75 giây rồi bắn tinh thể · khóa di chuyển và kết ấn 3 giây, không gây sát thương'},
     {id:'ice-volley',name:'Huyễn Sương Vô Ảnh',kind:'defense',style:'icefog',rank:'S',sequence:[...'zxce'],cooldown:11,cost:34,damage:0,count:0,duration:5,subtitle:'Ẩn người thật trong 5 giây · sương che nửa thân dưới trên toàn bộ nửa sân của bạn · tạo ảo ảnh lệch vị trí'},
-    {id:'ice-barrier',name:'Huyền Băng Thiên Bích',kind:'defense',style:'icewall',rank:'A',sequence:[...'zxv'],cooldown:12,cost:24,damage:0,count:0,shield:120,duration:8,subtitle:'Tường tinh thể mọc từ mặt đất trong 0,82 giây · chắn đòn từ phía trước, 120 độ bền, tồn tại 8 giây'},
-    {id:'ice-reflect',name:'Thiên Địa Tuyết Táng',kind:'attack',style:'snowstorm',rank:'SS',sequence:[...'zxwqwq'],cooldown:15,cost:50,damage:0,count:0,oncePerMatch:true,snowTime:90,subtitle:'6 ấn · gọi tuyết một lần mỗi trận, không gây sát thương · tích tối đa 90 tuyết, mỗi giây thêm 1 · dùng các chiêu Băng khác không tiêu tốn tuyết'}
+    {id:'ice-barrier',name:'Bão Tuyết',kind:'defense',style:'blizzard',rank:'A',sequence:[...'zxv'],cooldown:12,cost:24,damage:0,count:0,duration:8,snowMultiplier:2,requiresSnow:true,subtitle:'Cần đang gọi tuyết · tăng gấp đôi tốc độ tích tuyết trong 8 giây · tuyết rơi dày hơn, nhanh hơn và hơi chéo · không tạo tường chắn'},
+    {id:'ice-reflect',name:'Thiên Địa Tuyết Táng',kind:'attack',style:'snowstorm',rank:'SS',sequence:[...'zxwqwq'],cooldown:15,cost:50,damage:0,count:0,oncePerMatch:true,snowTime:90,slowPerSnow:.005,subtitle:'6 ấn · gọi tuyết một lần mỗi trận, mỗi giây thêm 1, tối đa 90 tuyết · mỗi tuyết làm đối thủ chậm 0,5%, tối đa 45% · dùng Tuyết táng trừ 45 tuyết, tuyết vẫn tiếp tục rơi'}
   ].map(s=>({...s,element:'ice',glyph:'氷',color:'#a6edff',heal:0,shield:s.shield||0}));
   const spells = elements.flatMap(el => el.id === 'wood' ? woodSpells : el.id === 'ice' ? iceSpells : el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'wind' ? windSpells : el.id === 'earth' ? earthSpells : el.id === 'light' ? lightSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
@@ -246,8 +246,7 @@
     "cost": 30
   },
   "ice-barrier": {
-    "cost": 25,
-    "shield": 110
+    "cost": 25
   },
   "light-reflect": {
     "duration": 3,
@@ -295,6 +294,9 @@
     "cost": 25,
     "duration": 9,
     "cooldown": 13
+  },
+  "ice-orb": {
+    "cost": 25
   }
 }/* spell-balance:end */;
   for(const spell of spells){
@@ -317,6 +319,8 @@
     if(spell.duration!==undefined)info.push('TIME '+spell.duration+'s');
     if(spell.growthTime)info.push('GROW '+spell.growthTime+'s');
     if(spell.snowTime)info.push('SNOW '+spell.snowTime+'s');
+    if(spell.snowCost)info.push('SNOW -'+spell.snowCost);
+    if(spell.snowMultiplier)info.push('SNOW * '+spell.snowMultiplier);
     if(spell.amplification)info.push('DMG * '+spell.amplification);
     if(spell.slowFactor!==undefined)info.push('SPEED * '+spell.slowFactor);
     spell.balanceSummary=info.join(' · ');spell.subtitle=spell.balanceSummary;
@@ -369,6 +373,7 @@
       if(spell.oncePerMatch&&this.usedOnce.has(spell.id))return {ok:false,reason:'once'};
       if(this.remaining(spell.id)>1e-7)return {ok:false,reason:'spellCooldown',remaining:this.remaining(spell.id)};
       if(spell.requiresSnowFull&&!context.snowFull)return {ok:false,reason:'snow'};
+      if(spell.requiresSnow&&!context.snowActive)return {ok:false,reason:'snowActive'};
       if(spell.snowCost&&(context.snowAmount||0)+1e-6<spell.snowCost)return {ok:false,reason:'snowCost'};
       if(spell.requiresGarden&&!context.woodGarden)return {ok:false,reason:'garden'};
       if (spell.requiresDomain && !context.darkDomain) return { ok: false, reason: 'domain' };

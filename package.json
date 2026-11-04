@@ -7,6 +7,7 @@
     "start": "node server.cjs",
     "balance": "node tools/balance-server.mjs",
     "test:balance-editor": "node tests/spell-balance-editor.mjs",
+    "test:ice-snow": "node tests/ice-snow-revision-core.mjs && node tools/build-android.mjs && node tests/ice-snow-revision-browser.cjs",
     "build": "node tools/build.mjs",
     "build:vercel": "node tools/build-vercel.mjs",
     "assets": "node tools/build-hands.mjs",

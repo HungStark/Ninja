@@ -56,7 +56,7 @@ export const SPELL_ILLUSTRATIONS={
  'ice-orb':circle(40,43,23,'#c5e8ef','#f0ffff')+snowflake(40,43,.8)+line('M16 19L21 27M59 14L56 25M35 9V19','#daf5ff',2)+path('M13 65Q38 55 68 65L62 72H20Z','#adcbd6','#e9fbff'),
  'ice-lance':shadowPerson(40,40,.85)+line('M22 22L55 49L26 57L57 24M18 39L58 60','#b7e2ef',5)+path('M17 14L31 18L23 32ZM60 48L69 67L52 60Z','#b6dce7','#edffff')+snowflake(61,18,.37),
  'ice-volley':shadowPerson(30,37,.8)+shadowPerson(57,34,.66)+line('M9 43C29 31 45 52 70 39M9 54C27 45 44 65 71 52M14 65C34 54 52 71 66 63','#d0e7ef',5)+line('M14 23Q39 8 65 24','#a9cddc',2),
- 'ice-barrier':path('M12 65L12 31L22 17L32 26L43 10L54 26L64 19L70 34V65Z','#91bfce','#e6fcff',2)+line('M22 20L25 64M43 14L40 66M61 25L57 64M26 42L40 36L57 44','#dffbff',1.7)+snowflake(42,48,.44),
+ 'ice-barrier':line('M10 22Q39 8 70 21M7 35Q38 21 70 34M8 49Q40 35 73 47','#b9e7f5',3)+snowflake(25,44,.44)+snowflake(55,55,.55)+line('M20 24L12 36M45 18L35 32M65 30L56 44M34 58L24 72M66 61L58 73','#efffff',2),
  'ice-reflect':path('M11 29C5 18 18 10 29 17C38 5 53 10 55 19C68 12 76 23 69 33Z','#819dad','#daeaf0')+snowflake(22,49,.37)+snowflake(51,44,.5)+snowflake(64,61,.3)+path('M7 67Q22 55 39 66Q58 57 74 68V74H7Z','#d2e9ed','#edfaff')
 };
 const urls=new Map();

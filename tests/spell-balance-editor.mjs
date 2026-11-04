@@ -10,7 +10,7 @@ import {WaterBubbles} from '../src/water-bubbles.js';
 import {balanceDocument,updatedSource,revisionOf} from '../tools/spell-balance-data.mjs';
 import {createBalanceServer} from '../tools/balance-server.mjs';
 
-const source=await fs.readFile('game-core.js','utf8'),doc=balanceDocument(source);
+const source=updatedSource(await fs.readFile('game-core.js','utf8'),{}),doc=balanceDocument(source);
 assert.equal(doc.rows.length,45);assert.equal(doc.elements.length,9);
 for(const element of doc.elements)assert.equal(doc.rows.filter(r=>r.element===element.id).length,5);
 for(const invalid of [null,[],{'unknown':{}},{'fire-volley':{name:'oops'}},{'fire-volley':{cost:-1}},{'fire-volley':{damage:null}},{'fire-barrier':{ignitionDamages:[1,2]}},{'lightning-barrier':{stunDurations:[0,1,Infinity]}}])assert.throws(()=>updatedSource(source,invalid));
@@ -28,7 +28,7 @@ const earth=new EarthArts(new T.Scene()),quake={...spell('earth-volley'),duratio
 earth.cast('player',quake,actors[0].pos,[0,0,-1],actors,[],actors[1].pos);
 earth.advance(.4,actors,[],()=>{quakeHits++;});assert.equal(quakeHits,1);
 earth.advance(1.6,actors,[],()=>{quakeHits++;});assert.equal(quakeHits,5,'all five waves fit the edited duration');earth.reset([]);
-const zeroSource=updatedSource(source,{'fire-volley':{damage:0},'ice-barrier':{shield:0}}),zeroDoc=balanceDocument(zeroSource);assert.equal(zeroDoc.rows.find(r=>r.id==='fire-volley').columns.damage.length,1);assert.equal(zeroDoc.rows.find(r=>r.id==='ice-barrier').columns.shield.length,1);
+const zeroSource=updatedSource(source,{'fire-volley':{damage:0},'earth-barrier':{shield:0}}),zeroDoc=balanceDocument(zeroSource);assert.equal(zeroDoc.rows.find(r=>r.id==='fire-volley').columns.damage.length,1);assert.equal(zeroDoc.rows.find(r=>r.id==='earth-barrier').columns.shield.length,1);
 assert.equal(JSON.stringify(runtime(updatedSource(changedSource,{})).spells.map(s=>s.damage)),JSON.stringify(runtime(updatedSource(source,{})).spells.map(s=>s.damage)));
 
 const tempParent=path.resolve('.tools');await fs.mkdir(tempParent,{recursive:true});
