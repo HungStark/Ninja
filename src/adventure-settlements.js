@@ -9,19 +9,6 @@ export function buildVillageSettlement(c,region,houseInRiver){
  const nearestRoad=(x,z)=>c.mainRoads.map(t=>{const u=Math.max(.03,Math.min(1,(x*t.x+z*t.z)/(t.x*t.x+t.z*t.z||1)));return {x:t.x*u,z:t.z*u};}).sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0];
  const spots=region.zones.filter(z=>!z.platform).map(z=>({...c.setpieceSpot(z),r:['crater','ash-outpost'].includes(z.id)&&id==='fire'?18:z.id==='lotus'?12:10}));
  const dry=(x,z,pad=0)=>id==='water'?waterwayAt(x,z).distance>waterwayAt(x,z).width+pad:Math.abs(x-riverAt(id,z).x)>riverAt(id,z).width+pad;
- function lane(points,width=1.5){
-  const positions=[],uv=[],indices=[];
-  for(let j=0;j<points.length;j++){const p=points[j],prev=points[Math.max(0,j-1)],next=points[Math.min(points.length-1,j+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1;
-   for(const side of [-1,1]){const x=p[0]+dz/length*width/2*side,z=p[1]-dx/length*width/2*side;positions.push(x,heightAt(x,z)+.058,z);uv.push(x*.55,z*.55);}
-   if(j&&dry(p[0],p[1],.5)&&dry(prev[0],prev[1],.5)){const n=(j-1)*2;indices.push(n,n+2,n+1,n+1,n+2,n+3);paths.push({a:prev,b:p,width});}
-  }
-  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const o=mesh(g,s.path,land);o.name=id+'-neighborhood-lane';o.userData.noCollision=true;o.castShadow=false;
- }
- function patch(x,z,r,material=s.path){
-  const positions=[x,heightAt(x,z)+.048,z],uv=[x*.5,z*.5],indices=[];
-  for(let k=0;k<=40;k++){const a=k/40*Math.PI*2,rr=r*(.86+Math.sin(a*3)*.08+Math.cos(a*5)*.045),px=x+Math.sin(a)*rr,pz=z+Math.cos(a)*rr;positions.push(px,heightAt(px,pz)+.048,pz);uv.push(px*.5,pz*.5);if(k&&dry(px,pz,.3)&&dry(x,z,.3))indices.push(0,k,k+1);}
-  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const o=mesh(g,material,land);o.userData.noCollision=true;o.castShadow=false;o.name=id+'-courtyard-paving';
- }
  function place(x,z,w,d,key,yaw=null){
   w*=HOUSE_WIDTH_SCALE;d*=HOUSE_WIDTH_SCALE;
   if(plots.length>=104)return false;
@@ -35,7 +22,7 @@ export function buildVillageSettlement(c,region,houseInRiver){
   if(!districts.has(key)){const marker=new T.Group();marker.name='settlement-district';marker.userData={village:id,district:key,houses:0};land.add(marker);districts.set(key,marker);}districts.get(key).userData.houses++;
   const start=[x+Math.sin(yaw)*(d/2+2.5),z+Math.cos(yaw)*(d/2+2.5)],end=nearestRoad(...start),points=[],length=Math.hypot(end.x-start[0],end.z-start[1]),steps=Math.max(2,Math.ceil(length/.8));
   paths.push({a:[x,z],b:start,width:w+.6});
-  for(let j=0;j<=steps;j++){const t=j/steps;points.push([start[0]+(end.x-start[0])*t+Math.sin(t*Math.PI)*.45,start[1]+(end.z-start[1])*t]);}lane(points);
+  for(let j=0;j<=steps;j++){const t=j/steps;points.push([start[0]+(end.x-start[0])*t+Math.sin(t*Math.PI)*.45,start[1]+(end.z-start[1])*t]);}for(let j=1;j<points.length;j++)paths.push({a:points[j-1],b:points[j],width:1.5});
   return true;
  }
  const centralKey={water:'fishers-street',fire:'forge-bazaar',lightning:'relay-street',wind:'mill-cottages'}[id],central=[];
@@ -58,12 +45,11 @@ export function buildVillageSettlement(c,region,houseInRiver){
  }
  for(const [x,z,w,d] of region.houses)place(x,z,w,d,'outer-street');
  for(const p of paths)c.reserveLane(p);
- patch(0,0,12);
- for(const zone of region.zones)if(!zone.platform&&!['red-cliff','summit-lotus'].includes(zone.id))patch(zone.x,zone.z,id==='wind'?7:8);
- const yardMaterial=M(id==='fire'?'#655649':id==='water'?'#8d998b':id==='lightning'?'#777485':'#92956c');
+
+
  function dress(x,z){
   if(!dry(x,z,2.7)||c.clearCorridor(x,z,2.6)||plots.some(p=>Math.abs(x-p.x)<p.w/2+2&&Math.abs(z-p.z)<p.d/2+2)||spots.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+2))return false;
-  const g=c.group(x,z);g.name=id+'-street-life';g.userData.kind=id==='water'?'net-drying':id==='fire'?'smith-yard':id==='lightning'?'relay-yard':'farmyard';patch(x,z,3.2,yardMaterial);
+  const g=c.group(x,z);g.name=id+'-street-life';g.userData.kind=id==='water'?'net-drying':id==='fire'?'smith-yard':id==='lightning'?'relay-yard':'farmyard';
   if(id==='water'){
    for(const side of [-1,1])cyl(g,s.wood,side*1.5,1.6,0,.09,3.2,6);
    box(g,s.wood,0,3,0,3.3,.12,.14);

@@ -1,4 +1,5 @@
 import {newFlask,readFlask,refillFlask} from './healing-flask.js';
+import {JOURNEY_ORDER,ATLAS_LAYOUT} from './village-travel.js';
 import {arenaRound} from './enemy-seal-timing.js';
 import {readMines} from './spirit-mines.js';
 import {readInterior,INTERIORS} from './adventure-interiors.js';
@@ -12,17 +13,19 @@ export {STARTER_SPELLS,MENTOR_SPELLS} from './adventure-world.js';
 
 // The atlas is also the source of truth for walking between village maps.
 export const VILLAGES = [
-  {id:'fire',name:'Làng Hỏa',glyph:'火',element:'fire',color:'#e47646',ground:'#635344',path:'#b19474',roof:'#813b32',sky:'#797f89',tree:'#ac593b',title:'Tro tàn dưới cổng đỏ',desc:'Mái ngói đỏ, đá núi lửa và những rặng phong giữa thung lũng khói.',x:25,y:22,polygon:'9,15 25,6 34,9 43,25 38,34 40,38 30,38 15,32 7,28',links:['water','nameless','wind','earth']},
-  {id:'water',name:'Làng Thủy',glyph:'水',element:'water',color:'#62c5de',ground:'#506f73',path:'#a9b5a3',roof:'#365c76',sky:'#91bdce',tree:'#6b9c9b',title:'Bến sương và thủy lộ',desc:'Nhà sàn xanh lam, hồ nước lặng và những bến đá chìm trong sương.',x:51,y:15,polygon:'34,9 47,3 61,6 69,12 65,24 58,28 44,25',links:['fire','lightning','nameless']},
-  {id:'lightning',name:'Làng Lôi',glyph:'雷',element:'lightning',color:'#bc9beb',ground:'#615c75',path:'#9995a3',roof:'#594070',sky:'#77768e',tree:'#79709c',title:'Lôi đài trên cao nguyên',desc:'Tháp dẫn sét, tinh thạch tím và vách đá trên cao nguyên giông.',x:79,y:24,polygon:'69,12 76,6 84,14 91,17 95,32 85,38 75,34 65,37 60,28 65,24',links:['water','nameless','light']},
-  {id:'nameless',name:'Làng Vô Danh',glyph:'◉',element:'wind',color:'#dfc58c',ground:'#78765a',path:'#8e8064',roof:'#655b43',sky:'#a5ada5',tree:'#797a53',title:'Nơi bước chân bắt đầu',desc:'Những mái tranh rách, đường đất mòn và bia mộ vô danh còn lưu dấu chiến tranh giữa Thủy, Hỏa và Lôi.',x:50,y:32,polygon:'44,25 58,28 60,28 65,37 56,39 49,37 40,38 38,34 43,25',links:['fire','water','lightning','wind']},
-  {id:'earth',name:'Làng Thổ',glyph:'土',element:'earth',color:'#d7ae72',ground:'#8b7051',path:'#c9aa7a',roof:'#6c4c38',sky:'#c2ad8e',tree:'#8b8153',title:'Thành đá giữa hẻm núi',desc:'Bậc đá sa thạch, nhà đất và những khối núi dựng đứng bảo vệ làng.',x:21,y:47,polygon:'7,28 15,32 30,38 34,48 33,56 27,59 9,59 3,43',links:['fire','wind','ice']},
-  {id:'wind',name:'Làng Phong',glyph:'風',element:'wind',color:'#91d0b0',ground:'#69876a',path:'#bec4a0',roof:'#426d62',sky:'#a7ccc6',tree:'#72996c',title:'Đồng cỏ kể chuyện gió',desc:'Guồng gió, đồng cỏ rộng và những dải cờ bạc màu trên đồi.',x:51,y:49,polygon:'40,38 49,37 56,39 65,37 68,46 64,57 59,61 43,63 38,66 33,56 34,48 30,38',links:['nameless','fire','earth','ice','wood','light','dark']},
-  {id:'light',name:'Làng Quang',glyph:'☀',element:'light',color:'#f4d57e',ground:'#a69a6a',path:'#ddd1a4',roof:'#9f8044',sky:'#d5ceb0',tree:'#b7ae70',title:'Thánh điện của bình minh',desc:'Đá trắng, tháp mặt trời và những cột pha lê hứng ánh sáng vàng.',x:82,y:49,polygon:'65,37 75,34 85,38 95,32 98,49 94,61 86,63 74,58 64,57 68,46',links:['lightning','wind','dark']},
-  {id:'ice',name:'Làng Băng',glyph:'❄',element:'ice',color:'#a9dcec',ground:'#a4b9b9',path:'#d3dcd4',roof:'#506c82',sky:'#bacfd8',tree:'#7c9d9f',title:'Dấu chân trên tuyết cũ',desc:'Tùng phủ tuyết, mái nhà dốc và tinh thể băng giữa sườn núi lạnh.',x:24,y:73,polygon:'9,59 27,59 33,56 38,66 35,77 31,91 24,88 13,75',links:['earth','wind','wood']},
-  {id:'wood',name:'Làng Mộc',glyph:'木',element:'wood',color:'#a6c97d',ground:'#49634b',path:'#9a9970',roof:'#455c3c',sky:'#7f9c88',tree:'#497449',title:'Lời thề dưới cổ thụ',desc:'Nhà gỗ, rễ cây cổ thụ và rừng sâu với ánh đom đóm xanh.',x:51,y:80,polygon:'43,63 59,61 64,67 68,79 69,91 51,97 39,92 31,91 35,77 38,66',links:['ice','wind','dark']},
-  {id:'dark',name:'Làng Ám',glyph:'☾',element:'dark',color:'#b7a0d6',ground:'#494858',path:'#858394',roof:'#383346',sky:'#555469',tree:'#61536e',title:'Đèn lồng bên kia màn sương',desc:'Rừng tím, đèn lồng lạnh và đền cổ ẩn dưới bầu trời hoàng hôn.',x:80,y:75,polygon:'64,57 74,58 86,63 94,61 94,77 85,86 69,91 68,79 64,67 59,61',links:['wind','light','wood']}
+  {id:'fire',name:'Làng Hỏa',glyph:'火',element:'fire',color:'#e47646',ground:'#635344',path:'#b19474',roof:'#813b32',sky:'#797f89',tree:'#ac593b',title:'Tro tàn dưới cổng đỏ',desc:'Mái ngói đỏ, đá núi lửa và những rặng phong giữa thung lũng khói.'},
+  {id:'water',name:'Làng Thủy',glyph:'水',element:'water',color:'#62c5de',ground:'#506f73',path:'#a9b5a3',roof:'#365c76',sky:'#91bdce',tree:'#6b9c9b',title:'Bến sương và thủy lộ',desc:'Nhà sàn xanh lam, hồ nước lặng và những bến đá chìm trong sương.'},
+  {id:'lightning',name:'Làng Lôi',glyph:'雷',element:'lightning',color:'#bc9beb',ground:'#615c75',path:'#9995a3',roof:'#594070',sky:'#77768e',tree:'#79709c',title:'Lôi đài trên cao nguyên',desc:'Tháp dẫn sét, tinh thạch tím và vách đá trên cao nguyên giông.'},
+  {id:'nameless',name:'Làng Vô Danh',glyph:'◉',element:'wind',color:'#dfc58c',ground:'#78765a',path:'#8e8064',roof:'#655b43',sky:'#a5ada5',tree:'#797a53',title:'Nơi bước chân bắt đầu',desc:'Những mái tranh rách, đường đất mòn và bia mộ vô danh còn lưu dấu chiến tranh giữa Thủy, Hỏa và Lôi.'},
+  {id:'earth',name:'Làng Thổ',glyph:'土',element:'earth',color:'#d7ae72',ground:'#8b7051',path:'#c9aa7a',roof:'#6c4c38',sky:'#c2ad8e',tree:'#8b8153',title:'Thành đá giữa hẻm núi',desc:'Bậc đá sa thạch, nhà đất và những khối núi dựng đứng bảo vệ làng.'},
+  {id:'wind',name:'Làng Phong',glyph:'風',element:'wind',color:'#91d0b0',ground:'#69876a',path:'#bec4a0',roof:'#426d62',sky:'#a7ccc6',tree:'#72996c',title:'Đồng cỏ kể chuyện gió',desc:'Guồng gió, đồng cỏ rộng và những dải cờ bạc màu trên đồi.'},
+  {id:'light',name:'Làng Quang',glyph:'☀',element:'light',color:'#f4d57e',ground:'#a69a6a',path:'#ddd1a4',roof:'#9f8044',sky:'#d5ceb0',tree:'#b7ae70',title:'Thánh điện của bình minh',desc:'Đá trắng, tháp mặt trời và những cột pha lê hứng ánh sáng vàng.'},
+  {id:'ice',name:'Làng Băng',glyph:'❄',element:'ice',color:'#a9dcec',ground:'#a4b9b9',path:'#d3dcd4',roof:'#506c82',sky:'#bacfd8',tree:'#7c9d9f',title:'Dấu chân trên tuyết cũ',desc:'Tùng phủ tuyết, mái nhà dốc và tinh thể băng giữa sườn núi lạnh.'},
+  {id:'wood',name:'Làng Mộc',glyph:'木',element:'wood',color:'#a6c97d',ground:'#49634b',path:'#9a9970',roof:'#455c3c',sky:'#7f9c88',tree:'#497449',title:'Lời thề dưới cổ thụ',desc:'Nhà gỗ, rễ cây cổ thụ và rừng sâu với ánh đom đóm xanh.'},
+  {id:'dark',name:'Làng Ám',glyph:'☾',element:'dark',color:'#b7a0d6',ground:'#494858',path:'#858394',roof:'#383346',sky:'#555469',tree:'#61536e',title:'Đèn lồng bên kia màn sương',desc:'Rừng tím, đèn lồng lạnh và đền cổ ẩn dưới bầu trời hoàng hôn.'}
 ];
+for(const v of VILLAGES)Object.assign(v,ATLAS_LAYOUT[v.id]);
+VILLAGES.sort((a,b)=>['nameless',...JOURNEY_ORDER].indexOf(a.id)-['nameless',...JOURNEY_ORDER].indexOf(b.id));
 export const village = id => VILLAGES.find(v=>v.id===id);
 export const QUESTS={
   nameless:{title:'Ngọn ấn bên cầu cổ',enemy:'Kẻ Phá Cầu',x:-34,z:-25,location:'Cầu Đá Vọng Âm',story:'Một kẻ lạ đang lấy đá ấn khỏi Cầu Đá Vọng Âm, cắt đường những người hái trà trở về. Hãy theo đường tây lên cầu và ngăn hắn lại.'},
@@ -37,7 +40,7 @@ export const QUESTS={
   dark:{title:'Ngọn đèn cho người trở về',enemy:'Ảnh nhẫn Không Tên',x:-32,z:23,location:'Phố Đèn Lồng Tím',story:'Ảnh nhẫn Không Tên lần lượt dập đèn ở Phố Đèn Lồng Tím phía tây. Hãy giữ những ngọn đèn còn lại để khách đi muộn tìm được đường về.'}
 };
 for(const id of ['water','fire','lightning','wind','earth','ice','wood','light','dark']){QUESTS[id].x*=2;QUESTS[id].z*=2;}QUESTS.water.x=82;QUESTS.water.z=38;
-export const CAMPAIGN_REGIONS=Object.freeze(['earth','wind','light','ice','wood']);
+export const CAMPAIGN_REGIONS=Object.freeze(['wind','earth','wood','ice','light']);
 const firstLeaders=['water','fire','lightning'];
 const treatyDelivered=(save,id)=>save.campaign?.deliveries?.includes(id)===true;
 const regionArtsLearned=(save,id)=>save.mentors?.[id]===true;
@@ -51,12 +54,14 @@ export function campaignStage(save) {
 }
 export function canTravel(save,target) {
   if(!village(target))return {allowed:false,reason:'Miền đất này không tồn tại trên địa đồ.'};
-  if(target==='dark'){
-    const ready=save.campaign?.treatySigned&&CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.story?.peaceSeals?.includes(id));
-    return {allowed:!!ready,reason:ready?'Hòa ước đã nối liền năm miền. Đã đến lúc đối mặt kẻ chủ mưu.':'Trao hòa ước và đánh bại thế lực canh giữ tại Thổ, Phong, Quang, Băng, Mộc trước khi tới Làng Ám.'};
-  }
   if(target==='nameless'||target===save.village)return {allowed:true,reason:''};
   if(save.story&&save.story.stage!=='infiltrate')return {allowed:false,reason:'Gặp mẹ, học thuật từ trưởng làng, giải cứu hộ vệ rồi trở về báo cáo trước khi rời quê nhà.'};
+  const previous=JOURNEY_ORDER.slice(0,JOURNEY_ORDER.indexOf(target)).find(id=>!save.story?.peaceSeals?.includes(id));
+  if(previous&&!save.visited?.includes(target)&&!save.story?.peaceSeals?.includes(target))return {allowed:false,reason:'Hoàn thành sứ mệnh hòa bình tại '+village(previous).name+' trước khi tới '+village(target).name+'.'};
+  if(target==='dark'){
+    const ready=save.campaign?.treatySigned&&CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.story?.peaceSeals?.includes(id));
+    return {allowed:!!ready,reason:ready?'Hòa ước đã nối liền năm miền. Đã đến lúc đối mặt kẻ chủ mưu.':'Trao hòa ước và đánh bại thế lực canh giữ tại Phong, Thổ, Mộc, Băng, Quang trước khi tới Làng Ám.'};
+  }
   if(FIRST_VILLAGES.includes(target))return {allowed:true,reason:''};
   if(!save.campaign?.treatySigned)return {allowed:false,reason:'Thuyết phục thủ lĩnh Hỏa và Lôi, rồi trở về Làng Vô Danh để ba làng ký hòa ước.'};
   return {allowed:true,reason:''};

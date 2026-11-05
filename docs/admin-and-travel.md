@@ -1,6 +1,6 @@
 # Xu, dịch chuyển và chế độ admin
 
-Hành trình mới bắt đầu với **0 xu**. Tiền kiếm được trong bản lưu đã có vẫn được giữ. Bản đồ thường tuân theo khóa cốt truyện: tới làng liền kề bằng cổng làng, mở thêm các miền bằng nhiệm vụ. Tùy chọn mở toàn bộ bản đồ trước đây đã được thay bằng quyền admin; giá trị kiểm tra cũ trong thiết bị không tự mở bản đồ nữa.
+Hành trình mới bắt đầu với **0 xu**. Tiền kiếm được trong bản lưu đã có vẫn được giữ. Bản đồ thường tuân theo khóa cốt truyện: tới làng liền kề bằng cổng hoặc bến thuyền, mở thêm các miền theo thứ tự Thủy → Hỏa → Lôi → Phong → Thổ → Mộc → Băng → Quang → Ám. Xem [bố cục và tuyến thuyền](village-travel.md). Tùy chọn mở toàn bộ bản đồ trước đây đã được thay bằng quyền admin; giá trị kiểm tra cũ trong thiết bị không tự mở bản đồ nữa.
 
 ## Ấn hồi sinh
 

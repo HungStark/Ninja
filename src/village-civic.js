@@ -130,7 +130,7 @@ function building(c,plot,kind){
 function campus(c,p){
   const g=c.group(p.x,p.z);g.position.y=p.base;g.rotation.y=p.yaw;g.name=p.kind+'-campus';g.userData={campus:p.kind,plot:{...p},noCollision:true};
   const wall=c.surfaces.stone,wood=c.surfaces.wood,roof=c.surfaces.roof,accent=c.M(c.v.color),gateWidth=p.kind==='school'?12:10,h=5.5;
-  const slab=c.box(g,c.surfaces.path,0,-.1,0,p.w,.25,p.d);slab.name=p.kind+'-courtyard';c.solidMesh(slab,{name:p.kind+'-courtyard',stepable:true});
+  const slab=c.box(g,c.M(c.v.ground),0,-.1,0,p.w,.25,p.d);slab.name=p.kind+'-courtyard';c.solidMesh(slab,{name:p.kind+'-courtyard',stepable:true});
   const solid=(x,z,w,d)=>{const o=c.box(g,wall,x,h/2,z,w,h,d);c.solidMesh(o,{name:p.kind+'-campus-wall',stepable:false});c.box(g,roof,x,h+.15,z,w+.2,.3,d+.2);};
   solid(-p.w/2,0,.8,p.d);solid(p.w/2,0,.8,p.d);solid(0,-p.d/2,p.w,.8);const half=(p.w-gateWidth)/2;for(const side of [-1,1]){solid(side*(gateWidth/2+half/2),p.d/2,half,.8);c.box(g,wood,side*(gateWidth/2+.6),3.8,p.d/2,1.1,7.6,1.2);}
   c.box(g,wood,0,7.2,p.d/2,gateWidth+4,.6,1.5);c.box(g,roof,0,8,p.d/2,gateWidth+6,.4,2.8);c.box(g,accent,0,6.5,p.d/2+.9,gateWidth-1,1.2,.12);
@@ -163,20 +163,5 @@ export function buildVillageCivic(c,layout){
 export function buildGateWatch(c,gates){
   for(const gate of gates){const yaw=Math.atan2(gate.x,gate.z),root=c.group(gate.x,gate.z);root.rotation.y=yaw;root.name='gate-watch-'+gate.id;root.userData.noCollision=true;
     for(const side of [-1,1]){const tower=new T.Group();tower.position.set(side*8,0,-2);root.add(tower);const timber=c.surfaces.wood,stone=c.surfaces.stone;const base=c.box(tower,stone,0,3,0,3.4,6,3.4);c.solidMesh(base,{name:'gate-watchtower',stepable:false});c.box(tower,timber,0,6.15,0,5,.3,5);for(const a of [-1,1])for(const b of [-1,1])c.box(tower,timber,a*2,7.5,b*2,.15,2.7,.15);buildGabledRoof(c,tower,5,5,9,.45,c.surfaces.roof);}
-  }
-}
-
-// Local lanes follow the finished collision map, rather than drawing a new
-// radial road through every cottage from the village's central square.
-export function buildCivicLanes(c,layout,walk){
-  if(!layout)return;
-  const connected=[[layout.shop.entry.x,layout.shop.entry.z]],pending=layout.houses.map(h=>{const p=civicPoint(h,0,h.d/2+1.8);return [p.x,p.z];});
-  while(pending.length){let selected=0,from=connected[0],best=Infinity;for(let i=0;i<pending.length;i++)for(const point of connected){const d=Math.hypot(pending[i][0]-point[0],pending[i][1]-point[1]);if(d<best){best=d;selected=i;from=point;}}const end=pending.splice(selected,1)[0],path=walk(from,end);connected.push(end);if(!path.length)continue;
-    const points=[from,...path],positions=[],uv=[],indices=[];
-    for(let i=0;i<points.length;i++){const p=points[i],a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b[0]-a[0],dz=b[1]-a[1],n=Math.hypot(dx,dz)||1;
-      for(const side of [-1,1]){const x=p[0]+dz/n*.8*side,z=p[1]-dx/n*.8*side;positions.push(x,c.heightAt(x,z)+.065,z);uv.push(x*.4,z*.4);}
-      if(i){const k=(i-1)*2;indices.push(k,k+2,k+1,k+1,k+2,k+3);c.reserveLane({a:points[i-1],b:p,width:1.8});}
-    }
-    const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.computeVertexNormals();const lane=c.mesh(geometry,c.surfaces.path,c.land);lane.name='neighborhood-footpath';lane.userData.noCollision=true;lane.castShadow=false;
   }
 }
