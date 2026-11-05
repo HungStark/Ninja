@@ -11,7 +11,7 @@ export function opponentBalanceId(profile,phase=1){
 }
 function stageSettings(profile,phase,overrides){
   const id=opponentBalanceId(profile,phase),value=overrides[id]||{},beast=profile.kind==='boss'&&phase===2;
-  return {id,damageBoost:value.damageBoost??0,damageReduction:value.damageReduction??0,
+  return {id,...(value.baseDamagePercent!==undefined?{baseDamagePercent:value.baseDamagePercent}:{}),
     mana:value.mana??100,infiniteMana:value.infiniteMana??profile.kind==='boss',
     sealDelay:value.sealDelay??profile.sealDelay??.42,
     ...(value.hp!==undefined?{hp:value.hp}:{}),...(!beast&&value.spellIds?{spellIds:[...value.spellIds]}:{})};
@@ -35,12 +35,12 @@ export function configureOpponent(profile,overrides=opponentBalanceOverrides){
   }
   return result;
 }
-export function opponentStage(profile,phase=1){return profile?.balanceStages?.[phase-1]||{mana:100,infiniteMana:profile?.kind==='boss',sealDelay:profile?.sealDelay??.42,damageBoost:0,damageReduction:0};}
+export function opponentStage(profile,phase=1){return profile?.balanceStages?.[phase-1]||{mana:100,infiniteMana:profile?.kind==='boss',sealDelay:profile?.sealDelay??.42};}
 export function opponentBaseDamageMultiplier(profile,phase=1){
   if(!profile)return 1;
   return profile.balancePractice?1:clamp((Number(profile.damageMultiplier)||1)+(profile.kind==='boss'?(phase-1)*.1:0),.1,2.5);
 }
-export function opponentDamageMultiplier(profile,phase=1){return opponentBaseDamageMultiplier(profile,phase)*(1+opponentStage(profile,phase).damageBoost/100);}
+export function opponentDamageMultiplier(profile,phase=1){const percent=opponentStage(profile,phase).baseDamagePercent;return percent===undefined?opponentBaseDamageMultiplier(profile,phase):percent/100;}
 export function createOpponentRules(GameRules,profile,phase=1){
   const settings=opponentStage(profile,phase),ids=settings.spellIds||(phase>1?profile.phaseSpellIds:profile.spellIds),rules=new GameRules(ids,{maxChakra:Math.max(100,settings.mana)});
   rules.maxChakra=settings.mana;rules.chakra=settings.mana;

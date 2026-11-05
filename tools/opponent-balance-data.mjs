@@ -8,6 +8,7 @@ import {GUARDIAN_FORMS} from '../src/guardian-beasts.js';
 import {PRACTICE_BOT_HP} from '../src/enemy-balance.js';
 import {BOT_HEALTH_SCALE} from '../src/enemy-balance.js';
 import {enemySealTiming} from '../src/enemy-seal-timing.js';
+import {opponentBaseDamageMultiplier} from '../src/opponent-balance.js';
 export const START='/* opponent-balance:start */',END='/* opponent-balance:end */';
 export function parseOpponentOverrides(source){const start=source.indexOf(START),end=source.indexOf(END);if(start<0||end<start)throw Error('Không tìm thấy cấu hình đối thủ.');return JSON.parse(source.slice(start+START.length,end));}
 export function opponentDocument(source,coreSource){
@@ -16,8 +17,9 @@ export function opponentDocument(source,coreSource){
   const add=(id,name,village,category,profile,phase=1)=>{
     const guardian=category==='guardian',beast=guardian&&phase===2;
     const hp=guardian?guardianPhaseHealth(profile.hp,village)[phase-1]:profile.hp;
-    const defaults={hp,mana:100,infiniteMana:guardian,sealDelay:profile.sealDelay??.42,damageBoost:0,damageReduction:0,spellIds:[...(guardian&&phase>1?profile.phaseSpellIds:profile.spellIds)]};
-    rows.push({id,name,village,villageName:VILLAGES.find(v=>v.id===village)?.name||'Luyện tập',category,phase,form:guardian?(phase===1?'Ninja':phase===2?'Linh thú':'Hợp nhất'):'Ninja',canEditSpells:!guardian||phase===1,usesMana:!beast,defaults,values:{...defaults,...overrides[id]},baseDamageMultiplier:profile.damageMultiplier??1});
+    const baseDamagePercent=Number((opponentBaseDamageMultiplier({...profile,kind:guardian?'boss':profile.kind},phase)*100).toFixed(6));
+    const defaults={hp,mana:100,infiniteMana:guardian,sealDelay:profile.sealDelay??.42,baseDamagePercent,spellIds:[...(guardian&&phase>1?profile.phaseSpellIds:profile.spellIds)]};
+    rows.push({id,name,village,villageName:VILLAGES.find(v=>v.id===village)?.name||'Luyện tập',category,phase,form:guardian?(phase===1?'Ninja':phase===2?'Linh thú':'Hợp nhất'):'Ninja',canEditSpells:!guardian||phase===1,usesMana:!beast,defaults,values:{...defaults,...overrides[id]}});
   };
   const kinds={random:'Ninja lang thang',quest:'Đối thủ việc làng',sidequest:'Ninja nhiệm vụ phụ','village-guard':'Cảnh vệ làng','guardian-guard':'Cận vệ linh thú',arena:'Ninja võ đường'};
   for(const village of VILLAGES){
@@ -41,7 +43,7 @@ export function opponentDocument(source,coreSource){
 export function updateOpponentSource(source,coreSource,overrides){
   if(!overrides||typeof overrides!=='object'||Array.isArray(overrides))throw Error('Dữ liệu đối thủ không hợp lệ.');
   const document=opponentDocument(source,coreSource),rows=new Map(document.rows.map(r=>[r.id,r])),spells=new Set(document.spells.map(s=>s.id)),clean={};
-  const limits={hp:[1,10000000],mana:[0,1000000],sealDelay:[.02,6],damageBoost:[-100,10000],damageReduction:[0,100]};
+  const limits={hp:[1,10000000],mana:[0,1000000],sealDelay:[.02,6],baseDamagePercent:[0,10000]};
   for(const [id,values]of Object.entries(overrides)){
     const row=rows.get(id);if(!row||!values||typeof values!=='object'||Array.isArray(values))throw Error('Đối thủ không hợp lệ: '+id);
     const result={};

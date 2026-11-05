@@ -2,9 +2,9 @@
 
 **Web nội bộ chỉnh 45 chiêu:** nhấp đúp `Mo-bang-can-bang.cmd`, hoặc chạy `npm run balance` rồi mở <http://127.0.0.1:4180/balance>. Đây là công cụ riêng, không gộp vào game. Xem [hướng dẫn bảng cân bằng](docs/spell-balance-editor.md).
 
-**Web nội bộ chỉnh đối thủ:** nhấp đúp `Mo-bang-doi-thu.cmd` hoặc mở <http://127.0.0.1:4180/opponents> khi máy chủ nội bộ đang chạy. Chỉnh máu từng giai đoạn linh thú, bộ chiêu ninja, mana, giây/ấn và phần trăm tăng / giảm sát thương. Xem [hướng dẫn cấu hình đối thủ](docs/opponent-balance-editor.md).
+**Web nội bộ chỉnh đối thủ:** nhấp đúp `Mo-bang-doi-thu.cmd` hoặc mở <http://127.0.0.1:4180/opponents> khi máy chủ nội bộ đang chạy. Chỉnh máu từng giai đoạn linh thú, bộ chiêu ninja, mana, giây/ấn và hệ số nền (% sát thương gốc). Xem [hướng dẫn cấu hình đối thủ](docs/opponent-balance-editor.md).
 
-**Web nội bộ chỉnh đối thủ:** nhấp đúp `Mo-bang-doi-thu.cmd` hoặc mở <http://127.0.0.1:4180/opponents> khi máy chủ nội bộ đang chạy. Chỉnh máu từng giai đoạn linh thú, bộ chiêu ninja, mana, giây/ấn và phần trăm tăng / giảm sát thương. Xem [hướng dẫn cấu hình đối thủ](docs/opponent-balance-editor.md).
+**Web nội bộ chỉnh đối thủ:** nhấp đúp `Mo-bang-doi-thu.cmd` hoặc mở <http://127.0.0.1:4180/opponents> khi máy chủ nội bộ đang chạy. Chỉnh máu từng giai đoạn linh thú, bộ chiêu ninja, mana, giây/ấn và hệ số nền (% sát thương gốc). Xem [hướng dẫn cấu hình đối thủ](docs/opponent-balance-editor.md).
 
 Chọn **Tiếng Việt / English** tại mục **Ngôn ngữ / Language** trên màn hình chính. Lựa chọn được lưu trên thiết bị; đổi ngôn ngữ giữ nguyên tiến trình và tên chiêu thức. Hội thoại dùng giọng của ngôn ngữ đã chọn, còn tên chiêu vẫn được đọc bằng tiếng Việt.
 

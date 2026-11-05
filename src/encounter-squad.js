@@ -3,7 +3,7 @@ import {createNinja} from './ninja.js';
 import {encounterAppearance} from './encounter-appearance.js';
 import {createEnemyMovement} from './enemy-movement.js';
 import {createDashAura} from './dash-aura.js';
-import {createOpponentRules,opponentStage} from './opponent-balance.js';
+import {createOpponentRules} from './opponent-balance.js';
 
 export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwWeapon,getPlayer,getShots,random,constrainMovement=(a,b)=>b,movementSlow=()=>1}){
   const members=[];
@@ -12,7 +12,6 @@ export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwW
   return {reset,syncVisibility(){for(const m of members)m.rig.root.visible=m.fighter.hp>0;},
     start(profiles,spawn){reset();profiles.slice(1).forEach((profile,i)=>{
       const rig=createNinja(encounterAppearance({kind:'intro-trio',...profile})),fighter=new Fighter(profile.hp);fighter.autoRestore=false;
-      fighter.damageReduction=opponentStage(profile).damageReduction/100;
       rig.root.position.copy(spawn).add(new T.Vector3(i===0?-3.8:3.8,0,1.8));scene.add(rig.root);
       const movement=createEnemyMovement(random);movement.reset(rig.root.position.x);
       members.push({id:'squad-'+(i+1),profile,rig,fighter,rules:createOpponentRules(GameRules,profile),movement,aura:createDashAura(scene),timer:profile.initialDelay,spell:null,step:0,pose:-1,casts:0,moving:false,castAge:99,trace:[],traceCast:false,weaponTimer:5+i*1.5});

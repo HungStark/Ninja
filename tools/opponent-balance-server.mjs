@@ -31,7 +31,7 @@ export function createOpponentHandler({rootURL=new URL('../',import.meta.url)}={
         if(missing.size)throw Error('Thiếu bản dịch: '+[...missing].join(' / ')+'; chưa lưu thay đổi.');
         if(await fs.readFile(sourceURL,'utf8')!==source){reply(res,409,{error:'Cấu hình vừa thay đổi. Hãy tải lại bảng.'});return true;}
         const outputs=[[sourceURL,next],[new URL('game.js',rootURL),vi.outputFiles[0].text],[new URL('game.en.js',rootURL),en.outputFiles[0].text]],previous=await Promise.all(outputs.map(([url])=>fs.readFile(url,'utf8')));
-        await fs.writeFile(new URL('.opponent-balance-last.json',rootURL),JSON.stringify({version:1,kind:'opponents',overrides:opponentDocument(source,core).overrides},null,2)+'\n');
+        await fs.writeFile(new URL('.opponent-balance-last.json',rootURL),JSON.stringify({version:2,kind:'opponents',overrides:opponentDocument(source,core).overrides},null,2)+'\n');
         try{for(const [url,text]of outputs)await atomicWriteFile(url,text);}catch(error){for(let i=0;i<outputs.length;i++)await atomicWriteFile(outputs[i][0],previous[i]);throw error;}
         reply(res,200,opponentDocument(next,core));
       }finally{busy=false;}
