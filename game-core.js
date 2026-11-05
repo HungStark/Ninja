@@ -246,7 +246,8 @@
     "cost": 30
   },
   "ice-barrier": {
-    "cost": 25
+    "cost": 50,
+    "cooldown": 16
   },
   "light-reflect": {
     "duration": 3,
