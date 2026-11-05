@@ -24,12 +24,9 @@ export function civicGatePosition(layout,angle){
 export function civicWaterRoutes(layout,routes){
   const placed=[];
   return routes.map(route=>{
-    const north=route.id.startsWith('north-'),origin=north?route.from[0]:route.from[1];
+    const origin=route.from[1];
     for(let step=0;step<=260;step+=4)for(const side of step?[-1,1]:[1]){
-      const t=origin+step*side;if(Math.abs(t)>132)continue;let from,to;
-      if(north){const z=69+Math.sin(t*.028)*7;from=[t,z-7.5];to=[t,z+7.5];}
-      else if(route.id==='west-ferry'){const r=riverAt('water',t);from=[r.x+r.width+1.5,t];to=[r.x-r.width-1.5,t];}
-      else{const x=46+Math.sin(t*.025)*9;from=[x-8.5,t];to=[x+8.5,t];}
+      const t=origin+step*side;if(Math.abs(t)>132)continue;const r=riverAt('water',t),from=[r.x+r.width+1.5,t],to=[r.x-r.width-1.5,t];
       const mid=[(from[0]+to[0])/2,(from[1]+to[1])/2];
       if(waterDepthAt(...mid)<3||[from,to].some(p=>layout.plots.some(plot=>insidePlot(plot,...p,5)))||placed.some(p=>Math.hypot(p[0]-mid[0],p[1]-mid[1])<22))continue;
       placed.push(mid);return {...route,from,to};

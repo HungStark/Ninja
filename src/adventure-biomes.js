@@ -9,8 +9,6 @@ export function traversalDefinitions(id){
   if(id==='water'){
     const routes=[];
     const main=riverAt(id,36);routes.push({id:'west-ferry',name:'Bè sang Xóm Sen',kind:'raft',from:[main.x+main.width+1.5,36],to:[main.x-main.width-1.5,36]});
-    const east=46+Math.sin(36*.025)*9;routes.push({id:'east-ferry',name:'Bè sang Chợ Cá',kind:'raft',from:[east-8.5,36],to:[east+8.5,36]});
-    for(const [name,x] of [['west',-94],['central',0],['east',96]]){const z=69+Math.sin(x*.028)*7;routes.push({id:`north-${name}`,name:'Bè qua Cửa Sông',kind:'raft',from:[x,z-7.5],to:[x,z+7.5]});}
     return routes;
   }
   if(id==='fire')return [{id:'red-cliff',name:'Bậc đá Vách Tro Hồng',kind:'stairs',from:[88,-70],to:[88,-87],top:36,speed:4}];
@@ -68,7 +66,7 @@ export function buildBiome(c,routes){
     }
   }
   if(id==='water'){
-    for(const axis of ['x','z']){const positions=[],indices=[];for(let k=0;k<=300;k++){const t=k-150,center=axis==='z'?46+Math.sin(t*.025)*9:69+Math.sin(t*.028)*7,width=axis==='z'?7:6;for(const side of [-1,1])positions.push(axis==='z'?center+side*width:t,-.675,axis==='z'?t:center+side*width);if(k<300){const n=k*2;indices.push(n,n+2,n+1,n+1,n+2,n+3);}}if(axis==='x')for(let k=0;k<indices.length;k+=3)[indices[k+1],indices[k+2]]=[indices[k+2],indices[k+1]];const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();const canal=mesh(geometry,new T.MeshStandardMaterial({color:'#5f9eaf',metalness:.22,roughness:.22,transparent:true,opacity:.87}),land);canal.name='fishing-village-canal';}
+    {const positions=[],indices=[];for(let k=0;k<=300;k++){const z=k-150,center=46+Math.sin(z*.025)*9;for(const side of [-1,1])positions.push(center+side*7,-.675,z);if(k<300){const n=k*2;indices.push(n,n+2,n+1,n+1,n+2,n+3);}}const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();const canal=mesh(geometry,new T.MeshStandardMaterial({color:'#5f9eaf',metalness:.22,roughness:.22,transparent:true,opacity:.87}),land);canal.name='fishing-village-canal';}
     for(let k=0;k<22;k++){const z=-118+k*11,w=riverAt(id,z),side=k%2?1:-1,x=w.x+side*(w.width+2),y=heightAt(x,z);if(c.clearCorridor(x,z,4))continue;const g=new T.Group();g.name='fishing-shed';g.position.set(x,y,z);land.add(g);for(const sx of [-1,1])cyl(g,M('#625b48'),sx*2,1.45,0,.1,4.1,6);box(g,M('#bba87c'),0,3.5,0,5,.16,3);for(let j=0;j<7;j++)beam(g,M('#817f66'),new T.Vector3(-2+j*.65,.4,.1),new T.Vector3(-2+j*.65,2.4,.1),.025);for(let j=0;j<6;j++){const fish=mesh(new T.OctahedronGeometry(.23),M('#a2bbb7'),g,-1.7+j*.62,1.3+Math.sin(j)*.2,.2);fish.scale.set(.5,1.4,.4);}for(let j=0;j<3;j++)cyl(g,M('#877457'),j*.8-1,.3,1.1,.38,.6,8);}
   }
   if(id==='ice'){const sea=box(land,M('#9ec9d6'),0,-.64,116,280,.1,56);sea.name='polar-frozen-sea';for(let k=0;k<28;k++){const x=-127+k*9.3,z=94+(k%4)*11;if(c.clearCorridor(x,z,5))continue;const ice=mesh(new T.DodecahedronGeometry(2.5+k%3),M(k%2?'#cde2e7':'#a9cfdb'),land,x,.5,z);ice.scale.set(1,1+k%3*.6,1.5);} }

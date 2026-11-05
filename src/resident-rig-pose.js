@@ -19,6 +19,8 @@ export function residentActivityPose(profile,time,moving){
     return {...pose,type:'kneeling-offering',hipsDrop:.84,spine:.12+reach*.05,chest:.04,kneeling:true,hands:[[-.16,.98-reach*.09,.43+reach*.33],[.24,.86,.31]],reach};
   }
   switch(type){
+    case 'steering':
+      return {...pose,spine:.08,chest:.02,knee:.08,hands:[[-.13,1.46,.35],[.18,1.46,.38]],toolPitch:0};
     case 'mourning':case 'offering':
       return {...pose,spine:.18,hands:[[-.16,1.58,.54],[.20,1.52,.50]]};
     case 'forging':case 'repair':case 'mining':{

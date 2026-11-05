@@ -788,7 +788,6 @@
   "Quán trà mất nửa mái sau một trận tập kích. Vết chém và đầu tên còn ghim trên cột gỗ.": "A raid tore away half the tea shop roof. Sword marks and arrowheads remain in its wooden posts.",
   "Làng chài đại thủy · những bến bè nối các xóm qua sông sâu": "Great-river fishing village · Raft docks connect hamlets across deep water",
   "Cồn Lưới Bạc": "Silver Net Islet",
-  "Những giàn lưới phơi quanh cồn nhỏ. Chỉ bè của dân chài mới vượt được nhánh sông phía nam.": "Drying nets surround a small islet. Only the fishers’ rafts can cross the southern channel.",
   "Cảng Cá Bình Minh": "Dawn Fishing Harbor",
   "Thuyền câu, thúng cá và nhà sàn quây quanh bến lớn.": "Fishing boats, baskets of fish and stilt houses gather around a large dock.",
   "Bãi Ngọc Trai": "Pearl Beach",
@@ -2331,5 +2330,10 @@
   "Hoàn thành sứ mệnh hòa bình tại": "Complete the peace mission in",
   "trước khi tới": "before visiting",
   "Trao hòa ước và đánh bại thế lực canh giữ tại Phong, Thổ, Mộc, Băng, Quang trước khi tới Làng Ám.": "Deliver the treaty and defeat the guardians in Wind, Earth, Wood, Ice and Light before visiting Shadow Village.",
-  "Hiệp ước đã có chữ ký của đại diện Thủy, Hỏa, Lôi và người làm chứng từ Vô Danh. Hãy mang bản sao lần lượt tới Phong, Thổ, Mộc, Băng và Quang.": "The treaty bears the signatures of Water, Fire and Lightning, witnessed by the Nameless Village. Deliver copies in order to Wind, Earth, Wood, Ice and Light."
+  "Hiệp ước đã có chữ ký của đại diện Thủy, Hỏa, Lôi và người làm chứng từ Vô Danh. Hãy mang bản sao lần lượt tới Phong, Thổ, Mộc, Băng và Quang.": "The treaty bears the signatures of Water, Fire and Lightning, witnessed by the Nameless Village. Deliver copies in order to Wind, Earth, Wood, Ice and Light.",
+  "Thuyền đang rời bến ·": "Leaving the harbor ·",
+  "Thuyền đang vào bến ·": "Approaching the harbor ·",
+  "Đang xuống thuyền ·": "Disembarking ·",
+  "Đã cập bến ·": "Arrived at the harbor ·",
+  "Những giàn lưới phơi quanh cồn nhỏ, nối với xóm chài bằng lối đất bên bờ nước.": "Drying nets surround a small islet, linked to the fishing hamlet by an earthen path beside the water."
 }

@@ -45,7 +45,7 @@
     "test:combat": "node tests/combat-core.mjs && node tests/combat.cjs",
     "test:adventure": "node tests/adventure-core.mjs && node tests/campaign-core.mjs && node tests/journey-story-browser.cjs",
     "test:world-journey": "node tests/world-journey.cjs",
-    "test:village-travel": "node tests/village-travel-core.mjs && node tests/campaign-core.mjs && node tests/village-exits-scene.mjs && node tests/village-travel-browser.cjs",
+    "test:village-travel": "node tests/village-travel-core.mjs && node tests/harbor-voyage-core.mjs && node tests/campaign-core.mjs && node tests/village-exits-scene.mjs && node tests/village-travel-browser.cjs",
     "test:training": "node tests/progression-core.mjs && node tests/training-browser.cjs",
     "test:exploration": "node tests/exploration-camera.cjs",
     "test:locomotion": "node tests/locomotion.cjs",

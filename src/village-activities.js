@@ -83,6 +83,7 @@ export function createVillageActivity({root,body,head,arms,legs,profile,material
   if(type==='watering'){arms[1].rotation.x=-.65+Math.sin(t*.9)*.12;arms[1].rotation.z=.2;body.rotation.x=.05;water.visible=Math.sin(t*.9)>-.3;}
   if(type==='farming'){arms[1].rotation.x=-.4+Math.sin(t*.9)*.22;arms[0].rotation.x=-.35;body.rotation.x=.09;}
   if(type==='fishing'){arms[1].rotation.x=-.25+Math.sin(t*.8)*.035;arms[0].rotation.x=-.6;head.rotation.x=.08;}
+  if(type==='steering'){arms[0].rotation.x=-.5;arms[1].rotation.x=-.65+Math.sin(t*.7)*.04;arms[0].rotation.z=.1;arms[1].rotation.z=-.1;body.rotation.x=.035;head.rotation.x=-.04;}
   if(['mending','reading','warming'].includes(type)){arms.forEach((a,i)=>{a.rotation.x=-(type==='reading'?1.03:.72)+Math.sin(t*1.4+i)*.035;a.rotation.z=i?-.31:.31;});head.rotation.x=.15;if(cloth)cloth.rotation.z=Math.sin(t*.8)*.035;}
   if(['market','sorting'].includes(type)){arms[1].rotation.x=-.65+Math.sin(t*.9)*.16;arms[0].rotation.x=-.45;head.rotation.x=.08;}
   if(type==='observing'){head.rotation.x=-.08;arms[1].rotation.x=-1.05;arms[0].rotation.x=-.7;}
