@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {chromium} from 'playwright';
+import {createBalanceServer} from '../tools/balance-server.mjs';
+import {parseOpponentOverrides} from '../tools/opponent-balance-data.mjs';
+import {runOpponentGameChecks} from './opponent-balance-game.mjs';
+const parent=path.resolve('.tools'),fixture=await fs.mkdtemp(path.join(parent,'opponents-test-'));
+await fs.mkdir(path.join(fixture,'src'));await fs.copyFile('src/opponent-balance.js',path.join(fixture,'src/opponent-balance.js'));await fs.copyFile('game-core.js',path.join(fixture,'game-core.js'));
+await fs.writeFile(path.join(fixture,'src/main.js'),'import '+JSON.stringify(path.resolve('src/main.js').replaceAll('\\','/'))+';');await fs.writeFile(path.join(fixture,'game.js'),'// previous Vietnamese bundle');await fs.writeFile(path.join(fixture,'game.en.js'),'// previous English bundle');
+const server=createBalanceServer({rootURL:pathToFileURL(fixture+path.sep)});let browser;
+const settings={'ninja:practice':{hp:850,mana:45,sealDelay:.15,damageBoost:100,damageReduction:25,spellIds:['fire-volley']},'guardian:fire:1':{hp:713,mana:60,infiniteMana:false,sealDelay:.18,spellIds:['water-lance']},'guardian:fire:2':{hp:1237,damageBoost:50,damageReduction:25}};
+const out='test-results/opponent-balance';await fs.mkdir(out,{recursive:true});
+try{
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port,url=origin+'/opponents',get=async()=>(await fetch(url+'/api')).json();
+ const post=(revision,overrides,headers={})=>fetch(url+'/api',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json',...headers},body:JSON.stringify({revision,overrides})});
+ const initial=await get();assert.equal(initial.rows.length,86);assert.equal((await fetch(origin+'/game.js')).status,404);assert.equal((await fetch(origin+'/balance')).status,200);
+ assert.equal((await post(initial.revision,settings,{Origin:'https://example.com'})).status,403);assert.equal((await post(initial.revision,{'guardian:fire:2':{spellIds:['fire-volley']}})).status,400);assert.deepEqual((await get()).overrides,{});
+ browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--allow-file-access-from-files','--use-angle=swiftshader','--enable-unsafe-swiftshader']});const page=await browser.newPage({viewport:{width:1600,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());await page.goto(url);await page.waitForSelector('#rows tr');assert.equal(await page.locator('#rows tr').count(),86);
+ await page.selectOption('#village','fire');await page.selectOption('#category','guardian');assert.equal(await page.locator('#rows tr:visible').count(),2);assert.equal(await page.locator('tr[data-id="guardian:fire:2"] .choose-spells').count(),0);assert.equal(await page.locator('tr[data-id="guardian:fire:2"] .mana-infinite').count(),0);
+ await page.selectOption('#village','all');await page.selectOption('#category','all');
+ const input=(id,key)=>page.locator('tr[data-id="'+id+'"] input[data-key="'+key+'"]'),fill=async(id,key,value)=>input(id,key).fill(String(value));
+ const choose=async(id,ids)=>{await page.locator('tr[data-id="'+id+'"] .choose-spells').click();for(const value of await page.locator('#spellChoices input:checked').evaluateAll(nodes=>nodes.map(n=>n.value)))await page.locator('#spellChoices input[value="'+value+'"]').uncheck();for(const value of ids)await page.locator('#spellChoices input[value="'+value+'"]').check();assert.equal(await page.locator('#applySpells').isDisabled(),false);await page.click('#applySpells');};
+ await fill('ninja:practice','hp',850);await fill('ninja:practice','mana',45);await fill('ninja:practice','sealDelay',.15);await fill('ninja:practice','damageBoost',100);await fill('ninja:practice','damageReduction',25);await choose('ninja:practice',['fire-volley']);
+ await page.reload();await page.waitForSelector('#rows tr');assert.equal(await input('ninja:practice','hp').inputValue(),'850');await fill('ninja:practice','hp',0);assert.equal(await page.locator('#save').isDisabled(),true);await fill('ninja:practice','hp',850);
+ await page.locator('tr[data-id="guardian:fire:1"] .mana-infinite').uncheck();await fill('guardian:fire:1','hp',713);await fill('guardian:fire:1','mana',60);await fill('guardian:fire:1','sealDelay',.18);await choose('guardian:fire:1',['water-lance']);
+ await fill('guardian:fire:2','hp',1237);await fill('guardian:fire:2','damageBoost',50);await fill('guardian:fire:2','damageReduction',25);
+ await page.locator('#changedOnly').check();assert.equal(await page.locator('#rows tr:visible').count(),3);await page.locator('#changedOnly').uncheck();await page.screenshot({path:out+'/draft-desktop.png',fullPage:true});
+ await page.click('#save');await page.waitForFunction(()=>document.getElementById('status').textContent.startsWith('Đã lưu và đồng bộ game.'));assert.deepEqual((await get()).overrides,settings);assert.deepEqual(parseOpponentOverrides(await fs.readFile(path.join(fixture,'src/opponent-balance.js'),'utf8')),settings);assert.equal((await post(initial.revision,{})).status,409);
+ assert.equal(await fs.readFile(path.join(fixture,'game-core.js'),'utf8'),await fs.readFile('game-core.js','utf8'),'opponent saves leave the spell balance table intact');const bundle=await fs.readFile(path.join(fixture,'game.js'),'utf8');assert.ok(bundle.includes('balanceStages'));assert.ok((await fs.readFile(path.join(fixture,'game.en.js'),'utf8')).includes('balanceStages'));
+ await page.reload();await page.waitForSelector('#rows tr');assert.equal(await input('ninja:practice','mana').inputValue(),'45');await page.selectOption('#category','guardian');await page.selectOption('#village','fire');await page.screenshot({path:out+'/guardian-editor.png',fullPage:true});await page.setViewportSize({width:430,height:900});await page.screenshot({path:out+'/mobile.png',fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ console.log('CHECK: internal opponent table, validation, draft reload, ninja loadouts, phase-specific fields, save / rebuild both languages and stale-tab protection passed.');
+ await runOpponentGameChecks(browser,bundle,out);
+ await page.click('#reset');await page.locator('#confirm button[value="restore"]').click();await page.click('#save');await page.waitForFunction(()=>document.getElementById('status').textContent.startsWith('Đã lưu và đồng bộ game.'));assert.deepEqual((await get()).overrides,{});assert.deepEqual(errors,[]);
+ console.log('PASS: opponent editor and saved configuration applied to actual ninja combat and guardian phase transitions.');
+}finally{await browser?.close();await new Promise(resolve=>server.close(resolve));const target=path.resolve(fixture);if(!target.startsWith(parent+path.sep))throw Error('Unsafe fixture path');await fs.rm(target,{recursive:true,force:true});}

@@ -2,6 +2,7 @@ import {GUARDIAN_FORMS} from './guardian-beasts.js';
 import {REGIONS} from './adventure-world.js';
 import {botHealth,PRACTICE_BOT_HP} from './enemy-balance.js';
 import {spellImage} from './spell-art.js';
+import {configureOpponent} from './opponent-balance.js';
 
 export const PRACTICE_GUARDIANS=['fire','water','lightning','wind','earth','light','dark','wood','ice'];
 export function validPracticeOpponent(value,spells){
@@ -9,9 +10,9 @@ export function validPracticeOpponent(value,spells){
 }
 export function practiceOpponentEncounter(value,spells){
   if(!validPracticeOpponent(value,spells))throw new RangeError('Chọn đúng 5 chiêu hoặc một linh thú hộ vệ.');
-  if(value.type==='ninja')return {kind:'practice-ninja',name:'Ninja tập luyện',hp:PRACTICE_BOT_HP,element:spells.find(s=>s.id===value.spells[0]).element,spellIds:[...value.spells]};
+  if(value.type==='ninja')return configureOpponent({kind:'practice-ninja',name:'Ninja tập luyện',hp:PRACTICE_BOT_HP,element:spells.find(s=>s.id===value.spells[0]).element,spellIds:[...value.spells],balancePractice:true});
   const id=value.guardian,spellIds=spells.filter(s=>s.element===id).map(s=>s.id);
-  return {kind:'boss',beastOnly:true,guardianForm:'beast',village:id,element:id,name:GUARDIAN_FORMS[id].name,guardianName:GUARDIAN_FORMS[id].name,hp:botHealth(REGIONS[id].boss.hp),phases:id==='dark'?3:2,spellIds,phaseSpellIds:spellIds,damageMultiplier:1};
+  return configureOpponent({kind:'boss',beastOnly:true,guardianForm:'beast',village:id,element:id,name:GUARDIAN_FORMS[id].name,guardianName:GUARDIAN_FORMS[id].name,hp:botHealth(REGIONS[id].boss.hp),phases:id==='dark'?3:2,spellIds,phaseSpellIds:spellIds,damageMultiplier:1,balancePractice:true});
 }
 
 export function createPracticeOpponentPicker({spells,elements,defaultLoadout,getLearnedSpells,renderSpell,onConfirm,onBack}){

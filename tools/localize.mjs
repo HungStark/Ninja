@@ -21,4 +21,4 @@ export function localizeSource(source,filename,missing,catalog=english){
  for(const [start,end,value]of edits.sort((a,b)=>b[0]-a[0]))source=source.slice(0,start)+value+source.slice(end);
  return source;
 }
-export function englishPlugin(missing){return {name:'english-catalog',setup(build){build.onLoad({filter:/[/\\]src[/\\].*\.js$/},async args=>({contents:localizeSource(await fs.readFile(args.path,'utf8'),args.path,missing),loader:'js'}));}};}
+export function englishPlugin(missing,catalog=english){return {name:'english-catalog',setup(build){build.onLoad({filter:/[/\\]src[/\\].*\.js$/},async args=>({contents:localizeSource(await fs.readFile(args.path,'utf8'),args.path,missing,catalog),loader:'js'}));}};}

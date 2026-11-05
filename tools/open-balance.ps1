@@ -1,3 +1,4 @@
+param([ValidateSet('balance','opponents')][string]$Page = 'balance')
 $ErrorActionPreference = 'Stop'
 $balanceRoot = Split-Path -Parent $PSScriptRoot
 $balanceNode = Join-Path $balanceRoot '.tools\node-v24.21.0-win-x64\node.exe'
@@ -5,7 +6,7 @@ if (-not (Test-Path -LiteralPath $balanceNode)) {
     $balanceNode = (Get-Command node.exe -ErrorAction Stop).Source
 }
 $balancePort = 4180
-$balanceUrl = "http://127.0.0.1:$balancePort/balance"
+$balanceUrl = "http://127.0.0.1:$balancePort/$Page"
 $balanceRunning = $false
 try {
     $balanceResponse = Invoke-WebRequest -UseBasicParsing -Uri "$balanceUrl/api" -TimeoutSec 2

@@ -12,6 +12,7 @@ import {gameAudio} from './game-audio.js';
 import {combatExperienceElement,requiresGuardBattle} from './combat-experience.js';
 import {questAction} from './quest-items.js';
 import {MOTHER_ID,STARTER_CHOICES,INTRO_SQUAD,promiseMother,chooseStarter,reportGuardian,negotiatePeace,villageSidequests,questForNPC,acceptSidequest,claimSidequest,completeSidequestTarget,sidequestReward,sidequestDone} from './journey-story.js';
+import {configureOpponent} from './opponent-balance.js';
 import {SHURIKEN_TYPES,equipmentState,ammoCount,buyEquipment,equipItem,takeShuriken,cycleShuriken,emergencySupply,maxShurikenPurchase,shurikenPrice,shurikenById} from './equipment.js';
 import {equipmentPanel,inventoryPanel,describeGear,shopContent} from './equipment-ui.js';
 import {fillGearIcons} from './gear-icons.js';
@@ -459,7 +460,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(encounter.squad)encounter.squad=encounter.squad.map(n=>({...n,...enemySealTiming(profile.rank,'random')}));
     if(kind==='arena')encounter.arenaRound=arenaRound(save);
     if(kind==='village-event'){const scale=1+Math.max(0,(encounter.rank||1)-1)*.08;encounter.hp=Math.round(encounter.hp/BOT_HEALTH_SCALE*scale)*BOT_HEALTH_SCALE;encounter.damageMultiplier*=scale;if(encounter.squad)encounter.squad=encounter.squad.map(n=>({...n,hp:Math.round(n.hp/BOT_HEALTH_SCALE*scale)*BOT_HEALTH_SCALE,damageMultiplier:n.damageMultiplier*scale}));}
-    encounter.admin=admin.active;encounter.forced=retreatLocked();
+    encounter=configureOpponent(encounter);encounter.admin=admin.active;encounter.forced=retreatLocked();
     dialogueItem=null;dialog('LỜI KHIÊU CHIẾN',encounter.name,'',[['Chuẩn bị giao chiến',()=>{persist();setPhase('loadout');onBattle(encounter);}],...(encounter.forced?[]:[['Lùi lại',()=>{if(encounter?.guardId)world.dismissGuard(encounter.guardId);encounter=null;world.clearEnemy();cooldown=90;distance=0;closeDialog();},true]])],{script:battleConversation(encounter,save),requireComplete:true});
   }
   function finishBattle(victory){if(!encounter||loading)return;return runLoading('Đang trở lại hành trình…',()=>{onReturn();const battle={...encounter},before=campaignStage(save),arts=save.learnedSpells.length;resolveBattle(save,encounter,victory);world.clearEnemy();cooldown=90;distance=0;encounter=null;enter(true,{reuseWorld:true,preserveHero:victory||battle.kind==='arena'});
