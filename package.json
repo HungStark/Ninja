@@ -64,6 +64,7 @@
     "test:movement": "node tests/movement-core.mjs && node tests/movement-browser.cjs",
     "test:scenery": "node tests/scenery-collision-core.mjs && node tests/scenery-inspection-browser.cjs",
     "test:shuriken": "node tests/shuriken-equipment.mjs && node tests/shuriken-browser.cjs",
+    "test:projectile-revision": "node tests/shuriken-equipment.mjs && node tests/fire-volley-targeting-core.mjs && node tests/projectile-motion.mjs && node tools/build.mjs && node tests/projectile-revision-browser.cjs",
     "test:ninjas": "node tests/ninja-models.mjs && node tests/enemy-movement-core.mjs && node tests/enemy-encounters-browser.cjs",
     "test:armor": "node tests/armor-designs.mjs && node tests/shop-hero-browser.cjs",
     "test:armor-motion": "node tests/armor-designs.mjs && node tests/hero-equipment-motion-browser.cjs",

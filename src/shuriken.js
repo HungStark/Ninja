@@ -21,11 +21,9 @@ export class ShurikenVisuals {
       if(!root){root=new T.Group();const spinner=new T.Group(),color=shot.color||'#707983';
         if(!this.materials.has(color))this.materials.set(color,vfxToon(color,{side:T.DoubleSide,emissive:color,emissiveIntensity:.13}));
         const blade=new T.Mesh(this.geometry,this.materials.get(color));blade.name='shuriken-blade';spinner.add(blade,new T.LineSegments(this.edges,this.ink));root.add(spinner);root.userData.spinner=spinner;root.userData.blade=blade;
-        if(shot.energy){
-          const energy=new T.Group();energy.name='platinum-blade-energy';spinner.add(energy);root.userData.energy=energy;
-          for(let i=0;i<2;i++){const arc=new T.Mesh(this.energyArc,this.energyMaterial);arc.rotation.z=i*Math.PI;arc.position.z=(i?1:-1)*.014;energy.add(arc);}
-          for(let i=0;i<3;i++){const angle=i*Math.PI*2/3,spark=new T.Mesh(this.energySpark,this.energyMaterial);spark.position.set(Math.cos(angle)*.15,Math.sin(angle)*.15,.014);energy.add(spark);}
-        }
+        const energy=new T.Group();energy.name='shuriken-blade-energy';spinner.add(energy);root.userData.energy=energy;
+        for(let i=0;i<2;i++){const arc=new T.Mesh(this.energyArc,this.energyMaterial);arc.rotation.z=i*Math.PI;arc.position.z=(i?1:-1)*.014;energy.add(arc);}
+        for(let i=0;i<3;i++){const angle=i*Math.PI*2/3,spark=new T.Mesh(this.energySpark,this.energyMaterial);spark.position.set(Math.cos(angle)*.15,Math.sin(angle)*.15,.014);energy.add(spark);}
         this.scene.add(root);this.objects.set(shot,root);}
       root.position.fromArray(shot.p);this.direction.fromArray(shot.v).normalize();root.quaternion.setFromUnitVectors(this.forward,this.direction);root.userData.spinner.rotation.z=shot.age*38;
       if(root.userData.energy)root.userData.energy.rotation.z=-shot.age*15;

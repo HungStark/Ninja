@@ -326,7 +326,7 @@
     if(spell.slowFactor!==undefined)info.push('SPEED * '+spell.slowFactor);
     spell.balanceSummary=info.join(' · ');spell.subtitle=spell.balanceSummary;
   }
-  const shuriken={name:'Phi tiêu',damage:2,speed:36,size:.075,interval:.45};
+  const shuriken={name:'Phi tiêu',damage:2,speed:72,size:.075,interval:.45,energy:true};
   function validateLoadout(ids) {
     if (!Array.isArray(ids) || ids.length < 1 || ids.length > 5) return { ok: false, reason: 'Chọn từ 1 đến 5 chiêu.' };
     if (new Set(ids).size !== ids.length || ids.some(id => !spells.some(s => s.id === id))) return { ok: false, reason: 'Bộ chiêu không hợp lệ hoặc bị trùng.' };

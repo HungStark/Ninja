@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {captureVolleyAim,refreshVolleyLaunchTarget} from '../src/fire-volley-targeting.js';
+const origin=[0,1.72,6],direction=[0,0,-1],point=[0,1.72,-12];
+const actor=(id,pos,hp=100)=>({id,pos:[...pos],fighter:{hp}});
+const foe=actor('primary',point),other=actor('squad-1',[3,1.72,-10]);
+const aim=captureVolleyAim(origin,direction,point,[other,foe]);assert.equal(aim.aimedTargetId,'primary');
+const shots=Array.from({length:3},()=>({...aim,target:[...aim.target]}));
+foe.pos=[2,1.72,-12];refreshVolleyLaunchTarget(shots[0],[other,foe]);assert.deepEqual(shots[0].target,foe.pos);const released=[...shots[0].target];
+foe.pos=[4,2.2,-10];other.pos=[0,1.72,-9];refreshVolleyLaunchTarget(shots[1],[other,foe]);assert.deepEqual(shots[1].target,foe.pos,'the second projectile keeps the original actor, even when another enemy enters the aim');assert.deepEqual(shots[0].target,released,'a launched projectile keeps an independent point');
+foe.pos[0]=5;refreshVolleyLaunchTarget(shots[2],[other,foe]);assert.deepEqual(shots[2].target,foe.pos);assert.deepEqual(shots[1].target,[4,2.2,-10],'stored targets never alias actor positions');
+const miss=captureVolleyAim(origin,[1,0,0],[31,1.72,6],[foe,other]);assert.equal(miss.aimedTargetId,null);foe.pos=[15,1.72,6];refreshVolleyLaunchTarget(miss,[foe]);assert.deepEqual(miss.target,[31,1.72,6],'a miss never acquires an enemy during formation');
+const dead={...aim,target:[...aim.target]};foe.fighter.hp=0;refreshVolleyLaunchTarget(dead,[foe,other]);assert.deepEqual(dead.target,point,'a dead target is not replaced');
+const behind=actor('behind',[0,1.72,10]),near=actor('near',[0,1.72,-3]),far=actor('far',[0,1.72,-20]);assert.equal(captureVolleyAim(origin,direction,point,[behind,far,near]).aimedTargetId,'near');
+assert.equal(captureVolleyAim(origin,direction,point,[near],{pointAim:true}).aimedTargetId,null,'a point aim does not capture an actor elsewhere along the ray');assert.equal(captureVolleyAim(origin,direction,near.pos,[near],{pointAim:true}).aimedTargetId,'near');
+console.log('PASS: separate launch-time snapshots, original actor identity across a salvo, moving/raised targets, dead-target fallback, no acquisition after a miss and point-aim selection.');

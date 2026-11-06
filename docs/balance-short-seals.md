@@ -8,7 +8,7 @@ Bản thử `tiered-cooldowns-v2` giữ chuỗi ấn ngắn, giảm sức mạnh
 - Chiêu mạnh hồi 20–24 giây; đại chiêu hồi 30–45 giây tùy sát thương, khống chế và khả năng chi phối trận. Sát thương các chiêu mạnh giữ nguyên.
 - Phòng thủ, khống chế và kích hoạt combo dùng hồi riêng theo vai trò, không bị ép chung theo hạng. Chuẩn bị phân thân hồi 2 giây; Độc Hoa cần vườn và là vùng sát thương kéo dài nên giữ hồi 6 giây.
 - Bỏng tồn tại 6 giây mỗi tầng; tĩnh điện 8 giây mỗi điểm. Mỗi tầng tự hết hạn; đánh thêm không làm mới toàn bộ các tầng cũ. Ở mức tối đa chỉ thay tầng cũ nhất.
-- Mọi loại phi tiêu giảm một nửa sát thương: sắt 2, bạc 2,5, vàng 3,5, bạch kim 5. Phi tiêu mặc định của bot và đấu tập là 2. Giữ nguyên tốc độ, nhịp ném và hệ số trang bị/chỉ số.
+- Mọi loại phi tiêu giảm một nửa sát thương: sắt 2, bạc 2,5, vàng 3,5, bạch kim 5. Phi tiêu mặc định của bot và đấu tập là 2. Tốc độ phi tiêu hiện là 72 m/giây; giữ nguyên nhịp ném và hệ số trang bị/chỉ số. Xem [cập nhật phi tiêu và Hỏa Vũ Liên Châu](projectile-update.md).
 - Chuỗi 2–6 ấn, hai ấn đầu cố định theo hệ. Mỗi hệ tối đa một chiêu 2 ấn. Đuôi dùng 10 ấn còn lại, không lặp liền nhau. Chuỗi không hết hạn, giữ qua khống chế và ném phi tiêu.
 - Khi hành trình mới học đúng một thuật khởi đầu: thuật đó hồi 4 giây. Học thêm thuật sẽ dùng hồi chuẩn, kể cả khi chỉ trang bị một chiêu. Điều này chỉ còn tạo khác biệt cho Thủy bộc cầu (chuẩn 5 giây).
 - Tường tồn tại 8–10 giây, giữ độ bền; hồi 12–14 giây. Óc Chó Hộ Vệ tăng thời lượng từ 8 lên 10 giây khi vườn trưởng thành. Quang kính giữ 2,5 giây, 3 ấn và 22 mana.
