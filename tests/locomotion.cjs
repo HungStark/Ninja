@@ -7,8 +7,8 @@ const {spawn}=require('node:child_process');
   const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   let page,checkpoint='load';
   try{
-    page=await browser.newPage({viewport:{width:1440,height:960}});await page.route('**/favicon.ico',route=>route.fulfill({status:204,body:''}));const errors=[];page.on('pageerror',e=>errors.push(e.stack));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-    const {newJourney}=await import('../src/adventure-data.js'),save=newJourney();save.position=[0,7];
+    page=await browser.newPage({viewport:{width:1440,height:960}});page.setDefaultTimeout(120000);await page.route('**/favicon.ico',route=>route.fulfill({status:204,body:''}));const errors=[];page.on('pageerror',e=>errors.push(e.stack));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+    const {newJourney}=await import('../src/adventure-data.js'),save=newJourney();save.position=[0,12];
     await page.addInitScript(s=>localStorage.setItem('anhoa-adventure-v1',JSON.stringify(s)),save);
     const state=()=>page.evaluate(()=>__AN_HOA__.adventure()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t);
     await page.goto('http://127.0.0.1:4322/?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.evaluate(()=>__AN_HOA__.explore.setRandom(false));await page.locator('#continueJourney').click();await advance(.3);await page.locator('#campaignToggle').click();

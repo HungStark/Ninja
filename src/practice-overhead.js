@@ -1,8 +1,9 @@
 import * as T from 'three';
+import {MOVEMENT_SPEED_MULTIPLIER} from './game-pace.js';
 
 // The rails in scene.js enclose x = ±16, z = -26..12. Leave room for the body.
 export const PRACTICE_BOUNDS={minX:-15.35,maxX:15.35,minZ:-25.35,maxZ:11.35};
-export const PRACTICE_MOVE_SPEED=5;
+export const PRACTICE_MOVE_SPEED=5*MOVEMENT_SPEED_MULTIPLIER;
 export function clampPracticePoint(p){return [T.MathUtils.clamp(p[0],PRACTICE_BOUNDS.minX,PRACTICE_BOUNDS.maxX),p[1],T.MathUtils.clamp(p[2],PRACTICE_BOUNDS.minZ,PRACTICE_BOUNDS.maxZ)];}
 export function stepPracticePoint(from,to,distance){const dx=to[0]-from[0],dz=to[2]-from[2],length=Math.hypot(dx,dz),t=length>0?Math.min(1,distance/length):0;return clampPracticePoint([from[0]+dx*t,from[1],from[2]+dz*t]);}
 

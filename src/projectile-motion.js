@@ -1,5 +1,5 @@
 // Distances are measured from release, not from the caster or formation animation.
-export const FLIGHT_PROFILE=Object.freeze({launchDistance:2,launchSpeedRatio:.2,burstDuration:.12,peakSpeedRatio:1.8});
+export const FLIGHT_PROFILE=Object.freeze({launchDistance:1,launchSpeedRatio:.45,burstDuration:.12,peakSpeedRatio:1.8});
 const INACTIVE_PHASES=new Set(['forming','staged','emerging','gathering','blooming','charging','descending','ready','striking','fading']);
 const clamp=t=>Math.max(0,Math.min(1,t));
 export function flightDistanceAt(time,speed){

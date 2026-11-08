@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {PROJECTILE_SPEED_MULTIPLIER} from './game-pace.js';
 import { vfxToon } from './vfx-materials.js';
 
 const clamp=v=>Math.max(0,Math.min(1,v)),ease=v=>{v=clamp(v);return v*v*(3-2*v);};
@@ -137,7 +138,7 @@ export class WoodGarden {
       for(let i=0;i<count;i++){
         const plant=plants[i%plants.length],round=Math.floor(i/plants.length),origin=this.plantPoint(plant,plant.parts.volleyOrigins[round]);
         const d=unit(sub(destination,origin)),p=add(origin,mul(d,.25));
-        shots.push({owner,element:'wood',style:'bambooleaf',phase:'blooming',releaseAt:.55+round*.12+plant.volleyDelay,releaseAge:0,p,old:[...p],origin:[...origin],target:[...destination],v:mul(d,25+growth*10),size:.16+.13*growth,color:'#9dcb52',damage:spell.damage/count,plantScale:scale,life:4,age:0,flightAge:0,trail:0,reflected:false});
+        shots.push({owner,element:'wood',style:'bambooleaf',phase:'blooming',releaseAt:.55+round*.12+plant.volleyDelay,releaseAge:0,p,old:[...p],origin:[...origin],target:[...destination],v:mul(d,(25+growth*10)*PROJECTILE_SPEED_MULTIPLIER),size:.16+.13*growth,color:'#9dcb52',damage:spell.damage/count,plantScale:scale,life:4,age:0,flightAge:0,trail:0,reflected:false});
       }
       return true;
     }

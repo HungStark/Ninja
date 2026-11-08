@@ -1,5 +1,6 @@
 import {flightDistanceAt,flightTimeAt} from './projectile-motion.js';
-import {STEP_DISTANCE,STEP_DURATION} from './dash-boost.js';
+import {STEP_DISTANCE} from './dash-boost.js';
+const STEP_DURATION=.2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 // Predict only released, approaching projectiles. A wide wave still needs a defense.

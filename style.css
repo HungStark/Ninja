@@ -261,12 +261,12 @@ body:not(.playing)>header,body:not(.playing)>#hud{visibility:hidden}
 #guide .cooldown-sweep,#guide .chakra-cover{position:absolute;inset:0;pointer-events:none;display:none}
 #guide .cooldown-sweep{z-index:1;background:conic-gradient(from 0deg,transparent 0deg var(--cooldown-sweep),#020c17d9 var(--cooldown-sweep) 360deg)}
 #guide .on-cooldown .cooldown-sweep{display:block}
-#guide .chakra-cover{z-index:2;background:#123d96cf;box-shadow:inset 0 0 16px #07204aa6}
-#guide .chakra-missing .chakra-cover{display:block}
+#guide .chakra-cover{z-index:2;background:#000000b8}
+#guide .spell-unavailable .unavailable-cover{display:block}
+#guide .unavailable-cover:after{content:'';position:absolute;left:50%;top:50%;width:142%;height:2px;background:#fff;transform:translate(-50%,-50%) rotate(-45deg);pointer-events:none}
 #guide .spell-cooldown{position:absolute;inset:0;z-index:3;display:grid;place-items:center;margin:0;font-size:18px;font-weight:700;color:#fff5da;text-shadow:0 1px 4px #000,0 0 5px #000;line-height:1}
 #guide .spell-number{position:absolute;right:3px;bottom:2px;z-index:4;font-size:9px;color:#f4efd9;text-shadow:0 1px 3px #000}
 #guide .spell.on-cooldown .spell-title{color:#bdc7cb}
-#guide .spell.nature-locked .spell-picture,#guide .spell.domain-locked .spell-picture,#guide .spell.combo-locked .spell-picture,#guide .spell.crater-locked .spell-picture{border-style:dashed}
 .enemy-heading{font-size:13px;font-weight:600;color:#e9dec1;line-height:1.4}
 #enemyAction,.enemy-seals{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px;min-height:27px;margin-top:10px}
 #enemyAction kbd,.enemy-seals kbd{display:inline-grid;place-items:center;min-width:23px;height:26px;padding:0 4px;border:1px solid #c3d3cd66;border-radius:3px;background:#b7cec910;color:#e4eee5;font-size:12px}
