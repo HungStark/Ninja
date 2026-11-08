@@ -216,11 +216,11 @@
   "wood-orb": {
     "cooldown": 5,
     "cost": 20,
-    "damage": 24
+    "damage": 15
   },
   "wood-volley": {
     "cost": 65,
-    "damage": 70
+    "damage": 65
   },
   "wood-lance": {
     "cost": 30,
@@ -246,8 +246,8 @@
     "cost": 30
   },
   "ice-barrier": {
-    "cost": 50,
-    "cooldown": 16
+    "cost": 45,
+    "duration": 6
   },
   "light-reflect": {
     "duration": 3,
@@ -297,7 +297,8 @@
     "cooldown": 13
   },
   "ice-orb": {
-    "cost": 25
+    "cost": 25,
+    "cooldown": 30
   }
 }/* spell-balance:end */;
   for(const spell of spells){
