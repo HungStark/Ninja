@@ -1,3 +1,4 @@
+import {readTreaties,storeTreaty} from './peace-treaties.js';
 import {grantFlask} from './healing-flask.js';
 import {HIDDEN_GUARD_COUNT,GUARDIAN_GUARD_COUNT} from './guard-placement.js';
 import {REGIONS,regionMetrics} from './adventure-world.js';
@@ -12,7 +13,7 @@ export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa Vũ Liên Châu',ele
 export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:botHealth(85),spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
 export const FIRST_VILLAGES=['water','fire','lightning'];
 const STAGES=['mother','chief','guardian','report','infiltrate'];
-export function newStory(){return {revision:1,stage:'mother',starter:null,guardianRestored:false,peaceSeals:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false}};}
+export function newStory(){return {revision:1,stage:'mother',starter:null,guardianRestored:false,peaceSeals:[],guardianOrders:[],treaties:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false}};}
 export function readStory(raw,save){
   const s=newStory();
   if(raw?.revision!==1){
@@ -21,6 +22,8 @@ export function readStory(raw,save){
     s.peaceSeals=Object.keys(save.bosses).filter(id=>id!=='nameless');if(save.expeditions?.fire===3)s.questItems.push('fire:lotus-medicine');return s;
   }
   s.stage=STAGES.includes(raw.stage)?raw.stage:'mother';
+  s.guardianOrders=[...new Set((Array.isArray(raw.guardianOrders)?raw.guardianOrders:[]).filter(id=>REGIONS[id]&&id!=='nameless'))];
+  s.treaties=readTreaties(raw.treaties);
   s.starter=STARTER_CHOICES.some(c=>c.id===raw.starter)?raw.starter:null;
   s.guardianRestored=raw.guardianRestored===true;
   s.peaceSeals=[...new Set(Array.isArray(raw.peaceSeals)?raw.peaceSeals.filter(id=>REGIONS[id]&&id!=='nameless'):[])];
@@ -59,8 +62,9 @@ export function reportGuardian(save){
   save.progression.books=save.progression.books.filter(id=>!STARTER_CHOICES.some(s=>s.id===id));
   save.story.stage='infiltrate';save.gold+=100;return true;
 }
-export function negotiatePeace(save,id){
+export function negotiatePeace(save,id,document){
   if(id==='nameless'||save.village!==id||!save.bosses[id]||save.story.peaceSeals.includes(id))return false;
+  if(document&&!storeTreaty(save,id,document))return false;
   save.story.peaceSeals.push(id);save.gold+=100;return true;
 }
 export function openingObjective(save){

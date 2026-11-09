@@ -79,7 +79,7 @@ export function planVillageCivic(id){
   hall.style=HALL_STYLES[id];for(const p of [hall,school,clinic])p.entry={...civicPoint(p,0,p.d/2+2),y:p.base};
   clinic.healer=civicPoint(clinic,2,clinic.d/2+2);
   for(const p of Object.values(campuses)){p.gate={...civicPoint(p,0,p.d/2+1),y:p.base};p.insideGate={...civicPoint(p,0,p.d/2-4),y:p.base};}
-  const guardian=civicPoint(campuses.hall,0,12),guardianPosts=[-18,18].map(x=>civicPoint(campuses.hall,x,14));
+  const guardian=civicPoint(campuses.hall,0,12),guardianPosts=[-8,8].map(x=>civicPoint(campuses.hall,x,22));
   const military=campuses.military;military.prison={...civicPoint(military,10,7),y:military.base};military.jailers=[civicPoint(military,-11,15),civicPoint(military,17,20)];
   const layout={id,hall,school,clinic,military,campuses,shop,residential,districts:[{id:id+'-residential',...residential}],houses,guardian,guardianPosts,plots,removedLandmarks:removed.map(z=>({id:z.id,name:z.name})),visibleLandmarks:visible};
   region.zones=visible;

@@ -1,3 +1,4 @@
+import {guardianOrdered,nextGuardianGuard,orderGuardianGuards} from './village-confrontation.js';
 import {planVillageExits} from './village-exits.js';
 import {atlasMarkup} from './world-atlas.js';
 import {travelKind} from './village-travel.js';
@@ -161,7 +162,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       mapTransfer=null;return ok;
     });
   }
-  function findJourneyItem(kind,id){const direct=world.interactives.find(i=>i.kind===kind&&(!id||i.id===id));if(direct)return direct;if(world.interior)return world.interactives.find(i=>i.kind==='interior-exit');if(kind==='npc'||id===save.village+'-chief')return world.interactives.find(i=>i.kind==='interior-enter'&&i.id===save.village+'-council-hall');const zone=REGIONS[save.village].zones.find(z=>z.id===id),person=REGIONS[save.village].npcs.find(p=>p.id===id),room=interiorForZone(save.village,zone?.id||person?.landmark);return room?world.interactives.find(i=>i.kind==='interior-enter'&&i.id===room):null;}
+  function findJourneyItem(kind,id){if(kind==='boss'&&guardianOrdered(save))kind='npc';const direct=world.interactives.find(i=>i.kind===kind&&(!id||i.id===id));if(direct)return direct;if(world.interior)return world.interactives.find(i=>i.kind==='interior-exit');if(kind==='npc'||id===save.village+'-chief')return world.interactives.find(i=>i.kind==='interior-enter'&&i.id===save.village+'-council-hall');const zone=REGIONS[save.village].zones.find(z=>z.id===id),person=REGIONS[save.village].npcs.find(p=>p.id===id),room=interiorForZone(save.village,zone?.id||person?.landmark);return room?world.interactives.find(i=>i.kind==='interior-enter'&&i.id===room):null;}
   function arenaDialog(){dialogueItem=null;const round=arenaRound(save),speed=enemySealTiming(0,'arena',round).sealSpeedMultiplier;dialog('GIAO HỮU CỬU LÀNG · VÒNG '+round,'Chọn đại diện giao đấu',`Vòng ${round}: đối thủ kết ấn nhanh ×${speed.toFixed(1)}. Mỗi lần thắng mở vòng tiếp theo và tăng tốc độ thêm 0,1; thua thì thử lại vòng hiện tại. Thắng hoặc thua đều trở lại võ đường; không nhận xu thưởng.`,[...VILLAGES.filter(v=>v.id!=='nameless').map(v=>['Đại diện '+v.name,()=>offerBattle('arena',{...encounterProfile(save,'arena',v.id),village:v.id,element:v.id,name:'Võ sinh '+v.name}),true]),['Để lúc khác',closeDialog,true]]);}
   function persist(){const safe=world.safeSave();save.position=safe.position;save.surface=safe.surface;save.elevation=safe.elevation;save.worldRevision=3;if(admin.active){$('journeySaved').textContent='Admin · Không lưu tiến trình';saveTimer=0;return;}try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));stored=save;$('journeySaved').textContent='Đã lưu';storageFailed=false;}catch{storageFailed=true;$('journeySaved').textContent='Chưa lưu được';}saveTimer=0;}
   let landmarkNotices=[],landmarkNoticeTimer=0;
@@ -217,6 +218,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     $('equipmentBody').querySelectorAll('[data-wear]').forEach(tile=>{const describe=()=>describeGear($('gearDetail'),tile.dataset.kind,tile.dataset.wear);tile.onmouseenter=describe;tile.onfocus=describe;tile.onclick=()=>{if(tile.dataset.slot){describe();return;}if(equipItem(save,tile.dataset.kind,tile.dataset.wear)){persist();refresh();openEquipment();describe();}};});
     $('equipmentBody').querySelectorAll('[data-loot]').forEach(tile=>tile.onclick=()=>{$('gearDetail').textContent=tile.title+' · Vật phẩm nhiệm vụ. Mang về cho người nhờ giúp để nhận thưởng.';});
     $('equipmentBody').querySelectorAll('[data-inventory-book]').forEach(tile=>tile.onclick=()=>{openProgression();});
+    $('equipmentBody').querySelectorAll('[data-treaty]').forEach(tile=>tile.onclick=()=>{const treaty=save.story.treaties.find(t=>t.id===tile.dataset.treaty);if(treaty){resetMovement();setPhase('peace-ceremony');peaceCeremony.view(treaty,village(treaty.village),()=>{setPhase('equipment');openEquipment();$('equipmentBody').querySelector('[data-treaty="'+treaty.id+'"]').focus();});}});
     $('findVillageShop').onclick=()=>{closeDialog();moveToItem(world.interactives.find(i=>i.kind==='shop'));};
   }
   function trainingSystem(element,p,open){
@@ -371,10 +373,10 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(stage==='guardian'){dialog('SỨ MỆNH ĐẦU TIÊN','Cứu hộ vệ quê nhà','Ba ninja Hỏa, Thủy, Lôi đã phá hỏng hộ vệ gần Đồi Chuông Gió. Mỗi tên chỉ biết một thuật cơ bản. Con phải đối đầu cả ba cùng lúc để lấy lại lõi ấn hồi sinh hộ vệ. Hãy nhìn nhịp kết ấn và né đòn; G giúp chuẩn bị một cú lướt.',[['Đánh dấu hộ vệ',()=>{closeDialog();moveToItem(world.interactives.find(i=>i.kind==='intro-guardian'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
     if(stage==='report'){
       const remaining=STARTER_CHOICES.filter(s=>!save.learnedSpells.includes(s.id)),names=remaining.map(s=>s.name).join(' và ');
-      dialog('BÁO CÁO · HỘ VỆ ĐÃ HỒI SINH','Mang dấu ấn hòa bình trở về',`Con đã cứu được quê nhà. Ta thưởng con 100 xu${remaining.length?` và truyền thụ ${names}`:''}. Muốn chấm dứt chiến tranh, hãy thâm nhập Hỏa, Thủy và Lôi, vượt qua cảnh vệ rồi khuất phục quái thú hộ vệ mỗi làng. Sau đó gặp trưởng làng để thương lượng lấy dấu ấn hòa bình. Mang đủ ba dấu ấn về đây để ký hiệp ước.`,[[`Nhận sứ mệnh · 100 xu${remaining.length?' + '+remaining.length+' thuật':''}`,()=>{if(reportGuardian(save)){refreshStory();toast(remaining.length?'Đã học '+names+' · Nhận 100 xu':'Nhận 100 xu · Ba con đường đã mở');}}]]);
+      dialog('BÁO CÁO · HỘ VỆ ĐÃ HỒI SINH','Mang dấu ấn hòa bình trở về',`Con đã cứu được quê nhà. Ta thưởng con 100 xu${remaining.length?` và truyền thụ ${names}`:''}. Muốn chấm dứt chiến tranh, hãy thâm nhập Hỏa, Thủy và Lôi, đối mặt hai hộ vệ của linh thú rồi tới phòng họp giao chiến với trưởng làng bị chiếm hữu. Sau chiến thắng, hãy tự viết và ký hiệp ước để nhận dấu ấn hòa bình. Mang đủ ba dấu ấn về đây để ký hiệp ước.`,[[`Nhận sứ mệnh · 100 xu${remaining.length?' + '+remaining.length+' thuật':''}`,()=>{if(reportGuardian(save)){refreshStory();toast(remaining.length?'Đã học '+names+' · Nhận 100 xu':'Nhận 100 xu · Ba con đường đã mở');}}]]);
     }
   }
-  function signVillagePeace(){const id=save.village;let signed=false;resetMovement();setPhase('peace-ceremony');peaceCeremony.begin({hero:{...save.hero,armor:equipmentState(save).armor},village:village(id)},()=>{signed=negotiatePeace(save,id);if(signed)persist();},()=>runLoading('Đang cập nhật khu vực…',()=>{refreshStory({rebuildWorld:true});if(signed&&id==='dark'&&!admin.active){dialogueItem=null;dialog('HÒA ƯỚC CỦA CHÍN MIỀN','Hòa bình trở lại Cửu Hệ','Vô Nguyệt đã thất bại. Trưởng Làng Ám cùng bạn ký lời cam kết và đóng dấu cuối cùng. Chín miền đã nối lại con đường hòa bình.',[['Tiếp tục khám phá',closeDialog],['Nhìn lại hành trình',()=>{closeDialog();openJournal();},true]]);}else toast('Đã ký cam kết và đóng dấu hòa bình · '+village(id).name);}));}
+  function signVillagePeace(){const id=save.village;let signed=false;resetMovement();setPhase('peace-ceremony');peaceCeremony.begin({hero:{...save.hero,armor:equipmentState(save).armor},village:village(id),cancel:()=>{setPhase('explore');refresh();}},document=>{signed=negotiatePeace(save,id,document);if(signed)persist();},()=>runLoading('Đang cập nhật khu vực…',()=>{refreshStory({rebuildWorld:true});if(signed&&id==='dark'&&!admin.active){dialogueItem=null;dialog('HÒA ƯỚC CỦA CHÍN MIỀN','Hòa bình trở lại Cửu Hệ','Vô Nguyệt đã thất bại. Trưởng Làng Ám cùng bạn ký lời cam kết và đóng dấu cuối cùng. Chín miền đã nối lại con đường hòa bình.',[['Tiếp tục khám phá',closeDialog],['Nhìn lại hành trình',()=>{closeDialog();openJournal();},true]]);}else toast('Đã ký cam kết và đóng dấu hòa bình · '+village(id).name);}));}
   function closeDialog(){if(retreatLocked()){toast('Chưa có dấu ấn hòa bình · Phải giao chiến với cảnh vệ');return;}setPhase('explore');if(waypointSource==='campaign'||waypointSource==='sidequest')refreshObjectiveMarker();}
   function interact(item){
     if(world.riding)return;
@@ -401,11 +403,13 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     const readyQuest=questForNPC(save.village,item);
     if(readyQuest&&save.story.sidequests[readyQuest.id]===2){sidequestDialog(readyQuest);return;}
     if(item.kind==='npc'&&v.id==='nameless'&&save.story.stage!=='infiltrate'){openingChief();return;}
+    if(item.kind==='npc'&&v.id!=='nameless'&&!save.bosses[v.id]){offerBattle('boss');return;}
     if(item.kind==='npc'&&v.id!=='nameless'&&save.bosses[v.id]&&!save.story.peaceSeals.includes(v.id)){
       dialog('THƯƠNG LƯỢNG · TRƯỞNG '+v.name,'Dấu ấn của một lời hứa','Bạn không đòi quyền cai trị sau khi khuất phục hộ vệ, mà xin một cam kết chấm dứt chiến tranh. Trưởng làng thừa nhận những cuộc tập kích có kẻ giật dây và đồng ý trao dấu ấn hòa bình cho bạn.',[['Báo chiến thắng · Ký cam kết hòa bình',signVillagePeace],['Tiếp tục suy nghĩ',closeDialog,true]]);return;
     }
     if(item.kind==='intro-guardian'){if(admin.active||save.story.stage==='guardian')offerBattle('intro-trio');else{dialog('HỘ VỆ ĐÃ HỎNG','Ba kẻ phá hoại','Hãy nói chuyện với mẹ và học một thuật từ trưởng làng trước khi giải cứu hộ vệ.',[['Trở lại',closeDialog]]);}return;}
     if(item.kind==='village-guard'){
+      if(item.guardRole==='guardian'&&!admin.active){if(!guardianOrdered(save))guardianGateDialog();else startGuardianGuard();return;}
       if(item.guardRole==='jailer'&&v.id==='fire'){
         if(villageEventStep(save,'fire')===1)offerBattle('village-event',villageEventEncounter('fire'));
         else dialog('CẢNH NGỤC','Nhà lao khu quân sự','Bà Hồng đang đợi ngoài cổng khu quân sự. Hãy gặp bà để biết chuyện gì đã xảy ra với Hạ Ly.',[['Tìm Bà Hồng',()=>{closeDialog();moveToItem(findJourneyItem('village-event'));}],['Để sau',closeDialog,true]]);
@@ -451,7 +455,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(item.kind==='treaty'){
       if(save.campaign.treatySigned){dialog('HỘI NGHỊ HÒA BÌNH','Lời hứa của ba làng','Hiệp ước đã có chữ ký của đại diện Thủy, Hỏa, Lôi và người làm chứng từ Vô Danh. Hãy mang bản sao lần lượt tới Phong, Thổ, Mộc, Băng và Quang.',[['Theo dấu sứ mệnh',()=>{closeDialog();followCampaign();}],['Khép quyển trục',closeDialog,true]]);return;}
       if(!canSignTreaty(save)){dialog('HỘI NGHỊ CHƯA ĐỦ ĐẠI DIỆN','Ba ngôi làng còn chia cắt','Hãy học thuật tại Thủy, đánh bại người đứng đầu Thủy rồi giải quyết xung đột ở Hỏa và Lôi. Khi cả ba thủ lĩnh chấp nhận hòa bình, họ sẽ cùng bạn về đây.',[['Tiếp tục sứ mệnh',()=>{closeDialog();followCampaign();}]]);return;}
-      dialog('HỘI NGHỊ THỦY · HỎA · LÔI','Hiệp ước bên chuông gió','Sau chuyến trở về cùng bạn, ba đại diện ngồi bên bàn đá của Làng Vô Danh. Họ thừa nhận những cuộc tập kích đã bị kẻ giấu mặt dàn dựng và đồng ý chấm dứt giao tranh. Bạn là người làm chứng và sứ giả mang hiệp ước hòa bình tới năm làng còn lại.',[['Ký hiệp ước hòa bình',()=>{if(signTreaty(save))runLoading('Đang cập nhật khu vực…',()=>{refreshStory({rebuildWorld:true});toast('◇ Hiệp ước đã ký · Năm con đường hòa bình đã mở');});}],['Chưa khép hội nghị',closeDialog,true]]);
+      dialog('HỘI NGHỊ THỦY · HỎA · LÔI','Hiệp ước bên chuông gió','Sau chuyến trở về cùng bạn, ba đại diện ngồi bên bàn đá của Làng Vô Danh. Họ thừa nhận những cuộc tập kích đã bị kẻ giấu mặt dàn dựng và đồng ý chấm dứt giao tranh. Bạn là người làm chứng và sứ giả mang hiệp ước hòa bình tới năm làng còn lại.',[['Ký hiệp ước hòa bình',()=>{resetMovement();setPhase('peace-ceremony');peaceCeremony.begin({hero:{...save.hero,armor:equipmentState(save).armor},village:village('nameless'),cancel:()=>{setPhase('explore');refresh();}},document=>{if(signTreaty(save,document))persist();},()=>runLoading('Đang cập nhật khu vực…',()=>{refreshStory({rebuildWorld:true});toast('◇ Hiệp ước đã lưu trong túi đồ · Năm con đường hòa bình đã mở');}));}],['Chưa khép hội nghị',closeDialog,true]]);
     }
     if(item.kind==='envoy'){
       if(!save.campaign.treatySigned){dialog('ĐẠI DIỆN · '+v.name,'Chưa có hiệp ước','Hãy trở lại Vô Danh cùng đại diện Thủy, Hỏa và Lôi để ký hiệp ước trước khi vận động các làng khác.',[['Tiếp tục',closeDialog]]);return;}
@@ -468,9 +472,27 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(mentorReady(save,id)){dialog('NHIỆM VỤ LÀNG · TRỞ VỀ NHẬN THƯỞNG',n.name,`${m.lesson} Phần thưởng: ${name}. Nếu chưa đủ hệ cấp ${requiredLevel(m.spellId)}, hãy giữ sách và tiếp tục tu luyện.`,[['Nhận thưởng · '+name,()=>{if(save.lessons[id]){learn();return;}save.lessons[id]=1;persist();const cast=dialogueCast(dialogueItem,save,r,village(id));dialog('KỲ NGỘ · ĐÃ HOÀN THÀNH',n.name,m.lesson,[['Nhận thưởng · '+name,learn]],{script:cast?[{speaker:cast.hero,text:'Tôi đã vô tình hoàn thành việc này trên đường khám phá.'},{speaker:cast.npc,text:m.lesson}]:null});}]]);return;}
     const missing=targets.filter(z=>!discovered(z));dialog('KỲ NGỘ · TRÊN ĐƯỜNG HỌC ĐẠO',n.name,`${m.clue} Còn ${missing.map(z=>z.name).join(' và ')} cần tự mình khám phá. Không cần giao chiến để nhận lời chỉ giáo.`,[['Theo dấu · '+missing[0].name,()=>{closeDialog();moveToItem(world.interactives.find(i=>i.kind==='landmark'&&i.id===missing[0].id));}],['Tiếp tục hành trình',closeDialog,true]]);
   }
+  function guardianGateDialog(){
+    if(save.village==='nameless'||save.bosses[save.village]||guardianOrdered(save))return false;
+    dialogueItem=null;
+    const id=save.village,r=REGIONS[id];
+    dialog('LINH THÚ CHẶN CỔNG',r.boss.guardian,'',[['Đối đầu hộ vệ trái',()=>{
+      orderGuardianGuards(save);persist();refreshStory({rebuildWorld:true});startGuardianGuard();
+    }]],{script:battleConversation({kind:'guardian-order',village:id,name:r.boss.guardian},save),requireComplete:true});return true;
+  }
+  function startGuardianGuard(immediate=false){
+    const guardId=nextGuardianGuard(save);if(!guardId)return false;
+    offerBattle('village-guard',{guardId,guardRole:'guardian',name:guardId.endsWith('-1')?'Hộ vệ trái':'Hộ vệ phải',guardianChain:true,immediate});return true;
+  }
   function offerBattle(kind,details={}){if(phase==='boarding'||retreatLocked())return;if(!save.learnedSpells.length){toast('Hãy gặp mẹ và học một thuật từ trưởng làng trước.');return;}
     const r=REGIONS[save.village],id=save.village;if(kind==='boss'){
     if(!admin.active&&save.bosses[id])return;
+    if(id!=='nameless'&&!admin.active){
+      if(!guardianOrdered(save)){guardianGateDialog();return;}
+      if(nextGuardianGuard(save)){startGuardianGuard();return;}
+      if(world.interior?.kind!=='council'){dialogueItem=null;dialog('PHÒNG HỌP CỦA LÀNG','Linh thú đã nhập vào trưởng làng','Hai hộ vệ đã thất bại. Linh thú đang chờ trong thân xác trưởng làng tại phòng họp.',[['Tới phòng họp',()=>{closeDialog();moveToItem(findJourneyItem('npc'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
+      details.possessedChief=true;
+    }
     if(!admin.active&&!villageEventComplete(save,id)){const e=currentVillageEvent(save,id);dialog('CÂU CHUYỆN CỦA '+village(id).name,e.title,'Trước khi đối mặt hộ vệ, hãy giúp những người đang gặp nạn và làm rõ chuyện xảy ra trong làng. '+e.body,[['Theo dấu sự kiện',()=>{closeDialog();moveToItem(findJourneyItem('village-event'));}],['Tiếp tục khám phá',closeDialog,true]]);return;}
     if(!admin.active&&id==='dark'&&!canTravel(save,'dark').allowed){dialog('TRẬN CHIẾN CUỐI CHƯA MỞ',r.boss.name,canTravel(save,'dark').reason,[['Tiếp tục sứ mệnh hòa bình',()=>{closeDialog();followCampaign();}],['Trở lại sau',closeDialog,true]]);return;}
   }
@@ -488,14 +510,19 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(kind==='arena')encounter.arenaRound=arenaRound(save);
     if(kind==='village-event'){const scale=1+Math.max(0,(encounter.rank||1)-1)*.08;encounter.hp=Math.round(encounter.hp/BOT_HEALTH_SCALE*scale)*BOT_HEALTH_SCALE;encounter.damageMultiplier*=scale;if(encounter.squad)encounter.squad=encounter.squad.map(n=>({...n,hp:Math.round(n.hp/BOT_HEALTH_SCALE*scale)*BOT_HEALTH_SCALE,damageMultiplier:n.damageMultiplier*scale}));}
     encounter=configureOpponent(encounter);encounter.admin=admin.active;encounter.forced=retreatLocked();
+    if(details.immediate){persist();setPhase('loadout');onBattle(encounter);return;}
     dialogueItem=null;dialog('LỜI KHIÊU CHIẾN',encounter.name,'',[['Chuẩn bị giao chiến',()=>{persist();setPhase('loadout');onBattle(encounter);}],...(encounter.forced?[]:[['Lùi lại',()=>{if(encounter?.guardId)world.dismissGuard(encounter.guardId);encounter=null;world.clearEnemy();cooldown=90;distance=0;closeDialog();},true]])],{script:battleConversation(encounter,save),requireComplete:true});
   }
   function finishBattle(victory){if(!encounter||loading)return;return runLoading('Đang trở lại hành trình…',()=>{onReturn();const battle={...encounter},before=campaignStage(save),arts=save.learnedSpells.length;resolveBattle(save,encounter,victory);world.clearEnemy();cooldown=90;distance=0;encounter=null;enter(true,{reuseWorld:true,preserveHero:victory||battle.kind==='arena'});
     if(battle.kind==='arena'){toast(victory?'Đã thắng vòng '+battle.arenaRound+' · Vòng '+arenaRound(save)+' đã mở':'Có thể thử lại vòng '+arenaRound(save)+' tại võ đường');return;}
     if(admin.active){toast('ADMIN · Kết quả giao chiến chỉ áp dụng trong phiên thử nghiệm');return;}
+    if(victory&&battle.kind==='village-guard'&&battle.guardianChain){
+      if(nextGuardianGuard(save)){startGuardianGuard(true);return;}
+      dialogueItem=null;dialog('HAI HỘ VỆ ĐÃ THẤT BẠI','Tới phòng họp','Bạn đã đánh bại hộ vệ trái và hộ vệ phải. Linh thú đã nhập vào trưởng làng và đang chờ bạn trong phòng họp.',[['Đi tới phòng họp',()=>{closeDialog();moveToItem(findJourneyItem('npc'));}],['Chuẩn bị thêm',closeDialog,true]]);return;
+    }
     if(victory&&battle.kind==='village-event'){dialogueItem=null;dialog('SỰ KIỆN CHÍNH',battle.village==='fire'?'Đã mở cửa nhà lao':'Màn sương đã bị phá',battle.village==='fire'?'Bạn lấy được chìa khóa từ hai cai ngục, mở cửa lao và tháo dây trói cho Hạ Ly. Nàng vẫn chưa thể đi lại vì vết thương. Hãy gặp Y nữ Đan và hái Hồng Liên trên đỉnh Vách Tro Hồng để điều chế thuốc cứu nàng.':'Kẻ canh cổng đã thất bại. Hãy mang các chứng cứ qua màn sương tới gặp Vân Dạ trước khi đối mặt Vô Nguyệt.',[['Theo dấu câu chuyện',()=>{closeDialog();moveToItem(findJourneyItem('village-event'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
     if(victory&&battle.kind==='intro-trio'){dialog('HỘ VỆ VÔ DANH HỒI SINH','Ánh sáng trở lại lõi ấn','Ba ninja đã bị đánh bại. Bạn trả lõi ấn về ngực hộ vệ, những đường nứt bắt đầu sáng trở lại. Hộ vệ đứng lên bảo vệ quê nhà. Hãy trở về báo tin cho trưởng làng.',[['Trở về báo cáo',()=>{closeDialog();followCampaign();}],['Tiếp tục khám phá',closeDialog,true]]);return;}
-    if(victory&&battle.kind==='boss'&&battle.village!=='dark'){toast('Đã khuất phục hộ vệ · Gặp trưởng làng để thương lượng dấu ấn hòa bình');return;}
+    if(victory&&battle.kind==='boss'&&battle.village!=='dark'){dialogueItem=null;dialog('LINH THÚ ĐÃ KHUẤT PHỤC','Ký hiệp ước hòa bình','Linh thú rời khỏi trưởng làng. Hai bên đồng ý chấm dứt giao tranh. Hãy tự viết nội dung và ký hiệp ước; bản đã ký sẽ được giữ trong túi đồ.',[['Viết và ký hiệp ước',signVillagePeace],['Ký sau',closeDialog,true]]);return;}
     if(victory&&battle.kind==='boss'&&battle.village==='dark'){dialog('BÁO CÁO CHIẾN THẮNG','Vô Nguyệt đã thất bại','Trở về gặp trưởng Làng Ám để thông báo, cùng ký cam kết và đóng dấu hòa bình cuối cùng.',[['Trở về báo cáo',()=>{closeDialog();followCampaign();}],['Tiếp tục khám phá',closeDialog,true]]);return;}
     if(victory&&battle.kind==='boss'&&before!=='treaty'&&campaignStage(save)==='treaty'){dialog('KẾT THÚC XUNG ĐỘT BA LÀNG','Cùng trở về Vô Danh','Thủy, Hỏa và Lôi đã nhận ra dấu vết của cùng một kẻ giật dây. Hải Châu, Xích Nham và Chấn Thiên quyết định cùng bạn trở lại Làng Vô Danh. Hãy dẫn ba đại diện về bàn hội nghị để ký hiệp ước hòa bình.',[['Dẫn đoàn về Vô Danh',()=>{closeDialog();followCampaign();}],['Dừng chân một lát',closeDialog,true]]);return;}
     toast(victory?(battle.kind==='boss'?'Thủ lĩnh đã khuất phục · Nhận sách kỹ năng và kinh nghiệm hệ · Mở Tu luyện để học':'Chiến thắng · Đã nhận xu và kinh nghiệm hệ.'):`Bạn đã hồi sinh tại ${village(save.checkpoint).name}.`);
@@ -546,7 +573,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   document.addEventListener('visibilitychange',()=>{if(document.hidden){resetMovement();releaseLook();}});
   document.addEventListener('focusin',e=>{if(textInputTarget(e.target))resetMovement();});
   window.addEventListener('beforeinput',e=>{if(phase==='explore'&&!textInputTarget(e.target))e.preventDefault();},{capture:true});
-  window.addEventListener('keydown',e=>{if(restartDialog.open||$('shurikenPurchase').open)return;if(['transition','boarding','peace-ceremony'].includes(phase)){e.preventDefault();return;}if(['duel','combat','loadout'].includes(phase)||textInputTarget(e.target)||e.ctrlKey||e.metaKey||e.altKey)return;if(e.repeat)return;const k=physicalKey(e);if(phase==='dialog'&&dialogue.active&&['e','enter',' '].includes(k)&&!(k!=='e'&&$('journeyDialog').contains(e.target)&&e.target.closest('button'))){e.preventDefault();dialogue.advance();return;}if(k==='m'){e.preventDefault();if(phase==='atlas')closeDialog();else openAtlas();}if(k==='b'){e.preventDefault();if(phase==='journal')closeDialog();else openJournal();}if(k==='escape'){e.preventDefault();if(retreatLocked()){toast('Chưa có dấu ấn hòa bình · Phải giao chiến với cảnh vệ');return;}if(['dialog','atlas','journal','progression','equipment','shop','checkpoint','admin'].includes(phase)){const retreat=!!encounter;if(encounter?.guardId)world.dismissGuard(encounter.guardId);encounter=null;if(retreat){world.clearEnemy();cooldown=90;distance=0;}closeDialog();}else menu();}if(k==='e'&&phase==='explore'){e.preventDefault();if(world.tryGrabLedge()||world.releaseCliff())return;const i=nearest();if(i)interact(i);}});
+  window.addEventListener('keydown',e=>{if(restartDialog.open||$('shurikenPurchase').open)return;if(phase==='peace-ceremony'){if(!document.getElementById('peaceCeremony').contains(e.target))e.preventDefault();return;}if(['transition','boarding'].includes(phase)){e.preventDefault();return;}if(['duel','combat','loadout'].includes(phase)||textInputTarget(e.target)||e.ctrlKey||e.metaKey||e.altKey)return;if(e.repeat)return;const k=physicalKey(e);if(phase==='dialog'&&dialogue.active&&['e','enter',' '].includes(k)&&!(k!=='e'&&$('journeyDialog').contains(e.target)&&e.target.closest('button'))){e.preventDefault();dialogue.advance();return;}if(k==='m'){e.preventDefault();if(phase==='atlas')closeDialog();else openAtlas();}if(k==='b'){e.preventDefault();if(phase==='journal')closeDialog();else openJournal();}if(k==='escape'){e.preventDefault();if(retreatLocked()){toast('Chưa có dấu ấn hòa bình · Phải giao chiến với cảnh vệ');return;}if(['dialog','atlas','journal','progression','equipment','shop','checkpoint','admin'].includes(phase)){const retreat=!!encounter;if(encounter?.guardId)world.dismissGuard(encounter.guardId);encounter=null;if(retreat){world.clearEnemy();cooldown=90;distance=0;}closeDialog();}else menu();}if(k==='e'&&phase==='explore'){e.preventDefault();if(world.tryGrabLedge()||world.releaseCliff())return;const i=nearest();if(i)interact(i);}});
   window.addEventListener('resize',()=>{world.resize();if(phase==='equipment')heroPreview.show($('heroPreview'),equipmentState(save));});window.addEventListener('pagehide',()=>{if(!loading&&phase!=='boarding'&&phase!=='home'&&phase!=='duel')persist();});
   function update(dt){
     if(phase==='boarding'){
@@ -561,6 +588,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     peaceCeremony.update(dt);time+=dt;dialogue.update(dt);let moving=false;
     if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('journeyToast').hidden=true;}
     if(phase==='explore'){
+      if(!admin.active&&!world.interior&&save.story.stage==='infiltrate'&&save.village!=='nameless'&&!save.bosses[save.village]){if(!guardianOrdered(save)){guardianGateDialog();return;}if(nextGuardianGuard(save)){startGuardianGuard();return;}}
       if(landmarkNotices.length){
         landmarkNoticeTimer-=dt;
         while(landmarkNotices.length&&landmarkNoticeTimer<=0){landmarkNotices.shift();landmarkNoticeTimer+=7;}

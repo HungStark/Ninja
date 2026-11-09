@@ -2,14 +2,22 @@ import {heroSpeaker} from './adventure-dialogue.js';
 import {encounterAppearance} from './encounter-appearance.js';
 import {ninjaProfile} from './ninja.js';
 import {village} from './adventure-data.js';
+import {villagerAppearance} from './villager-appearance.js';
 
 // Combat setup stays in the encounter. The conversation only contains what
 // these characters would actually say to one another in the world.
 export function battleConversation(encounter,save){
   const hero=heroSpeaker(save),lines=[],say=(speaker,text)=>lines.push({speaker,text});
   const opponent=(entry=encounter,index=0)=>{const look=encounterAppearance({...encounter,...entry});return {id:'challenge-'+look.id+'-'+index,name:entry.name||encounter.name,role:village(look.village||look.id).name,appearance:look.kind==='creature'?look:ninjaProfile(look)};};
-  const enemy=opponent();
-  if(encounter.kind==='intro-trio'){
+  const enemy=encounter.possessedChief?{id:'possessed-chief-'+encounter.village,name:'Trưởng '+village(encounter.village).name,role:village(encounter.village).name,appearance:villagerAppearance(encounter.village,{kind:'chief'})}:opponent();
+  if(encounter.kind==='guardian-order'){
+    const beast=opponent({kind:'boss',guardianForm:'beast'});
+    say(beast,'Đứng lại! Kẻ lạ mặt nào lại dám đột nhập vào đây?');
+    say(hero,'Tôi đến từ Làng Vô Danh. Chiến tranh đã cướp đi người thân của tôi. Tôi muốn gặp trưởng làng để bàn chuyện hòa bình, không phải để gây hại.');
+    say(beast,'Những lời ngon ngọt đó không lừa được ta. Hai hộ vệ đâu! Bắt kẻ đột nhập này lại! Tả vệ tiến lên trước, hữu vệ tiếp ứng!');
+    say(hero,'Xin hãy nghe tôi giải thích! Tôi không muốn phải giao chiến với các người.');
+    say(beast,'Nếu còn sống sót, tới phòng họp mà nói tiếp. Ta sẽ nhập vào trưởng làng và đích thân chờ ngươi ở đó!');
+  }else if(encounter.kind==='intro-trio'){
     const foes=encounter.squad.map(opponent);
     say(hero,'Các người dừng lại đi! Đây là làng của tôi, không phải nơi để các người thanh toán lẫn nhau!');
     say(foes[0],'Tránh ra! Chuyện giữa Hỏa, Thủy và Lôi chưa đến lượt ngươi xen vào.');
@@ -24,6 +32,7 @@ export function battleConversation(encounter,save){
     say(enemy,'Đừng giữ sức. Nếu không trụ nổi, cứ nhận thua!');
     say(hero,'Tôi sẽ chiến đấu hết mình. Xin chỉ giáo!');
   }else if(encounter.kind==='boss'){
+    if(encounter.possessedChief)say(enemy,'Không ngờ ngươi đánh bại được hai hộ vệ của ta. Chúng đều là tinh nhuệ!');
     say(hero,'Tôi đến để chấm dứt chiến tranh giữa các làng. Xin hãy nghe tôi nói.');
     say(enemy,'Một kẻ lữ hành mà đòi quyết định vận mệnh của '+enemy.role+' sao? Lời nói của ngươi có sức nặng gì?');
     say(hero,'Tôi không muốn thêm ai bị thương. Nhưng nếu phải vượt qua ông để bảo vệ họ, tôi sẽ không lùi bước.');
