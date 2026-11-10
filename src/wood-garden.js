@@ -1,3 +1,4 @@
+import {actorHitPadding} from './combat-size.js';
 import * as T from 'three';
 import {PROJECTILE_SPEED_MULTIPLIER} from './game-pace.js';
 import { vfxToon } from './vfx-materials.js';
@@ -176,7 +177,7 @@ export class WoodGarden {
     for(const e of [...this.attacks]){
       e.age+=dt;const victim=actors.find(a=>a.owner!==e.owner);
       if(e.kind==='vinebind'&&!e.hit[0]&&e.age>=.85){
-        e.hit[0]=true;e.connected=distance(victim.pos,e.target)<1.65+.3*e.growth;
+        e.hit[0]=true;e.connected=distance(victim.pos,e.target)<1.65+.3*e.growth+actorHitPadding(victim);
         if(e.connected)this.hit({owner:e.owner,element:'wood',style:'vinehit',color:'#75b94d',damage:e.spell.damage,controlDuration:e.spell.controlDuration,unreflectable:true,v:[0,0,0]},victim.pos,actors,impact);
       }
       const life=e.connected ? .85+e.spell.controlDuration : 1.6;
@@ -187,7 +188,7 @@ export class WoodGarden {
       const elapsed=Math.min(dt,c.life);c.age+=elapsed;c.life-=elapsed;c.inside.clear();
       const radius=this.cloudRadius(c);
       for(const actor of actors){
-        if(actor.owner===c.owner||c.age<.35||distance(actor.pos,c.center)>radius||actor.pos[1]-this.floor(actor.pos[0],actor.pos[2])>c.height)continue;
+        if(actor.owner===c.owner||c.age<.35||distance(actor.pos,c.center)>radius+actorHitPadding(actor)||actor.pos[1]-this.floor(actor.pos[0],actor.pos[2])>c.height)continue;
         c.inside.add(actor.owner);const key=c.owner+':'+actor.owner,amount=c.damageRate*elapsed,current=exposure.get(key);
         if(!current||current.amount<amount)exposure.set(key,{cloud:c,actor,amount});
       }

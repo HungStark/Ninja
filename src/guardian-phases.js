@@ -62,9 +62,9 @@ export function createGuardianPhases(scene){
     breakPrison(damage){return usesDistinct()&&distinct.breakPrison(damage);},
     intercept(shot,scale){return usesDistinct()&&distinct.intercept(shot,scale);},
     areaDamage(shot,p,r,scale){if(usesDistinct())distinct.areaDamage(shot,p,r,scale);},
-    update(dt,fighter,player,boss,impact,{enabled=true,controlled=false,mouthPosition=null,control=null}={}){
+    update(dt,fighter,player,boss,impact,{enabled=true,controlled=false,mouthPosition=null,control=null,playerHitboxScale=1}={}){
       if(!config||phase===1||transition||fighter.hp<=0||!enabled)return;
-      if(usesDistinct()){distinct.update(dt,fighter,player,boss,impact,{enabled,controlled,control});return;}
+      if(usesDistinct()){distinct.update(dt,fighter,player,boss,impact,{enabled,controlled,control,playerHitboxScale});return;}
       clock+=dt;armor=Math.max(0,armor-dt);
       for(const s of [...scars]){s.age+=dt;s.m.material.opacity=.72*Math.min(1,(7-s.age)/2);if(s.age>=7){dispose(s.m);scars.splice(scars.indexOf(s),1);}}
       // Monster attacks stop under control; aura attacks are independent of the human.

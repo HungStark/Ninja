@@ -345,7 +345,7 @@ body.guardian-transform #enemyNameplates{display:none!important}.versus-portrait
 .peace-card footer{position:static;left:auto;right:auto;bottom:auto;min-height:32px}.peace-card footer span{display:block!important}
 .audio-slider select{display:block;width:100%;min-height:44px;margin-top:6px;padding:8px 10px;border:1px solid #b9bd8b66;border-radius:4px;background:#29443f;color:#e8ddc0;font:inherit}
 
-#practiceViewScreen{display:none!important;z-index:150;justify-content:center;background:#102325c9;backdrop-filter:blur(6px)}
+#practiceViewScreen{z-index:150;justify-content:center;background:#102325c9;backdrop-filter:blur(6px)}
 .practice-view-card{width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;text-align:left}
 .practice-view-card h2{font-size:28px;line-height:1.15;margin:12px 0}
 .practice-view-card>p{font-size:13px;line-height:1.6;color:#bcc8b8}

@@ -1,3 +1,4 @@
+import {actorHitPadding} from './combat-size.js';
 import * as T from 'three';
 import { vfxToon } from './vfx-materials.js';
 
@@ -56,7 +57,7 @@ export class EarthArts {
   }
   target(owner,pos,dir,actors){
     const victim=actors.find(a=>a.owner!==owner),axis=unit(dir);
-    if(victim){const delta=sub(victim.pos,pos),along=delta.reduce((sum,v,i)=>sum+v*axis[i],0),off=Math.hypot(...sub(delta,mul(axis,along)));if(along>0&&along<55&&off<1.2)return [victim.pos[0],this.heightAt(victim.pos[0],victim.pos[2]),victim.pos[2]];}
+    if(victim){const delta=sub(victim.pos,pos),along=delta.reduce((sum,v,i)=>sum+v*axis[i],0),off=Math.hypot(...sub(delta,mul(axis,along)));if(along>0&&along<55&&off<1.2+actorHitPadding(victim))return [victim.pos[0],this.heightAt(victim.pos[0],victim.pos[2]),victim.pos[2]];}
     const reach=axis[1]<-.025?clamp(-pos[1]/axis[1],6,55):31,p=add(pos,mul(axis,reach));p[1]=this.heightAt(p[0],p[2]);return p;
   }
   cast(owner,spell,pos,dir,actors,walls=[],aimPoint){
@@ -213,7 +214,7 @@ export class EarthArts {
           if(intercept({owner:e.owner,old,p:[...e.headPosition],size:.45})){this.remove(e,walls);continue;}
           if(victim){
             const delta=sub(victim.pos,e.origin),along=delta[0]*e.axis[0]+delta[2]*e.axis[2],nearest=clamp(along,from,e.travel),point=add(e.origin,mul(e.axis,nearest));
-            if(distance(victim.pos,point)<1.2){
+            if(distance(victim.pos,point)<1.2+actorHitPadding(victim)){
               e.eruptedAt=e.age;e.center=[victim.pos[0],this.heightAt(victim.pos[0],victim.pos[2]),victim.pos[2]];e.head.visible=false;e.life=e.spell.duration+.95;
               for(let i=0;i<5;i++){
                 const a=i*Math.PI/2,p=i===0?[...e.center]:add(e.center,[Math.cos(a)*.85,0,Math.sin(a)*.85]);
@@ -226,15 +227,15 @@ export class EarthArts {
         e.phase=e.eruptedAt===undefined?'tunneling':e.age-e.eruptedAt<.95?'erupting':'ridge';
         for(const node of e.nodes){const age=e.age-node.delay;
           if(age>=0&&!node.started){node.started=true;this.burst(node.p,.45);blast(e.owner,node.p,.8);}
-          if(age>=.12&&age<=.55&&victim&&!e.hitOwners.has(victim.owner)&&distance(victim.pos,node.p)<1.15&&victim.pos[1]-node.p[1]<2.8){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.owner);event('spike',e,victim);}
+          if(age>=.12&&age<=.55&&victim&&!e.hitOwners.has(victim.owner)&&distance(victim.pos,node.p)<1.15+actorHitPadding(victim)&&victim.pos[1]-node.p[1]<2.8){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.owner);event('spike',e,victim);}
         }
       }else if(e.kind==='craterspikes'){
         e.phase=e.age<.45?'rising':'spiked';
-        if(e.age>=.25&&victim&&!e.hitOwners.has(victim.owner)&&distance(victim.pos,e.center)<e.spell.radius&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+3.5){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.owner);event('spike',e,victim);}
+        if(e.age>=.25&&victim&&!e.hitOwners.has(victim.owner)&&distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+3.5){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.owner);event('spike',e,victim);}
       }else if(e.kind==='quake'){
         e.phase=e.age<e.spell.duration?'shifting':'rubble';
         const total=Math.min(e.spell.count,Math.floor((e.age+1e-6)*e.spell.count/e.spell.duration));e.ticks??=0;
-        while(e.ticks<total){e.ticks++;event('quake',e,victim);blast(e.owner,e.center,e.spell.radius);if(victim&&distance(victim.pos,e.center)<e.spell.radius&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+2.8)this.hit(e,victim,e.spell.damage,damage,blast);}
+        while(e.ticks<total){e.ticks++;event('quake',e,victim);blast(e.owner,e.center,e.spell.radius);if(victim&&distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+2.8)this.hit(e,victim,e.spell.damage,damage,blast);}
       }else if(e.kind==='wall'){
         e.phase=e.hp/e.maxHp<.4?'cracked':'wall';if(e.hp<=0){this.burst(e.center,2);event('wallbreak',e);this.remove(e,walls);continue;}
       }else if(e.kind==='gravity'){
@@ -243,7 +244,7 @@ export class EarthArts {
         for(let i=0;i<e.nodes.length;i+=e.spell.liftBatchSize){const n=e.nodes[i];if(old<n.liftAt&&e.age>=n.liftAt)this.burst(add(n.source,[0,.5,0]),.5);}
         if(!e.captureChecked&&e.age>=e.spell.chargeTime){
           e.captureChecked=true;
-          if(victim&&distance(victim.pos,e.center)<e.spell.radius&&victim.fighter.invulnerableTime<=0){
+          if(victim&&distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.fighter.invulnerableTime<=0){
             for(const other of this.effects)if(other!==e&&other.capture?.owner===victim.owner){other.capture.fighter.earthControlTime=0;other.capture=null;}
             e.capture={owner:victim.owner,fighter:victim.fighter,from:[...victim.pos],height:victim.pos[1]-1.72};event('capture',e,victim);
           }

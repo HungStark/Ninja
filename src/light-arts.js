@@ -1,3 +1,4 @@
+import {actorHitRadius} from './combat-size.js';
 import * as T from 'three';
 import { absorbDurability, crossWalls } from './combat.js';
 const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),mul=(a,s)=>a.map(v=>v*s);
@@ -169,7 +170,7 @@ export class LightArts {
     for(const leg of p.path){
       const victim=actors.find(a=>a.owner!==leg.owner);
       if(victim&&!hitOwners.has(leg.owner)){const along=dot(sub(victim.pos,leg.start),leg.dir),reach=dist(leg.start,leg.end);
-        if(along>=0&&along<=reach&&dist(add(leg.start,mul(leg.dir,along)),victim.pos)<=.67){this.hit(leg.owner,p.spell,leg.multiplier,leg.dir,victim.pos,damage);hitOwners.add(leg.owner);}}
+        if(along>=0&&along<=reach&&dist(add(leg.start,mul(leg.dir,along)),victim.pos)<=actorHitRadius(victim,.67)){this.hit(leg.owner,p.spell,leg.multiplier,leg.dir,victim.pos,damage);hitOwners.add(leg.owner);}}
       if(leg.wall)this.flash(leg.end,.3);
       if(leg.event==='mirror'&&leg.optic.hp>0){leg.optic.reflections++;this.reflections++;this.flash(leg.end,.6);}
       if(leg.event==='dome'){const dome=leg.optic;dome.rays.push({age:0,ticks:0,power:leg.multiplier,spectrum:leg.spectrum,path:this.bouncePath(dome,leg.end,leg.dir,leg.multiplier,leg.spectrum)});this.flash(leg.end,.5);}

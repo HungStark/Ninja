@@ -1,3 +1,4 @@
+import {actorHitRadius} from './combat-size.js';
 import * as T from 'three';
 import { clone as cloneActor } from 'three/addons/utils/SkeletonUtils.js';
 import { vfxToon } from './vfx-materials.js';
@@ -117,7 +118,7 @@ export class NatureArts {
       b.axis=unit([victim.pos[0]-b.p[0],0,victim.pos[2]-b.p[2]]);
       const before=[...b.p],step=b.spell.speed*motionDt;b.p[0]+=b.axis[0]*step;b.p[2]+=b.axis[2]*step;b.p[1]=this.floor(b.p[0],b.p[2])+b.spell.radius;b.spin.rotation.x+=b.axis[2]*step/b.spell.radius;b.spin.rotation.z-=b.axis[0]*step/b.spell.radius;
       const delta=sub(b.p,before),length2=delta.reduce((n,v)=>n+v*v,0),t=length2?clamp(sub(victim.pos,before).reduce((n,v,i)=>n+v*delta[i],0)/length2):0,contact=add(before,mul(delta,t));
-      if(length(sub(victim.pos,contact))<=b.spell.radius+.45){
+      if(length(sub(victim.pos,contact))<=b.spell.radius+actorHitRadius(victim,.45)){
         b.p=contact;
         const hit={owner:b.owner,victimId:victim.id,element:'ice',style:'snowball',damage:b.spell.damage,color:b.spell.color,unreflectable:true,v:[...b.axis]};
         if(impact)impact(hit,victim.pos);else victim.fighter.receive(hit.damage,true,false,'ice');

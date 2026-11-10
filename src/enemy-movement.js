@@ -22,7 +22,7 @@ export function incomingThreat(shots,position,horizon=1.3){
 }
 
 export const ENEMY_DIRECTION_INTERVAL=2,ENEMY_MOVEMENT_LIMIT=5.3;
-export function defensivePosition(position,walls=[],optics=[],attacker=[0,1.72,7]){
+export function defensivePosition(position,walls=[],optics=[],attacker=[0,1.72,7],bounds){
   const candidates=[...walls.filter(w=>w.owner==='enemy'&&w.hp>0&&w.life>0).map(w=>({p:w.p,normal:w.normal,gap:3})),...optics.filter(o=>o.owner==='enemy'&&o.life>0&&(o.kind==='sphere'||o.kind==='mirror'&&o.hp>0)).map(o=>({p:o.center,normal:o.normal,gap:o.kind==='sphere'?o.radius+1.2:2.5}))];
   let best=null;
   for(const cover of candidates){
@@ -30,7 +30,7 @@ export function defensivePosition(position,walls=[],optics=[],attacker=[0,1.72,7
     // Frontal walls/mirrors only work on their outward side.
     if(dx*n[0]+dz*n[2]<=0)continue;
     const goal=[cover.p[0]-n[0]*cover.gap,position[1],cover.p[2]-n[2]*cover.gap];
-    if(Math.abs(goal[0])>ENEMY_MOVEMENT_LIMIT||Math.hypot(goal[0]-position[0],goal[2]-position[2])>9)continue;
+    if((bounds?goal[0]<bounds.minX||goal[0]>bounds.maxX||goal[2]<bounds.minZ||goal[2]>bounds.maxZ:Math.abs(goal[0])>ENEMY_MOVEMENT_LIMIT)||Math.hypot(goal[0]-position[0],goal[2]-position[2])>9)continue;
     const distance=Math.hypot(goal[0]-position[0],goal[2]-position[2]);if(!best||distance<best.distance)best={goal,distance};
   }
   return best?.goal||null;
@@ -41,12 +41,40 @@ export function unblockableThreat(shots,position){
 export function createEnemyMovement(random=Math.random){
   const choose=()=>random()<.5?-1:1;
   let direction=choose(),directionTime=ENEMY_DIRECTION_INTERVAL,velocity=0,mode='circling',target=direction*ENEMY_MOVEMENT_LIMIT;
+  let targetPoint=null,region=null,velocity2d=[0,0];
+  function freeMove(dt,{position,bounds,moveSpeed,heavy,slow,constrain,cover,danger,frontGuard}){
+    const limit=p=>[clamp(p[0],bounds.minX,bounds.maxX),position[1],clamp(p[2],bounds.minZ,bounds.maxZ)],distance=p=>Math.hypot(p[0]-position[0],p[2]-position[2]);
+    const key=[bounds.minX,bounds.maxX,bounds.minZ,bounds.maxZ].join(':');
+    if(region!==key){region=key;targetPoint=null;}
+    if(frontGuard&&!danger){mode='sheltering';targetPoint=null;target=position[0];return position;}
+    if(cover&&!danger){mode='sheltering';targetPoint=limit(cover);}
+    else if(danger){
+      mode='evading';const center=danger.target||danger.p,radius=(danger.blastRadius||danger.radius||3.5)+1;
+      const candidates=Array.from({length:8},(_,i)=>limit([center[0]+Math.cos(i*Math.PI/4)*radius,position[1],center[2]+Math.sin(i*Math.PI/4)*radius]));
+      candidates.sort((a,b)=>{const da=Math.hypot(a[0]-center[0],a[2]-center[2]),db=Math.hypot(b[0]-center[0],b[2]-center[2]),safeA=da>=radius-1e-6,safeB=db>=radius-1e-6;return safeA!==safeB?safeA?-1:1:safeA?distance(a)-distance(b):db-da;});targetPoint=candidates[0];
+    }else{
+      if(mode!=='patrolling')targetPoint=null;
+      mode='patrolling';
+      if(!targetPoint||directionTime<=1e-8||distance(targetPoint)<.1){
+        targetPoint=limit([bounds.minX+random()*(bounds.maxX-bounds.minX),position[1],bounds.minZ+random()*(bounds.maxZ-bounds.minZ)]);
+        if(distance(targetPoint)<.5)targetPoint=[position[0]<(bounds.minX+bounds.maxX)/2?bounds.maxX:bounds.minX,position[1],position[2]<(bounds.minZ+bounds.maxZ)/2?bounds.maxZ:bounds.minZ];
+        directionTime=ENEMY_DIRECTION_INTERVAL;
+      }
+      directionTime=Math.max(0,directionTime-dt);
+    }
+    target=targetPoint[0];const length=distance(targetPoint),step=Math.min(length,Math.max(0,dt)*moveSpeed*(heavy?.8:1)*clamp(slow,0,1));
+    const next=length>1e-8?limit(constrain([position[0]+(targetPoint[0]-position[0])*step/length,position[1],position[2]+(targetPoint[2]-position[2])*step/length])):position;
+    velocity2d=dt>0?[(next[0]-position[0])/dt,(next[2]-position[2])/dt]:[0,0];velocity=velocity2d[0];direction=Math.sign(velocity)||direction;
+    if(step>0&&Math.hypot(next[0]-position[0],next[2]-position[2])<1e-6)targetPoint=null;
+    return next;
+  }
   return {
-    reset(x=0){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;velocity=0;mode='circling';target=direction*ENEMY_MOVEMENT_LIMIT;},
-    update(dt,{position,heavy=false,blocked=false,slow=1,constrain=p=>p,shots=[],walls=[],optics=[],attacker,frontGuard=false}){
-      velocity=0;
+    reset(x=0){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;velocity=0;velocity2d=[0,0];targetPoint=null;region=null;mode='circling';target=direction*ENEMY_MOVEMENT_LIMIT;},
+    update(dt,{position,heavy=false,blocked=false,slow=1,constrain=p=>p,shots=[],walls=[],optics=[],attacker,frontGuard=false,bounds=null,moveSpeed=STEP_DISTANCE/STEP_DURATION}){
+      velocity=0;velocity2d=[0,0];
       if(blocked){mode='idle';target=position[0];return position;}
-      const cover=defensivePosition(position,walls,optics,attacker),danger=unblockableThreat(shots,position);
+      const cover=defensivePosition(position,walls,optics,attacker,bounds),danger=unblockableThreat(shots,position);
+      if(bounds)return freeMove(dt,{position,bounds,moveSpeed,heavy,slow,constrain,cover,danger,frontGuard});
       if(frontGuard&&!danger){mode='sheltering';target=position[0];return position;}
       if(cover&&!danger){
         mode='sheltering';target=cover[0];const distance=Math.hypot(cover[0]-position[0],cover[2]-position[2]),step=Math.min(distance,dt*4*clamp(slow,0,1));
@@ -74,6 +102,6 @@ export function createEnemyMovement(random=Math.random){
       target=direction*ENEMY_MOVEMENT_LIMIT;velocity=dt>0?(x-position[0])/dt:0;
       return [x,position[1],position[2]];
     },
-    state:()=>({mode,target,direction,directionTime,velocity,dodges:0,reaction:0,cooldown:0,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION,dashBoost:{ready:0,cooldown:0,dashing:0,uses:0}})
+    state:()=>({mode,target,targetPoint:targetPoint&&[...targetPoint],velocity2d:[...velocity2d],direction,directionTime,velocity,dodges:0,reaction:0,cooldown:0,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION,dashBoost:{ready:0,cooldown:0,dashing:0,uses:0}})
   };
 }

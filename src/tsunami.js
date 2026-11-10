@@ -1,8 +1,9 @@
+import {actorHitRadius} from './combat-size.js';
 // Snow and living gardens survive; shadow clones are swept behind the opponent.
 export function sweepTsunami(wave,start,end,{actors,walls,fields,dark,wind,light,earth,nature,intersectsWave}){
   const touches=(p,r=0,q=p)=>intersectsWave(p,q,start,end,wave.normal,wave.width,wave.height,r,wave.depth);
   const carry=(element,style,owner,color)=>{wave.carried.push({element,style,owner,color});if(wave.carried.length>24)wave.carried.shift();};
-  for(const actor of actors)if(actor.owner!==wave.owner&&touches(actor.pos,.54)){
+  for(const actor of actors)if(actor.owner!==wave.owner&&touches(actor.pos,actorHitRadius(actor))){
     const f=actor.fighter;if(f.shield>0||f.reflect>0){carry(f.defenseElement,'armor',actor.owner,f.color);f.shield=f.shieldTime=f.reflect=0;}
   }
   for(const wall of walls){

@@ -1,3 +1,4 @@
+import {actorHitRadius} from './combat-size.js';
 const dot=(a,b)=>a.reduce((n,v,i)=>n+v*b[i],0);
 const sub=(a,b)=>a.map((v,i)=>v-b[i]);
 const alive=a=>a.id!=null&&a.fighter?.hp>0&&a.pos?.length===3&&a.pos.every(Number.isFinite);
@@ -7,7 +8,7 @@ export function captureVolleyAim(origin,direction,point,actors,{pointAim=false}=
   const candidates=actors.filter(alive).map(actor=>{
     const delta=sub(actor.pos,origin),along=dot(delta,direction),offset=pointAim?sub(actor.pos,point):delta.map((v,i)=>v-direction[i]*along);
     return {actor,along,miss:Math.hypot(...offset)};
-  }).filter(hit=>hit.along>0&&hit.miss<.65).sort((a,b)=>a.along-b.along);
+  }).filter(hit=>hit.along>0&&hit.miss<actorHitRadius(hit.actor,.65)).sort((a,b)=>a.along-b.along);
   return {target:[...point],aimedTargetId:candidates[0]?.actor.id??null};
 }
 

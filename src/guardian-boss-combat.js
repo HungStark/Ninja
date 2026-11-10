@@ -25,6 +25,7 @@ export function createGuardianBossCombat(scene){
   let village=null,design=null,passive=null,phase=2,clock=0,cycle=0,wait=1.8,action=null,serial=0,ctx=null,attacks=0;
   let pose={},exposed=0,stagger=0,legDamage=0,tailCount=0,stack=0,stackLife=0,night=0,waterLevel=0,prison=null;
   let history=[],entities=[],shelters=[],lamps=[],passiveVisuals=[],environmentReady=false;
+  const playerPadding=()=>.54*((ctx?.playerHitboxScale??1)-1);
   const models=new Set();
   function mesh(kind,p,scale,color=design.color,opacity=.7){
     const m=new T.Mesh(geometry[kind],new T.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false,side:T.DoubleSide}));
@@ -153,7 +154,7 @@ export function createGuardianBossCombat(scene){
     else{
       pose.x=a.target[0]-boss[0];pose.z=a.target[2]-boss[2];pose.y=0;
       once('land',landing,()=>{
-        const hit=distance(player,a.target)<a.radius;
+        const hit=distance(player,a.target)<a.radius+playerPadding();
         if(hit)emit(a.damage,player,{ignoreShield:gold,armorPiercing:gold});
         // A missed Wind dive is a real punish window. Gold opens its feathers
         // after every dive, allowing a counter even after a shielded hit.
@@ -189,12 +190,12 @@ export function createGuardianBossCombat(scene){
       case 'dragon-pressure':{
         once('line',0,()=>{a.end=[...a.target];a.visuals.push(beam(origin,a.end,.16,'#ff7f72'));});
         once('fire',a.windup,()=>{a.ray=beam(origin,a.end,a.radius*.8);a.visuals.push(a.ray);});
-        if(t>=a.windup&&t<a.windup+a.beamDuration){a.tick=(a.tick||0)+dt;if(a.tick>=a.tickInterval){const tick=a.tick;a.tick=0;if(segmentDistance(player,origin,a.end)<a.radius)emit(a.damagePerSecond*tick,player,{blockable:true,old:origin,p:[...player]});}}break;
+        if(t>=a.windup&&t<a.windup+a.beamDuration){a.tick=(a.tick||0)+dt;if(a.tick>=a.tickInterval){const tick=a.tick;a.tick=0;if(segmentDistance(player,origin,a.end)<a.radius+playerPadding())emit(a.damagePerSecond*tick,player,{blockable:true,old:origin,p:[...player]});}}break;
       }
       case 'dragon-prison':
         once('warning',0,()=>warning(a.target,a.radius));
         once('capture',a.windup,()=>{
-          if(distance(player,a.target)>a.radius)return;
+          if(distance(player,a.target)>a.radius+playerPadding())return;
           const m=mesh('orb',player,[1.2,1.7,1.2],'#61d6ff',.3),rim=mesh('orb',player,[1.22,1.72,1.22],'#d2f8ff',.5);rim.material.wireframe=true;
           prison={id:++serial,kind:'prison',p:[...player],r:1.4,hp:a.hp,maxHp:a.hp,age:0,life:a.life,damage:a.damage,tickInterval:a.tickInterval,visuals:[m,rim]};entities.push(prison);
         });break;
@@ -220,7 +221,7 @@ export function createGuardianBossCombat(scene){
         if(t>=start&&t<start+a.rushDuration){
           const q=clamp((t-start)/a.rushDuration,0,.999)*3,k=Math.floor(q),p=lerp(a.path[k],a.path[k+1],q-k);
           const old=[boss[0]+(pose.x||0),1.7,boss[2]+(pose.z||0)];pose.x=p[0]-boss[0];pose.z=p[2]-boss[2];pose.lean=-.25;
-          if(!a.hit&&segmentDistance(player,old,p)<a.radius){a.hit=true;emit(a.damage,player);}
+          if(!a.hit&&segmentDistance(player,old,p)<a.radius+playerPadding()){a.hit=true;emit(a.damage,player);}
         }else if(t>=start+a.rushDuration){const q=1-clamp((t-start-a.rushDuration)/a.returnDuration,0,1);pose.x=(a.path[3][0]-boss[0])*q;pose.z=(a.path[3][2]-boss[2])*q;}
         break;
       }
@@ -271,7 +272,7 @@ export function createGuardianBossCombat(scene){
       case 'shadow-ambush':
         once('warning',a.warningStart,()=>{a.reappear=[a.target[0],1.7,a.target[2]+2];warning(a.reappear,a.radius);a.visuals.push(line(a.reappear,a.target,.18,'#dc9eff'));});
         if(t>=a.reappearAt&&t<a.retreatAt){pose.x=a.reappear[0]-boss[0];pose.z=a.reappear[2]-boss[2];}
-        once('strike',a.strikeAt,()=>{if(distance(player,a.target)<a.radius)emit(a.damage,player,{v:[0,0,-1]});exposed=a.exposedDuration;});break;
+        once('strike',a.strikeAt,()=>{if(distance(player,a.target)<a.radius+playerPadding())emit(a.damage,player,{v:[0,0,-1]});exposed=a.exposedDuration;});break;
       case 'shadow-pack':
         for(let i=0;i<a.count;i++)once(i,a.windup+i*a.interval,()=>wolf([(i%2?1:-1)*6,0,a.target[2]-7],player,a.warning));break;
       case 'shadow-night':
@@ -322,7 +323,7 @@ export function createGuardianBossCombat(scene){
       if(e.kind==='hazard'){
         if(e.age>=e.delay&&!e.fired){
           e.fired=true;erupt(e);
-          if(distance(player,e.p)<e.r+.25)emit(e.damage,player,{bind:e.bind,ignoreShield:e.ignoreShield,armorPiercing:e.armorPiercing});
+          if(distance(player,e.p)<e.r+.25+playerPadding())emit(e.damage,player,{bind:e.bind,ignoreShield:e.ignoreShield,armorPiercing:e.armorPiercing});
           gameAudio.impact(village,e.damage);
         }
         if(!e.fired)e.visuals[0].material.opacity=.22+(Math.sin(e.age*12)+1)*.16;
@@ -331,32 +332,32 @@ export function createGuardianBossCombat(scene){
           const old=[...e.p],d=new T.Vector3(...player).sub(new T.Vector3(...e.p)).normalize(),v=new T.Vector3(...e.v);
           if(e.homing)v.lerp(d,Math.min(1,dt*e.homing)).normalize();e.v=v.toArray();
           e.p=e.p.map((p,i)=>p+e.v[i]*e.speed*dt);e.visuals[0].position.fromArray(e.p);e.visuals[0].rotation.z+=dt*5;
-          if(segmentDistance(player,old,e.p)<e.r+.5){emit(e.damage,player,{blockable:true,old,p:[...player],v:e.v});destroy(e);}
+          if(segmentDistance(player,old,e.p)<e.r+.5+playerPadding()){emit(e.damage,player,{blockable:true,old,p:[...player],v:e.v});destroy(e);}
         }
       }else if(e.kind==='wolf'){
         if(e.age>=e.delay){
           const d=new T.Vector3(player[0]-e.p[0],0,player[2]-e.p[2]).normalize(),old=[...e.p];
           e.p[0]+=d.x*e.speed*dt;e.p[2]+=d.z*e.speed*dt;e.group.position.fromArray(e.p);e.group.rotation.y=Math.atan2(d.x,d.z);
-          if(segmentDistance([player[0],0,player[2]],old,e.p)<e.radius){emit(e.damage,player);destroy(e);}
+          if(segmentDistance([player[0],0,player[2]],old,e.p)<e.radius+playerPadding()){emit(e.damage,player);destroy(e);}
         }
       }else if(e.kind==='wave'){
         if(e.age>=e.delay){const old=e.p[2];e.p[2]+=e.speed*dt;e.visuals.forEach(m=>m.position.z=e.p[2]);
-          if(!e.hit&&player[2]>=old-1&&player[2]<=e.p[2]+1){e.hit=true;if(Math.abs(player[0]-e.gap)>e.gapWidth/2-.25)emit(e.damage,player);}}
+          if(!e.hit&&player[2]>=old-1-playerPadding()&&player[2]<=e.p[2]+1+playerPadding()){e.hit=true;if(Math.abs(player[0]-e.gap)>e.gapWidth/2-.25-playerPadding())emit(e.damage,player);}}
       }else if(e.kind==='tornado'){
         if(e.age>=e.delay){
           e.p[0]=Math.sin((e.age-e.delay)*e.orbitSpeed+e.seed*2.1)*e.travelAmplitude;
           e.visuals.forEach((m,i)=>{m.position.x=e.p[0]+Math.sin(e.age*4+i)*.15;m.rotation.y=e.age*3+i;if(m.geometry===geometry.arc)m.rotation.x=Math.PI/2;});
-          e.tick+=dt;if(e.tick>=e.tickInterval){e.tick=0;if(distance(player,e.p)<e.radius)emit(e.damage,player);}
+          e.tick+=dt;if(e.tick>=e.tickInterval){e.tick=0;if(distance(player,e.p)<e.radius+playerPadding())emit(e.damage,player);}
         }
       }else if(e.kind==='shockwave'){
         const old=e.r;e.r+=dt*e.speed;e.visuals[0].scale.setScalar(Math.max(.1,e.r));
-        const d=distance(player,e.p);if(!e.hit&&d>=old-e.radius&&d<=e.r+e.radius){e.hit=true;if(player[1]<2.8)emit(e.damage,player);}
+        const d=distance(player,e.p);if(!e.hit&&d>=old-e.radius-playerPadding()&&d<=e.r+e.radius+playerPadding()){e.hit=true;if(player[1]<2.8)emit(e.damage,player);}
       }else if(e.kind==='blade'){
         if(e.age>=e.delay){const old=[...e.p];e.p=e.p.map((v,i)=>v+e.v[i]*e.speed*dt);e.visuals[0].position.fromArray(e.p);
-          if(!e.hit&&segmentDistance(player,old,e.p)<e.radius){e.hit=true;emit(e.damage,player,{ignoreShield:true,armorPiercing:true});}}
+          if(!e.hit&&segmentDistance(player,old,e.p)<e.radius+playerPadding()){e.hit=true;emit(e.damage,player,{ignoreShield:true,armorPiercing:true});}}
       }else if(e.kind==='crystal'){
         e.visuals[1].rotation.y+=dt;
-        if(e.age>=e.explodeAt){if(distance(player,e.p)<e.blast)emit(e.damage,player);destroy(e);}
+        if(e.age>=e.explodeAt){if(distance(player,e.p)<e.blast+playerPadding())emit(e.damage,player);destroy(e);}
       }else if(e.kind==='prison'){
         // Captured players may still seal and attack the bubble to escape.
         e.visuals.forEach(m=>m.position.fromArray(player));e.p=[...player];
@@ -394,7 +395,7 @@ export function createGuardianBossCombat(scene){
     clear,trigger:begin,
     update(dt,fighter,player,boss,impact,options={}){
       if(!design||options.enabled===false||fighter.hp<=0)return;
-      ctx={fighter,player:[...player],boss:[...boss],impact,control:options.control};
+      ctx={fighter,player:[...player],boss:[...boss],impact,control:options.control,playerHitboxScale:options.playerHitboxScale??1};
       clock+=dt;exposed=Math.max(0,exposed-dt);stagger=Math.max(0,stagger-dt);night=Math.max(0,night-dt);
       stackLife=Math.max(0,stackLife-dt);if(!stackLife)stack=0;
       if(!environmentReady){environmentReady=true;addEnvironment(player,boss);}

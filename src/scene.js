@@ -4,6 +4,7 @@ import { toon, canvasTexture, windyDepth, glowTexture, windTime } from "./materi
 import { inkMaterial, addInkOutline } from './ink-outline.js';
 import { createTerrainGrid, TerrainSurface } from './terrain-surface.js';
 import { createGrassGeometry } from './grass.js';
+import {inArenaChannel,carveArenaChannel,createArenaChannel} from './arena-channel.js';
 let seed = 1681;
 const rand = () => {
   seed = Math.imul(seed, 1664525) + 1013904223 >>> 0;
@@ -87,55 +88,11 @@ export function createWorld() {
   groundTex.wrapS = groundTex.wrapT = T.RepeatWrapping;
   groundTex.repeat.set(14, 16);
   mats.ground.map = groundTex;
-  const groundGeo = createTerrainGrid();
+  const groundGeo = carveArenaChannel(createTerrainGrid());
   const ground = mesh(groundGeo, mats.ground, [0, 0, -20]);
   terrainMeshes.push(ground);
   ground.castShadow = false;
-  const stoneTex = canvasTexture(256, (c, n) => {
-    c.fillStyle = "#d4d8bb";
-    c.fillRect(0, 0, n, n);
-    for (let i = 0; i < 180; i++) {
-      c.globalAlpha = i%5===0?.27:0;
-      c.fillStyle = i % 2 ? "#7e9183" : "#f6efcf";
-      c.beginPath();
-      const x=rand()*n,y=rand()*n,rx=range(4,30),ry=range(2,12),angle=rand()*6;
-      for(let j=0;j<6;j++){
-        const a=j/6*Math.PI*2,r=1+.22*Math.sin(i*1.8+j*2.3);
-        const px=Math.cos(a)*rx*r,py=Math.sin(a)*ry*r;
-        const bx=x+px*Math.cos(angle)-py*Math.sin(angle),by=y+px*Math.sin(angle)+py*Math.cos(angle);
-        if(j===0)c.moveTo(bx,by);else c.lineTo(bx,by);
-      }
-      c.closePath();
-      c.fill();
-    }
-    c.strokeStyle = "#677467";
-    c.globalAlpha = 0.38;
-    c.lineWidth = 1.5;
-    for (let i = 0; i < 8; i++) {
-      let x = rand() * n, y = rand() * n;
-      c.beginPath();
-      c.moveTo(x, y);
-      for (let j = 0; j < 4; j++) {
-        x += range(-15, 15);
-        y += range(8, 20);
-        c.lineTo(x, y);
-      }
-      c.stroke();
-    }
-    c.globalAlpha = 1;
-  });
-  const pathMat = toon("#dedec5", { map: stoneTex });
-  for (let z = 11; z > -28; z -= 2.35) for (let x = -1; x <= 1; x++) {
-    const tile = mesh(new T.BoxGeometry(1.87, 0.14, 2.17,4,1,4), pathMat, [x * 1.97, 0.02, z + range(-0.045, 0.045)]);
-    terrainMeshes.push(tile);
-    tile.rotation.y = range(-0.02, 0.02);
-    const uv=tile.geometry.attributes.uv,turn=(Math.round(z/2.35)+x+40)%4;
-    for(let i=0;i<uv.count;i++){
-      let u=uv.getX(i),v=uv.getY(i);
-      for(let j=0;j<turn;j++){const next=1-v;v=u;u=next;}
-      uv.setXY(i,u,v);
-    }
-  }
+  const channel=createArenaChannel(scene);
   function rock(p, s, color) {
     const geometry = new T.IcosahedronGeometry(1, 2), pos = geometry.attributes.position;
     for (let i = 0; i < pos.count; i++) {
@@ -150,7 +107,7 @@ export function createWorld() {
   }
   for (let i = 0; i < 48; i++) {
     let x = range(-23, 23), z = range(-40, 15);
-    if (Math.abs(x) < 3.6) continue;
+    if (inArenaChannel(x,z,1)||Math.hypot(x,z-7)<2.5||Math.hypot(x,z+24)<2.5) continue;
     rock([x, 0.18, z], [range(0.3, 1.1), range(0.25, 0.7), range(0.4, 1.2)], i % 3 ? "#9fae95" : "#b2bca1");
   }
   for (const side of [-1, 1]) for (let i = 0; i < 10; i++) {
@@ -180,7 +137,7 @@ export function createWorld() {
   const grass = new T.InstancedMesh(grassGeo, grassMat, 1700), dummy = new T.Object3D();
   for (let i = 0; i < grass.count; i++) {
     let x, z;
-    do { x = range(-22, 22); z = range(-40, 15); } while (Math.abs(x) < 3.15);
+    do { x = range(-22, 22); z = range(-40, 15); } while (inArenaChannel(x,z,.7));
     dummy.position.set(x, .015, z);
     dummy.rotation.y = rand() * Math.PI * 2;
     dummy.scale.setScalar(range(.6, 1.4));
@@ -193,28 +150,6 @@ export function createWorld() {
   scene.add(grass);
   const opponentSpawn = new T.Vector3(0, 0, -24);
   const plantReferenceHeight = 7.88; // Preserve the established size of summoned Wood plants.
-  const bannerTex = canvasTexture(256, (c, n) => {
-    c.fillStyle = "#bc5949";
-    c.fillRect(0, 0, n, n);
-    c.strokeStyle = "#f3d59e";
-    c.lineWidth = 5;
-    c.strokeRect(15, 15, n - 30, n - 30);
-    c.fillStyle = "#f3d59e";
-    c.font = "115px serif";
-    c.textAlign = "center";
-    c.textBaseline = "middle";
-    c.fillText("\u708E", n / 2, n * 0.47);
-    for (let j = 0; j < 5; j++) c.fillRect(n / 2 - 4, n * 0.75 + j * 5, 8, 2);
-  });
-  const bannerMat = toon("#ffffff", { map: bannerTex, wind: true, side: T.DoubleSide });
-  for (const side of [-1, 1]) {
-    mesh("cylinder", mats.wood, [side * 12, 2.65, -22], [0.07, 5.3, 0.07]);
-    const geo = new T.PlaneGeometry(1.15, 2.8, 5, 12);
-    geo.translate(0, 1.4, 0);
-    const flag = mesh(geo, bannerMat, [side * 11.44, 2.16, -22]);
-    flag.customDepthMaterial = windyDepth();
-    mesh("box", mats.gold, [side * 11.44, 5, -22], [1.4, 0.08, 0.08]);
-  }
   for (const side of [-1, 1]) {
     for (let i = 0; i < 10; i++) {
       mesh("box", mats.wood, [side * 16, 0.85, -25 + i * 4], [0.25, 1.7, 0.25]);
@@ -224,6 +159,7 @@ export function createWorld() {
   }
   function update(time, dt) {
     windTime.value = time;
+    channel.update(time);
     for (const a of animated) {
       if (a.type === "cloud") a.object.position.x = a.origin.x + Math.sin(time * 0.025 + a.phase) * 3;
     }

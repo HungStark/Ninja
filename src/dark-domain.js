@@ -1,3 +1,4 @@
+import {actorHitPadding} from './combat-size.js';
 import * as T from 'three';
 import { vfxToon } from './vfx-materials.js';
 import { DarkDomainIntro } from './dark-domain-intro.js';
@@ -285,7 +286,7 @@ export class DarkDomain {
         const previous=[c.p[0],c.hitHeight,c.p[2]],speed=c.form==='bull'?SHADOW_CHARGE.bullSpeed:SHADOW_CHARGE.dogSpeed,travel=Math.min(dist,dt*speed);if(dist>.001){c.p[0]+=delta[0]/dist*travel;c.p[2]+=delta[1]/dist*travel;}
         if(intercept({owner:c.owner,old:previous,p:[c.p[0],c.hitHeight,c.p[2]],size:c.hitRadius})){this.destroyClone(c);continue;}
         if(distance(c.p,destination)<.15){
-          if(distance(c.p,opponent.pos)<1.35&&opponent.fighter.invulnerableTime<=0)strike(c,[opponent.pos[0],1.5,opponent.pos[2]]);
+          if(distance(c.p,opponent.pos)<1.35+actorHitPadding(opponent)&&opponent.fighter.invulnerableTime<=0)strike(c,[opponent.pos[0],1.5,opponent.pos[2]]);
           this.destroyClone(c);continue;
         }
       }
@@ -312,7 +313,7 @@ export class DarkDomain {
       const fall=clamp(b.age/b.fallTime);
       if(!b.impactDone&&b.age+1e-6>=b.fallTime){
         b.impactDone=true;const live=fighters.find(f=>f.owner===b.targetOwner);
-        if(live&&distance(b.p,live.pos)<1.5&&live.fighter.invulnerableTime<=0){
+        if(live&&distance(b.p,live.pos)<1.5+actorHitPadding(live)&&live.fighter.invulnerableTime<=0){
           if(this.usable){b.victim=live;live.fighter.darkControlTime=b.duration;}
           const result=live.fighter.receive(b.damage,true,true,'dark');crush?.(b,live,result);
         }
