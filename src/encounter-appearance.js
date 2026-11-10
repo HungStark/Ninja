@@ -33,8 +33,13 @@ export function createEncounterCreature(id){
   const parts=[];root.traverse(o=>{if(o.isMesh&&headNames.test(o.name))parts.push(o);});for(const part of parts)head.attach(part);
   root.updateMatrixWorld(true);const mouth=new T.Object3D();mouth.name='guardian-mouth-anchor';mouth.position.copy(head.worldToLocal(mouthPart.getWorldPosition(new T.Vector3())));mouth.position.z+=.55;head.add(mouth);
   const headWorldScale=new T.Vector3();
+  const fireTails=[];
+  if(id==='fire')root.traverse(m=>{if(m.isMesh&&/^fire-tail-\d+$/.test(m.name)){m.material=m.material.clone();materials.add(m.material);fireTails.push(m);}});
+  function setCombatState(state={}){
+    for(const m of fireTails){const lit=Number(m.name.slice(10))<=state.tailCount;m.material.emissive?.set(lit?'#ff6d0a':'#000000');m.material.emissiveIntensity=lit?1.1:0;}
+  }
   function setArtPose(p={}){head.position.copy(headBase);head.position.z-=(p.headPull||0)/head.parent.getWorldScale(headWorldScale).z;head.rotation.x=p.headTilt||0;}
-  return {root,height,form:GUARDIAN_FORMS[id],setArtPose,mouthPosition(p){if(p)setArtPose(p);root.updateWorldMatrix(true,true);return mouth.getWorldPosition(new T.Vector3());},update(time,moving=false,reducedMotion=false,velocity=0){
+  return {root,height,form:GUARDIAN_FORMS[id],setArtPose,setCombatState,mouthPosition(p){if(p)setArtPose(p);root.updateWorldMatrix(true,true);return mouth.getWorldPosition(new T.Vector3());},update(time,moving=false,reducedMotion=false,velocity=0){
     body.position.y=baseY+(reducedMotion?0:Math.sin(time*(moving?9:2))*(moving?.07:.025)/scale);
     body.rotation.z=reducedMotion?0:-velocity*.012;
     for(const a of animated){if(a.kind==='halo')a.mesh.rotation.z=time*.2;if(a.kind==='pulse')a.mesh.scale.setScalar(1+Math.sin(time*4)*.08);}

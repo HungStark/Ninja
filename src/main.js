@@ -170,7 +170,11 @@ async function main() {
     camera3d.position.fromArray(playerPos()).lerp(close,weight);const normal=new T.Quaternion().setFromEuler(new T.Euler(camera.pitch,camera.yaw,0,'YXZ')),look=new T.Object3D();look.position.copy(camera3d.position);look.lookAt(target);look.rotateY(Math.PI);camera3d.quaternion.copy(normal).slerp(look.quaternion,weight);setWorldFov(baseFov-12*weight);handsPass.enabled=false;
     opponent.group.scale.setScalar(1+Math.sin(clamp(tr.age/3.2,0,1)*Math.PI)*.1);
   }
-  function guardianImpact(shot,pos){shot={...shot,damage:shot.damage*bossDamageMultiplier()/baseEnemyDamageMultiplier()};if(shot.blockable&&snowBlocks(shot))return;if(shot.blockable&&crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot)))return;impact(shot,pos);}
+  function guardianImpact(shot,pos){const scaled={...shot,damage:shot.damage*bossDamageMultiplier()/baseEnemyDamageMultiplier()};if(scaled.blockable&&snowBlocks(scaled))return {damage:0};if(scaled.blockable&&crossWalls(scaled,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,scaled)))return {damage:0};impact(scaled,pos);shot.hitResult=scaled.hitResult;return scaled.hitResult;}
+  function guardianControl(kind,duration){
+    const key=kind==='ice'?'iceControlTime':kind==='wood'?'woodControlTime':'lightningControlTime';
+    player[key]=Math.max(player[key]||0,duration);interruptActor('player');
+  }
 
   const squad=createEncounterSquad(scene,{GameRules,Fighter,keys,random:rand,getPlayer:playerPos,getShots:()=>shots,
     constrainMovement:(old,goal)=>lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),movementSlow:p=>earthArts.slowAt(p[0],p[2])*lightArts.slowAt('enemy',p)*natureArts.slowAt('enemy'),
@@ -402,6 +406,7 @@ async function main() {
   }
   function pinMobileAim(){
     if(cinematicActive()||!androidInterface()||!started||paused||won||adventure?.activeView)return;
+    if(activeBoss()&&!guardianPhases.lockable())return;
     const origin=playerPos(),target=combatEnemies().filter(a=>a.fighter.hp>0).sort((a,b)=>vlen(vsub(a.pos,origin))-vlen(vsub(b.pos,origin)))[0];if(!target)return;
     const d=vsub(natureArts.perceivedPosition('player',[target]),playerPos());
     camera.yaw=Math.atan2(-d[0],-d[2]);camera.pitch=Math.atan2(d[1],Math.hypot(d[0],d[2]));
@@ -425,6 +430,7 @@ async function main() {
     gameAudio.cast(spell,owner!=='player');
     if(!natureArts.canCast(owner,spell))return false;
     spell=natureArts.empower(owner,spell);
+    if(owner==='player'&&spell.kind==='attack'&&guardianPhases.breakPrison((spell.damage||15)*damageMultiplierFor(battlePlayerStats,spell.element)))return true;
     if(spell.style==='waterbubbles'){
       waterBubbles.cast(owner,spell,owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:natureArts.perceivedPosition(owner,windActors()));
       if(owner==='player')announce('Thủy Bộc Phá Không · 4 bong bóng nổ lần lượt ở giây 1, 2, 3, 4.');
@@ -600,16 +606,17 @@ async function main() {
   function launchShuriken(owner,weapon,pos,dir,sourceProfile=null){
     if(owner==='enemy')weapon={...weapon,damage:weapon.damage*(sourceProfile?opponentDamageMultiplier(sourceProfile):bossDamageMultiplier())/baseEnemyDamageMultiplier()};
     gameAudio.shuriken(owner!=='player');
+    if(owner==='player'&&guardianPhases.breakPrison(weapon.damage*damageMultiplierFor(battlePlayerStats,'weapon')))return weapon;
     const infused=weapon,target=volleyTarget(owner,pos,dir),side=vnorm([-dir[2],0,dir[0]]),p=vadd(vadd(pos,vmul(dir,.7)),vmul(side,.15));p[1]-=.12;
     shots.push({owner,element:'weapon',shurikenType:weapon.shurikenType||'iron',energy:true,waterInfused:!!infused.waterInfused,style:'shuriken',phase:'flying',p,old:[...p],v:vmul(vnorm(vsub(target,p)),infused.speed),size:infused.size,damage:infused.damage,color:weapon.color||'#707983',life:4,age:0,flightAge:0,trail:0,reflected:false});
     return infused;
   }
-  function volleyAimActors(owner){return windActors().filter(a=>a.owner!==owner&&a.fighter.hp>0).map(a=>({...a,pos:natureArts.perceivedPosition(owner,[a])}));}
+  function volleyAimActors(owner){return windActors().filter(a=>a.owner!==owner&&a.fighter.hp>0&&(a.id!=='primary'||owner!=='player'||guardianPhases.lockable())).map(a=>({...a,pos:natureArts.perceivedPosition(owner,[a])}));}
   function volleyTarget(owner, pos, dir) {
     if(owner==='player'&&overheadPractice()){const p=practiceOverhead.point();return [p[0],practiceAimHeight(p),p[2]];}
     const opponentPosition = owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:natureArts.perceivedPosition(owner,windActors());
     const delta = vsub(opponentPosition, pos), along = dot(delta, dir);
-    if (along > 0 && vlen(vsub(delta, vmul(dir, along))) < .65) return vadd(pos, vmul(dir, along));
+    if ((owner!=='player'||guardianPhases.lockable())&&along > 0 && vlen(vsub(delta, vmul(dir, along))) < .65) return vadd(pos, vmul(dir, along));
     const distance = dir[1] < -.025 ? clamp(-pos[1] / dir[1], 1, 55) : 31;
     return vadd(pos, vmul(dir, distance));
   }
@@ -696,11 +703,15 @@ async function main() {
   }
   function impact(shot, pos) {
     if(cinematicActive()||(activeBoss()&&shot.owner==='player'&&enemy.hp<=0))return true;
-    const multiplier=shot.owner==='player'?damageMultiplierFor(battlePlayerStats,shot.element)*(activeBoss()?guardianPhases.damageMultiplier():1):(shot.damageScale??baseEnemyDamageMultiplier());
+    const defense=activeBoss()&&shot.owner==='player'?guardianPhases.defense(shot,pos):{multiplier:1,reflect:0};
+    const multiplier=shot.owner==='player'?damageMultiplierFor(battlePlayerStats,shot.element)*defense.multiplier:(shot.damageScale??baseEnemyDamageMultiplier());
     const victim=shot.owner==='player'?(combatEnemies().find(a=>a.id===shot.victimId)||combatEnemies().filter(a=>a.fighter.hp>0).sort((a,b)=>vlen(vsub(a.pos,pos))-vlen(vsub(b.pos,pos)))[0]):null;
-    const fighter = shot.owner === 'enemy' ? player : victim?.fighter||enemy, result = fighter.receive(shot.damage*multiplier, shot.reflected || shot.unreflectable,!!shot.ignoreShield,shot.waterInfused?'water':shot.element);
+    const fighter = shot.owner === 'enemy' ? player : victim?.fighter||enemy, result = fighter.receive(shot.damage*multiplier, shot.reflected || shot.unreflectable,!!shot.ignoreShield,shot.armorPiercing?null:shot.waterInfused?'water':shot.element);
     if(adventure?.inBattle&&shot.owner==='player'&&result.damage>0)adventure.awardCombatExperience(result.damage*.5,victim?.id||shot.victimId);
-    shot.hitResult=result;if(activeBoss()&&shot.owner==='player')guardianPhases.onDamage(result.damage);
+    shot.hitResult=result;if(activeBoss()&&shot.owner==='player'){
+      guardianPhases.onDamage(result.damage,shot,pos);
+      if(defense.reflect>0&&!result.immune&&!shot.unreflectable&&!shot.reflected){const r=player.receive(shot.damage*damageMultiplierFor(battlePlayerStats,shot.element)*defense.reflect,true,false,activeBoss().element);if(r.damage>0)cameraImpacts.trigger('reflect',.65);}
+    }
     if(result.immune)return true;
     if(!['poisontick','aircut'].includes(shot.style))gameAudio.impact(shot.element,result.damage,!result.damage,shot.style);
     fighter.applyElementHit(shot.element,result,shot.style);
@@ -793,6 +804,7 @@ async function main() {
   }
   function meteorImpact(shot) {
     const pos = [shot.p[0], .1, shot.p[2]];
+    guardianPhases.areaDamage(shot,pos,shot.blastRadius,damageMultiplierFor(battlePlayerStats,shot.element));
     gameAudio.meteorImpact(shot);
     effects.arts.blast(pos, 'meteor', shot.blastRadius);
     for (let j = 0; j < 80; j++) particle(pos, [range(-7, 7), range(2, 12), range(-7, 7)], range(.025, .08), range(.6, 1.2), '#ffc56e');
@@ -804,6 +816,7 @@ async function main() {
   }
   function thunderImpact(shot) {
     const pos=shot.target;
+    guardianPhases.areaDamage(shot,pos,shot.blastRadius,damageMultiplierFor(battlePlayerStats,shot.element));
     if(snowBlocks({...shot,old:shot.cloudPoint,p:[...pos]}))return;
     if(shot.style==='jacob')lightArts.flash([pos[0],1.72,pos[2]],2);
     else effects.lightningArts.blast(pos,shot.blastRadius);
@@ -838,7 +851,7 @@ async function main() {
   }
   function snowBlocks(shot){return natureArts.intercept(shot);}
   function updateShots(dt) {
-    aimMagneticShots(shots,windActors());
+    aimMagneticShots(shots,windActors().filter(a=>a.id!=='primary'||guardianPhases.lockable()));
     for(let i=fields.length-1;i>=0;i--){fields[i].life-=dt;fields[i].age+=dt;if(fields[i].life<=1e-6)fields.splice(i,1);}
     for (let i = walls.length - 1; i >= 0; i--) { if(!walls[i].earthEffect)walls[i].life -= dt; if (walls[i].life <= 0 || walls[i].hp <= 0) walls.splice(i, 1); }
     // Let the continuous forward gust catch swept projectiles before walls or waves resolve them.
@@ -977,10 +990,17 @@ async function main() {
       const groundHit=earthArts.intersectTerrain(shot.old,shot.p,Math.min(.15,shot.size||.04));
       if(groundHit){if(shot.style==='shuriken')burst(groundHit,4,.4,'#bdc9d7');else earthArts.burst(groundHit,.8);shots.splice(i,1);continue;}
       if(crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot))){shots.splice(i,1);continue;}
+      if(guardianPhases.intercept(shot,damageMultiplierFor(battlePlayerStats,shot.element))){burst(shot.p,5,.5,'#d7f7df');shots.splice(i,1);continue;}
       const candidates=shot.owner==='enemy'?[{id:'player',pos:playerPos(),fighter:player}]:combatEnemies().filter(a=>a.fighter.hp>0);
-      const delta=vsub(shot.p,shot.old),hits=candidates.map(a=>{const t=clamp(dot(vsub(a.pos,shot.old),delta)/(dot(delta,delta)||1),0,1),closest=vadd(shot.old,vmul(delta,t));return {a,t,closest,hit:a.fighter.invulnerableTime<=0&&vlen(vsub(closest,a.pos))<.54+shot.size};}).filter(h=>h.hit).sort((a,b)=>a.t-b.t);
+      const delta=vsub(shot.p,shot.old),hits=candidates.map(a=>{
+        if(a.id==='primary'&&activeBoss()&&guardianPhases.phase===2&&activeBoss().village!=='nameless'){
+          const hit=opponent.guardianContact(shot);
+          if(hit||activeBoss().village==='earth')return {a,t:hit?.t||0,closest:hit?.point||shot.p,part:hit?.part,hit:!!hit&&a.fighter.invulnerableTime<=0};
+        }
+        const t=clamp(dot(vsub(a.pos,shot.old),delta)/(dot(delta,delta)||1),0,1),closest=vadd(shot.old,vmul(delta,t));return {a,t,closest,hit:a.fighter.invulnerableTime<=0&&vlen(vsub(closest,a.pos))<.54+shot.size};
+      }).filter(h=>h.hit).sort((a,b)=>a.t-b.t);
       const contact=hits[0],collided=!!contact,closest=contact?.closest||shot.p;
-      if(contact)shot.victimId=contact.a.id;
+      if(contact){shot.victimId=contact.a.id;shot.guardianPart=contact.part;}
       if (shot.element === 'fire' && shot.style === 'volley' && !collided && dot(vsub(shot.target, shot.old), vsub(shot.target, shot.p)) <= 0) { shots.splice(i, 1); continue; }
       if (collided && impact(shot, closest)) shots.splice(i, 1);
       else if (shot.life <= 0 || Math.abs(shot.p[0]) > 30 || Math.abs(shot.p[2]) > 45 || shot.p[1] < earthArts.heightAt(shot.p[0],shot.p[2])+.08) shots.splice(i, 1);
@@ -1088,11 +1108,11 @@ async function main() {
 
       if(overheadPractice()){
         if(lightArts.blocksDash('player',playerPos()))dashBoost.cancelDash();
-        const dash=dashBoost.state(),isDashing=dash.dashing>0,target=practiceOverhead.target(),blocked=player.controlTime>0||natureArts.buried('player')||earthArts.captured('player');
+        const dash=dashBoost.state(),isDashing=dash.dashing>0,target=practiceOverhead.target(),blocked=player.controlTime>0||natureArts.buried('player')||earthArts.captured('player')||guardianPhases.slowAt(playerPos())===0;
         moveDirection=0;
         if(blocked){practiceOverhead.stop();dashBoost.cancelDash();}
         else if(target){
-          const distance=(isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):PRACTICE_MOVE_SPEED*dt*earthArts.slowAt(camera.p[0],camera.p[2])*lightArts.slowAt('player',playerPos()))*natureArts.slowAt('player');
+          const distance=(isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):PRACTICE_MOVE_SPEED*dt*earthArts.slowAt(camera.p[0],camera.p[2])*lightArts.slowAt('player',playerPos()))*natureArts.slowAt('player')*guardianPhases.slowAt(playerPos());
           const old=playerPos(),goal=stepPracticePoint(old,target,distance),next=clampPracticePoint(lightArts.constrainMovement('player',old,earthArts.move(old,goal)));
           camera.p[0]=next[0];camera.p[2]=next[2];moveTargetX=next[0];moveDirection=Math.hypot(next[0]-old[0],next[2]-old[2])>1e-6?1:0;
           if(Math.hypot(target[0]-next[0],target[2]-next[2])<.02||dt>1e-8&&Math.hypot(next[0]-old[0],next[2]-old[2])<1e-6)practiceOverhead.stop();
@@ -1105,7 +1125,7 @@ async function main() {
       if(lightArts.blocksDash('player',playerPos()))dashBoost.cancelDash();
       const dash=dashBoost.state(),isDashing=dash.dashing>0;
       moveDirection = player.controlTime <= 0 && Math.abs(remaining) > .001 ? Math.sign(remaining) : 0;
-      if(player.controlTime>0||natureArts.buried('player')){dashBoost.cancelDash();moveTargetX=camera.p[0];moveDirection=0;}
+      if(player.controlTime>0||natureArts.buried('player')||guardianPhases.slowAt(playerPos())===0){dashBoost.cancelDash();moveTargetX=camera.p[0];moveDirection=0;}
       const travel=(isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):sidestepSpeed*dt*earthArts.slowAt(camera.p[0],camera.p[2])*guardianPhases.slowAt(playerPos())*lightArts.slowAt('player',playerPos()))*natureArts.slowAt('player');
       const goal=[camera.p[0]+moveDirection*Math.min(Math.abs(remaining),travel),playerPos()[1],camera.p[2]];
       if(!natureArts.buried('player'))camera.p[0]=lightArts.constrainMovement('player',playerPos(),earthArts.move(playerPos(),goal))[0];
@@ -1117,7 +1137,7 @@ async function main() {
       lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;},snowBlocks);
       if(checkGuardianDefeat()){updateUI();return;}
       const guardianBase=guardianAnchor?[guardianAnchor.x,guardianAnchor.y+(opponent.group.userData.height||4)*.55,guardianAnchor.z]:enemyPos();
-      guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0,mouthPosition:p=>opponent.guardianMouth(p)});
+      guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0,mouthPosition:p=>opponent.guardianMouth(p),control:guardianControl});
       updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);guardianAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),(actor,amount)=>{const r=actor.fighter.receive(amount,true,false,'wind');if(r.damage>0){enemyHit=.25;hitTimer=.1;}return r.damage;},!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);battleMetrics.observeWalls(walls);
       enemyDashAura.update(dt,[opponent.group.position.x,earthFloor('enemy',opponent.group.position.x,opponent.group.position.z),opponent.group.position.z],enemy.hp>0&&enemyMovement.state().dashBoost.dashing>0,reducedMotion);
       if(!won)darkDomain.updateClones(dt,animationTime,[{owner:'player',pos:camera.p,fighter:player},{owner:'enemy',pos:enemyPos(),fighter:enemy}],
@@ -1129,7 +1149,8 @@ async function main() {
       if (messageTime <= 0) { $('message').textContent = androidInterface()?'Ghim và tấn công để ngắm đối thủ · Tấn công để đánh theo tâm':rules.ready() ? overheadPractice()?'SPACE thi triển · di chuột để ngắm':'SPACE thi triển · chuột trái/phải để né' : 'SPACE ném phi tiêu · kết ấn theo quyển trục'; $('message').style.color = '#c7c5b6'; }
       if(player.controlTime<=0&&activePose<0&&rules.sequence.length){activePose=keys.indexOf(rules.sequence.at(-1));hands.seal(activePose);poseAge=0;}
       updateUI();
-      if(messageTime<=0&&opportunities.length){$('message').textContent=opportunities[0].text;$('message').style.color='#e4cf8d';}
+      if(messageTime<=0&&guardianPhases.state().counter){$('message').textContent=guardianPhases.state().counter;$('message').style.color='#e4cf8d';}
+      if(messageTime<=0&&opportunities.length&&!guardianPhases.state().counter){$('message').textContent=opportunities[0].text;$('message').style.color='#e4cf8d';}
     }
     if (!paused) {
       recoil = Math.max(0, recoil - dt * .7); flashTimer = Math.max(0, flashTimer - dt); hitTimer = Math.max(0, hitTimer - dt); enemyHit = Math.max(0, enemyHit - dt);
@@ -1139,6 +1160,7 @@ async function main() {
       opponent.group.position.y=darkDomain.depth('enemy')+earthFloor('enemy',opponent.group.position.x,opponent.group.position.z);
       if(activeBoss()&&guardianPhases.phase>1){const offset=guardianPhases.offset;if(guardianPhases.phase===2&&guardianAnchor){opponent.group.position.set(guardianAnchor.x+offset.x,guardianAnchor.y+offset.y,guardianAnchor.z+offset.z);opponent.group.rotation.x=offset.lean;}else if(opponent.guardianAura){opponent.guardianAura.position.set(offset.x,.35+offset.y-darkDomain.depth('enemy'),-.8+offset.z);}}
       opponent.setGuardianArtPose(guardianPhases.offset);
+      if(activeBoss())opponent.setGuardianCombatState(guardianPhases.state());
       playerAvatar.group.position.set(camera.p[0],darkDomain.depth('player')+earthFloor('player',camera.p[0],camera.p[2]),camera.p[2]);
       if(overheadPractice()){const direction=aim();camera.yaw=Math.atan2(-direction[0],-direction[2]);}
       playerAvatar.group.rotation.set(0,Math.PI+camera.yaw,0);
@@ -1159,6 +1181,10 @@ async function main() {
     const enemyWall = walls.find(w => w.owner === 'enemy' && w.hp > 0 && !['earth','wood'].includes(w.element));
     $('enemyChakra').textContent = activeBoss()&&guardianPhases.phase===2?'THI TRIỂN TRỰC TIẾP':currentEnemySettings().infiniteMana?'MANA VÔ HẠN':Math.floor(aiRules.chakra)+' / '+aiRules.maxChakra+' MANA'; $('enemyShield').textContent = [elementalStatus(enemy,false),enemy.controlTime>0?enemy.controlSource+' '+enemy.controlTime.toFixed(1)+'s':'',natureArts.status('enemy'),earthArts.status('enemy'),lightArts.status('enemy'),enemy.invulnerableTime>0?(darkDomain.dives.some(d=>d.owner==='enemy')?'U Ảnh Thuấn Di':'Miễn nhiễm')+' '+enemy.invulnerableTime.toFixed(1)+'s':'',enemy.shieldTime > 0 && (enemy.shield || enemy.reflect) ? 'Khiên ' + enemy.shield + (enemy.reflect ? ' · phản đòn' : '') : '',enemySpirit?'Tiên linh '+Math.max(0,enemySpirit.life-(enemySpirit.age<enemySpirit.formation?enemySpirit.formation-enemySpirit.age:0)).toFixed(1)+'s':'',enemyField?'Lôi Đình Kết Giới '+enemyField.life.toFixed(1)+'s':'', enemyWall ? (enemyWall.element === 'ice'?'Huyền Băng Thiên Bích ':enemyWall.element === 'wind'?'Tường gió ':enemyWall.element === 'water' ? 'Huyền Thủy Hộ Thuẫn ' : 'Hỏa Bích Thiên Thành ') + enemyWall.hp : ''].filter(Boolean).join(' · ');
     if(activeBoss()&&guardianPhases.phase===2)$('enemyAction').textContent=guardianPhases.state().signature||'Quan sát · chuẩn bị thi triển';
+    const guardianInfo=guardianPhases.state();
+    if(guardianInfo.passive){$('enemyShield').textContent+=' · '+guardianInfo.passive+(guardianInfo.tailCount?' '+guardianInfo.tailCount+'/'+guardianInfo.passiveParameters.tailCap:'')+(guardianInfo.exposed>0?' · Lộ điểm yếu '+guardianInfo.exposed.toFixed(1)+'s':'');}
+    if(guardianInfo.prison)$('shieldStatus').textContent+=' · Thủy Lao '+Math.ceil(guardianInfo.prison.hp)+' HP · Tấn công để phá';
+    if(guardianInfo.stacks)$('shieldStatus').textContent+=' · '+(activeBoss()?.village==='ice'?'Hàn Khí ':'Lôi Tích ')+guardianInfo.stacks+'/'+guardianInfo.passiveParameters.stackCount;
     if(activeBoss()&&guardianPhases.state().armor>0)$('enemyShield').textContent+=' · Giáp hộ vệ −35% sát thương · '+guardianPhases.state().armor.toFixed(1)+'s';
     const boost=dashBoost.state();
     $('moveHint').textContent = overheadPractice()?'CHUỘT PHẢI: DI CHUYỂN · G: LƯỚT THEO CON TRỎ · SPACE: THI TRIỂN':boost.ready>0?'TĂNG LỰC '+boost.ready.toFixed(1)+'s · CLICK TRÁI / PHẢI ĐỂ LƯỚT 3 M':moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'GIỮ TRÁI / PHẢI ĐỂ DI CHUYỂN LIÊN TỤC';
@@ -1166,7 +1192,7 @@ async function main() {
     $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':rules.chakra+1e-8<DASH_MANA_COST?'Thiếu mana · cần 10':overheadPractice()?'Lướt · 10 mana':'Tăng lực · 10 mana';
     $('dashBoostButton').title=overheadPractice()?'G: lướt ngay 3 m theo con trỏ, tốn 10 mana, hồi 1 giây':'G: tốn 10 mana để tăng lực trong 3 giây; click trái/phải lướt 3 m, hồi 1 giây';
     $('flash').style.opacity = flashTimer * .32; $('hitMarker').style.opacity = hitTimer > 0 ? 1 : 0;
-    const targetEntity=aimedEnemy(),delta = vsub(adventure?.encounter?.squad?targetEntity.pos:natureArts.perceivedPosition('player',windActors()), playerPos()), d = aim(), onTarget = vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7;
+    const targetEntity=aimedEnemy(),delta = vsub(adventure?.encounter?.squad?targetEntity.pos:natureArts.perceivedPosition('player',windActors()), playerPos()), d = aim(), onTarget = guardianPhases.lockable()&&vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7;
     $('reticle').classList.toggle('on-target', onTarget && targetEntity.fighter.hp > 0 && !waveView);
     $('targetInfo').style.opacity = onTarget && running && !waveView ? 1 : 0; $('targetName').textContent = adventure?.inBattle?(adventure.encounter.squad?[adventure.encounter.squad[0],...squad.state()].find((a,i)=>combatEnemies()[i]?.id===aimedEnemy().id)?.name||adventure.encounter.name:adventure.encounter.name):'ĐỐI THỦ'; $('targetHP').style.width = aimedEnemy().fighter.hp / aimedEnemy().fighter.maxHp * 100 + '%';
     playerShield.visible = !['fire', 'water', 'lightning', 'dark','wood','ice'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.position.set(camera.p[0], 1.45+earthFloor('player',camera.p[0],camera.p[2]), camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
@@ -1221,7 +1247,7 @@ async function main() {
     touchControls?.update();
     if(adventure?.activeView){const key=adventure.phase==='dialog'?[adventure.village,canvas.width,canvas.height].join(':'):null;if(key&&key===dialogueFrameKey)return;dialogueFrameKey=key;enemyNameplates.update(camera3d,[],false);renderer.info.reset();renderer.clear();renderer.render(adventure.world.scene,adventure.world.camera);return;}dialogueFrameKey=null;
     natureArts.visuals(shots,windActors(),camera3d,quality,reducedMotion);
-    squad.syncVisibility();opponent.group.visible=(enemy.hp>0||guardianPhases.transitioning)&&!natureArts.hidden('enemy');if(natureArts.hidden('player'))playerAvatar.group.visible=false;
+    squad.syncVisibility();opponent.group.visible=(enemy.hp>0||guardianPhases.transitioning)&&!natureArts.hidden('enemy')&&!guardianPhases.hidden();if(natureArts.hidden('player'))playerAvatar.group.visible=false;
     if(['wood','ice'].includes(enemy.defenseElement))opponent.shield.visible=false;
     earthArts.visuals(animationTime,reducedMotion);
     world.terrain.deform((x,z)=>earthArts.heightAt(x,z),earthArts.revision);

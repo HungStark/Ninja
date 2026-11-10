@@ -122,7 +122,9 @@
     "test:village-peace": "node tests/village-peace-revision-core.mjs && node tools/build-android.mjs && node tests/village-peace-revision-browser.cjs",
     "test:shop-layout": "node tools/build.mjs && node tests/shop-layout-browser.cjs",
     "test:inventory-map": "node tests/inventory-map-core.mjs && node tools/build-android.mjs && node tests/inventory-map-browser.cjs",
-    "test:opening": "node tools/build-vercel.mjs && node tests/opening-cinematic-browser.cjs"
+    "test:opening": "node tools/build-vercel.mjs && node tests/opening-cinematic-browser.cjs",
+    "test:guardian-bosses": "node tests/guardian-boss-combat.mjs && node tests/guardian-phases-core.mjs && node tests/guardian-ally-arts-core.mjs && node tools/build-android.mjs && node tests/guardian-boss-browser.cjs && node tests/guardian-boss-integration.cjs",
+    "test:guardian-balance": "node tests/guardian-balance-core.mjs && node tests/guardian-boss-combat.mjs && node tests/guardian-phases-core.mjs && node tests/guardian-ally-arts-core.mjs && node tools/build-android.mjs && node tests/guardian-balance-editor.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

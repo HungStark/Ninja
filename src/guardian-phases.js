@@ -2,17 +2,20 @@
 import {GUARDIAN_ARTS,guardianPhaseHealth,guardianLeap,guardianBreath,GUARDIAN_BASIC_TIMING as BASIC} from './guardian-arts.js';
 import {guardianElementMultipliers} from './guardian-element-balance.js';
 import {gameAudio} from './game-audio.js';
+import {createGuardianBossCombat} from './guardian-boss-combat.js';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 export function createGuardianPhases(scene){
+  const distinct=createGuardianBossCombat(scene);
   const root=new T.Group();root.name='guardian-beast-arts';scene.add(root);
   const sphere=new T.SphereGeometry(1,16,12),ring=new T.RingGeometry(.86,1,40),disk=new T.CircleGeometry(1,40),cylinder=new T.CylinderGeometry(1,1,1,12,1,true),box=new T.BoxGeometry(1,1,1),crystal=new T.OctahedronGeometry(1),leaf=new T.ConeGeometry(.45,1,4);
   let config=null,phase=1,health=[],transition=null,clock=0,wait=2,cycle=0,action=null,armor=0,attacks=0,pose={x:0,y:0,z:0,lean:0},totalDamage=0;
   const hazards=[],history=[],scars=[];
+  const usesDistinct=()=>!!config&&config.village!=='nameless'&&phase>1;
   const color=()=>GUARDIAN_ARTS[config?.village]?.color||'#dfc58c';
   function material(opacity=.55){return new T.MeshBasicMaterial({color:color(),transparent:true,opacity,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending});}
   function mesh(geo,p,scale,opacity=.55){const m=new T.Mesh(geo,material(opacity));m.position.fromArray(p);m.scale.fromArray(scale);root.add(m);return m;}
   function dispose(m){if(!m)return;m.removeFromParent();m.material.dispose();if(m.userData.ownedGeometry)m.geometry.dispose();}
-  function clear(){for(const child of [...root.children])dispose(child);hazards.length=scars.length=0;action=null;pose={x:0,y:0,z:0,lean:0};}
+  function clear(){distinct.clear();for(const child of [...root.children])dispose(child);hazards.length=scars.length=0;action=null;pose={x:0,y:0,z:0,lean:0};}
   function crackGround(target){
     const vertices=[];
     function strip(a,b,w){const dx=b[0]-a[0],dz=b[1]-a[1],n=Math.hypot(dx,dz)||1,x=-dz/n*w,z=dx/n*w;vertices.push(a[0]+x,0,a[1]+z,a[0]-x,0,a[1]-z,b[0]+x*.5,0,b[1]+z*.5,b[0]+x*.5,0,b[1]+z*.5,a[0]-x,0,a[1]-z,b[0]-x*.5,0,b[1]-z*.5);}
@@ -44,17 +47,24 @@ export function createGuardianPhases(scene){
     shell.position.set(boss[0]+pose.x,boss[1]+pose.y,boss[2]+pose.z);shell.rotation.y+=dt*.6;
   }
   const api={
-    reset(next=null,fighter=null){clear();config=next;phase=next?.basicOnly||next?.beastOnly?2:1;health=next?[...(next.phaseHealth||guardianPhaseHealth(next.hp,next.village))]:[];transition=null;clock=cycle=attacks=totalDamage=armor=0;wait=next?.basicOnly?1.5:2;history.length=0;if(fighter)fighter.incomingElementMultipliers=phase===2&&next?guardianElementMultipliers(next.village):{};if(next&&fighter){fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;}},
+    reset(next=null,fighter=null){clear();config=next;phase=next?.basicOnly||next?.beastOnly?2:1;health=next?[...(next.phaseHealth||guardianPhaseHealth(next.hp,next.village))]:[];transition=null;clock=cycle=attacks=totalDamage=armor=0;wait=next?.basicOnly?1.5:2;history.length=0;if(usesDistinct())distinct.reset(next.village,phase);if(fighter)fighter.incomingElementMultipliers=phase===2&&next?guardianElementMultipliers(next.village):{};if(next&&fighter){fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;}},
     beginTransition(fighter,position=[0,0,-13]){if(!config||config.beastOnly||transition||phase>=health.length||fighter.hp>0)return false;clear();armor=0;transition={age:0,from:phase,to:phase+1,switched:false,position:[...position]};return true;},
     advanceTransition(dt,fighter,onPhase){if(!transition)return;transition.age+=dt;const t=transition.age;
       if(!transition.rings){transition.rings=Array.from({length:3},(_,i)=>{const m=mesh(ring,[0,0,0],[1,1,1],.6);m.rotation.x=-Math.PI/2+i*.6;return m;});transition.shell=mesh(sphere,[0,0,0],[1,1,1],.2);}
       transition.rings.forEach((m,i)=>{m.position.set(transition.position[0],.6+i*.9,transition.position[2]);m.rotation.z+=dt*(i+1);m.scale.setScalar(1.4+(t*(i+1))%3);m.material.opacity=Math.max(0,Math.sin(t/3.2*Math.PI))*.75;});transition.shell.position.set(transition.position[0],2.1,transition.position[2]);transition.shell.scale.setScalar(1+Math.sin(t/3.2*Math.PI)*2.5);transition.shell.material.opacity=Math.max(0,1-Math.abs(t-1.35)/.6)*.8;
-      if(t>=1.35&&!transition.switched){transition.switched=true;phase=transition.to;fighter.incomingElementMultipliers=phase===2?guardianElementMultipliers(config.village):{};fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;fighter.shield=fighter.shieldTime=fighter.reflect=0;fighter.burns=[];fighter.staticCharges=[];fighter.snowBuried=false;for(const key of ['waterControlTime','darkControlTime','windControlTime','earthControlTime','iceControlTime','woodControlTime','lightningControlTime','boatControlTime','magneticTime','ignitionTime','invulnerableTime'])fighter[key]=0;onPhase(phase);}if(t>=3.2){for(const m of transition.rings)dispose(m);dispose(transition.shell);transition=null;wait=2;}},
-    damageMultiplier(){return armor>0?.65:1;},
-    onDamage(amount){totalDamage+=Math.max(0,amount);},
-    slowAt(p){return action?.type==='frost'&&action.age>1.6&&Math.hypot(p[0]-action.target[0],p[2]-action.target[2])<4?.65:1;},
-    update(dt,fighter,player,boss,impact,{enabled=true,controlled=false,mouthPosition=null}={}){
+      if(t>=1.35&&!transition.switched){transition.switched=true;phase=transition.to;fighter.incomingElementMultipliers=phase===2?guardianElementMultipliers(config.village):{};fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;fighter.shield=fighter.shieldTime=fighter.reflect=0;fighter.burns=[];fighter.staticCharges=[];fighter.snowBuried=false;for(const key of ['waterControlTime','darkControlTime','windControlTime','earthControlTime','iceControlTime','woodControlTime','lightningControlTime','boatControlTime','magneticTime','ignitionTime','invulnerableTime'])fighter[key]=0;if(usesDistinct())distinct.reset(config.village,phase);onPhase(phase);}if(t>=3.2){for(const m of transition.rings)dispose(m);dispose(transition.shell);transition=null;wait=2;}},
+    damageMultiplier(shot,p){return usesDistinct()?distinct.defense(shot,p).multiplier:armor>0?.65:1;},
+    defense(shot,p){return usesDistinct()?distinct.defense(shot,p):{multiplier:armor>0?.65:1,reflect:0};},
+    onDamage(amount,shot,p){totalDamage+=Math.max(0,amount);if(usesDistinct())distinct.onDamage(amount,shot,p);},
+    slowAt(p){return usesDistinct()?distinct.slowAt(p):action?.type==='frost'&&action.age>1.6&&Math.hypot(p[0]-action.target[0],p[2]-action.target[2])<4?.65:1;},
+    hidden(){return usesDistinct()&&distinct.hidden();},
+    lockable(){return !usesDistinct()||distinct.lockable();},
+    breakPrison(damage){return usesDistinct()&&distinct.breakPrison(damage);},
+    intercept(shot,scale){return usesDistinct()&&distinct.intercept(shot,scale);},
+    areaDamage(shot,p,r,scale){if(usesDistinct())distinct.areaDamage(shot,p,r,scale);},
+    update(dt,fighter,player,boss,impact,{enabled=true,controlled=false,mouthPosition=null,control=null}={}){
       if(!config||phase===1||transition||fighter.hp<=0||!enabled)return;
+      if(usesDistinct()){distinct.update(dt,fighter,player,boss,impact,{enabled,controlled,control});return;}
       clock+=dt;armor=Math.max(0,armor-dt);
       for(const s of [...scars]){s.age+=dt;s.m.material.opacity=.72*Math.min(1,(7-s.age)/2);if(s.age>=7){dispose(s.m);scars.splice(scars.indexOf(s),1);}}
       // Monster attacks stop under control; aura attacks are independent of the human.
@@ -95,9 +105,9 @@ export function createGuardianPhases(scene){
         if(h.hit){h.column.scale.y=Math.max(.01,5*(1-(h.age-h.warning)/.6));if(h.age>h.warning+.6){dispose(h.m);dispose(h.column);hazards.splice(hazards.indexOf(h),1);}}}
       updateArmor(boss,dt);
     },
-    trigger(index,player,boss,fighter){if(!config||phase===1||transition||!Number.isInteger(index)||index<0||index>4||(config.village==='nameless'&&index===3))return false;removeAction();return makeAction(index,player,boss,fighter);},
-    dispose(){clear();for(const geometry of [sphere,ring,disk,cylinder,box,crystal,leaf])geometry.dispose();root.removeFromParent();},
-    get transitioning(){return !!transition;},get phase(){return phase;},get active(){return !!config;},get form(){return phase===1?'human':phase===2?'beast':'avatar';},get offset(){return {...pose};},
-    state:()=>({phase,maxPhase:health.length||1,form:phase===1?'human':phase===2?'beast':'avatar',phaseHealth:[...health],transition:transition?{age:transition.age,from:transition.from,to:transition.to,switched:transition.switched}:null,signature:action?.name||'',action:action?{type:action.type,name:action.name,age:action.age,stage:action.stage||action.type,orbScale:action.orb?.scale.x||0}:null,armor,attacks,cracks:scars.map(s=>({position:s.m.position.toArray(),age:s.age})),history:history.map(h=>({...h})),hazards:hazards.map(h=>({position:[...h.p],remaining:Math.max(0,h.warning-h.age),radius:h.r,hit:h.hit})),offset:{...pose}})
+    trigger(index,player,boss,fighter){if(!config||phase===1||transition)return false;if(usesDistinct())return distinct.trigger(index,player,boss,fighter);if(!Number.isInteger(index)||index<0||index>4||(config.village==='nameless'&&index===3))return false;removeAction();return makeAction(index,player,boss,fighter);},
+    dispose(){clear();distinct.dispose();for(const geometry of [sphere,ring,disk,cylinder,box,crystal,leaf])geometry.dispose();root.removeFromParent();},
+    get transitioning(){return !!transition;},get phase(){return phase;},get active(){return !!config;},get form(){return phase===1?'human':phase===2?'beast':'avatar';},get offset(){return usesDistinct()?distinct.offset:{...pose};},
+    state:()=>({phase,maxPhase:health.length||1,form:phase===1?'human':phase===2?'beast':'avatar',phaseHealth:[...health],transition:transition?{age:transition.age,from:transition.from,to:transition.to,switched:transition.switched}:null,signature:action?.name||'',action:action?{type:action.type,name:action.name,age:action.age,stage:action.stage||action.type,orbScale:action.orb?.scale.x||0}:null,armor,attacks,cracks:scars.map(s=>({position:s.m.position.toArray(),age:s.age})),history:history.map(h=>({...h})),hazards:hazards.map(h=>({position:[...h.p],remaining:Math.max(0,h.warning-h.age),radius:h.r,hit:h.hit})),...(usesDistinct()?distinct.state():{}),offset:usesDistinct()?distinct.offset:{...pose}})
   };return api;
 }

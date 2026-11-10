@@ -1,4 +1,4 @@
-param([ValidateSet('balance','opponents')][string]$Page = 'balance')
+param([ValidateSet('balance','opponents','guardians')][string]$Page = 'balance')
 $ErrorActionPreference = 'Stop'
 $balanceRoot = Split-Path -Parent $PSScriptRoot
 $balanceNode = Join-Path $balanceRoot '.tools\node-v24.21.0-win-x64\node.exe'
@@ -8,15 +8,32 @@ if (-not (Test-Path -LiteralPath $balanceNode)) {
 $balancePort = 4180
 $balanceUrl = "http://127.0.0.1:$balancePort/$Page"
 $balanceRunning = $false
+$balanceUpgrade = $false
 try {
-    $balanceResponse = Invoke-WebRequest -UseBasicParsing -Uri "$balanceUrl/api" -TimeoutSec 2
+    $balanceResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$balancePort/balance/api" -TimeoutSec 2
     $balanceRunning = $balanceResponse.StatusCode -eq 200
+    if ($balanceRunning) {
+        try { $null = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$balancePort/guardians/api" -TimeoutSec 2 }
+        catch { $balanceUpgrade = $true }
+    }
 } catch { }
+if ($balanceUpgrade) {
+    $balanceOwner = Get-NetTCPConnection -LocalPort $balancePort -State Listen -ErrorAction Stop | Select-Object -First 1 -ExpandProperty OwningProcess
+    $balanceProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $balanceOwner"
+    $balanceOwnedNode = [IO.Path]::GetFullPath($balanceNode).StartsWith($balanceRoot + '\', [StringComparison]::OrdinalIgnoreCase)
+    $balanceOwnedCommand = $balanceProcess.CommandLine -match [regex]::Escape($balanceRoot)
+    if ($balanceProcess.ExecutablePath -eq $balanceNode -and $balanceProcess.CommandLine -match 'tools[\\/]balance-server\.mjs' -and ($balanceOwnedNode -or $balanceOwnedCommand)) {
+        Stop-Process -Id $balanceOwner -ErrorAction Stop
+        $balanceRunning = $false
+    } else {
+        throw 'Cong 4180 dang chay ban cu hoac chuong trinh khac. Dong may chu bang can bang cu roi mo lai.'
+    }
+}
 if (-not $balanceRunning) {
     $env:BALANCE_PORT = [string]$balancePort
     $balanceLog = Join-Path $balanceRoot '.tools'
     New-Item -ItemType Directory -Path $balanceLog -Force | Out-Null
-    Start-Process -FilePath $balanceNode -ArgumentList 'tools/balance-server.mjs' -WorkingDirectory $balanceRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $balanceLog 'balance-server.log') -RedirectStandardError (Join-Path $balanceLog 'balance-server-error.log')
+    Start-Process -FilePath $balanceNode -ArgumentList ('"' + (Join-Path $balanceRoot 'tools\balance-server.mjs') + '"') -WorkingDirectory $balanceRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $balanceLog 'balance-server.log') -RedirectStandardError (Join-Path $balanceLog 'balance-server-error.log')
     for ($balanceAttempt = 0; $balanceAttempt -lt 30; $balanceAttempt++) {
         try {
             $balanceResponse = Invoke-WebRequest -UseBasicParsing -Uri "$balanceUrl/api" -TimeoutSec 1

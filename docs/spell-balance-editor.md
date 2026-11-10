@@ -4,6 +4,8 @@
 
 Nhấp đúp `Mo-bang-can-bang.cmd` ở thư mục dự án. Bảng mở tại <http://127.0.0.1:4180/balance> và tự khởi động máy chủ cục bộ. Có thể chạy `npm run balance` rồi mở cùng địa chỉ nếu Node nằm trong PATH.
 
+Tab **Kỹ năng linh thú** mở bảng riêng cho 27 kỹ năng và 9 nội tại của các linh thú. Có thể nhấp đúp `Mo-bang-linh-thu.cmd` để mở trực tiếp; xem [hướng dẫn bảng linh thú](guardian-balance-editor.md).
+
 1. Lọc theo hệ hoặc tìm tên chiêu (có thể gõ không dấu).
 2. Sửa hồi chiêu, mana, thời gian khống chế, sát thương, độ bền hoặc hiệu lực. Ô `—` là chỉ số không áp dụng cho cơ chế chiêu.
 3. Bấm **Lưu vào dự án**, rồi tải lại tab game. Nếu đang giữa trận, nên vào lại trận để dùng đồng nhất toàn bộ chỉ số mới.

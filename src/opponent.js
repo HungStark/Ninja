@@ -59,7 +59,16 @@ export async function createOpponent(scene,spawnPosition,playerModel=false){
     shield.visible=!['fire','water','lightning','dark'].includes(fighter.defenseElement)&&fighter.shieldTime>0&&(fighter.shield>0||fighter.reflect>0);shield.material.color.set(fighter.color);shield.rotation.y=time*.4;
   }
   setAppearance();
-  return {group,rig,update,shield,aura,get ninja(){return ninja;},guardianMouth:p=>(creature||guardianAura)?.mouthPosition(p).toArray(),setGuardianArtPose:p=>{creature?.setArtPose(p);guardianAura?.setArtPose(p);},get guardianAura(){return guardianAura?.root;},get legs(){return ninja?.legs||[];},setInkViewport:(w,h)=>{rig.setInkViewport(w,h);ninja?.setInkViewport(w,h);},setAppearance};
+  const raycaster=new T.Raycaster();
+  function guardianContact(shot){
+    if(!creature)return null;
+    group.updateMatrixWorld(true);
+    const start=new T.Vector3(...shot.old),delta=new T.Vector3(...shot.p).sub(start),length=delta.length();if(length<1e-9)return null;
+    raycaster.set(start,delta.normalize());raycaster.near=0;raycaster.far=length+(shot.size||0);
+    const hit=raycaster.intersectObject(creature.root,true)[0];
+    return hit?{point:hit.point.toArray(),part:hit.object.name,t:hit.distance/length}:null;
+  }
+  return {group,rig,update,shield,aura,guardianContact,setGuardianCombatState:s=>{creature?.setCombatState(s);guardianAura?.setCombatState(s);},get ninja(){return ninja;},guardianMouth:p=>(creature||guardianAura)?.mouthPosition(p).toArray(),setGuardianArtPose:p=>{creature?.setArtPose(p);guardianAura?.setArtPose(p);},get guardianAura(){return guardianAura?.root;},get legs(){return ninja?.legs||[];},setInkViewport:(w,h)=>{rig.setInkViewport(w,h);ninja?.setInkViewport(w,h);},setAppearance};
 }
 
 // The exploration hero with the articulated hand-seal rig used by combat.

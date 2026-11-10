@@ -3,6 +3,7 @@ import {REGIONS} from './adventure-world.js';
 import {botHealth,PRACTICE_BOT_HP} from './enemy-balance.js';
 import {spellImage} from './spell-art.js';
 import {configureOpponent} from './opponent-balance.js';
+import {GUARDIAN_BOSS_DESIGNS} from './guardian-boss-designs.js';
 
 export const PRACTICE_GUARDIANS=['fire','water','lightning','wind','earth','light','dark','wood','ice'];
 export function validPracticeOpponent(value,spells){
@@ -39,7 +40,8 @@ export function createPracticeOpponentPicker({spells,elements,defaultLoadout,get
     const learned=getLearnedSpells(),visible=spells.filter(s=>(filter==='all'||s.element===filter)&&(learning==='all'||learned.has(s.id)===(learning==='learned')));
     $('practiceEnemySpells').innerHTML=visible.length?visible.map((s,i)=>renderSpell(s,i,value.spells).replace('data-equip=','data-practice-spell=')).join(''):'<p class="catalog-empty" role="status">'+(learning==='unlearned'?'Không có chiêu chưa học.':'Chưa có chiêu đã học.')+'</p>';
     $('practiceGuardianChoices').innerHTML=PRACTICE_GUARDIANS.map(id=>{const e=elements.find(e=>e.id===id);return '<button type="button" data-practice-guardian="'+id+'" aria-pressed="'+(value.guardian===id)+'" style="--element:'+e.color+'"><b>'+e.glyph+'</b><strong>'+e.name+'</strong><span class="equip-mark" aria-hidden="true">'+(value.guardian===id?'✓':'+')+'</span></button>';}).join('');
-    const e=elements.find(e=>e.id===value.guardian);$('practiceGuardianSelected').innerHTML='<div class="practice-guardian-selected" style="--element:'+e.color+'"><b>'+e.glyph+'</b><strong>'+e.name+'</strong></div>';
+    const e=elements.find(e=>e.id===value.guardian),design=GUARDIAN_BOSS_DESIGNS[value.guardian];
+    $('practiceGuardianSelected').innerHTML='<div class="practice-guardian-selected" style="--element:'+e.color+'"><b>'+e.glyph+'</b><strong>'+GUARDIAN_FORMS[value.guardian].name+'</strong></div><div class="guardian-tactics"><p>'+('★'.repeat(design.difficulty)+'☆'.repeat(5-design.difficulty))+' · '+design.passive+'</p><ol>'+design.skills.map(s=>'<li>'+s.name+'</li>').join('')+'</ol><p>'+design.counter+'</p></div>';
   }
   root.addEventListener('click',event=>{
     if(!open)return;

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cân bằng kỹ năng linh thú · Cửu Ấn</title><link rel="stylesheet" href="/balance/editor.css"><script type="module" src="/balance/editor.js"></script></head>
+<body data-balance-api="/guardians/api" data-balance-kind="guardian-skills" data-balance-unit="dòng"><main>
+<header><div class="brand">九印 <span>CỬU ẤN / CÔNG CỤ PHÁT TRIỂN</span></div>
+<nav class="internal-tabs" aria-label="Bảng nội bộ"><a href="/balance">45 chiêu thức</a><a href="/guardians" aria-current="page">Kỹ năng linh thú</a><a href="/opponents">Sức mạnh đối thủ</a></nav>
+<div class="heading"><div><h1>Cân bằng kỹ năng linh thú</h1><p>27 kỹ năng và 9 nội tại. Lưu vào dự án, tải lại game và vào trận mới để thử.</p></div><span class="game-link">Web nội bộ riêng</span></div>
+<div class="overview"><span><strong>27</strong> kỹ năng</span><span><strong>9</strong> nội tại</span><span id="changeCount">Đang nạp…</span></div></header>
+<section class="controls" aria-label="Điều khiển bảng"><div class="filters">
+<label>Tìm<input id="search" type="search" placeholder="Tên kỹ năng hoặc linh thú…"></label>
+<label>Linh thú<select id="element"><option value="all">Tất cả 9 linh thú</option></select></label>
+<label>Loại<select id="rowKind"><option value="all">Tất cả</option><option value="skill">Kỹ năng</option><option value="passive">Nội tại</option></select></label>
+<label class="check"><input id="changedOnly" type="checkbox"> Chỉ dòng đã chỉnh</label></div>
+<div class="actions"><button id="discard">Bỏ bản nháp</button><button id="reset">Khôi phục chỉ số gốc</button><button id="save" class="primary" disabled>Lưu vào dự án</button></div></section>
+<p id="status" role="status" aria-live="polite">Đang đọc thông số linh thú…</p>
+<div class="table-wrap" tabindex="0" aria-label="Bảng kỹ năng linh thú, cuộn ngang để xem đủ cột"><table><thead><tr>
+<th scope="col">Linh thú / Kỹ năng</th><th scope="col">Nghỉ sau chiêu <small>giây · thời gian chờ trước chiêu kế</small></th><th scope="col">Mana <small>linh thú không dùng</small></th><th scope="col">Khống chế <small>giây</small></th><th scope="col">Sát thương <small>mỗi đòn / mỗi nhịp / mỗi giây</small></th><th scope="col">Độ bền <small>HP vật thể có thể phá</small></th><th scope="col">Thi triển <small>giây · vật thể có thời gian riêng</small></th><th scope="col">Cơ chế / Chỉ số bổ sung</th>
+</tr></thead><tbody id="rows"></tbody></table><p id="empty" hidden>Không có kỹ năng phù hợp bộ lọc.</p></div>
+<footer><p>Mở <b>Chi tiết &amp; chỉ số bổ sung</b> để chỉnh số đợt, tốc độ, tầm đánh, thời gian báo trước, hồi máu, phản đòn, nội tại và các vùng an toàn. <b>0,01 = 1%</b> ở các ô tỉ lệ; <b>—</b> = không áp dụng. Long Thủy Pháo dùng sát thương mỗi giây; lốc xoáy, Thủy Lao và bão tuyết dùng sát thương mỗi nhịp. Các đòn còn lại ghi sát thương mỗi lần trúng.</p>
+<p>Thời gian thi triển là lúc boss đang dùng chiêu; đạn, sóng và vật thể đã tạo có thời gian tồn tại riêng. Nội tại, hệ số sát thương đối thủ và phòng thủ người chơi vẫn áp dụng sau các số gốc trong bảng. Sóng thần dùng hành lang né ngang; Vô Danh Thú giữ nguyên.</p>
+<div class="file-actions"><button id="export">Xuất JSON</button><label class="button">Nhập JSON<input id="import" type="file" accept="application/json,.json" hidden></label><span id="visibleCount"></span></div>
+<p>Lưu cập nhật <code>src/guardian-balance.js</code> và dựng lại hai bản web Việt/Anh. Dữ liệu được đưa vào các bản build Android tiếp theo; APK đã cài và website đã triển khai cần build / phát hành lại.</p></footer>
+</main><dialog id="confirm"><form method="dialog"><h2>Khôi phục thông số linh thú?</h2><p>Đưa cả 27 kỹ năng và 9 nội tại về chỉ số gốc trong bản nháp. Bấm “Lưu vào dự án” để áp dụng.</p><div class="actions"><button value="cancel">Hủy</button><button class="primary" value="restore">Khôi phục 36 dòng</button></div></form></dialog></body></html>

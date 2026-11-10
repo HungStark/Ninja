@@ -1,5 +1,11 @@
 # Cửu Ấn
 
+**Bảng cân bằng kỹ năng linh thú:** mở `Mo-bang-can-bang.cmd` và chọn tab **Kỹ năng linh thú**, hoặc nhấp đúp `Mo-bang-linh-thu.cmd`. Chỉnh 27 kỹ năng và 9 nội tại tại <http://127.0.0.1:4180/guardians>; lưu sẽ áp dụng vào dữ liệu game thật và dựng lại bản web Việt/Anh. Xem [hướng dẫn bảng linh thú](docs/guardian-balance-editor.md).
+
+**Bộ chiêu linh thú:** chín linh thú của các làng có ba kỹ năng, nội tại và cách khắc chế riêng; Vô Danh Thú giữ nguyên. Sóng thần Thủy Long chừa hành lang an toàn để né ngang trong đấu trường phẳng. Xem [thiết kế và cách kiểm tra](docs/guardian-boss-redesign.md).
+
+**Bộ chiêu linh thú:** chín linh thú của các làng có ba kỹ năng, nội tại và cách khắc chế riêng; Vô Danh Thú giữ nguyên. Sóng thần Thủy Long chừa hành lang an toàn để né ngang trong đấu trường phẳng. Xem [thiết kế và cách kiểm tra](docs/guardian-boss-redesign.md).
+
 **Web nội bộ chỉnh 45 chiêu:** nhấp đúp `Mo-bang-can-bang.cmd`, hoặc chạy `npm run balance` rồi mở <http://127.0.0.1:4180/balance>. Đây là công cụ riêng, không gộp vào game. Xem [hướng dẫn bảng cân bằng](docs/spell-balance-editor.md).
 
 **Web nội bộ chỉnh đối thủ:** nhấp đúp `Mo-bang-doi-thu.cmd` hoặc mở <http://127.0.0.1:4180/opponents> khi máy chủ nội bộ đang chạy. Chỉnh máu từng giai đoạn linh thú, bộ chiêu ninja, mana, giây/ấn và hệ số nền (% sát thương gốc). Xem [hướng dẫn cấu hình đối thủ](docs/opponent-balance-editor.md).
