@@ -16,7 +16,7 @@ for filename in ['hero-ninja-simple.glb','npc_nam-simple.vrm','npc_nu-simple.vrm
     for index,mesh in enumerate(g['meshes']):
         names=mesh.get('extras',{}).get('targetNames',[])
         if not names:continue
-        keep=[] if filename.startswith('hero-') else [i for i,n in enumerate(names) if n in used_faces]
+        keep=[i for i,n in enumerate(names) if n=='Fcl_EYE_Close'] if filename.startswith('hero-') else [i for i,n in enumerate(names) if n in used_faces]
         maps[index]={old:new for new,old in enumerate(keep)}
         mesh['extras']['targetNames']=[names[i] for i in keep]
         if keep:mesh['weights']=[mesh.get('weights',[0]*len(names))[i] for i in keep]

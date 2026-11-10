@@ -342,3 +342,15 @@ body[data-journey=dialog] #journeyHud{visibility:hidden}
 #heroForm .journey-language select{min-width:116px;min-height:36px;padding:7px 10px;font-size:12px;flex:none}
 #heroForm .journey-version{display:block;margin-top:15px;font-size:8px;line-height:1.8;letter-spacing:1.1px;color:#a7b8aa}
 @media(max-height:360px){#heroForm .hero-home-meta{margin-top:8px;padding-top:8px}#heroForm .journey-language{font-size:10px;gap:5px}#heroForm .journey-language select{min-width:90px;min-height:30px;padding:5px 6px;font-size:10px}#heroForm .journey-version{font-size:7px;line-height:1.6;letter-spacing:.7px;margin-top:7px}#heroForm .hero-home-actions{gap:6px}#heroForm .hero-home-actions>button{min-height:36px;padding:8px 10px;font-size:10px;letter-spacing:.3px;gap:8px}#heroForm .hero-home-actions>button span{font-size:15px}}
+body[data-journey=opening] #startScreen{display:none!important}
+body[data-journey=opening] #journeyToast{display:none}
+.journey-opening{position:fixed;inset:0;z-index:42;pointer-events:auto;background:linear-gradient(180deg,rgba(5,13,18,.38),transparent 23%,transparent 63%,rgba(5,13,18,.58));font-family:"Segoe UI",Arial,sans-serif}
+.journey-opening[hidden]{display:none}
+.journey-opening::before,.journey-opening::after{content:"";position:absolute;left:0;right:0;height:5vh;background:#080e12;pointer-events:none}
+.journey-opening::before{top:0}.journey-opening::after{bottom:0}
+.opening-skip{position:absolute;top:max(7vh,env(safe-area-inset-top));right:max(3vw,env(safe-area-inset-right));padding:8px 15px;border:1px solid #d9c59166;border-radius:5px;color:#f1e6cc;background:#14292cbb;font:600 13px "Segoe UI",Arial,sans-serif;cursor:pointer}
+.opening-subtitle{position:absolute;left:50%;bottom:9vh;transform:translateX(-50%);width:min(760px,85vw);box-sizing:border-box;padding:18px 24px;color:#f7efd9;background:rgba(15,32,35,.91);border:1px solid #d9c59144;border-top:2px solid #d9c591;border-radius:5px;box-shadow:0 10px 36px #0005}
+.opening-subtitle strong{display:block;color:#e4c78d;font-size:14px;letter-spacing:.04em}.opening-subtitle p{margin:8px 0 0;font-size:clamp(15px,1.35vw,20px);line-height:1.6;min-height:3.2em;max-height:24vh;overflow:auto}
+.opening-next{display:block;margin:10px 0 0 auto;padding:7px 15px;background:#dec38e;color:#182c30;border:0;border-radius:4px;font:600 13px "Segoe UI",Arial,sans-serif;cursor:pointer}
+.opening-subtitle[hidden],.opening-next[hidden]{display:none}
+@media(max-height:500px){.opening-subtitle{bottom:7vh;padding:10px 16px;width:min(720px,88vw)}.opening-subtitle p{margin-top:4px;font-size:15px;line-height:1.4;min-height:2.8em;max-height:21vh}.opening-subtitle strong{font-size:12px}.opening-next{margin-top:6px;padding:5px 12px}.opening-skip{padding:6px 12px;top:6vh}}

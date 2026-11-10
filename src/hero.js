@@ -100,6 +100,8 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
     body.visible=false;head=new T.Group();head.name='hero-face';head.position.set(0,2.61,0);body.add(head);scarf=new T.Group();body.add(scarf);
     for(const side of [-1,1]){const pivot=new T.Group(),knee=new T.Group(),foot=new T.Group();pivot.position.set(side*.175,1.21,0);knee.position.y=-.5;foot.position.y=-.51;body.add(pivot);pivot.add(knee);knee.add(foot);legs.push({side,pivot,knee,foot});const arm=new T.Group(),elbow=new T.Group(),hand=new T.Group();arm.position.set(side*.36,2.04,0);elbow.position.set(side*.02,-.46,0);hand.position.set(0,-.43,.035);body.add(arm);arm.add(elbow);elbow.add(hand);arms.push({side,pivot:arm,upper:new T.Group(),lower:new T.Group(),elbow,hand,fingers:[]});}
   }
+  let eyeOpening=1,eyeMeshes=[],faceAnchor=null;
+  function setEyeOpening(value){eyeOpening=Math.max(0,Math.min(1,value));for(const mesh of eyeMeshes)mesh.morphTargetInfluences[mesh.morphTargetDictionary.Fcl_EYE_Close]=1-eyeOpening;head.traverse(o=>{if(o.name==='hero-visible-eye')o.scale.y=Math.max(.04,eyeOpening);});}
   const gear=new T.Group();gear.name='hero-equipment';body.add(gear);let gearKey='',equipment=null,avatarPose=null,avatarOutfit=null,avatarWardrobe=null,avatarArmorAnchors=null,lastEquipmentState=null,pouch=null;
   const armorAnchor=(parent,name)=>{const g=new T.Group();g.name=name;parent.add(g);return g;};
   const pouchAnchor=armorAnchor(body,'hero-pouch-anchor');pouchAnchor.position.set(-.34,1.34,-.06);pouchAnchor.rotation.y=-Math.PI/2;
@@ -156,6 +158,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
       // a white stripe at the small size used by the training portrait.
       const faceBone=visual.getObjectByName('J_Bip_C_Head');
       if(faceBone){
+        faceAnchor=new T.Object3D();visual.updateMatrixWorld(true);faceAnchor.position.copy(faceBone.worldToLocal(visual.localToWorld(new T.Vector3(0,1.613,.058))));faceBone.add(faceAnchor);
         const maskGeometry=new T.BufferGeometry();
         maskGeometry.setAttribute('position',new T.Float32BufferAttribute([-.096,1.592,.045,0,1.589,.097,.096,1.592,.045,-.078,1.526,.027,0,1.522,.079,.078,1.526,.027,-.099,1.58,-.018,-.084,1.528,-.019,.099,1.58,-.018,.084,1.528,-.019],3));
         maskGeometry.setIndex([0,3,1,1,3,4,1,4,2,2,4,5,6,7,0,0,7,3,2,5,8,8,5,9]);
@@ -171,6 +174,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
       const bind=bone=>bone?{bone,base:bone.quaternion.clone(),position:bone.position.clone()}:null;
       avatarPose={hips:bind(bones.hips),spine:bind(bones.spine),chest:bind(bones.chest),scale,legLength:(bones.knees[0]?.position.length()||.393)+(bones.feet[0]?.position.length()||.46)};
       for(const part of ['arms','elbows','legs','knees','feet'])avatarPose[part]=bones[part].map(bind);
+      visual.traverse(o=>{if(o.morphTargetDictionary?.Fcl_EYE_Close!==undefined)eyeMeshes.push(o);});setEyeOpening(eyeOpening);
       root.add(visual);body.visible=false;root.userData.referenceAppearance=true;outlineMeshes(visual);
       // The armor is fitted to a standing character, rather than the source T-pose.
       for(let i=0;i<2;i++)avatarArm(i,.06,0,.16,REST_ARM_OPEN);
@@ -238,5 +242,5 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
   }
   function airPose(v){setAirborne(true,v);legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;avatarLeg(i,l.pivot.rotation.x,l.knee.rotation.x,l.foot.rotation.x);});arms.forEach((a,i)=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;a.elbow.rotation.x=-.35;avatarArm(i,-.6,i===0?.22:-.22,.35);});}
   function climbPose(t){arms.forEach((a,i)=>{a.pivot.rotation.x=-2+Math.sin(t*6+i*Math.PI)*.35;a.elbow.rotation.x=-.5;avatarArm(i,a.pivot.rotation.x,0,.5);});legs.forEach((l,i)=>{l.knee.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25;avatarLeg(i,-.15,l.knee.rotation.x,-l.knee.rotation.x+.15);});body.rotation.x=-.1;}
-  return {root,group:root,ready,get modelReady(){return root.userData.referenceAppearance===true;},cloth,hair,legs,arms,armorAnchors,get equippedArmorAnchors(){return avatarArmorAnchors||armorAnchors;},get pouch(){return pouch;},update,airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
+  return {root,group:root,ready,setEyeOpening,get eyeOpening(){return eyeOpening;},facePosition(){root.updateMatrixWorld(true);return faceAnchor?faceAnchor.getWorldPosition(new T.Vector3()):root.localToWorld(new T.Vector3(0,2.64,.2));},get modelReady(){return root.userData.referenceAppearance===true;},cloth,hair,legs,arms,armorAnchors,get equippedArmorAnchors(){return avatarArmorAnchors||armorAnchors;},get pouch(){return pouch;},update,airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
 }

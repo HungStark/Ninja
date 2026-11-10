@@ -34,7 +34,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),{spawn
   }
   const prepareBattle=async()=>{await page.evaluate(()=>{for(let i=0;i<40&&!__AN_HOA__.adventure().dialogue.complete;i++)document.getElementById('dialogNext').click();});await page.locator('#dialogActions button').first().click();};
   await open();
-  console.log('CHECK: new journey, paint order and input lock');await begin('#heroForm button[type=submit]');await settled();assert.equal((await state()).phase,'explore');
+  console.log('CHECK: new journey, paint order and input lock');await begin('#heroForm button[type=submit]');await settled();assert.equal((await state()).phase,'opening');await page.locator('.opening-skip').click();await page.evaluate(()=>__AN_HOA__.advance(2.3));assert.equal((await state()).phase,'explore');
   const {newJourney}=await import('../src/adventure-data.js'),{promiseMother,chooseStarter}=await import('../src/journey-story.js'),save=newJourney('Loading test');promiseMother(save);chooseStarter(save,'water-barrier');save.story.stage='infiltrate';save.activated=['nameless','water'];save.visited=['nameless','water'];save.position=[0,7];save.gold=83;
   await page.evaluate(s=>sessionStorage.setItem('loading-fixture',JSON.stringify(s)),save);await open();
   console.log('CHECK: continue waits for characters, including slow loads');await page.evaluate(()=>window.__holdCharacters=true);await begin('#continueJourney');await page.waitForFunction(()=>!!window.__releaseCharacters);
