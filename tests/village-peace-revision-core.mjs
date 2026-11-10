@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {newJourney,readJourney,resolveBattle,signTreaty} from '../src/adventure-data.js';
 import {negotiatePeace,villageSidequests} from '../src/journey-story.js';
-import {guardianOrdered,orderGuardianGuards,nextGuardianGuard,confrontationObjective} from '../src/village-confrontation.js';
+import {guardianOrdered,orderGuardianGuards,nextGuardianGuard,confrontationObjective,inCouncilCourtyard} from '../src/village-confrontation.js';
+import {civicPoint} from '../src/village-civic.js';
 import {readTreaties} from '../src/peace-treaties.js';
 import {createEnemyMovement,defensivePosition} from '../src/enemy-movement.js';
 import {createAdventureScene} from '../src/adventure-scene.js';
@@ -49,6 +50,11 @@ for(const id of Object.keys(REGIONS)){
     for(let j=0;j<i;j++)assert.ok(Math.hypot(items[i].x-items[j].x,items[i].z-items[j].z)>=MIN_QUEST_ITEM_SPACING-.001,id+' item spacing');
   }
   if(id!=='nameless'){
+    const court=world.civic.campuses.hall,inside=civicPoint(court,0,court.d/2-1),outside=civicPoint(court,0,court.d/2+1);
+    assert.ok(inCouncilCourtyard(world.civic,{...inside,y:court.base}),id+' entering council courtyard');
+    assert.equal(inCouncilCourtyard(world.civic,{...outside,y:court.base}),false,id+' outside council gate');
+    assert.equal(inCouncilCourtyard(world.civic,{...inside,y:court.base+10}),false,id+' above courtyard');
+    for(const gate of world.gates){const length=Math.hypot(gate.x,gate.z);assert.equal(inCouncilCourtyard(world.civic,{x:gate.x*(1-6/length),z:gate.z*(1-6/length)}),false,id+' village arrival stays outside council courtyard');}
     const guards=world.guardsState().filter(g=>g.guardRole==='guardian'),center=world.civic.guardian;
     assert.equal(guards.length,2);assert.ok(guards.every(g=>Math.hypot(g.x-center.x,g.z-center.z)<18),id+' guards directly ahead');
     orderGuardianGuards(state);world.load(id,state);assert.equal(world.boss,null,id+' guardian has entered the chief');

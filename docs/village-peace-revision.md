@@ -2,7 +2,7 @@
 
 Các mục tiêu nhiệm vụ trong làng được đặt cách nhau ít nhất 12 mét. Vị trí được giải quyết sau khi dựng địa hình và công trình, kiểm tra va chạm và dành chỗ cho cả nhiệm vụ chưa nhận hoặc vật phẩm đã thu thập.
 
-Khi người chơi bước vào một làng chưa khuất phục, linh thú chặn lại và đối thoại. Sau khi ra lệnh bắt người chơi, linh thú nhập vào trưởng làng và biến mất khỏi sân. Hai hộ vệ đứng ngay trước vị trí của linh thú. Người chơi đánh hộ vệ trái trước; chiến thắng chuyển thẳng sang trận hộ vệ phải. Tiến trình từng hộ vệ được lưu lại, kể cả khi tải lại trò chơi.
+Khi người chơi đi qua cổng sân phòng họp của một làng chưa khuất phục, linh thú chặn lại và đối thoại. Đi qua cổng làng hoặc khám phá bên ngoài sân không kích hoạt cuộc chặn đường này. Sau khi ra lệnh bắt người chơi, linh thú nhập vào trưởng làng và biến mất khỏi sân. Hai hộ vệ đứng ngay trước vị trí của linh thú. Người chơi đánh hộ vệ trái trước; chiến thắng chuyển thẳng sang trận hộ vệ phải. Tiến trình từng hộ vệ được lưu lại, kể cả khi tải lại trò chơi; trận chưa hoàn thành sẽ tiếp tục khi người chơi trở vào sân phòng họp.
 
 Sau hai hộ vệ, người chơi gặp trưởng làng trong phòng họp. Trưởng làng bị chiếm hữu có lời thoại riêng, rồi dùng hệ giao chiến và các giai đoạn linh thú hiện có. Các sự kiện cứu dân và phần thưởng cũ vẫn được giữ.
 

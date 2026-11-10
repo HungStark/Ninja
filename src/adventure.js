@@ -1,4 +1,4 @@
-import {guardianOrdered,nextGuardianGuard,orderGuardianGuards} from './village-confrontation.js';
+import {guardianOrdered,nextGuardianGuard,orderGuardianGuards,inCouncilCourtyard} from './village-confrontation.js';
 import {planVillageExits} from './village-exits.js';
 import {atlasMarkup} from './world-atlas.js';
 import {travelKind} from './village-travel.js';
@@ -473,7 +473,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     const missing=targets.filter(z=>!discovered(z));dialog('KỲ NGỘ · TRÊN ĐƯỜNG HỌC ĐẠO',n.name,`${m.clue} Còn ${missing.map(z=>z.name).join(' và ')} cần tự mình khám phá. Không cần giao chiến để nhận lời chỉ giáo.`,[['Theo dấu · '+missing[0].name,()=>{closeDialog();moveToItem(world.interactives.find(i=>i.kind==='landmark'&&i.id===missing[0].id));}],['Tiếp tục hành trình',closeDialog,true]]);
   }
   function guardianGateDialog(){
-    if(save.village==='nameless'||save.bosses[save.village]||guardianOrdered(save))return false;
+    if(save.village==='nameless'||save.bosses[save.village]||guardianOrdered(save)||world.interior||!inCouncilCourtyard(world.civic,world.hero.root.position))return false;
     dialogueItem=null;
     const id=save.village,r=REGIONS[id];
     dialog('LINH THÚ CHẶN CỔNG',r.boss.guardian,'',[['Đối đầu hộ vệ trái',()=>{
@@ -588,7 +588,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     peaceCeremony.update(dt);time+=dt;dialogue.update(dt);let moving=false;
     if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('journeyToast').hidden=true;}
     if(phase==='explore'){
-      if(!admin.active&&!world.interior&&save.story.stage==='infiltrate'&&save.village!=='nameless'&&!save.bosses[save.village]){if(!guardianOrdered(save)){guardianGateDialog();return;}if(nextGuardianGuard(save)){startGuardianGuard();return;}}
+      if(!admin.active&&!world.interior&&!world.riding&&!world.surface&&save.story.stage==='infiltrate'&&save.village!=='nameless'&&!save.bosses[save.village]&&inCouncilCourtyard(world.civic,world.hero.root.position)){if(!guardianOrdered(save)){guardianGateDialog();return;}if(nextGuardianGuard(save)){startGuardianGuard();return;}}
       if(landmarkNotices.length){
         landmarkNoticeTimer-=dt;
         while(landmarkNotices.length&&landmarkNoticeTimer<=0){landmarkNotices.shift();landmarkNoticeTimer+=7;}

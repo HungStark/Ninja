@@ -15,6 +15,12 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),{spawn
   const interact=async(kind,id)=>{await page.evaluate(({kind,id})=>{const w=__testWorld,i=w.interactives.find(i=>i.kind===kind&&(!id||i.id===id));if(!i)throw Error('Missing '+kind+' '+id);w.hero.root.position.set(i.x,i.y??w.heightAt(i.x,i.z),i.z);__AN_HOA__.explore.interact(kind,id);},{kind,id});};
   const win=async()=>{await page.evaluate(()=>__AN_HOA__.setHealth('enemy',0));await advance(.2);await page.locator('#nextButton').click();await page.waitForFunction(()=>!__AN_HOA__.adventure().loading);};
   await page.goto('http://127.0.0.1:4368/?test=1&adventure=1');await ready();
+  checkpoint='village gates do not trigger the guardian';console.log('CHECK: '+checkpoint);
+  assert.equal((await a()).phase,'explore');await advance(2);assert.equal((await a()).phase,'explore');assert.equal((await a()).encounter,null);assert.ok(!(await a()).save.story.guardianOrders.includes('fire'));
+  const villageGates=await page.evaluate(()=>__testWorld.gates.map(g=>({x:g.x,z:g.z})));
+  for(const gate of villageGates){await page.evaluate(g=>{const w=__testWorld,n=Math.hypot(g.x,g.z),x=g.x*(1-6/n),z=g.z*(1-6/n);w.hero.root.position.set(x,w.heightAt(x,z),z);},gate);await advance(.1);assert.equal((await a()).phase,'explore');}
+  await page.evaluate(()=>{const w=__testWorld,c=w.civic.campuses.hall,z=c.d/2+1;w.hero.root.position.set(c.x+Math.sin(c.yaw)*z,c.base,c.z+Math.cos(c.yaw)*z);});await advance(.1);assert.equal((await a()).phase,'explore','outside the council gate stays peaceful');
+  await page.evaluate(()=>{const w=__testWorld,c=w.civic.campuses.hall,z=c.d/2-1;w.hero.root.position.set(c.x+Math.sin(c.yaw)*z,c.base,c.z+Math.cos(c.yaw)*z);});await advance(.1);
   checkpoint='guardian gate dialogue';console.log('CHECK: '+checkpoint);assert.equal((await a()).phase,'dialog');assert.match(await page.locator('#dialogKicker').innerText(),/CHẶN CỔNG/);assert.equal(await primary().isDisabled(),true);const gateLines=await finishDialogue();assert.ok(gateLines.some(l=>l.includes('Bắt kẻ đột nhập')));await page.screenshot({path:out+'/gate-dialogue.png'});await primary().click();
   assert.ok((await a()).save.story.guardianOrders.includes('fire'));assert.equal(await page.evaluate(()=>__testWorld.boss===null),true);assert.equal((await a()).encounter.guardId,'fire-guardian-sentry-1');
   await finishDialogue();await primary().click();await page.locator('#startButton').click();await advance(2.5);await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));
