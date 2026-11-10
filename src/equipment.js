@@ -52,6 +52,7 @@ export const ARM_GUARDS=[{id:'bare-wrists',name:'Băng tay lữ hành',price:0,c
 export const armorById=id=>ARMORS.find(a=>a.id===id);
 export const armguardById=id=>ARM_GUARDS.find(a=>a.id===id);
 export const bagById=id=>BAGS.find(b=>b.id===id);
+export const bestOwnedBag=e=>(e.ownedBags||[]).map(bagById).filter(Boolean).reduce((best,bag)=>bag.capacity>best.capacity?bag:best,BAGS[0]);
 export const shurikenById=id=>SHURIKEN_TYPES.find(s=>s.id===id);
 export function newEquipment(){return {version:1,armor:'traveler',armguard:'bare-wrists',bag:'pouch-30',shuriken:'iron',ownedArmor:['traveler'],ownedArmguards:['bare-wrists'],ownedBags:['pouch-30'],ammo:{iron:10,steel:0,tempered:0,chakra:0}};}
 export function readEquipment(raw){
@@ -60,7 +61,7 @@ export function readEquipment(raw){
   clean.ownedArmor=[...new Set(['traveler',...(Array.isArray(raw.ownedArmor)?raw.ownedArmor.filter(id=>armorById(id)):[])])];
   clean.ownedArmguards=[...new Set(['bare-wrists',...(Array.isArray(raw.ownedArmguards)?raw.ownedArmguards.filter(id=>armguardById(id)):[])])];
   clean.ownedBags=[...new Set(['pouch-30',...(Array.isArray(raw.ownedBags)?raw.ownedBags.filter(id=>bagById(id)):[])])];
-  clean.armor=clean.ownedArmor.includes(raw.armor)?raw.armor:'traveler';clean.bag=clean.ownedBags.includes(raw.bag)?raw.bag:'pouch-30';
+  clean.armor=clean.ownedArmor.includes(raw.armor)?raw.armor:'traveler';clean.bag=bestOwnedBag(clean).id;
   clean.armguard=clean.ownedArmguards.includes(raw.armguard)?raw.armguard:'bare-wrists';
   clean.shuriken=shurikenById(raw.shuriken)?raw.shuriken:'iron';let room=bagById(clean.bag).capacity;
   // Preserve the most valuable ammunition when an old save exceeds the new bag size.
@@ -70,18 +71,20 @@ export function readEquipment(raw){
 export function selectAvailableShuriken(e){if(e.ammo[e.shuriken]>0)return true;const next=SHURIKEN_TYPES.find(s=>e.ammo[s.id]>0);if(!next)return false;e.shuriken=next.id;return true;}
 export function cycleShuriken(save){const e=save.equipment,available=SHURIKEN_TYPES.filter(s=>e.ammo[s.id]>0);if(!available.length)return false;const i=available.findIndex(s=>s.id===e.shuriken);e.shuriken=available[(i+1)%available.length].id;return true;}
 export const ammoCount=equipment=>Object.values(equipment.ammo).reduce((a,b)=>a+b,0);
-export function equipmentState(save){const e=save.equipment;return {hero:{...save.hero},armor:armorById(e.armor),armguard:armguardById(e.armguard)||ARM_GUARDS[0],bag:bagById(e.bag),shuriken:shurikenById(e.shuriken),ammo:{...e.ammo},count:ammoCount(e),available:e.ammo[e.shuriken]||0};}
+export function equipmentState(save){const e=save.equipment;e.bag=bestOwnedBag(e).id;return {hero:{...save.hero},armor:armorById(e.armor),armguard:armguardById(e.armguard)||ARM_GUARDS[0],bag:bagById(e.bag),shuriken:shurikenById(e.shuriken),ammo:{...e.ammo},count:ammoCount(e),available:e.ammo[e.shuriken]||0};}
 export function damageMultiplierFor(stats,element){return (stats.damageMultiplier||1)+(element==='weapon'?0:stats.elementBonuses?.[element]||0);}
 export function shopStock(village){return [...SHURIKEN_TYPES.filter(s=>village!=='nameless'||s.id!=='chakra').map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village&&(village!=='nameless'||a.intro)).map(a=>({...a,kind:'armor'})),...ARM_GUARDS.filter(a=>a.village===village&&(village!=='nameless'||a.intro)).map(a=>({...a,kind:'armguard'})),...BAGS.filter(b=>b.price>0&&(village!=='nameless'||b.capacity<=20)).map(b=>({...b,kind:'bag'}))];}
 // Keep the former ten-piece price, rounded up once for the selected quantity.
 export const shurikenPrice=(item,quantity)=>Math.ceil(item.price*quantity/item.quantity);
 export function maxShurikenPurchase(save,id){
   const item=shopStock(save.village).find(i=>i.kind==='shuriken'&&i.id===id);if(!item)return 0;
-  return Math.max(0,Math.min(50,bagById(save.equipment.bag).capacity-ammoCount(save.equipment),Math.floor(save.gold*item.quantity/item.price)));
+  return Math.max(0,Math.min(50,bestOwnedBag(save.equipment).capacity-ammoCount(save.equipment),Math.floor(save.gold*item.quantity/item.price)));
 }
 export function buyEquipment(save,id,quantity=10){
   const item=shopStock(save.village).find(item=>item.id===id),e=save.equipment;if(!item)return {ok:false,reason:'Món hàng không bán tại cửa hàng này.'};
+  e.bag=bestOwnedBag(e).id;
   if(item.kind==='armor'&&e.ownedArmor.includes(id)||item.kind==='armguard'&&e.ownedArmguards.includes(id)||item.kind==='bag'&&e.ownedBags.includes(id))return {ok:false,reason:'Bạn đã sở hữu món này.'};
+  if(item.kind==='bag'&&item.capacity<=bestOwnedBag(e).capacity)return {ok:false,reason:'Túi hiện tại đã có sức chứa bằng hoặc lớn hơn.'};
   if(item.kind==='shuriken'&&(!Number.isSafeInteger(quantity)||quantity<1||quantity>50))return {ok:false,reason:'Chọn từ 1 đến 50 phi tiêu.'};
   const price=item.kind==='shuriken'?shurikenPrice(item,quantity):item.price;
   if(save.gold<price)return {ok:false,reason:'Không đủ xu.'};
@@ -98,7 +101,7 @@ export function equipItem(save,kind,id){
   const e=save.equipment;
   if(kind==='armor'&&e.ownedArmor.includes(id))e.armor=id;
   else if(kind==='armguard'&&e.ownedArmguards.includes(id))e.armguard=id;
-  else if(kind==='bag'&&e.ownedBags.includes(id)&&bagById(id).capacity>=ammoCount(e))e.bag=id;
+  else if(kind==='bag'&&id===bestOwnedBag(e).id)e.bag=id;
   else if(kind==='shuriken'&&shurikenById(id))e.shuriken=id;
   else return false;return true;
 }
