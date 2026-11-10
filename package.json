@@ -119,7 +119,8 @@
     "test:android-attack": "node tools/build-android.mjs && node tests/android-attack-browser.cjs",
     "test:mobile-multitouch": "node tools/build-android.mjs && node tests/mobile-multitouch.cjs",
     "test:ice-support": "node tests/nature-core.mjs && node tools/build-android.mjs && node tests/ice-support-browser.cjs",
-    "test:village-peace": "node tests/village-peace-revision-core.mjs && node tools/build-android.mjs && node tests/village-peace-revision-browser.cjs"
+    "test:village-peace": "node tests/village-peace-revision-core.mjs && node tools/build-android.mjs && node tests/village-peace-revision-browser.cjs",
+    "test:shop-layout": "node tools/build.mjs && node tests/shop-layout-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"
