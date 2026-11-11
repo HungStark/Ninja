@@ -7,8 +7,9 @@ rendering another set of characters before each fight.
 The pre-battle VS screen reads the same catalog instead of constructing and
 rendering another set of characters before each fight.
 `portrait-key.js` selects the correct village, named resident, Hạ Ly state or
-hero armor/coat combination; changing a name or ammunition does not invalidate
-the image. Pending loads cannot replace a newer speaker or a closed dialogue.
+hero armor; changing a name, ammunition or old saved outfit/hair colors does not
+invalidate the image. Hero presets use the fixed black outfit and hair colors.
+Pending loads cannot replace a newer speaker or a closed dialogue.
 
 The browser character factories now start with controller groups only; they do
 not build the old procedural body, hair, uniform or duplicate equipment while
@@ -39,7 +40,7 @@ After changing only elder faces, regenerate their 21 portraits with
 `tools/build-portraits.mjs --elders`; this preserves the rest of the catalog.
 
 `portrait-presets.js` and `portrait-renderer.js` are builder-only modules. The
-catalog contains 453 presets deduplicated into 293 WebP files (1,387,022 bytes),
+catalog contains 241 presets deduplicated into 209 WebP files (889,558 bytes),
 at 256×304. The static server uses content-hashed filenames and immutable image
 caching; Android and web packaging include the same assets. The game keeps a
 neutral initials placeholder if an image fails rather than starting a costly

@@ -20,7 +20,7 @@ const files = [
   "ket_an.jpg",
   "assets/ninja-hands.glb",
   "assets/ha-ly-simple.glb",
-  "assets/hero-ninja-simple.glb",
+  "assets/hero-ninja-reference.glb",
   "assets/village-ninja.glb",
   "assets/npc_nam-simple.vrm",
   "assets/npc_nu-simple.vrm",

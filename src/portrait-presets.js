@@ -4,12 +4,12 @@ import {REGIONS} from './adventure-world.js';
 import {HA_LY,HA_LY_MOTHER} from './village-events.js';
 import {ninjaProfile} from './ninja.js';
 
-import {PORTRAIT_COATS} from './portrait-key.js';
+import {HERO_PORTRAIT_COAT,HERO_PORTRAIT_HAIR} from './portrait-key.js';
 
 // Used by the offline portrait builder, never by the dialogue UI.
 export function portraitPresets(){
   const result=new Map(),add=(key,spec)=>result.set(key,spec);
-  for(const armor of ARMORS)for(const coat of PORTRAIT_COATS)add('hero/'+armor.id+'/'+coat,{kind:'hero',equipment:{hero:{coat,hair:'#161821'},armor,armguard:ARM_GUARDS[0],bag:BAGS[0]}});
+  for(const armor of ARMORS)add('hero/'+armor.id,{kind:'hero',equipment:{hero:{coat:HERO_PORTRAIT_COAT,hair:HERO_PORTRAIT_HAIR},armor,armguard:ARM_GUARDS[0],bag:BAGS[0]}});
   for(const [village,region]of Object.entries(REGIONS)){
     add('ninja/'+village,{kind:'ninja',profile:ninjaProfile({id:'village-guard-'+village,village,kind:'ninja'}),pose:'standing'});
     add('guardian/'+village,{kind:'guardian',village});

@@ -30,7 +30,11 @@ function accessor(asset,index){
         if(p.targets){
           assert.deepEqual(q.attributes,p.attributes,'face geometry and skin remain unchanged');assert.equal(q.indices,p.indices);
           const oldNames=original.json.meshes[mi].extras.targetNames,newNames=simple.json.meshes[mi].extras.targetNames;
-          for(const [i,name]of newNames.entries()){const target=p.targets[oldNames.indexOf(name)];assert.deepEqual(q.targets[i],target);for(const index of Object.values(target))assert.deepEqual(accessor(simple,index),accessor(original,index),'retained facial expression deltas preserved');}
+          for(const [i,name]of newNames.entries()){
+            const target=p.targets[oldNames.indexOf(name)],current=q.targets[i];
+            assert.deepEqual(Object.keys(current),Object.keys(target));
+            for(const key of Object.keys(target))assert.deepEqual(accessor(simple,current[key]),accessor(original,target[key]),'retained facial expression deltas preserved even when accessors are repacked');
+          }
           assert.ok(newNames.length<=16,'unused facial GPU targets are pruned');
         }
         const positions=accessor(simple,q.attributes.POSITION),indices=accessor(simple,q.indices);
@@ -84,7 +88,7 @@ function accessor(asset,index){
       page.on('pageerror',e=>errors.push(e.stack));
       page.on('console',m=>{if(m.type()==='error'||m.type()==='warning'&&/Could not load/.test(m.text()))errors.push(m.text());});
       await page.route('**/character-preview.html',route=>route.fulfill({contentType:'text/html',body:'<html><style>body{margin:0}</style></html>'}));
-      if(original)await page.route(/-simple\.(glb|vrm)$/,route=>route.continue({url:route.request().url().replace('-simple.','.')}));
+      if(original)await page.route(/(?:hero-ninja-reference\.glb|-simple\.(?:glb|vrm))$/,route=>route.continue({url:route.request().url().replace('-simple.','.').replace('-reference.','.')}));
       await page.goto('http://127.0.0.1:4321/character-preview.html');
       await page.addScriptTag({content:bundle.outputFiles[0].text});
       await page.waitForFunction(()=>review.ready(),{timeout:30000});
