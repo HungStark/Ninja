@@ -18,6 +18,7 @@ export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwW
     });},
     actors(){return members.map(m=>({id:m.id,owner:'enemy',pos:pos(m),height:m.rig.height,fighter:m.fighter,dir:direction(pos(m),getPlayer())}));},
     fighter(id){return members.find(m=>m.id===id)?.fighter;},
+    root(id){return members.find(m=>m.id===id)?.rig.root;},
     position(id){const m=members.find(m=>m.id===id);return m&&pos(m);},
     update(dt,time,enabled=true,reducedMotion=false){
       for(const m of members){

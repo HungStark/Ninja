@@ -43,7 +43,6 @@ export class NatureArts {
   perceivedPosition(observer,actors){const victim=actors.find(a=>a.owner!==observer),fog=victim&&this.fogs.find(f=>f.owner===victim.owner);return fog?[fog.p[0],fog.p[1]+1.72,fog.p[2]]:victim?.pos;}
   cast(owner,spell,pos,dir,actors,walls=[],shots=[],aimPoint){
     if(!this.canCast(owner,spell))return false;
-    if(spell.style==='snowball'&&!actors.some(a=>a.owner!==owner&&a.fighter.hp>0))return false;
     if(spell.element==='wood')return this.wood.cast(owner,spell,pos,dir,actors,walls,shots,aimPoint);
     if(spell.snowCost)this.weather(owner).amount=Math.max(0,this.weather(owner).amount-spell.snowCost);
     if(spell.style==='snowstorm'){this.snow.push({owner,spell,age:0,amount:0,consumed:false});return true;}
@@ -63,8 +62,8 @@ export class NatureArts {
       this.fogs.push({...fog,owner,p,decoy,age:0,life:spell.duration});return true;
     }
     if(spell.style==='snowball'){
-      const victim=actors.find(a=>a.owner!==owner&&a.fighter.hp>0);if(!victim)return false;
-      const axis=unit([victim.pos[0]-pos[0],0,victim.pos[2]-pos[2]]),p=add(pos,mul(axis,8)),root=this.group(),spin=new T.Group();root.add(spin);
+      let axis=unit([dir[0],0,dir[2]]);if(length(axis)<.5)axis=[0,0,-1];
+      const p=add(pos,mul(axis,8)),root=this.group(),spin=new T.Group();root.add(spin);
       const material=this.white.clone();this.mesh(spin,'snow',material,[0,0,0],[spell.radius,spell.radius,spell.radius]);
       for(let i=0;i<24;i++){const a=i*2.399,y=1-2*(i+.5)/24,r=Math.sqrt(1-y*y);this.mesh(spin,'sphere',i%3?material:this.blue,[Math.cos(a)*r*spell.radius*.94,y*spell.radius*.94,Math.sin(a)*r*spell.radius*.94],[.45,.35,.45]);}
       p[1]=this.floor(p[0],p[2])+spell.radius;root.position.fromArray(p);
@@ -72,7 +71,7 @@ export class NatureArts {
       // Gather loose clumps nearby; the ground cover, drifts and falling flakes remain.
       for(let i=0;i<60;i++){const a=i*2.399,r=2+hash(i+70)*6,origin=[p[0]+Math.cos(a)*r,0,p[2]+Math.sin(a)*r];origin[1]=this.floor(origin[0],origin[2])+.1;const m=this.mesh(gather,'snow',i%4?this.white:this.blue,origin,[.12,.12,.12]);chunks.push({m,origin,delay:hash(i+260)*.6});}
       spin.scale.setScalar(.04);
-      this.balls.push({owner,spell,victim:victim.owner,victimId:victim.id,root,spin,material,p,axis,gather,chunks,gatherTime:2,phase:'gathering',age:0});return true;
+      this.balls.push({owner,spell,root,spin,material,p,axis,gather,chunks,gatherTime:2,phase:'gathering',age:0,travel:0,range:spell.range??64});return true;
     }
     return null;
   }
@@ -110,20 +109,25 @@ export class NatureArts {
     for(const e of [...this.iceWalls]){e.age+=dt;e.wall.height=e.height*ease(e.age/e.formation);if(!walls.includes(e.wall)||e.wall.hp<=0||e.wall.life<=0)this.removeIceWall(e,walls);}
     for(const b of [...this.bindings])if(b.fighter.iceControlTime<=0){b.root.removeFromParent();this.bindings.splice(this.bindings.indexOf(b),1);}
     for(const b of [...this.balls]){
-      const victim=actors.find(a=>b.victimId?a.id===b.victimId:a.owner===b.victim);if(!victim||victim.fighter.hp<=0){this.removeBall(b);continue;}b.age+=dt;let motionDt=dt;
+      b.age+=dt;let motionDt=dt;
       if(b.phase==='gathering'){
         if(b.age+1e-6<b.gatherTime)continue;
         b.phase='rolling';b.gather.removeFromParent();motionDt=Math.max(0,b.age-b.gatherTime);
       }
-      b.axis=unit([victim.pos[0]-b.p[0],0,victim.pos[2]-b.p[2]]);
-      const before=[...b.p],step=b.spell.speed*motionDt;b.p[0]+=b.axis[0]*step;b.p[2]+=b.axis[2]*step;b.p[1]=this.floor(b.p[0],b.p[2])+b.spell.radius;b.spin.rotation.x+=b.axis[2]*step/b.spell.radius;b.spin.rotation.z-=b.axis[0]*step/b.spell.radius;
-      const delta=sub(b.p,before),length2=delta.reduce((n,v)=>n+v*v,0),t=length2?clamp(sub(victim.pos,before).reduce((n,v,i)=>n+v*delta[i],0)/length2):0,contact=add(before,mul(delta,t));
-      if(length(sub(victim.pos,contact))<=b.spell.radius+actorHitRadius(victim,.45)){
-        b.p=contact;
+      const before=[...b.p],step=Math.min(b.spell.speed*motionDt,b.range-b.travel);b.travel+=step;b.p[0]+=b.axis[0]*step;b.p[2]+=b.axis[2]*step;b.p[1]=this.floor(b.p[0],b.p[2])+b.spell.radius;b.spin.rotation.x+=b.axis[2]*step/b.spell.radius;b.spin.rotation.z-=b.axis[0]*step/b.spell.radius;
+      const delta=sub(b.p,before),length2=delta.reduce((n,v)=>n+v*v,0);let first=null;
+      for(const victim of actors){
+        if(victim.owner===b.owner||victim.fighter.hp<=0)continue;
+        const offset=sub(before,victim.pos),radius=b.spell.radius+actorHitRadius(victim,.45),c=length(offset)**2-radius*radius;
+        let t=0;if(c>0){if(length2<1e-12)continue;const projection=offset.reduce((n,v,i)=>n+v*delta[i],0),disc=projection*projection-length2*c;if(disc<0)continue;t=(-projection-Math.sqrt(disc))/length2;if(t<0||t>1)continue;}
+        if(!first||t<first.t)first={victim,t};
+      }
+      if(first){
+        const {victim,t}=first;b.p=add(before,mul(delta,t));
         const hit={owner:b.owner,victimId:victim.id,element:'ice',style:'snowball',damage:b.spell.damage,color:b.spell.color,unreflectable:true,v:[...b.axis]};
         if(impact)impact(hit,victim.pos);else victim.fighter.receive(hit.damage,true,false,'ice');
         this.shatter(b);
-      }
+      }else if(b.travel>=b.range)this.removeBall(b);
     }
     return null;
   }
@@ -165,7 +169,7 @@ export class NatureArts {
     snowBursts:this.snowBursts.map(b=>({owner:b.owner,age:b.age,life:b.life,position:b.root.position.toArray(),fragments:b.fragments.length})),iceWalls:[],
     iceGather:[...this.shots].filter(([s])=>s.style==='icebind'&&s.phase==='blooming').map(([s,r])=>({owner:s.owner,progress:clamp(s.releaseAge/s.releaseAt),flakes:r.userData.bind.flakes.count,crystalScale:r.userData.bind.core.scale.x})),
     fogs:this.fogs.map(f=>({owner:f.owner,life:f.life,position:[...f.p],coverPosition:f.cover.position.toArray(),insideView:f.owner==='player',decoyVisible:f.decoy.visible,cloudCount:f.clouds.count,field:{...f.bounds,height:f.height}})),
-    balls:this.balls.map(b=>({owner:b.owner,victim:b.victim,victimId:b.victimId,phase:b.phase,position:[...b.p],age:b.age,gatherTime:b.gatherTime,gatherProgress:clamp(b.age/b.gatherTime),gatherChunks:b.phase==='gathering'?b.chunks.filter(c=>c.m.visible).length:0,radius:b.spell.radius,damage:b.spell.damage,snowCost:b.spell.snowCost})),
+    balls:this.balls.map(b=>({owner:b.owner,phase:b.phase,position:[...b.p],direction:[...b.axis],travel:b.travel,range:b.range,age:b.age,gatherTime:b.gatherTime,gatherProgress:clamp(b.age/b.gatherTime),gatherChunks:b.phase==='gathering'?b.chunks.filter(c=>c.m.visible).length:0,radius:b.spell.radius,damage:b.spell.damage,snowCost:b.spell.snowCost})),
     bindings:this.bindings.map(b=>b.owner),hidden:{player:this.hidden('player'),enemy:this.hidden('enemy')},snowVisible:this.environment.visible
   };}
   resetForPhase(walls=[]){

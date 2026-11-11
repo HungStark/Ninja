@@ -23,7 +23,7 @@ for(const owner of ['player','enemy']){
   }
 }
 const view=createPracticeOverhead(new T.Scene()),config={enabled:true,active:true,available:true,position:[0,1.72,7],target:[0,0,-24],heightAt:()=>0};
-for(const style of ['woodseed','ignite','discharge','aircombo','earthcraterspikes','waterbubbles','vinebind','shadowclone','domain','shadowdive','flowerpoison','snowstorm','blizzard','snowball','icefog']){
+for(const style of ['woodseed','ignite','discharge','aircombo','earthcraterspikes','waterbubbles','vinebind','shadowclone','domain','shadowdive','flowerpoison','snowstorm','blizzard','icefog']){
   assert.equal(practiceSpellNeedsAim({style}),false);view.update({...config,spell:{style}});assert.equal(view.state().preview,null);assert.equal(view.state().visible,false);
 }
 for(const style of ['volley','windslash','meteor','earthgravity','earthquake','lightdome','bamboostab','shadowcommand','walnutwall']){view.update({...config,spell:{style}});assert.ok(view.state().preview,'aimed skills retain their preview');}

@@ -95,8 +95,8 @@ export class EarthArts {
       e.hp=spell.shield;e.maxHp=spell.shield;e.wallRefs=[];e.crackMat=this.ink.clone();e.materials.push(e.crackMat);
       const side=[axis[2],0,-axis[0]];
       for(let i=0;i<7;i++){
-        const x=(i-3)*1.04,p=add(add(center,mul(side,x)),mul(axis,.075*x*x));p[1]=this.heightAt(p[0],p[2]);
-        const n=unit(add(axis,mul(side,-.15*x))),part=new T.Group();root.add(part);part.position.fromArray(p);part.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),new T.Vector3(...n));
+        const x=(i-3)*1.04,p=add(add(center,mul(side,x)),mul(axis,-.075*x*x));p[1]=this.heightAt(p[0],p[2]);
+        const n=unit(add(axis,mul(side,.15*x))),part=new T.Group();root.add(part);part.position.fromArray(p);part.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),new T.Vector3(...n));
         this.mesh(part,'box',i%2?this.dark:this.rock,[0,spell.wallHeight/2,0],[1.15,spell.wallHeight,.65]);
         for(let j=0;j<3;j++)this.mesh(part,'rock',j%2?this.light:this.rock,[(j%2-.5)*.35,.5+j*.95,.32],[.40,.40,.20]);
         for(const z of [-.34,.34]){const crack=new T.LineSegments(this.cracks,e.crackMat);crack.position.set(0,spell.wallHeight/2,z);crack.scale.set(1,spell.wallHeight,1);part.add(crack);}

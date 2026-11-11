@@ -7,7 +7,7 @@ export const PRACTICE_DIVIDERS=[1,2].map(i=>PRACTICE_ARENA.minZ+(PRACTICE_ARENA.
 export const PRACTICE_BOUNDS={minX:-15.35,maxX:15.35,minZ:-25.35,maxZ:11.35};
 export const PRACTICE_MOVE_SPEED=2.5*MOVEMENT_SPEED_MULTIPLIER;
 export const PRACTICE_BOT_MOVE_SPEED=PRACTICE_MOVE_SPEED*.5;
-const AUTOMATIC_SPELL_STYLES=new Set(['woodseed','ignite','discharge','aircombo','earthcraterspikes','waterbubbles','shadowclone','domain','shadowdive','flowerpoison','vinebind','snowstorm','blizzard','snowball','icefog']);
+const AUTOMATIC_SPELL_STYLES=new Set(['woodseed','ignite','discharge','aircombo','earthcraterspikes','waterbubbles','shadowclone','domain','shadowdive','flowerpoison','vinebind','snowstorm','blizzard','icefog']);
 export function practiceSpellNeedsAim(spell){return !!spell&&!AUTOMATIC_SPELL_STYLES.has(spell.style);}
 export function clampPracticePoint(p){return [T.MathUtils.clamp(p[0],PRACTICE_BOUNDS.minX,PRACTICE_BOUNDS.maxX),p[1],T.MathUtils.clamp(p[2],PRACTICE_BOUNDS.minZ,PRACTICE_BOUNDS.maxZ)];}
 // Skills may move actors across a divider. Walking and G stay in the section
@@ -44,7 +44,7 @@ export function createPracticeOverhead(scene,{actorScale=1}={}){
       destination.visible=active&&!!moveTarget;if(destination.visible)destination.position.set(moveTarget[0],heightAt(moveTarget[0],moveTarget[2])+.13,moveTarget[2]);
       preview=null;if(!root.visible)return;
       const dx=cursor[0]-position[0],dz=cursor[2]-position[2],length=Math.hypot(dx,dz),direction=length>.001?[dx/length,0,dz/length]:[0,0,-1];
-      const self=['domain','shadowclone','shadowdive','snowstorm','icefog','snowball','flowerpoison'].includes(spell.style);
+      const self=['domain','shadowclone','shadowdive','snowstorm','icefog','flowerpoison'].includes(spell.style);
       const wall=['firewall','waterwall','windwall','icewall','earthwall','lightmirror'].includes(spell.style);
       const area=['meteor','thunder','jacob','waterbubbles','shadowbind','lightdome','earthgravity','earthquake','earthcraterspikes','stormfield','lightsphere','ignite','discharge','woodseed','aircombo'].includes(spell.style);
       const fixed=spell.style==='lightmirror'?2.4:spell.style==='icewall'?3.2:wall?3:spell.style==='stormfield'?4:spell.style==='lightsphere'?3:null;

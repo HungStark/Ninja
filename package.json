@@ -9,6 +9,7 @@
     "test:balance-editor": "node tests/spell-balance-editor.mjs",
     "test:opponent-balance": "node tests/opponent-balance-core.mjs && node tools/build.mjs && node tests/opponent-balance-editor.mjs",
     "test:ice-snow": "node tests/ice-snow-revision-core.mjs && node tools/build-android.mjs && node tests/ice-snow-revision-browser.cjs",
+    "test:directional-spells": "node tests/directional-earth-snow-core.mjs && node tests/character-damage-feedback-core.mjs && node tests/practice-garden-core.mjs && node tools/build-android.mjs && node tests/directional-earth-snow-browser.cjs",
     "test:quest-ninjas": "node tests/quest-refresh-core.mjs && node tests/inventory-quest-core.mjs && node tools/build-android.mjs && node tests/sidequest-ninja-visibility-browser.cjs",
     "build": "node tools/build.mjs",
     "build:vercel": "node tools/build-vercel.mjs",
