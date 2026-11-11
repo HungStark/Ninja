@@ -12,8 +12,9 @@ const hash=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)
 // Mature plant height follows the arena gate. Growth only scales these models
 // down; the forest and its attacks share the same real plant transforms.
 export class WoodGarden {
-  constructor(scene,floor,intersect=()=>null,gateHeight=8){
+  constructor(scene,floor,intersect=()=>null,gateHeight=8,{gardenBounds=()=>null}={}){
     this.scene=scene;this.floor=floor;this.intersect=intersect;this.gardens=[];this.attacks=[];this.clouds=[];this.walnuts=[];this.bindings=[];this.serial=0;this.gateHeight=gateHeight;this.maxPlantHeight=gateHeight*.75;
+    this.gardenBounds=gardenBounds;
     this.geo={sphere:new T.IcosahedronGeometry(1,1),stem:new T.CylinderGeometry(1,1,1,7),cone:new T.ConeGeometry(1,1,7),leaf:new T.OctahedronGeometry(1),nut:new T.SphereGeometry(1,18,12)};
     this.mat={bark:vfxToon('#795235'),nut:vfxToon('#b58b50'),ridge:vfxToon('#6d482d'),stem:vfxToon('#438a47'),leaf:vfxToon('#75b94d'),bamboo:vfxToon('#92bd52'),node:vfxToon('#d0ce75'),petal:vfxToon('#b76bb6'),mouth:vfxToon('#3f153f'),poison:vfxToon('#b1e84b')};
     this.mat.canopyDark=vfxToon('#4d863c');this.mat.canopyLight=vfxToon('#8ab954');
@@ -79,13 +80,17 @@ export class WoodGarden {
     return {root,parts,height:height*normalize};
   }
   sow(owner,spell,pos,actors){
-    const victim=actors.find(a=>a.owner!==owner),axis=unit([victim.pos[0]-pos[0],0,victim.pos[2]-pos[2]]),side=[-axis[2],0,axis[0]],root=this.group();
+    const victim=actors.find(a=>a.owner!==owner),zones=this.gardenBounds(owner),axis=zones?[0,0,owner==='player'?-1:1]:unit([victim.pos[0]-pos[0],0,victim.pos[2]-pos[2]]),side=[-axis[2],0,axis[0]],root=this.group();
     const plants=[],walnutPosition=add(add(pos,mul(axis,5.5)),mul(side,3.1));
     // Scatter around the opponent. Keep the foreground plants below waist
     // height so the forest does not obscure the opponent from the caster.
     for(let i=0;i<36;i++){
       let p,spacing=-1;
-      for(let attempt=0;attempt<96;attempt++){
+      if(zones){
+        const b=zones.opponent,row=Math.floor(i/9),column=i%9,t=(row+.5+(hash(i+117)-.5)*.5)/4;
+        p=[b.minX+(column+.5+(hash(i+51)-.5)*.7)/9*(b.maxX-b.minX),0,owner==='player'?b.maxZ-t*(b.maxZ-b.minZ):b.minZ+t*(b.maxZ-b.minZ)];
+      }
+      for(let attempt=0;!zones&&attempt<96;attempt++){
         const angle=(i%4+hash(i*193+attempt*2+8))*Math.PI/2;
         const radius=i===0?.165:Math.sqrt(.32*.32+hash(i*193+attempt*2+9)*(1-.32*.32));
         const candidate=add(add(victim.pos,mul(side,Math.cos(angle)*radius*10)),mul(axis,Math.sin(angle)*radius*11));
@@ -95,15 +100,23 @@ export class WoodGarden {
         if(gap>=2.05)break;
       }
       p??=add(victim.pos,mul(side,i%4<2?5:-5));
-      const foreground=(p[0]-victim.pos[0])*axis[0]+(p[2]-victim.pos[2])*axis[2]<0;
+      const foreground=zones?i<18:(p[0]-victim.pos[0])*axis[0]+(p[2]-victim.pos[2])*axis[2]<0;
       plants.push({kind:['flower','vine','bamboo'][i%3],p,foreground,sizeVariation:foreground?1:i===0?.95:.58+.42*hash(i+277),heightLimit:foreground?(victim.height??3)*.5:Infinity,landAt:1.05+(i%4)*.09});
     }
+    if(zones){walnutPosition[0]=owner==='player'?zones.own.maxX:zones.own.minX;walnutPosition[2]=owner==='player'?zones.own.maxZ:zones.own.minZ;}
     plants.push({kind:'walnut',p:walnutPosition,landAt:.7});
     let readyAt=0;
     plants.forEach((plant,i)=>{
       plant.p[0]=Math.max(-13,Math.min(13,plant.p[0]));plant.p[2]=Math.max(-37,Math.min(21,plant.p[2]));plant.p[1]=this.floor(plant.p[0],plant.p[2]);plant.seed=this.mesh(root,'sphere','nut',pos,[.11,.15,.11]);
       plant.seedOrigin=add(pos,mul(side,(i%3-1)*.2));plant.launchAt=i===plants.length-1?0:(i%9)*.025;
       const model=this.plantModel(plant.kind,plant.heightLimit,plant.sizeVariation);plant.model=model.root;plant.parts=model.parts;plant.height=model.height;plant.pulse=0;plant.exhaleTime=0;plant.model.visible=false;
+      if(zones){
+        const b=plant.kind==='walnut'?zones.own:zones.opponent,box=new T.Box3().setFromObject(plant.model);
+        let reach=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)))+plant.height*.14+.12;
+        const limit=Math.min(b.maxX-b.minX,b.maxZ-b.minZ)/2-.1;
+        if(reach>limit){const ratio=limit/reach;plant.parts.normalization*=ratio;plant.height*=ratio;plant.model.scale.setScalar(plant.parts.normalization);reach=limit;}
+        plant.p[0]=Math.max(b.minX+reach,Math.min(b.maxX-reach,plant.p[0]));plant.p[2]=Math.max(b.minZ+reach,Math.min(b.maxZ-reach,plant.p[2]));plant.p[1]=this.floor(plant.p[0],plant.p[2]);
+      }
       const anchor=this.group(root);anchor.position.fromArray(plant.p);anchor.add(plant.model);plant.anchor=anchor;
       readyAt=Math.max(readyAt,plant.landAt+.3);
     });

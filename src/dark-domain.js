@@ -209,7 +209,7 @@ export class DarkDomain {
     if(this.transition||(spell.requiresDomain&&!this.usable))return false;
     if(spell.style==='shadowclone'){
       if(this.cloneCount(owner)>=spell.maxClones){
-        const dog=this.upgradable(owner)[0];return dog?this.upgradeClone(dog,spell):false;
+        const dogs=this.upgradable(owner).slice(0,2);for(const dog of dogs)this.upgradeClone(dog,spell);return dogs.length>0;
       }
       // Reserve slots for the spell's cap, including clones waiting to resurface.
       const slots=[1,0,2,...Array.from({length:Math.max(0,spell.maxClones-3)},(_,i)=>i+3)].filter(slot=>!this.clones.some(c=>c.owner===owner&&c.rowSlot===slot));

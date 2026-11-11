@@ -76,7 +76,7 @@ export class FireEffects {
     this.scene.add(ring);
     this.rings.push({ mesh: ring, age: 0 });
   }
-  update(dt, time, shots, particles, camera, quality, walls = [], fighters = [], fields = [], reducedMotion = false) {
+  update(dt, time, shots, particles, camera, quality, walls = [], fighters = [], fields = [], reducedMotion = false, overhead = false) {
     this.time = time;
     this.fireMaterial.uniforms.uTime.value = time;
     while (this.objects.length < shots.length) this.makeShot();
@@ -145,7 +145,7 @@ export class FireEffects {
     this.arts.update(dt, time, shots, walls, fighters, quality);
     this.waterArts.update(dt, time, shots, walls, fighters);
     this.lightningArts.update(dt,time,shots,fields,fighters,quality);
-    this.shurikens.update(shots);
+    this.shurikens.update(shots,{overhead});
     this.flightBursts.update(dt,shots,quality,reducedMotion);
     this.elemental.update(time,fighters,quality,reducedMotion,camera);
   }

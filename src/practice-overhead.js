@@ -7,6 +7,8 @@ export const PRACTICE_DIVIDERS=[1,2].map(i=>PRACTICE_ARENA.minZ+(PRACTICE_ARENA.
 export const PRACTICE_BOUNDS={minX:-15.35,maxX:15.35,minZ:-25.35,maxZ:11.35};
 export const PRACTICE_MOVE_SPEED=2.5*MOVEMENT_SPEED_MULTIPLIER;
 export const PRACTICE_BOT_MOVE_SPEED=PRACTICE_MOVE_SPEED*.5;
+const AUTOMATIC_SPELL_STYLES=new Set(['woodseed','ignite','discharge','aircombo','earthcraterspikes','waterbubbles','shadowclone','domain','shadowdive','flowerpoison','vinebind','snowstorm','blizzard','snowball','icefog']);
+export function practiceSpellNeedsAim(spell){return !!spell&&!AUTOMATIC_SPELL_STYLES.has(spell.style);}
 export function clampPracticePoint(p){return [T.MathUtils.clamp(p[0],PRACTICE_BOUNDS.minX,PRACTICE_BOUNDS.maxX),p[1],T.MathUtils.clamp(p[2],PRACTICE_BOUNDS.minZ,PRACTICE_BOUNDS.maxZ)];}
 // Skills may move actors across a divider. Walking and G stay in the section
 // occupied when the movement starts, without snapping a skill back home.
@@ -38,7 +40,7 @@ export function createPracticeOverhead(scene,{actorScale=1}={}){
     reset(){moveTarget=null;pointer=null;cursor=[0,0,-8];preview=null;root.visible=destination.visible=playerMarker.visible=fence.visible=false;},
     camera(camera,canvas){const height=Math.max(47,47*1.2/camera.aspect);camera.fov=52;camera.position.set(0,height,-7+height*30/47);camera.lookAt(0,0,-7);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);projectPointer(camera,canvas);},
     update({enabled,active,spell,available,position,target,heightAt}){
-      fence.visible=enabled;playerMarker.visible=enabled;playerMarker.position.set(position[0],heightAt(position[0],position[2])+.14,position[2]);root.visible=active&&!!spell;
+      fence.visible=enabled;playerMarker.visible=enabled;playerMarker.position.set(position[0],heightAt(position[0],position[2])+.14,position[2]);root.visible=active&&practiceSpellNeedsAim(spell);
       destination.visible=active&&!!moveTarget;if(destination.visible)destination.position.set(moveTarget[0],heightAt(moveTarget[0],moveTarget[2])+.13,moveTarget[2]);
       preview=null;if(!root.visible)return;
       const dx=cursor[0]-position[0],dz=cursor[2]-position[2],length=Math.hypot(dx,dz),direction=length>.001?[dx/length,0,dz/length]:[0,0,-1];

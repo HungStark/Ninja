@@ -10,9 +10,9 @@ const hash=i=>{const v=Math.sin(i*127.1+311.7)*43758.5453;return v-Math.floor(v)
 
 // Match state lives here; rendering never advances snow, growth or combat damage.
 export class NatureArts {
-  constructor(scene,floor=()=>0,avatars={},intersect=()=>null,gateHeight=8){
+  constructor(scene,floor=()=>0,avatars={},intersect=()=>null,gateHeight=8,options={}){
     this.scene=scene;this.floor=floor;this.avatars=avatars;this.time=0;this.trees=[];this.snow=[];this.fogs=[];this.balls=[];this.bindings=[];this.shots=new Map();this.shields=new Map();
-    this.wood=new WoodGarden(scene,floor,intersect,gateHeight);this.trees=this.wood.gardens;
+    this.wood=new WoodGarden(scene,floor,intersect,gateHeight,options);this.trees=this.wood.gardens;
     this.iceSupport=new IceSupportVfx();this.iceWalls=[];this.blizzards=[];this.snowBursts=[];this.snowfallTime=0;this.snowWindTime=0;
     this.geo={sphere:new T.IcosahedronGeometry(1,1),snow:new T.IcosahedronGeometry(1,2),cone:new T.ConeGeometry(1,1,6),box:new T.BoxGeometry(1,1,1),trunk:new T.CylinderGeometry(.65,1,1,9),leaf:new T.OctahedronGeometry(1)};
     this.bark=vfxToon('#765235');this.woodMat=vfxToon('#ae8252');this.leaf=vfxToon('#54944b');this.bright=vfxToon('#9ad36d');this.white=vfxToon('#edf7ff');this.blue=vfxToon('#aacfe7');

@@ -17,7 +17,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),path
     assert.match(await page.locator('[data-equip="dark-orb"]').innerText(),/HỒI 2s/);await click('startButton');await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));
     // The special 2-second cooldown applies to summons and upgrades, while rank C stays unchanged.
     await seal('dark-orb');await page.keyboard.press('Space');assert.equal((await state()).cooldowns['dark-orb'],2);await advance(1.99);await seal('dark-orb');assert.equal(await page.locator('#castButton').isDisabled(),true);await advance(.01);assert.equal(await page.locator('#castButton').isDisabled(),false);await page.keyboard.press('Space');assert.equal((await clones()).length,2);
-    await cast('dark-orb');await cast('dark-orb');assert.equal((await state()).cooldowns['dark-orb'],2);assert.equal((await clones()).filter(c=>c.form==='bull').length,1);
+    await cast('dark-orb');await cast('dark-orb');assert.equal((await state()).cooldowns['dark-orb'],2);assert.equal((await clones()).filter(c=>c.form==='bull').length,2);
     await reset();await cast('dark-orb');await advance(.5);let before=await clones(),dog=before[0];
     await enemy('wind-orb',[dog.position[0],.72,dog.position[2]-3],[0,0,1]);await advance(.5);assert.deepEqual(identity(await clones()),identity(before));let s=await state();assert.equal(s.shots,1);assert.ok(s.projectiles[0].position[2]>dog.position[2]);assert.equal(s.projectiles[0].velocity[2],29);await advance(.5);assert.equal((await state()).health,964,'Projectiles pass through clones and still hurt the caster');
     for(const [id,seconds] of [['light-orb',.2],['fire-meteor',3.6],['lightning-thunder',2.1],['light-volley',2.5]]){
