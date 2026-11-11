@@ -1,8 +1,9 @@
 import {SHURIKEN_TYPES} from './equipment.js';
 import {setupMobileLayout} from './mobile-layout.js';
 import {sprintTargetOffset,sprintTargetClearance} from './mobile-sprint.js';
+import {setupMobileTacticalControls} from './mobile-tactical-controls.js';
 export const androidInterface=()=>document.documentElement.dataset.android==='true'||(navigator.maxTouchPoints>0&&matchMedia('(pointer:coarse)').matches);
-export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAndCast,holdStep,releaseStep,boost,look,pause,selectAmmo,toggleGuide,sprint}){
+export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAndCast,holdStep,releaseStep,boost,look,pause,selectAmmo,toggleGuide,sprint,tacticalMove,tacticalAim,tacticalCast,selectTarget,heal,resume}){
   if(!androidInterface())return null;
   if(!document.querySelector('link[href$="android.css"]')){const css=document.createElement('link');css.rel='stylesheet';css.href='android.css';document.head.append(css);}
   document.body.classList.add('android-ui');
@@ -62,8 +63,8 @@ export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAnd
   // pointerdown so a second or third finger works while movement is held.
   guide.addEventListener('pointerdown',e=>{const button=e.target.closest('[data-spell]');if(button&&guide.contains(button))press(button,e,()=>sealSpell(Number(button.dataset.spell)));});
   guide.addEventListener('click',e=>{const button=e.target.closest('[data-spell]');if(button&&guide.contains(button))keyboardClick(button,e,()=>sealSpell(Number(button.dataset.spell)));});
-  canvas.addEventListener('pointerdown',e=>{if(!live()||drag)return;e.preventDefault();drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
-  canvas.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id||!live())return;look(e.clientX-drag.x,e.clientY-drag.y);drag.x=e.clientX;drag.y=e.clientY;});
+  canvas.addEventListener('pointerdown',e=>{if(getState().tactical||!live()||drag)return;e.preventDefault();drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointermove',e=>{if(getState().tactical||!drag||e.pointerId!==drag.id||!live())return;look(e.clientX-drag.x,e.clientY-drag.y);drag.x=e.clientX;drag.y=e.clientY;});
   const pad=root.querySelector('#androidJoystick'),knob=pad.querySelector('i');
   function resetFloating(){const p=root.querySelector('#androidJoystick');p.style.removeProperty('--joystick-float-x');p.style.removeProperty('--joystick-float-y');p.classList.remove('floating-active');padBiasX=padBiasY=0;}
   function homePad(){const x=pad.style.getPropertyValue('--joystick-float-x'),y=pad.style.getPropertyValue('--joystick-float-y');pad.style.setProperty('--joystick-float-x','0px');pad.style.setProperty('--joystick-float-y','0px');const r=pad.getBoundingClientRect();pad.style.setProperty('--joystick-float-x',x||'0px');pad.style.setProperty('--joystick-float-y',y||'0px');return r;}
@@ -109,8 +110,10 @@ export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAnd
   window.addEventListener('resize',release);
   document.querySelector('.center-status').append(root.querySelector('#androidClearSeals'));
   const mobileLayout=setupMobileLayout({getState,pause,release});
-  return {enabled:true,get aiming(){return drag!==null;},update(){const s=getState();if(phase!==s.phase){release();phase=s.phase;hudSampleAt=-Infinity;}if(!live()&&(stepPointers.size||actionPointers.size||drag))release();combat.hidden=!s.started||s.won||s.paused||s.phase==='explore';explore.hidden=s.phase!=='explore';if(s.phase==='explore')clearCoveredLabels();
+  const tactical=setupMobileTacticalControls({canvas,getState,move:tacticalMove,aim:tacticalAim,cast:tacticalCast,dash:boost,selectTarget,heal,selectAmmo,sealSpell,pause,resume});
+  return {enabled:true,get aiming(){return tactical.aiming||drag!==null;},tacticalState:()=>tactical.state(),update(){const s=getState();if(phase!==s.phase){release();phase=s.phase;hudSampleAt=-Infinity;}if(!live()&&(stepPointers.size||actionPointers.size||drag))release();combat.hidden=!s.started||s.won||s.paused||s.phase==='explore'||s.tactical;explore.hidden=s.phase!=='explore';if(s.phase==='explore')clearCoveredLabels();
     root.querySelectorAll('[data-touch-ammo]').forEach(b=>{const n=s.equipment?.ammo[b.dataset.touchAmmo]??(b.dataset.touchAmmo==='iron'?Infinity:0);b.disabled=n<=0;b.querySelector('small').textContent=n===Infinity?'∞':n;b.classList.toggle('selected',s.equipment?s.equipment.shuriken.id===b.dataset.touchAmmo:b.dataset.touchAmmo==='iron');});
     root.querySelector('#androidAmmoCurrent').textContent=s.equipment?s.equipment.shuriken.name.replace('Phi tiêu ',''):'sắt';
-  },release};
+    tactical.update(s);
+  },release(){release();tactical.release();}};
 }

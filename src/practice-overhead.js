@@ -36,9 +36,10 @@ export function createPracticeOverhead(scene,{actorScale=1}={}){
   function projectPointer(camera,canvas){if(!pointer)return;const r=canvas.getBoundingClientRect();ray.setFromCamera(new T.Vector2((pointer[0]-r.left)/r.width*2-1,-(pointer[1]-r.top)/r.height*2+1),camera);if(ray.ray.intersectPlane(plane,hit))cursor=clampPracticePoint(hit.toArray());}
   return {
     point:()=>[...cursor],
+    aimAt(point){pointer=null;cursor=clampPracticePoint(point);},
     pointer(x,y,camera,canvas){pointer=[x,y];projectPointer(camera,canvas);},
     move(from){moveTarget=clampPracticeActorPoint(cursor,'player',.65*actorScale,from);},
-    moveTo(point,from){moveTarget=clampPracticeActorPoint(point,'player',.65*actorScale,from);},
+    moveTo(point,from,unrestricted=false){moveTarget=unrestricted?clampPracticePoint(point):clampPracticeActorPoint(point,'player',.65*actorScale,from);},
     target:()=>moveTarget&&[...moveTarget],
     stop(){moveTarget=null;destination.visible=false;},
     reset(){moveTarget=null;pointer=null;cursor=[0,0,-8];preview=null;root.visible=destination.visible=playerMarker.visible=fence.visible=false;},
@@ -51,8 +52,8 @@ export function createPracticeOverhead(scene,{actorScale=1}={}){
       }
       camera.fov=CAMERA_FOV;camera.position.copy(focus).addScaledVector(back,distance);camera.lookAt(focus);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);projectPointer(camera,canvas);
     },
-    update({enabled,active,spell,available,position,target,heightAt}){
-      fence.visible=enabled;playerMarker.visible=enabled;playerMarker.position.set(position[0],heightAt(position[0],position[2])+.14,position[2]);root.visible=active&&practiceSpellNeedsAim(spell);
+    update({enabled,active,spell,available,position,target,heightAt,showFences=true}){
+      fence.visible=enabled&&showFences;playerMarker.visible=enabled;playerMarker.position.set(position[0],heightAt(position[0],position[2])+.14,position[2]);root.visible=active&&practiceSpellNeedsAim(spell);
       destination.visible=active&&!!moveTarget;if(destination.visible)destination.position.set(moveTarget[0],heightAt(moveTarget[0],moveTarget[2])+.13,moveTarget[2]);
       preview=null;if(!root.visible)return;
       const dx=cursor[0]-position[0],dz=cursor[2]-position[2],length=Math.hypot(dx,dz),direction=length>.001?[dx/length,0,dz/length]:[0,0,-1];

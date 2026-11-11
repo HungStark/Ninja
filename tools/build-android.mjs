@@ -9,6 +9,8 @@ const files=['language-loader.js','game.en.js','game-core.en.js','style.css','ad
 await Promise.all(files.map(f=>fs.copyFile(path.join(root,f),path.join(out,f))));
 await Promise.all(['ha-ly-simple.glb','hero-ninja-simple.glb','village-ninja.glb','npc_nam-simple.vrm','npc_nu-simple.vrm'].map(f=>fs.copyFile(path.join(root,'assets',f),path.join(out,'assets',f))));
 await fs.cp(path.join(root,'assets','portraits'),path.join(out,'assets','portraits'),{recursive:true});
+await fs.mkdir(path.join(out,'assets','ui'),{recursive:true});
+await fs.copyFile(path.join(root,'assets','ui','attack-button.png'),path.join(out,'assets','ui','attack-button.png'));
 for(const language of ['vi','en']){
  const name=language==='en'?'index.en.html':'index.html';
  let html=await fs.readFile(path.join(root,name),'utf8');
