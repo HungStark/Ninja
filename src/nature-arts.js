@@ -69,9 +69,9 @@ export class NatureArts {
       p[1]=this.floor(p[0],p[2])+spell.radius;root.position.fromArray(p);
       const gather=this.group(),chunks=[];
       // Gather loose clumps nearby; the ground cover, drifts and falling flakes remain.
-      for(let i=0;i<60;i++){const a=i*2.399,r=2+hash(i+70)*6,origin=[p[0]+Math.cos(a)*r,0,p[2]+Math.sin(a)*r];origin[1]=this.floor(origin[0],origin[2])+.1;const m=this.mesh(gather,'snow',i%4?this.white:this.blue,origin,[.12,.12,.12]);chunks.push({m,origin,delay:hash(i+260)*.6});}
+      for(let i=0;i<60;i++){const a=i*2.399,r=2+hash(i+70)*6,origin=[p[0]+Math.cos(a)*r,0,p[2]+Math.sin(a)*r];origin[1]=this.floor(origin[0],origin[2])+.1;const m=this.mesh(gather,'snow',i%4?this.white:this.blue,origin,[.12,.12,.12]);chunks.push({m,origin,delay:hash(i+260)*.3});}
       spin.scale.setScalar(.04);
-      this.balls.push({owner,spell,root,spin,material,p,axis,gather,chunks,gatherTime:2,phase:'gathering',age:0,travel:0,range:spell.range??64});return true;
+      this.balls.push({owner,spell,root,spin,material,p,axis,gather,chunks,gatherTime:1,phase:'gathering',age:0,travel:0,range:spell.range??64});return true;
     }
     return null;
   }

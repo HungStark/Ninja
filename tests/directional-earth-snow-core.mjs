@@ -26,7 +26,7 @@ for(const owner of ['player','enemy']){
   const actors=[caster,victim];
   const cast=(direction,targets=actors)=>{snow.reset([]);snow.cast(owner,spell('ice-reflect'),caster.pos,direction,targets);snow.advance(35,targets);assert.equal(snow.cast(owner,spell('ice-orb'),caster.pos,direction,targets),true);return snow.balls[0];};
   let ball=cast([1,.5,0]);assert.deepEqual(ball.axis,[1,0,0]);close(ball.p[0],8);close(ball.p[2],0);
-  victim.pos=[-20,1.72,15];snow.advance(3,actors);close(ball.p[0],11.1);close(ball.p[2],0);assert.deepEqual(ball.axis,[1,0,0]);close(victim.fighter.hp,1000);
+  victim.pos=[-20,1.72,15];snow.advance(3,actors);close(ball.p[0],20.4);close(ball.p[2],0);assert.deepEqual(ball.axis,[1,0,0]);close(victim.fighter.hp,1000);
   victim.fighter.hp=0;snow.advance(1,actors);assert.ok(snow.balls.includes(ball),'Target death does not cancel the aimed ball');
   snow.advance(100,actors);assert.equal(snow.balls.length,0,'Missed balls expire');
   ball=cast([0,0,-1],[caster]);snow.advance(2,[caster]);assert.equal(ball.phase,'rolling','Casting needs no target');

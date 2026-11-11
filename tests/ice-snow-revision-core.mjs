@@ -24,7 +24,7 @@ for(const owner of ['player','enemy']){
   assert.equal(shots[0].phase,'flying');assert.equal(shots[0].releaseAt,0);
   arts.visuals(shots,actors,null);assert.equal(arts.state().iceGather.length,0);
   setup();cast('ice-reflect',owner);advance(35);cast('ice-orb',owner);
-  const ball=arts.balls[0],origin=[...ball.p];advance(1.999);
+  const ball=arts.balls[0],origin=[...ball.p];advance(.999);
   assert.equal(ball.phase,'gathering');assert.deepEqual(ball.p,origin);
   advance(.001);assert.equal(ball.phase,'rolling');assert.deepEqual(ball.p,origin);
   advance(.01);assert.notDeepEqual(ball.p,origin);
@@ -38,7 +38,7 @@ for(const owner of ['player','enemy']){
   const target=actors.find(a=>a.owner!==owner),original=[...target.pos];
   assert.equal(cast('ice-orb',owner),true);close(arts.snowAmount(owner),55);assert.equal(arts.weather(owner).consumed,false);
   close(arts.slowAt(target.owner),.725);arts.visuals([],actors,null);assert.ok(arts.cover.material.opacity>.3);assert.equal(arts.drifts.filter(d=>d.m.visible).length,28);
-  const oldDrifts=arts.drifts.map(d=>d.m.position.toArray());advance(1);close(arts.snowAmount(owner),56);arts.visuals([],actors,null);assert.deepEqual(arts.drifts.map(d=>d.m.position.toArray()),oldDrifts);
+  const oldDrifts=arts.drifts.map(d=>d.m.position.toArray());advance(.5);close(arts.snowAmount(owner),55.5);arts.visuals([],actors,null);assert.deepEqual(arts.drifts.map(d=>d.m.position.toArray()),oldDrifts);
   assert.equal(arts.balls[0].phase,'gathering');assert.ok(arts.flakes.geometry.drawRange.count>0);
   assert.equal(advance(20),null);assert.equal(hits.length,1);assert.equal(hits[0].damage,250);close(target.fighter.hp,750);
   assert.equal(arts.balls.length,0);assert.equal(arts.snowBursts.length,1);assert.equal(moved,0);assert.deepEqual(target.pos,original);assert.equal(target.fighter.iceControlTime,0);assert.ok(!target.fighter.snowBuried);assert.equal(arts.buried(target.owner),null);
