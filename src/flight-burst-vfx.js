@@ -42,8 +42,9 @@ export class FlightBurstEffects{
     const entry=this.pool.find(e=>!e.active)||(this.pool.length<24?this.make():this.pool.reduce((a,b)=>a.age>b.age?a:b));
     entry.active=true;entry.age=0;entry.shot=shot;entry.size=T.MathUtils.clamp(Math.sqrt(shot.size||.3),.65,1.45);
     entry.root.position.fromArray(position);entry.root.quaternion.setFromUnitVectors(forward,new T.Vector3(...shot.v).normalize());entry.root.scale.setScalar(entry.size);
-    const tint=new T.Color('#e7f8ff').lerp(new T.Color(shot.color||'#93eaff'),.22);
-    entry.rings.forEach((r,i)=>r.material.color.copy(i?tint:new T.Color('#f2fbff')).multiplyScalar(1.5));
+    // Preserve the spell's elemental hue across the burst and its slipstream.
+    const tint=new T.Color(shot.color||'#93eaff');
+    entry.rings.forEach(r=>r.material.color.copy(tint).multiplyScalar(1.5));
     entry.fan.material.uniforms.uColor.value.copy(tint);entry.wake.material.uniforms.uColor.value.copy(tint);
     this.count++;
   }
