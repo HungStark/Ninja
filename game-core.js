@@ -77,7 +77,7 @@
   ].map(s=>({...s,element:'light',glyph:'光',color:'#fff2bd',heal:0,shield:s.shield||0}));
   const darkSpells = [
     { id:'dark-orb', name:'U Minh Phân Ảnh', kind:'attack', style:'shadowclone', rank:'C', cooldown:2, sequence:[...'dfz'], cost:15, damage:20, count:2, cloneCount:2, maxClones:4, upgradeDamage:30, subtitle:'Tạo 2 chó bóng mỗi lần, tối đa 4 ảnh · chó gây 20 sát thương · đủ 4 ảnh thì mỗi lần nâng tối đa 2 chó thành bò gây 30 sát thương · không bị chiêu đối thủ phá hủy, không cản đạn' },
-    { id:'dark-lance', name:'U Ảnh Tuyệt Sát', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'],cooldown:8, cost:20, damage:20, count:1, requiresClones:true, subtitle:'Lấy đà rồi chạy lao tới điểm ngắm · chó 20, bò 30 sát thương · ngoài lãnh địa biến mất, trong lãnh địa tự trồi lên lại' },
+    { id:'dark-lance', name:'U Ảnh Tuyệt Sát', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'],cooldown:8, cost:20, damage:20, count:1, requiresClones:true, subtitle:'Lấy đà rồi bám theo mục tiêu được chọn · chó 20, bò 30 sát thương · bị tường cản và trừ sát thương · ngoài lãnh địa biến mất, trong lãnh địa tự trồi lên lại' },
     { id:'dark-volley', name:'U Ảnh Huyễn Tượng', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfwq'],cooldown:20, cost:56, damage:90, fallTime:.7, duration:2, count:1, subtitle:'Voi bóng rơi xuống đầu đối thủ, gây 90 sát thương · trong lãnh địa mới nhấn chìm, khóa mọi thao tác 2 giây và nhìn qua bóng đen · có thể né trước khi voi đáp' },
     { id:'dark-domain', name:'U Minh Lĩnh Vực', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfrzsq'],cooldown:45, cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · voi bóng nhấn chìm địch và mở khóa lặn, phân thân bị đánh sẽ trồi lên lại' },
     { id:'dark-reflect', name:'U Ảnh Thuấn Di', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfa'],cooldown:8, cost:32, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
@@ -90,7 +90,7 @@
     {id:'wood-reflect',name:'Vạn Mộc Sinh Giới',kind:'attack',style:'woodseed',rank:'SS',sequence:[...'fzrerd'],cooldown:15,cost:50,damage:0,count:0,oncePerMatch:true,growthTime:60,subtitle:'6 ấn · gieo rừng hoa độc, dây leo và tre bao quanh đối thủ, cả trước, sau và hai bên, óc chó trước mặt bên phải · không gây sát thương, một lần mỗi trận · trưởng thành sau 60 giây, cây phía sau lớn nhỏ xen kẽ · cây phía trước cao tối đa nửa người đối thủ, phía sau cao tới 3/4 cổng cũ'}
   ].map(s=>({...s,element:'wood',glyph:'木',color:'#9ed26c',heal:0,shield:s.shield||0}));
   const iceSpells=[
-    {id:'ice-orb',name:'Tuyết táng',kind:'attack',style:'snowball',rank:'SS',sequence:[...'zx'],cooldown:45,cost:20,damage:250,count:1,snowCost:35,speed:6.2,radius:4.8,subtitle:'Tiêu hao 35 tuyết · gom một phần tuyết thành cầu lăn theo hướng chỉ định, chặn chiêu khi lăn · chạm đối thủ gây 250 sát thương rồi vỡ, không cuốn người đi · tuyết vẫn tiếp tục rơi'},
+    {id:'ice-orb',name:'Tuyết táng',kind:'attack',style:'snowball',rank:'SS',sequence:[...'zx'],cooldown:45,cost:20,damage:250,count:1,snowCost:35,speed:6.2,radius:4.8,subtitle:'Tiêu hao 35 tuyết · gom một phần tuyết thành cầu bám theo mục tiêu được chọn, chặn chiêu khi lăn · bị tường cản và trừ sát thương · chạm đối thủ gây 250 sát thương rồi vỡ, không cuốn người đi · tuyết vẫn tiếp tục rơi'},
     {id:'ice-lance',name:'Hàn Băng Phong Tỏa',kind:'attack',style:'icebind',rank:'B',sequence:[...'zxs'],cooldown:8,cost:28,damage:0,count:1,size:.38,speed:27,controlDuration:3,subtitle:'Bắn tinh thể băng ngay lập tức · khóa di chuyển và kết ấn 3 giây, không gây sát thương'},
     {id:'ice-volley',name:'Huyễn Sương Vô Ảnh',kind:'defense',style:'icefog',rank:'S',sequence:[...'zxce'],cooldown:11,cost:34,damage:0,count:0,duration:5,subtitle:'Ẩn người thật trong 5 giây · sương che nửa thân dưới trên toàn bộ nửa sân của bạn · tạo ảo ảnh lệch vị trí'},
     {id:'ice-barrier',name:'Bão Tuyết',kind:'defense',style:'blizzard',rank:'A',sequence:[...'zxv'],cooldown:12,cost:24,damage:0,count:0,duration:8,snowMultiplier:2,requiresSnow:true,subtitle:'Cần đang gọi tuyết · tăng gấp đôi tốc độ tích tuyết trong 8 giây · tuyết rơi dày hơn, nhanh hơn và hơi chéo · không tạo tường chắn'},
@@ -125,7 +125,9 @@
     "upgradeDamage": 32
   },
   "dark-volley": {
-    "cost": 50
+    "cost": 50,
+    "duration": 1,
+    "damage": 100
   },
   "fire-lance": {
     "cost": 50,
@@ -169,7 +171,14 @@
     "cooldown": 12
   },
   "fire-barrier": {
-    "cost": 25
+    "cost": 25,
+    "ignitionDamages": [
+      9,
+      18,
+      27,
+      40,
+      50
+    ]
   },
   "lightning-reflect": {
     "cooldown": 12,
@@ -216,20 +225,19 @@
   "wood-orb": {
     "cooldown": 5,
     "cost": 20,
-    "damage": 15
+    "damage": 18
   },
   "wood-volley": {
     "cost": 65,
     "damage": 65
   },
   "wood-lance": {
-    "cost": 30,
-    "damage": 20
+    "cost": 30
   },
   "wood-barrier": {
     "cooldown": 12,
     "cost": 25,
-    "shield": 70
+    "shield": 50
   },
   "ice-lance": {
     "cost": 25
@@ -450,16 +458,21 @@
     return [x,position[1],z];
   }
   // Swept plane intersection prevents fast projectiles from passing through a wall.
-  function intersectFireWall(start, end, wall) {
+  function intersectFireWall(start, end, wall, padding = 0) {
     const side = p => (p[0] - wall.p[0]) * wall.normal[0] + (p[2] - wall.p[2]) * wall.normal[2];
     const startSide = side(start), endSide = side(end);
     const a = Math.abs(startSide) < 1e-8 ? 0 : startSide, b = Math.abs(endSide) < 1e-8 ? 0 : endSide;
-    if (a * b > 0 || Math.abs(a - b) < 1e-8) return null;
-    const t = a / (a - b), point = start.map((v, i) => v + (end[i] - v) * t);
+    padding=Math.max(0,padding);
+    let t;
+    if(padding>0){
+      if(Math.abs(a-b)<1e-8){if(Math.abs(a)>padding)return null;t=0;}
+      else{const first=(a-padding)/(a-b),last=(a+padding)/(a-b);t=Math.max(0,Math.min(first,last));if(t>1||Math.max(first,last)<0)return null;}
+    }else{if(a*b>0||Math.abs(a-b)<1e-8)return null;t=a/(a-b);}
+    const point = start.map((v, i) => v + (end[i] - v) * t);
     const across = (point[0] - wall.p[0]) * -wall.normal[2] + (point[2] - wall.p[2]) * wall.normal[0];
-    if (wall.radius) return Math.hypot(across, point[1] - wall.p[1]) <= wall.radius ? point : null;
+    if (wall.radius) return Math.hypot(across, point[1] - wall.p[1]) <= wall.radius+padding ? point : null;
     const bottom=wall.p[1]||0;
-    return Math.abs(across) <= wall.width / 2 && point[1] >= bottom && point[1] <= bottom+wall.height ? point : null;
+    return Math.abs(across) <= wall.width / 2+padding && point[1] >= bottom-padding && point[1] <= bottom+wall.height+padding ? point : null;
   }
   // Sweep in the wave's frame to catch crossing projectiles, regardless of their speed or owner.
   function intersectsWave(start, end, waveStart, waveEnd, normal, width, height, padding = 0, depth = 2.4) {

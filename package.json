@@ -45,6 +45,7 @@
     "test:nature": "node tests/nature-core.mjs && node tests/nature.cjs",
     "test:hand-element-rings": "node tests/hand-element-rings.cjs",
     "test:cooldowns": "node tests/cooldowns-shuriken.cjs",
+    "test:projectile-defense": "node tests/projectile-defense-targeting-core.mjs && node tests/shadow-charge-core.mjs && node tests/guardian-boss-combat.mjs && node tools/build-android.mjs && node tests/projectile-defense-targeting-browser.cjs",
     "test:combat": "node tests/combat-core.mjs && node tests/combat.cjs",
     "test:adventure": "node tests/adventure-core.mjs && node tests/campaign-core.mjs && node tests/journey-story-browser.cjs",
     "test:world-journey": "node tests/world-journey.cjs",

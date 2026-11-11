@@ -1,4 +1,5 @@
 import {actorHitRadius} from './combat-size.js';
+import {crossWalls} from './combat.js';
 import * as T from 'three';
 import { clone as cloneActor } from 'three/addons/utils/SkeletonUtils.js';
 import { vfxToon } from './vfx-materials.js';
@@ -11,7 +12,7 @@ const hash=i=>{const v=Math.sin(i*127.1+311.7)*43758.5453;return v-Math.floor(v)
 // Match state lives here; rendering never advances snow, growth or combat damage.
 export class NatureArts {
   constructor(scene,floor=()=>0,avatars={},intersect=()=>null,gateHeight=8,options={}){
-    this.scene=scene;this.floor=floor;this.avatars=avatars;this.time=0;this.trees=[];this.snow=[];this.fogs=[];this.balls=[];this.bindings=[];this.shots=new Map();this.shields=new Map();
+    this.scene=scene;this.floor=floor;this.intersect=intersect;this.avatars=avatars;this.time=0;this.trees=[];this.snow=[];this.fogs=[];this.balls=[];this.bindings=[];this.shots=new Map();this.shields=new Map();
     this.wood=new WoodGarden(scene,floor,intersect,gateHeight,options);this.trees=this.wood.gardens;
     this.iceSupport=new IceSupportVfx();this.iceWalls=[];this.blizzards=[];this.snowBursts=[];this.snowfallTime=0;this.snowWindTime=0;
     this.geo={sphere:new T.IcosahedronGeometry(1,1),snow:new T.IcosahedronGeometry(1,2),cone:new T.ConeGeometry(1,1,6),box:new T.BoxGeometry(1,1,1),trunk:new T.CylinderGeometry(.65,1,1,9),leaf:new T.OctahedronGeometry(1)};
@@ -41,9 +42,11 @@ export class NatureArts {
   hidden(owner){return this.fogs.some(f=>f.owner===owner)||!!this.buried(owner);}
   buried(){return null;}
   perceivedPosition(observer,actors){const victim=actors.find(a=>a.owner!==observer),fog=victim&&this.fogs.find(f=>f.owner===victim.owner);return fog?[fog.p[0],fog.p[1]+1.72,fog.p[2]]:victim?.pos;}
-  cast(owner,spell,pos,dir,actors,walls=[],shots=[],aimPoint){
+  cast(owner,spell,pos,dir,actors,walls=[],shots=[],aimPoint,targetId){
     if(!this.canCast(owner,spell))return false;
     if(spell.element==='wood')return this.wood.cast(owner,spell,pos,dir,actors,walls,shots,aimPoint);
+    const target=spell.style==='snowball'?actors.find(a=>a.owner!==owner&&a.fighter.hp>0&&(targetId===undefined||(a.id??a.owner)===targetId)):null;
+    if(spell.style==='snowball'&&!target)return false;
     if(spell.snowCost)this.weather(owner).amount=Math.max(0,this.weather(owner).amount-spell.snowCost);
     if(spell.style==='snowstorm'){this.snow.push({owner,spell,age:0,amount:0,consumed:false});return true;}
     if(spell.style==='blizzard'){
@@ -62,7 +65,7 @@ export class NatureArts {
       this.fogs.push({...fog,owner,p,decoy,age:0,life:spell.duration});return true;
     }
     if(spell.style==='snowball'){
-      let axis=unit([dir[0],0,dir[2]]);if(length(axis)<.5)axis=[0,0,-1];
+      let axis=unit([target.pos[0]-pos[0],0,target.pos[2]-pos[2]]);if(length(axis)<.5)axis=[0,0,-1];
       const p=add(pos,mul(axis,8)),root=this.group(),spin=new T.Group();root.add(spin);
       const material=this.white.clone();this.mesh(spin,'snow',material,[0,0,0],[spell.radius,spell.radius,spell.radius]);
       for(let i=0;i<24;i++){const a=i*2.399,y=1-2*(i+.5)/24,r=Math.sqrt(1-y*y);this.mesh(spin,'sphere',i%3?material:this.blue,[Math.cos(a)*r*spell.radius*.94,y*spell.radius*.94,Math.sin(a)*r*spell.radius*.94],[.45,.35,.45]);}
@@ -71,7 +74,7 @@ export class NatureArts {
       // Gather loose clumps nearby; the ground cover, drifts and falling flakes remain.
       for(let i=0;i<60;i++){const a=i*2.399,r=2+hash(i+70)*6,origin=[p[0]+Math.cos(a)*r,0,p[2]+Math.sin(a)*r];origin[1]=this.floor(origin[0],origin[2])+.1;const m=this.mesh(gather,'snow',i%4?this.white:this.blue,origin,[.12,.12,.12]);chunks.push({m,origin,delay:hash(i+260)*.3});}
       spin.scale.setScalar(.04);
-      this.balls.push({owner,spell,root,spin,material,p,axis,gather,chunks,gatherTime:1,phase:'gathering',age:0,travel:0,range:spell.range??64});return true;
+      this.balls.push({owner,spell,damage:spell.damage,targetId:target.id??target.owner,root,spin,material,p,axis,gather,chunks,gatherTime:1,phase:'gathering',age:0,travel:0,range:spell.range??64});return true;
     }
     return null;
   }
@@ -98,7 +101,7 @@ export class NatureArts {
     const fragments=Array.from({length:48},(_,i)=>{const a=i*2.399,y=hash(i+98)*2-1,r=Math.sqrt(1-y*y),axis=[Math.cos(a)*r,y,Math.sin(a)*r];return {origin:mul(axis,ball.spell.radius*.6),v:add(mul(axis,3+hash(i+43)*5),[0,2,0]),scale:.15+hash(i+52)*.5};});
     this.snowBursts.push({owner:ball.owner,root,material,chunks,fragments,age:0,life:1.2});this.removeBall(ball);
   }
-  advance(dt,actors,setPosition=()=>{},walls=[],impact){
+  advance(dt,actors,setPosition=()=>{},walls=[],impact,onWallHit=()=>{}){
     if(dt<=0)return null;this.time+=dt;
     this.wood.advance(dt,actors,walls,impact);
     const windyTime=Math.max(0,...this.blizzards.map(b=>Math.min(dt,b.life)));this.snowfallTime+=dt+windyTime*.8;this.snowWindTime+=windyTime*1.1;
@@ -109,12 +112,15 @@ export class NatureArts {
     for(const e of [...this.iceWalls]){e.age+=dt;e.wall.height=e.height*ease(e.age/e.formation);if(!walls.includes(e.wall)||e.wall.hp<=0||e.wall.life<=0)this.removeIceWall(e,walls);}
     for(const b of [...this.bindings])if(b.fighter.iceControlTime<=0){b.root.removeFromParent();this.bindings.splice(this.bindings.indexOf(b),1);}
     for(const b of [...this.balls]){
+      const target=actors.find(a=>(a.id??a.owner)===b.targetId&&a.owner!==b.owner&&a.fighter.hp>0);
+      if(!target){this.removeBall(b);continue;}
       b.age+=dt;let motionDt=dt;
       if(b.phase==='gathering'){
         if(b.age+1e-6<b.gatherTime)continue;
         b.phase='rolling';b.gather.removeFromParent();motionDt=Math.max(0,b.age-b.gatherTime);
       }
-      const before=[...b.p],step=Math.min(b.spell.speed*motionDt,b.range-b.travel);b.travel+=step;b.p[0]+=b.axis[0]*step;b.p[2]+=b.axis[2]*step;b.p[1]=this.floor(b.p[0],b.p[2])+b.spell.radius;b.spin.rotation.x+=b.axis[2]*step/b.spell.radius;b.spin.rotation.z-=b.axis[0]*step/b.spell.radius;
+      const heading=unit([target.pos[0]-b.p[0],0,target.pos[2]-b.p[2]]);if(length(heading)>.5)b.axis=heading;
+      const before=[...b.p],step=Math.min(b.spell.speed*motionDt,b.range-b.travel,Math.hypot(target.pos[0]-b.p[0],target.pos[2]-b.p[2]));b.travel+=step;b.p[0]+=b.axis[0]*step;b.p[2]+=b.axis[2]*step;b.p[1]=this.floor(b.p[0],b.p[2])+b.spell.radius;b.spin.rotation.x+=b.axis[2]*step/b.spell.radius;b.spin.rotation.z-=b.axis[0]*step/b.spell.radius;
       const delta=sub(b.p,before),length2=delta.reduce((n,v)=>n+v*v,0);let first=null;
       for(const victim of actors){
         if(victim.owner===b.owner||victim.fighter.hp<=0)continue;
@@ -122,9 +128,13 @@ export class NatureArts {
         let t=0;if(c>0){if(length2<1e-12)continue;const projection=offset.reduce((n,v,i)=>n+v*delta[i],0),disc=projection*projection-length2*c;if(disc<0)continue;t=(-projection-Math.sqrt(disc))/length2;if(t<0||t>1)continue;}
         if(!first||t<first.t)first={victim,t};
       }
+      const attack={owner:b.owner,element:'ice',style:'snowball',old:before,p:first?add(before,mul(delta,first.t)):[...b.p],size:b.spell.radius,damage:b.damage,color:b.spell.color,unreflectable:true,v:[...b.axis]};
+      const blocked=crossWalls(attack,walls,this.intersect,(w,p,r)=>{if(r.remaining<=1e-7)b.p=[...p];onWallHit(w,p,r,attack);});
+      b.damage=attack.damage;
+      if(blocked){this.shatter(b);continue;}
       if(first){
         const {victim,t}=first;b.p=add(before,mul(delta,t));
-        const hit={owner:b.owner,victimId:victim.id,element:'ice',style:'snowball',damage:b.spell.damage,color:b.spell.color,unreflectable:true,v:[...b.axis]};
+        const hit={...attack,victimId:victim.id};
         if(impact)impact(hit,victim.pos);else victim.fighter.receive(hit.damage,true,false,'ice');
         this.shatter(b);
       }else if(b.travel>=b.range)this.removeBall(b);
@@ -169,7 +179,7 @@ export class NatureArts {
     snowBursts:this.snowBursts.map(b=>({owner:b.owner,age:b.age,life:b.life,position:b.root.position.toArray(),fragments:b.fragments.length})),iceWalls:[],
     iceGather:[...this.shots].filter(([s])=>s.style==='icebind'&&s.phase==='blooming').map(([s,r])=>({owner:s.owner,progress:clamp(s.releaseAge/s.releaseAt),flakes:r.userData.bind.flakes.count,crystalScale:r.userData.bind.core.scale.x})),
     fogs:this.fogs.map(f=>({owner:f.owner,life:f.life,position:[...f.p],coverPosition:f.cover.position.toArray(),insideView:f.owner==='player',decoyVisible:f.decoy.visible,cloudCount:f.clouds.count,field:{...f.bounds,height:f.height}})),
-    balls:this.balls.map(b=>({owner:b.owner,phase:b.phase,position:[...b.p],direction:[...b.axis],travel:b.travel,range:b.range,age:b.age,gatherTime:b.gatherTime,gatherProgress:clamp(b.age/b.gatherTime),gatherChunks:b.phase==='gathering'?b.chunks.filter(c=>c.m.visible).length:0,radius:b.spell.radius,damage:b.spell.damage,snowCost:b.spell.snowCost})),
+    balls:this.balls.map(b=>({owner:b.owner,targetId:b.targetId,phase:b.phase,position:[...b.p],direction:[...b.axis],travel:b.travel,range:b.range,age:b.age,gatherTime:b.gatherTime,gatherProgress:clamp(b.age/b.gatherTime),gatherChunks:b.phase==='gathering'?b.chunks.filter(c=>c.m.visible).length:0,radius:b.spell.radius,damage:b.damage,snowCost:b.spell.snowCost})),
     bindings:this.bindings.map(b=>b.owner),hidden:{player:this.hidden('player'),enemy:this.hidden('enemy')},snowVisible:this.environment.visible
   };}
   resetForPhase(walls=[]){

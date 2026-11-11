@@ -9,7 +9,7 @@ export const PRACTICE_MOVE_SPEED=2.5*MOVEMENT_SPEED_MULTIPLIER;
 export const PRACTICE_BOT_MOVE_SPEED=PRACTICE_MOVE_SPEED*.5;
 // A narrower lens and three-quarter angle give the tactical view a MOBA feel.
 const CAMERA_PITCH=Math.PI/4,CAMERA_YAW=Math.PI/12,CAMERA_FOV=40;
-const AUTOMATIC_SPELL_STYLES=new Set(['woodseed','ignite','discharge','aircombo','earthcraterspikes','waterbubbles','shadowclone','domain','shadowdive','flowerpoison','vinebind','snowstorm','blizzard','icefog']);
+const AUTOMATIC_SPELL_STYLES=new Set(['woodseed','ignite','discharge','aircombo','earthcraterspikes','waterbubbles','shadowclone','shadowcommand','domain','shadowdive','flowerpoison','vinebind','snowstorm','snowball','blizzard','icefog']);
 export function practiceSpellNeedsAim(spell){return !!spell&&!AUTOMATIC_SPELL_STYLES.has(spell.style);}
 export function clampPracticePoint(p){return [T.MathUtils.clamp(p[0],PRACTICE_BOUNDS.minX,PRACTICE_BOUNDS.maxX),p[1],T.MathUtils.clamp(p[2],PRACTICE_BOUNDS.minZ,PRACTICE_BOUNDS.maxZ)];}
 // Skills may move actors across a divider. Walking and G stay in the section

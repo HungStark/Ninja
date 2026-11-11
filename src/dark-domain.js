@@ -202,9 +202,10 @@ export class DarkDomain {
         this.makeClone(owner,p.toArray(),victim.pos,spell,slot);
       }
     }else if(spell.style==='shadowcommand'){
+      if(!victim||victim.fighter.hp<=0)return false;
       const clones=this.commandable(owner);if(!clones.length)return false;
-      for(const c of clones){c.target=[target[0],0,target[2]];c.mode='windup';c.age=0;c.body.position.y=0;}
-      this.splash(target);
+      for(const c of clones){c.targetId=victim.id??victim.owner;c.target=[victim.pos[0],0,victim.pos[2]];c.chargeDamage=c.damage;c.mode='windup';c.age=0;c.body.position.y=0;}
+      this.splash(victim.pos);
     }else if(spell.style==='shadowbind'){
       for(const b of [...this.bindings])if(b.owner===owner)this.releaseBinding(b);
       const p=[target[0],0,target[2]];
@@ -230,11 +231,12 @@ export class DarkDomain {
     c.waveCarry={wave,target:[c.p[0]+wave.normal[0]*ahead,0,c.p[2]+wave.normal[2]*ahead]};
     c.mode='carried';c.age=0;c.body.visible=true;c.body.position.y=0;this.splash(c.p);
   }
-  updateClones(dt,time,fighters,strike,crush,intercept=()=>false) {
+  updateClones(dt,time,fighters,strike,crush,intercept=()=>false,block=()=>false) {
     for(const c of [...this.clones]) {
       if(!this.clones.includes(c))continue;
-      c.age+=dt;const opponent=fighters.find(f=>f.owner!==c.owner);
-      if(!opponent)continue;
+      c.age+=dt;const attacking=['windup','charging'].includes(c.mode),opponent=fighters.find(f=>f.owner!==c.owner&&!(f.fighter.hp<=0)&&(!attacking||(f.id??f.owner)===c.targetId));
+      if(!opponent||opponent.fighter.hp<=0){if(attacking)this.destroyClone(c);continue;}
+      if(attacking)c.target=[opponent.pos[0],0,opponent.pos[2]];
       if(c.mode==='carried'){
         c.body.position.z=0;c.body.rotation.x=0;
         const {wave,target}=c.waveCarry,dx=target[0]-c.p[0],dz=target[2]-c.p[2],dist=Math.hypot(dx,dz);
@@ -263,9 +265,11 @@ export class DarkDomain {
       const delta=[destination[0]-c.p[0],destination[2]-c.p[2]],dist=Math.hypot(...delta);
       if(moving){
         const previous=[c.p[0],c.hitHeight,c.p[2]],speed=c.form==='bull'?SHADOW_CHARGE.bullSpeed:SHADOW_CHARGE.dogSpeed,travel=Math.min(dist,dt*speed);if(dist>.001){c.p[0]+=delta[0]/dist*travel;c.p[2]+=delta[1]/dist*travel;}
-        if(intercept({owner:c.owner,old:previous,p:[c.p[0],c.hitHeight,c.p[2]],size:c.hitRadius})){this.destroyClone(c);continue;}
+        const attack={owner:c.owner,victimId:opponent.id,element:'dark',style:'shadowstrike',damage:c.chargeDamage??c.damage,old:previous,p:[c.p[0],c.hitHeight,c.p[2]],size:c.hitRadius,unreflectable:true};
+        if(intercept(attack)||block(attack)){this.destroyClone(c);continue;}
+        c.chargeDamage=attack.damage;
         if(distance(c.p,destination)<.15){
-          if(distance(c.p,opponent.pos)<1.35+actorHitPadding(opponent)&&opponent.fighter.invulnerableTime<=0)strike(c,[opponent.pos[0],1.5,opponent.pos[2]]);
+          if(distance(c.p,opponent.pos)<1.35+actorHitPadding(opponent)&&opponent.fighter.invulnerableTime<=0)strike(c,[opponent.pos[0],1.5,opponent.pos[2]],attack);
           this.destroyClone(c);continue;
         }
       }

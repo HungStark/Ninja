@@ -2548,5 +2548,12 @@
   "Bắn tinh thể băng khóa di chuyển và kết ấn của đối thủ khi trúng.": "Fire an ice crystal that prevents the opponent from moving and forming seals on hit.",
   "Ẩn người thật trong sương và tạo ảo ảnh lệch vị trí để đánh lạc hướng đối thủ.": "Hide your real body in mist and create a displaced illusion to mislead the opponent.",
   "Cần đang gọi tuyết; tăng tốc tích tuyết và khiến tuyết rơi dày hơn.": "Requires active snowfall; accelerate snow accumulation and make the snowfall denser.",
-  "Gọi tuyết một lần mỗi trận; tuyết tích dần làm chậm đối thủ và cung cấp tuyết cho Tuyết táng.": "Call snowfall once per match; accumulating snow slows opponents and supplies snow for Snow Burial."
+  "Gọi tuyết một lần mỗi trận; tuyết tích dần làm chậm đối thủ và cung cấp tuyết cho Tuyết táng.": "Call snowfall once per match; accumulating snow slows opponents and supplies snow for Snow Burial.",
+  "Lấy đà rồi bám theo mục tiêu được chọn · chó 20, bò 30 sát thương · bị tường cản và trừ sát thương · ngoài lãnh địa biến mất, trong lãnh địa tự trồi lên lại": "Wind up and chase the selected target · dog 20, bull 30 damage · walls absorb damage · disappear outside the domain, rise again inside it",
+  "Tiêu hao 35 tuyết · gom một phần tuyết thành cầu bám theo mục tiêu được chọn, chặn chiêu khi lăn · bị tường cản và trừ sát thương · chạm đối thủ gây 250 sát thương rồi vỡ, không cuốn người đi · tuyết vẫn tiếp tục rơi": "Consumes 35 snow · gathers snow into a ball that follows the selected target and blocks attacks · walls absorb damage · deals 250 damage and shatters on contact without carrying the opponent · snowfall continues",
+  "Tiêu hao 35 tuyết · bám theo mục tiêu được chọn · bị tường cản · vỡ khi chạm": "Consumes 35 snow · follows the selected target · blocked by walls · shatters on contact",
+  "sát thương · bám theo mục tiêu được chọn · bị tường cản · vỡ khi chạm, không cuốn đối thủ": "damage · follows the selected target · blocked by walls · shatters on contact without carrying the opponent",
+  "Ra lệnh cho chó và bò bóng bám theo mục tiêu được chọn; tường chắn trừ sát thương, trong lãnh địa chúng có thể trồi lên trở lại.": "Order shadow dogs and bulls to chase the selected target; walls absorb damage, and inside the domain they can rise again.",
+  "Tiêu hao tuyết để tạo cầu bám theo mục tiêu được chọn, chặn chiêu khi lăn, chịu tường chắn và vỡ khi trúng đối thủ.": "Spend snow to create a ball that follows the selected target, blocks spells while rolling, is blocked by walls, and shatters on hitting an opponent.",
+  "Chó 20 / bò 30 sát thương · bám theo mục tiêu được chọn · bị tường cản": "Dog 20 / bull 30 damage · chases the selected target · blocked by walls"
 }

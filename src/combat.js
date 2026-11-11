@@ -6,7 +6,7 @@ export function absorbDurability(defense,damage,key='hp'){
 }
 
 export function crossWalls(shot,walls,intersect,onHit=()=>{}){
-  const hits=walls.filter(w=>w.hp>0&&w.owner!==shot.owner).map(w=>({wall:w,point:intersect(shot.old,shot.p,w)})).filter(h=>h.point);
+  const hits=walls.filter(w=>w.hp>0&&(w.life===undefined||w.life>0)&&w.owner!==shot.owner).map(w=>({wall:w,point:intersect(shot.old,shot.p,w,shot.size||0)})).filter(h=>h.point);
   const distance=p=>Math.hypot(...p.map((v,i)=>v-shot.old[i]));hits.sort((a,b)=>distance(a.point)-distance(b.point));
   for(const {wall,point} of hits){
     if(wall.hp<=0)continue;

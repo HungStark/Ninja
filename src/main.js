@@ -176,7 +176,12 @@ async function main() {
     camera3d.position.fromArray(playerPos()).lerp(close,weight);const normal=new T.Quaternion().setFromEuler(new T.Euler(camera.pitch,camera.yaw,0,'YXZ')),look=new T.Object3D();look.position.copy(camera3d.position);look.lookAt(target);look.rotateY(Math.PI);camera3d.quaternion.copy(normal).slerp(look.quaternion,weight);setWorldFov(baseFov-12*weight);handsPass.enabled=false;
     opponent.group.scale.setScalar(1+Math.sin(clamp(tr.age/3.2,0,1)*Math.PI)*.1);
   }
-  function guardianImpact(shot,pos){const scaled={...shot,damage:shot.damage*bossDamageMultiplier()/baseEnemyDamageMultiplier()};if(scaled.blockable&&snowBlocks(scaled))return {damage:0};if(scaled.blockable&&crossWalls(scaled,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,scaled)))return {damage:0};impact(scaled,pos);shot.hitResult=scaled.hitResult;return scaled.hitResult;}
+  function guardianIntercept(shot){
+    const scale=bossDamageMultiplier()/baseEnemyDamageMultiplier(),scaled={...shot,damage:shot.damage*scale};
+    const blocked=snowBlocks(scaled)||crossWalls(scaled,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,scaled));
+    shot.damage=scale>0?scaled.damage/scale:0;return blocked;
+  }
+  function guardianImpact(shot,pos){if(shot.blockable&&guardianIntercept(shot))return {damage:0};const scaled={...shot,damage:shot.damage*bossDamageMultiplier()/baseEnemyDamageMultiplier()};impact(scaled,pos);shot.hitResult=scaled.hitResult;return scaled.hitResult;}
   function guardianControl(kind,duration){
     const key=kind==='ice'?'iceControlTime':kind==='wood'?'woodControlTime':'lightningControlTime';
     player[key]=Math.max(player[key]||0,duration);interruptActor('player');
@@ -282,7 +287,7 @@ async function main() {
     const activationStats={waterbubbles:'4 bong bóng · nổ lần lượt mỗi 0,25 giây · 7,5 sát thương gốc/quả · nhận hệ số tăng sát thương · hồi '+spell.cooldown+' giây',ignite:'Bỏng 1–5 tầng → 10 / 20 / 30 / 45 / 60 sát thương',discharge:'Tĩnh điện 1–3 → choáng 0,5 / 1 / 2s → từ tính 3 / 5 / 7s'};
     if (!preparation) return carriedSpellMarkup(spell,i,selected);
     const taken = equipped.includes(spell.id), kind = activationStats[spell.style] ? (spell.style==='waterbubbles'?'BẪY':'KÍCH HOẠT') : spell.oncePerMatch?'KHỞI TẠO':spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = iceSpellStats(spell) || spell.balanceSummary || activationStats[spell.style] || (spell.oncePerMatch?'Không gây sát thương · 1 lần mỗi trận':spell.element==='wood'?({flowerpoison:'Khói tím 6 giây · vùng 2–5 m · 5–15 sát thương/giây trong vùng',vinebind:'18–54 sát thương · trói 2–6 giây',bamboostab:'Lá tre bay tới điểm ngắm · 1–3 đợt, tổng 75–225 sát thương',walnutwall:'Quả rơi và hóa lớn · chắn phía trước, 8–10 giây'})[spell.style]:spell.style==='snowball'?'Tiêu hao 35 tuyết · lăn theo hướng chỉ định · vỡ khi chạm':spell.style==='icewall'?'Tường băng trồi lên · 120 độ bền · 8 giây':spell.style==='icefog'?'Ẩn người thật · sương thấp phủ nửa sân · ảo ảnh lệch vị trí':spell.style==='icebind'?'Bắn ngay · đóng băng 3 giây':spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 26 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 20 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'130 độ bền · tường cong 10 giây · chặn đường',earthgravity:'60 khi giam + 75 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 26 / 45,5 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'Vòm 10 giây · khóa G · tốc độ 50%, chạm vòm 25% · laser cộng dồn',lightmirror:'2,5 giây · 120 độ bền · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 150 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · voi nhấn chìm và mở khóa lặn' : spell.style==='shadowclone'?'Tối đa 4 bóng · mỗi lần nâng tối đa 2 chó thành bò':spell.style==='shadowcommand'?'Chó 22 / bò 33 sát thương · ánh đỏ nhẹ':spell.style==='shadowbind'?'90 sát thương · trong lãnh địa nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · '+spell.duration+' giây · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : ''));
+    const stats = iceSpellStats(spell) || spell.balanceSummary || activationStats[spell.style] || (spell.oncePerMatch?'Không gây sát thương · 1 lần mỗi trận':spell.element==='wood'?({flowerpoison:'Khói tím 6 giây · vùng 2–5 m · 5–15 sát thương/giây trong vùng',vinebind:'18–54 sát thương · trói 2–6 giây',bamboostab:'Lá tre bay tới điểm ngắm · 1–3 đợt, tổng 75–225 sát thương',walnutwall:'Quả rơi và hóa lớn · chắn phía trước, 8–10 giây'})[spell.style]:spell.style==='snowball'?'Tiêu hao 35 tuyết · bám theo mục tiêu được chọn · bị tường cản · vỡ khi chạm':spell.style==='icewall'?'Tường băng trồi lên · 120 độ bền · 8 giây':spell.style==='icefog'?'Ẩn người thật · sương thấp phủ nửa sân · ảo ảnh lệch vị trí':spell.style==='icebind'?'Bắn ngay · đóng băng 3 giây':spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 26 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 20 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'130 độ bền · tường cong 10 giây · chặn đường',earthgravity:'60 khi giam + 75 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 26 / 45,5 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'Vòm 10 giây · khóa G · tốc độ 50%, chạm vòm 25% · laser cộng dồn',lightmirror:'2,5 giây · 120 độ bền · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 150 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · voi nhấn chìm và mở khóa lặn' : spell.style==='shadowclone'?'Tối đa 4 bóng · mỗi lần nâng tối đa 2 chó thành bò':spell.style==='shadowcommand'?'Chó 20 / bò 30 sát thương · bám theo mục tiêu được chọn · bị tường cản':spell.style==='shadowbind'?'90 sát thương · trong lãnh địa nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · '+spell.duration+' giây · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : ''));
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spellImage(spell) + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · ' + spell.cost + ' MANA · HỒI CHIÊU ' + spell.cooldown + 's' + (spell.snowCost ? ' · ' + spell.snowCost + ' TUYẾT' : '') + '</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -467,7 +472,7 @@ async function main() {
       return true;
     }
     if(['wood','ice'].includes(spell.element)){
-      const art=natureArts.cast(owner,spell,pos,dir,windActors(),walls,shots,['bamboostab','icebind'].includes(spell.style)?volleyTarget(owner,pos,dir):undefined);
+      const art=natureArts.cast(owner,spell,pos,dir,windActors(),walls,shots,['bamboostab','icebind'].includes(spell.style)?volleyTarget(owner,pos,dir):undefined,spell.style==='snowball'?(owner==='player'?aimedEnemy()?.id:'player'):undefined);
       if(art!==null)return art;
     }
     if(owner==='player')clearEarthView();
@@ -496,7 +501,7 @@ async function main() {
     if(spell.element==='dark'){
       // The falling elephant applies its hit inside DarkDomain, outside impact().
       if(spell.style==='shadowbind')spell={...spell,damage:spell.damage*(owner==='player'?damageMultiplierFor(battlePlayerStats,spell.element)*(activeBoss()?guardianPhases.damageMultiplier():1):baseEnemyDamageMultiplier())};
-      const victim={owner:owner==='player'?'enemy':'player',pos:owner==='player'?enemyPos():camera.p,fighter:owner==='player'?enemy:player};
+      const victim=spell.style==='shadowcommand'?(owner==='player'?aimedEnemy():{id:'player',owner:'player',pos:playerPos(),fighter:player}):{owner:owner==='player'?'enemy':'player',pos:owner==='player'?enemyPos():camera.p,fighter:owner==='player'?enemy:player};
       const result=darkDomain.cast(spell,owner,pos,dir,owner==='player'&&overheadPractice()&&spell.style==='shadowbind'?practiceAimPoint():volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
       if(result&&spell.style==='shadowdive'&&owner==='player'){
         if(!usesWindCamera())clearWindView();
@@ -639,6 +644,7 @@ async function main() {
   }
   function practiceSpellTarget(spell){
     if(mobileTactical()&&spell?.style==='waterbubbles')return mobileManualAim?practiceAimPoint():mobileEnemy().pos;
+    if(['snowball','shadowcommand'].includes(spell?.style))return aimedEnemy()?.pos||enemyPos();
     if(spell&&['waterbubbles','ignite','discharge','woodseed','aircombo'].includes(spell.style))return enemyPos();
     if(spell?.style==='earthcraterspikes')return earthArts.crater('player')?.center||practiceOverhead.point();
     return practiceOverhead.point();
@@ -1129,7 +1135,7 @@ async function main() {
       windArts.advance(dt,windActors(),impact);
       earthArts.advance(dt,windActors(),walls,impact,setEarthActorPosition,earthEvent,undefined,snowBlocks);
       const wasSnowReady=natureArts.snowReady('player');
-      natureArts.advance(dt,windActors(),(owner,p)=>{if(owner==='player'){if(overheadPractice()){practiceOverhead.stop();dashBoost.cancelDash();}camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact);
+      natureArts.advance(dt,windActors(),(owner,p)=>{if(owner==='player'){if(overheadPractice()){practiceOverhead.stop();dashBoost.cancelDash();}camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact,wallImpact);
       if(!wasSnowReady&&natureArts.snowReady('player'))announce('Đã tích đủ 35 tuyết · Z X rồi SPACE để dùng Tuyết táng!');
 
       if(overheadPractice()){
@@ -1166,11 +1172,11 @@ async function main() {
       lightArts.advance(dt,windActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;},snowBlocks);
       if(checkGuardianDefeat()){updateUI();return;}
       const guardianBase=guardianAnchor?[guardianAnchor.x,guardianAnchor.y+(opponent.group.userData.height||4)*characterScale()*.55,guardianAnchor.z]:enemyPos();
-      guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0,mouthPosition:p=>opponent.guardianMouth(p),control:guardianControl,playerHitboxScale:characterScale()});
+      guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0,mouthPosition:p=>opponent.guardianMouth(p),control:guardianControl,playerHitboxScale:characterScale(),interceptProjectile:guardianIntercept});
       updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);guardianAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),(actor,amount)=>{const r=actor.fighter.receive(amount,true,false,'wind');if(r.damage>0){enemyHit=.25;hitTimer=.1;if(overheadPractice())damageFeedback.trigger(actor.id,actor.pos);}return r.damage;},!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);battleMetrics.observeWalls(walls);
       enemyDashAura.update(dt,[opponent.group.position.x,earthFloor('enemy',opponent.group.position.x,opponent.group.position.z),opponent.group.position.z],enemy.hp>0&&enemyMovement.state().dashBoost.dashing>0,reducedMotion);
-      if(!won)darkDomain.updateClones(dt,animationTime,[{owner:'player',pos:playerPos(),fighter:player,hitboxScale:characterScale()},{owner:'enemy',pos:enemyPos(),fighter:enemy,hitboxScale:characterScale()}],
-        (clone,pos)=>impact({owner:clone.owner,element:'dark',style:'shadowstrike',damage:clone.damage,v:vnorm(vsub(pos,clone.p)),unreflectable:true},pos),shadowCrushImpact,snowBlocks);
+      if(!won)darkDomain.updateClones(dt,animationTime,windActors(),
+        (clone,pos,attack)=>impact({...attack,v:vnorm(vsub(pos,clone.p))},pos),shadowCrushImpact,snowBlocks,shot=>crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot)));
       if(checkGuardianDefeat()){updateUI();return;}
       if(adventure?.inBattle&&!won&&(player.hp<=0||allEnemiesDefeated())){finish(player.hp>0);return;}
       messageTime -= dt;
