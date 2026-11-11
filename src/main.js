@@ -80,11 +80,11 @@ async function main() {
   const practiceHandInset=createPracticeHandInset(renderer,hands);
   const scene = world.scene, opponent = await createOpponent(scene, world.opponentSpawn);
   const practiceOverhead=createPracticeOverhead(scene,{actorScale:PRACTICE_CHARACTER_SCALE});
-  let practiceView=androidInterface()?'overhead':'first-person',choosingPracticeView=false,practiceOpponentConfirmed=false,practiceEncounter=null;
+  let practiceView='overhead',choosingPracticeView=false,practiceOpponentConfirmed=false,practiceEncounter=null;
   let mobileTargetId='primary',mobileMoveVector=[0,0],mobileManualAim=null,mobileAimHold=0;
   const practiceOpponentPicker=createPracticeOpponentPicker({spells,elements,defaultLoadout,getLearnedSpells:()=>learnedSpells,renderSpell:(s,i,ids)=>spellMarkup(s,i,true,ids,true),onConfirm:event=>{practiceOpponentConfirmed=true;start(event);},onBack:()=>{practiceOpponentConfirmed=false;$('startButton').focus();}});
-  const boundedPractice=()=>!adventure?.inBattle&&!journeyLearning;
-  const overheadPractice=()=>practiceView==='overhead'&&(androidInterface()||boundedPractice());
+  const boundedCombat=()=>!journeyLearning||!!adventure?.encounter;
+  const overheadPractice=()=>practiceView==='overhead'||!!adventure?.encounter;
   const mobileTactical=()=>androidInterface()&&overheadPractice()&&(!adventure||['duel','combat'].includes(adventure.phase));
   function closePracticeView(){choosingPracticeView=false;$('practiceViewScreen').classList.add('hidden');$('startScreen').inert=false;}
   $('practiceViewBack').onclick=()=>{closePracticeView();practiceOpponentConfirmed=false;};
@@ -183,7 +183,7 @@ async function main() {
   }
 
   const squad=createEncounterSquad(scene,{GameRules,Fighter,keys,random:rand,getPlayer:playerPos,getShots:()=>shots,
-    constrainMovement:(old,goal)=>lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),movementSlow:p=>earthArts.slowAt(p[0],p[2])*lightArts.slowAt('enemy',p)*natureArts.slowAt('enemy'),
+    constrainMovement:(old,goal)=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old),movementSlow:p=>earthArts.slowAt(p[0],p[2])*lightArts.slowAt('enemy',p)*natureArts.slowAt('enemy'),
     launch:(member,spell,pos,dir)=>{const before=shots.length;launch(spell,'enemy',pos,dir,member.profile);for(const shot of shots.slice(before))shot.sourceId=member.id;},
     throwWeapon:(member,weapon,pos,dir)=>{const before=shots.length;launchShuriken('enemy',weapon,pos,dir,member.profile);for(const shot of shots.slice(before))shot.sourceId=member.id;}
   });
@@ -225,7 +225,7 @@ async function main() {
   const waterBubbles = new WaterBubbles(scene);
   const earthArts = new EarthArts(scene);
   const lightArts = new LightArts(scene,intersectFireWall,(a,b)=>earthArts.intersectTerrain(a,b));
-  const natureArts=new NatureArts(scene,(x,z)=>earthArts.heightAt(x,z),{player:playerAvatar.group,enemy:opponent.group},intersectFireWall,world.plantReferenceHeight,{gardenBounds:owner=>overheadPractice()&&boundedPractice()?{own:practiceMovementBounds(owner,0),opponent:practiceMovementBounds(owner==='player'?'enemy':'player',0)}:null});
+  const natureArts=new NatureArts(scene,(x,z)=>earthArts.heightAt(x,z),{player:playerAvatar.group,enemy:opponent.group},intersectFireWall,world.plantReferenceHeight,{gardenBounds:owner=>overheadPractice()&&boundedCombat()?{own:practiceMovementBounds(owner,0),opponent:practiceMovementBounds(owner==='player'?'enemy':'player',0)}:null});
   // The Wind Spirit's cinematic view is independent of the practice view choice.
   let windCameraEnabled=false,windView=null;
   let quality = 1;
@@ -388,7 +388,7 @@ async function main() {
     // Hand readiness effects follow exactly the same gate as the Space button.
     hands.setReady($('castButton').disabled ? null : ready?.element);
     if(mobileTactical()&&!mobileManualAim){const target=mobileEnemy().pos;practiceOverhead.aimAt([target[0],0,target[2]]);}
-    practiceOverhead.update({showFences:boundedPractice(),enabled:overheadPractice()&&started,active:overheadPractice()&&started&&!paused&&!won,spell:ready,available:!$('castButton').disabled,position:playerPos(),target:practiceSpellTarget(ready),heightAt:(x,z)=>earthFloor('player',x,z)});
+    practiceOverhead.update({showFences:boundedCombat(),enabled:overheadPractice()&&started,active:overheadPractice()&&started&&!paused&&!won,spell:ready,available:!$('castButton').disabled,position:playerPos(),target:practiceSpellTarget(ready),heightAt:(x,z)=>earthFloor('player',x,z)});
     updateOpportunities();
     document.querySelectorAll('.seal').forEach(el => { el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
     const availabilityContext=playerCastContext();
@@ -431,7 +431,7 @@ async function main() {
   function playerPos(){return [camera.p[0],camera.p[1]+earthFloor('player',camera.p[0],camera.p[2]),camera.p[2]];}
   function characterScale(){return overheadPractice()?PRACTICE_CHARACTER_SCALE:1;}
   function movementClearance(owner){return (owner==='enemy'&&activeBoss()?3:.65)*characterScale();}
-  function combatMovementBounds(owner,from){const c=movementClearance(owner);return boundedPractice()?practiceMovementBounds(owner,c,from):{minX:PRACTICE_ARENA.minX+c,maxX:PRACTICE_ARENA.maxX-c,minZ:PRACTICE_ARENA.minZ+c,maxZ:PRACTICE_ARENA.maxZ-c};}
+  function combatMovementBounds(owner,from){const c=movementClearance(owner);return boundedCombat()?practiceMovementBounds(owner,c,from):{minX:PRACTICE_ARENA.minX+c,maxX:PRACTICE_ARENA.maxX-c,minZ:PRACTICE_ARENA.minZ+c,maxZ:PRACTICE_ARENA.maxZ-c};}
   function practiceActorPoint(owner,p,from=owner==='player'?camera.p:opponent.group.position.toArray()){if(!overheadPractice())return p;const b=combatMovementBounds(owner,from);return [clamp(p[0],b.minX,b.maxX),p[1],clamp(p[2],b.minZ,b.maxZ)];}
 
   function windActors(){return [{id:'player',owner:'player',pos:playerPos(),height:playerAvatar.group.userData.height*characterScale(),hitboxScale:characterScale(),dir:aim(),fighter:player},...combatEnemies().map(a=>({...a,dir:vnorm(vsub(playerPos(),a.pos))}))];}
@@ -1142,7 +1142,7 @@ async function main() {
           camera.p[0]=next[0];camera.p[2]=next[2];moveTargetX=next[0];moveDirection=Math.hypot(next[0]-old[0],next[2]-old[2])>1e-6?1:0;
         }else if(target){
           const distance=(isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):PRACTICE_MOVE_SPEED*dt*earthArts.slowAt(camera.p[0],camera.p[2])*lightArts.slowAt('player',playerPos()))*natureArts.slowAt('player')*guardianPhases.slowAt(playerPos());
-          const old=playerPos(),delta=vsub(target,old),goal=boundedPractice()?stepPracticePoint(old,target,distance,movementClearance('player')):vadd(old,vmul(delta,Math.min(1,distance/(Math.hypot(delta[0],delta[2])||1)))),next=practiceActorPoint('player',lightArts.constrainMovement('player',old,earthArts.move(old,goal)));
+          const old=playerPos(),delta=vsub(target,old),goal=boundedCombat()?stepPracticePoint(old,target,distance,movementClearance('player')):vadd(old,vmul(delta,Math.min(1,distance/(Math.hypot(delta[0],delta[2])||1)))),next=practiceActorPoint('player',lightArts.constrainMovement('player',old,earthArts.move(old,goal)));
           camera.p[0]=next[0];camera.p[2]=next[2];moveTargetX=next[0];moveDirection=Math.hypot(next[0]-old[0],next[2]-old[2])>1e-6?1:0;
           if(Math.hypot(target[0]-next[0],target[2]-next[2])<.02||dt>1e-8&&Math.hypot(next[0]-old[0],next[2]-old[2])<1e-6)practiceOverhead.stop();
         }
@@ -1257,8 +1257,7 @@ async function main() {
     darkDomain.updateSubmergeView(diveDepth,camera3d.position.y);
     reactionEuler.set(...cameraReaction.rotation); reactionRotation.setFromEuler(reactionEuler);
     if(!windView)camera3d.quaternion.multiply(reactionRotation);
-    if(overheadPractice()){practiceOverhead.camera(camera3d,canvas);handsPass.enabled=false;playerAvatar.group.visible=started&&!natureArts.hidden('player');}
-    document.body.classList.toggle('practice-overhead',overheadPractice()&&started);
+    syncCombatView();
     effects.update(paused ? 0 : dt, animationTime, shots, particles, camera3d, quality, walls,
       [{ owner: 'player', fighter: player, pos: playerPos() }, { owner: 'enemy', fighter: enemy, pos: enemyPos() }],fields,reducedMotion,overheadPractice());
     darkDomain.visuals(running?dt:0,animationTime,shots);
@@ -1271,6 +1270,11 @@ async function main() {
     const opticalHint={lightsphere:'SPACE tạo cầu thủy tinh trước mặt · 8 giây · laser xuyên qua thành 7 sắc',lightdome:'SPACE gọi gương rơi ghép vòm · đủ đi ra tự do · khóa G · tốc độ 50%, chạm vòm 25% · 10 giây',lightmirror:'SPACE tạo gương trước mặt · phản đòn phía trước trong 2,5 giây'}[readyLightStyle];
     if(opticalHint)$('message').textContent=opticalHint;
   }
+  function syncCombatView(){
+    document.body.classList.toggle('practice-overhead',overheadPractice()&&started);
+    if(!overheadPractice())return;
+    practiceOverhead.camera(camera3d,canvas);handsPass.enabled=false;playerAvatar.group.visible=started&&!natureArts.hidden('player');
+  }
   let dialogueFrameKey=null;
   function render() {
     touchControls?.update();
@@ -1280,6 +1284,9 @@ async function main() {
     if(['wood','ice'].includes(enemy.defenseElement))opponent.shield.visible=false;
     earthArts.visuals(animationTime,reducedMotion);
     world.terrain.deform((x,z)=>earthArts.heightAt(x,z),earthArts.revision);
+    // Intro/loading ticks can return early. Set the combat camera before every
+    // world render so the first exposed frame never uses the first-person view.
+    syncCombatView();
     if(!windView&&!overheadPractice())darkDomain.intro.updateCamera(camera3d);
     guardianCamera();
     damageFeedback.render([{id:'player',root:playerAvatar.group},{id:'primary',root:opponent.group},...squad.actors().map(a=>({id:a.id,root:squad.root(a.id)}))],overheadPractice()&&started);
@@ -1517,7 +1524,7 @@ async function main() {
       if(Math.hypot(target[0]-pos[0],target[2]-pos[2])<.01)return;
       if(!dashBoost.arm(player.controlTime>0||natureArts.buried('player')||earthArts.captured('player')||lightArts.blocksDash('player',pos)))return;
       dashBoost.consume();playerAvatar.dash([target[0]-pos[0],0,target[2]-pos[2]]);rules.chakra=Math.max(0,rules.chakra-DASH_MANA_COST);
-      practiceOverhead.moveTo(target,pos,!boundedPractice());gameAudio.dash();updateUI();return;
+      practiceOverhead.moveTo(target,pos,!boundedCombat());gameAudio.dash();updateUI();return;
     }
     if(dashBoost.arm(player.controlTime>0||natureArts.buried('player')||lightArts.blocksDash('player',playerPos()))){
       rules.chakra=Math.max(0,rules.chakra-DASH_MANA_COST);
@@ -1539,7 +1546,8 @@ async function main() {
       practiceOpponentPicker.show();return;
     }
     if(!started&&!adventure?.inBattle&&!journeyLearning){
-      if(androidInterface()){document.querySelector('[name=practiceView][value='+practiceView+']').checked=true;document.querySelector('[name=practiceView][value=overhead]').parentElement.querySelector('small').textContent='Joystick để di chuyển · chạm chiêu để kết ấn · giữ nút thi triển để ngắm.';}
+      document.querySelector('[name=practiceView][value='+practiceView+']').checked=true;
+      if(androidInterface())document.querySelector('[name=practiceView][value=overhead]').parentElement.querySelector('small').textContent='Joystick để di chuyển · chạm chiêu để kết ấn · giữ nút thi triển để ngắm.';
       choosingPracticeView=true;$('startScreen').inert=true;$('practiceViewScreen').classList.remove('hidden');
       document.querySelector('input[name="practiceView"]:checked').focus();return;
     }
@@ -1568,7 +1576,7 @@ async function main() {
     const cooldownOverrides=introductoryCooldowns(adventure?.state().save.learnedSpells,!!adventure?.encounter);
     rules = new GameRules(loadout,{maxChakra:battlePlayerStats.maxChakra,chakraRegen:battlePlayerStats.chakraRegen,cooldownOverrides}); player = new Fighter(battlePlayerStats.maxHp); enemy = new Fighter(adventure?.encounter?.hp||practiceEncounter?.hp||PRACTICE_BOT_HP);player.resistances={...(battlePlayerStats.resistances||{})};playerAvatar.setEquipment(adventure?.encounter?adventure.equipment:null);hands.setArmguard(adventure?.encounter?adventure.equipment.armguard:null);bossEnraged=false;aiWeaponTimer=4;
     if(adventure?.encounter){adventure.beginCombat();player.autoRestore=false;enemy.autoRestore=false;}
-    darkDomain.reset();world.setArena(adventure?.inBattle&&adventure.encounter.kind==='arena');
+    darkDomain.reset();world.setArena(adventure?.inBattle&&adventure.encounter.kind==='arena',{overhead:overheadPractice()});
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
     const el = adventure?.inBattle?elements.find(e=>e.id===adventure.encounter.element):elements[(round - 1) % elements.length], support = elements[(round + 1) % elements.length];
     aiRules = new GameRules(['wood','ice'].includes(el.id)?spells.filter(s=>s.element===el.id).map(s=>s.id):el.id==='earth'?['earth-orb','earth-lance','earth-volley','earth-barrier','earth-reflect']:el.id==='dark'?['dark-domain','dark-orb','dark-lance','dark-volley','dark-reflect']:el.id==='light'?['light-orb','light-barrier','light-reflect','light-lance','light-volley']:el.id==='wind'?['wind-orb','wind-lance','wind-volley','wind-barrier','wind-reflect']:[el.id+(el.id==='fire'?'-volley':el.id==='water'?'-tsunami':'-thunder'),el.id+'-lance',el.id+(el.id==='fire'?'-meteor':'-volley'),['fire','water','lightning'].includes(el.id)?el.id+'-barrier':support.id==='dark'?'dark-reflect':support.id+'-barrier',support.id+'-reflect'].filter((id,i,list)=>list.indexOf(id)===i));
@@ -1585,6 +1593,7 @@ async function main() {
     started = true; paused = false; won = false; selected = 0; score = 0; battleTime = 0; aiTimer = 2.2; aiSpell = null; aiStep = 0; aiCycle = 0; aiCasts = 0; aiCastAge = 99; enemyPose = -1; enemyHit = 0;
     shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; fields.length = 0; effects.reset(); hands.clearEffects(); recoil = flashTimer = hitTimer = 0; activePose = -1; poseAge = 99; moveTargetX = 0; moveDirection = 0; touchPoint = null;
     camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }; opponent.group.position.copy(world.opponentSpawn); opponent.group.rotation.set(0, 0, 0);
+    playerAvatar.group.position.set(camera.p[0],earthFloor('player',camera.p[0],camera.p[2]),camera.p[2]);playerAvatar.group.rotation.set(0,Math.PI,0);
     opponent.setNaturalCombat(overheadPractice());opponent.group.scale.setScalar(characterScale());playerAvatar.group.scale.setScalar(characterScale());opponent.setAppearance(adventure?.encounter?.squad?{kind:'intro-trio',...adventure.encounter.squad[0]}:adventure?.encounter||((practiceEncounter?.kind==='boss')?practiceEncounter:null));enemyMovement.reset();enemyMoving=false;
     if(overheadPractice())opponent.group.position.fromArray(clampPracticeActorPoint(opponent.group.position.toArray(),'enemy',movementClearance('enemy')));
     if(adventure?.inBattle&&adventure.encounter.squad){squad.start(adventure.encounter.squad,world.opponentSpawn);for(const actor of squad.actors())squad.root(actor.id).scale.setScalar(characterScale());aiTimer=adventure.encounter.squad[0].initialDelay;}
@@ -1594,11 +1603,12 @@ async function main() {
     $('score').textContent = '00'; $('roundText').textContent = 'Trận đấu ' + String(round).padStart(2, '0'); $('currentSeal').textContent = 'Sẵn sàng kết ấn';
     document.body.classList.add('playing'); document.body.classList.remove('paused');
     ['startScreen', 'pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden'));
-    gameAudio.unlock(); renderGuide(); announce(overheadPractice()?'Chuột phải để di chuyển · G lướt theo con trỏ · kết đủ ấn để xem hướng chiêu.':androidInterface()?'Kéo giữa màn hình để ngắm. Ghim và tấn công ngắm đối thủ gần nhất; Tấn công đánh theo tâm hiện tại.':'Lia chuột để ngắm. Giữ chuột trái hoặc phải để di chuyển liên tục.'); updateUI(); tick(0); requestAimLock(event);
+    gameAudio.unlock(); renderGuide(); announce(overheadPractice()?'Chuột phải để di chuyển · G lướt theo con trỏ · kết đủ ấn để xem hướng chiêu.':androidInterface()?'Kéo giữa màn hình để ngắm. Ghim và tấn công ngắm đối thủ gần nhất; Tấn công đánh theo tâm hiện tại.':'Lia chuột để ngắm. Giữ chuột trái hoặc phải để di chuyển liên tục.'); updateUI(); tick(0); syncCombatView(); requestAimLock(event);
   }
   function pause() { if (battleIntro.active || !started || won) return;showBattleStatistics();$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;practiceOverhead.stop();dashBoost.cancelDash(); gameAudio.pauseVoice(true); moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
   function resume(event) { paused = false; gameAudio.pauseVoice(false); moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {
+    practiceView='overhead';
     practiceOpponentPicker.close();practiceOpponentConfirmed=false;practiceEncounter=null;
     practiceOverhead.reset();closePracticeView();$('practiceHandInset').hidden=true;document.body.classList.remove('practice-overhead');playerAvatar.group.visible=false;
     gameAudio.clearSpellSounds();

@@ -8,7 +8,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),{spawn
     page=await browser.newPage({viewport:{width:1440,height:960}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
     const state=()=>page.evaluate(()=>__AN_HOA__.state()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t);
     await page.goto('http://127.0.0.1:4359/index.html?test=1&mode=duel');await page.waitForFunction(()=>document.body.dataset.ready==='true');
-    await page.locator('#startButton').click();await page.locator('#practiceOpponentConfirm').click();await page.locator('#practiceViewConfirm').click();await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));await advance(.01);
+    await page.locator('#startButton').click();await page.locator('#practiceOpponentConfirm').click();await page.locator('[name=practiceView][value=first-person]').check();await page.locator('#practiceViewConfirm').click();await page.evaluate(()=>__AN_HOA__.setAIEnabled(false));await advance(.01);
     let s=await state();assert.equal(s.cameraView,'first-person');assert.ok(s.viewPosition[1]<5);assert.equal(s.practiceOverhead.fencesVisible,false);await page.screenshot({path:out+'/first-person-no-flags.png'});
     for(const [guardian,skill]of [['wind',1],['lightning',0]]){
       await page.keyboard.press('Escape');await page.locator('#changeLoadout').click();await page.locator('#startButton').click();await page.locator('[data-practice-type=guardian]').click();await page.locator('[data-practice-guardian='+guardian+']').click();await page.locator('#practiceOpponentConfirm').click();await page.locator('[name=practiceView][value=overhead]').check();await page.locator('#practiceViewConfirm').click();

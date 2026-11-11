@@ -43,7 +43,7 @@ export function buildInterior(c,room){
   }else if(wood){
     for(let z=b.minZ+1;z<b.maxZ;z+=1.25)box(root,M(Math.round(z)%2?'#a28c67':'#917852'),0,.006,z,b.x*2-.4,.012,.035);
     for(const side of [-1,1])for(const z of [-24,-12,0,12,24])solid(box(root,trim,side*23,5.6,z,.75,11.2,.75),'arena-timber-column');
-    for(const z of [-24,-12,0,12,24])box(root,trim,0,10.7,z,47,.6,.6);
+    for(const z of [-24,-12,0,12,24])box(root,trim,0,10.7,z,47,.6,.6).name='arena-ceiling-beam';
     // The ring is flush with the surrounding floor; movement never catches a step.
     cyl(root,M('#c4b386'),0,.015,0,13,.03,64);const ring=mesh(new T.RingGeometry(12.4,12.62,64),M('#644d36'),root,0,.04,0);ring.rotation.x=-Math.PI/2;
     for(const side of [-1,1])for(let row=0;row<3;row++){const x=side*(17+row*2);solid(box(root,M(row%2?'#746047':'#826d50'),x,.5+row*.5,0,1.65,1+row,42),'arena-grandstand');for(const z of [-20,20])box(root,trim,x,1.25+row*.5,z,1.8,.12,.18);}
@@ -51,7 +51,7 @@ export function buildInterior(c,room){
     villages.forEach((id,i)=>{const x=-20+i*5,cloth=box(root,M(({water:'#6296b2',fire:'#b85843',lightning:'#9182bb',earth:'#ab8a58',wind:'#85aa86',light:'#e0c984',ice:'#a5d5dc',wood:'#568764',dark:'#635577'})[id]),x,7.6,-30.55,2.5,4,.06);cloth.name='village-banner-'+id;box(root,warm,x,9.7,-30.4,2.8,.08,.12);});
     box(root,trim,0,.5,-24,7,1,2.5);box(root,M('#c9b585'),0,1.02,-24,6.8,.06,2.4);
     fixtures.push({kind:'arena-host',id:'wood-arena-host',x:0,z:17,y:0,label:'Trọng tài · Giao hữu Cửu Làng'});
-    for(const z of [-20,0,20]){const light=new T.PointLight('#ffdc9e',9,35,1.5);light.position.set(0,8,z);root.add(light);cyl(root,warm,0,8,z,.5,.65,8);}
+    for(const z of [-20,0,20]){const light=new T.PointLight('#ffdc9e',9,35,1.5);light.position.set(0,8,z);root.add(light);cyl(root,warm,0,8,z,.5,.65,8).name='arena-ceiling-lamp';}
     box(root,trim,0,2.3,30.65,4.6,4.6,.08);box(root,M('#e6d2a0',.35),0,4.9,30.5,5,.3,.3);
   }else{
     for(const [x,z,d] of [[-7,-17,10],[-7,-32,10],[-7,-48,12],[7,-18,9],[7,-35,12],[7,-52,10]]){solid(box(root,M('#555b50'),x,4.5,z,2,9,d),'mine-partition');for(let k=0;k<3;k++){const rock=mesh(new T.DodecahedronGeometry(1),stone,root,x,2+k*2.5,z+(k-1)*d*.22);rock.scale.set(1.35,1.5,1.7);}}
