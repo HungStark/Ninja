@@ -47,10 +47,10 @@ export class EarthArts {
   corePosition(e){const t=ease(e.age/e.throwEnd),p=add(e.coreOrigin,mul(sub(e.orb,e.coreOrigin),t));p[1]+=Math.sin(t*Math.PI)*3;return p;}
   liftDistance(e,elapsed){const t=Math.max(0,elapsed);return e.spell.pullSpeed*t+.5*e.spell.pullAcceleration*t*t;}
   liftTravelTime(e,length){const speed=e.spell.pullSpeed,acceleration=e.spell.pullAcceleration;return (Math.sqrt(speed*speed+2*acceleration*length)-speed)/acceleration;}
-  centerHeight(e){return Math.min(e.orb[1]-1.72,e.baseHeight+.14+this.liftDistance(e,e.age-e.spell.chargeTime));}
+  centerHeight(e){return Math.min(e.orb[1]-1.72,e.baseHeight+.14+this.liftDistance(e,e.age-e.chargeTime));}
   rockProgress(e,n){return clamp(this.liftDistance(e,e.age-n.liftAt)/n.pathLength);}
   rockPosition(e,n){return n.path.getPointAt(this.rockProgress(e,n)).toArray();}
-  gravityStage(e){return e.age<e.throwEnd?'throwing':e.age<e.spell.chargeTime?'fracturing':e.age<e.spell.chargeTime+.6?'lifting-center':e.age<e.pullEnd?'gathering':e.age<e.holdEnd?'caged':e.age<e.landTime?'falling':'crater';}
+  gravityStage(e){return e.age<e.throwEnd?'throwing':e.age<e.chargeTime?'fracturing':e.age<e.chargeTime+.6?'lifting-center':e.age<e.pullEnd?'gathering':e.age<e.holdEnd?'caged':e.age<e.landTime?'falling':'crater';}
   viewTarget(e){
     const down=ease((e.age-e.throwEnd)/.18),ground=add(e.center,[0,1+Math.max(0,this.centerHeight(e)-e.baseHeight),0]);
     return add(mul(this.corePosition(e),1-down),mul(ground,down));
@@ -106,8 +106,9 @@ export class EarthArts {
         e.wallRefs.push(wall);walls.push(wall);
       }
     }else if(kind==='gravity'){
-      e.pullEnd=spell.chargeTime+spell.pullTime;e.holdEnd=e.pullEnd+spell.holdTime;e.landTime=e.holdEnd+spell.fallTime;e.life=e.landTime+spell.craterTime;e.phase='charging';e.captureChecked=false;
-      e.throwEnd=spell.chargeTime*.65;e.coreOrigin=add(pos,mul(axis,.8));e.coreOrigin[1]+=.12;
+      const oldFlightTime=spell.chargeTime*.65;e.throwEnd=oldFlightTime*2;e.chargeTime=spell.chargeTime+(e.throwEnd-oldFlightTime);
+      e.pullEnd=e.chargeTime+spell.pullTime;e.holdEnd=e.pullEnd+spell.holdTime;e.landTime=e.holdEnd+spell.fallTime;e.life=e.landTime+spell.craterTime;e.phase='charging';e.captureChecked=false;
+      e.coreOrigin=add(pos,mul(axis,.8));e.coreOrigin[1]+=.12;
       e.orb=[center[0],18+center[1],center[2]];e.core=this.mesh(root,'core',this.black,e.coreOrigin,[.28,.28,.28]);
       e.mass=this.mesh(root,'rock',this.dark,e.orb,[0,0,0]);e.mass.visible=false;
       e.platform=new T.Group();root.add(e.platform);
@@ -138,7 +139,7 @@ export class EarthArts {
         const destination=add(e.orb,target),first=add(source,[(random(seed+2)-.5)*1.4,2.8+random(seed+3)*.7,(random(seed+4)-.5)*1.4]);
         const middle=add(add(source,mul(sub(destination,source),.58)),[(random(seed+5)-.5)*4,(random(seed+6)-.5)*1.2,(random(seed+7)-.5)*4]);
         const path=new T.CatmullRomCurve3([new T.Vector3(...source),new T.Vector3(...first),new T.Vector3(...middle),new T.Vector3(...destination)],false,'centripetal');path.arcLengthDivisions=96;
-        const batch=Math.floor(i/spell.liftBatchSize),pathLength=path.getLength(),liftAt=spell.chargeTime+.6+batch*spell.liftBatchInterval,spin=[random(seed+9)-.5,random(seed+10)-.5,random(seed+11)-.5];
+        const batch=Math.floor(i/spell.liftBatchSize),pathLength=path.getLength(),liftAt=e.chargeTime+.6+batch*spell.liftBatchInterval,spin=[random(seed+9)-.5,random(seed+10)-.5,random(seed+11)-.5];
         e.nodes.push({source,target,path,pathLength,spin,mesh:rock,liftAt,batch});
       }
       // Finish only after every batch has accelerated along its full path.
@@ -164,8 +165,8 @@ export class EarthArts {
     for(const e of this.effects){
       if(e===exclude)continue;
       const fade=ease(e.life/.35),d=Math.hypot(x-e.center[0],z-e.center[2]);
-      if(e.kind==='gravity'&&e.age>=e.spell.chargeTime){
-        const age=e.age-e.spell.chargeTime,shape=1-ease(d/e.spell.craterRadius);
+      if(e.kind==='gravity'&&e.age>=e.chargeTime){
+        const age=e.age-e.chargeTime,shape=1-ease(d/e.spell.craterRadius);
         const lift=1.8*(1-ease(d/2.1))*ease(age/.3)*(1-ease((age-.5)/.35));
         h+=(lift-2.7*shape*ease((age-.45)/(e.spell.pullTime-.75)))*fade;
       }
@@ -239,10 +240,10 @@ export class EarthArts {
       }else if(e.kind==='wall'){
         e.phase=e.hp/e.maxHp<.4?'cracked':'wall';if(e.hp<=0){this.burst(e.center,2);event('wallbreak',e);this.remove(e,walls);continue;}
       }else if(e.kind==='gravity'){
-        e.phase=e.age<e.spell.chargeTime?'charging':e.age<e.pullEnd?'pulling':e.age<e.holdEnd?'caged':e.age<e.landTime?'falling':'crater';
+        e.phase=e.age<e.chargeTime?'charging':e.age<e.pullEnd?'pulling':e.age<e.holdEnd?'caged':e.age<e.landTime?'falling':'crater';
         if(old<e.throwEnd&&e.age>=e.throwEnd){this.burst(add(e.center,[0,.15,0]),.65);event('fracture',e,victim);}
         for(let i=0;i<e.nodes.length;i+=e.spell.liftBatchSize){const n=e.nodes[i];if(old<n.liftAt&&e.age>=n.liftAt)this.burst(add(n.source,[0,.5,0]),.5);}
-        if(!e.captureChecked&&e.age>=e.spell.chargeTime){
+        if(!e.captureChecked&&e.age>=e.chargeTime){
           e.captureChecked=true;
           if(victim&&distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.fighter.invulnerableTime<=0){
             for(const other of this.effects)if(other!==e&&other.capture?.owner===victim.owner){other.capture.fighter.earthControlTime=0;other.capture=null;}
@@ -252,8 +253,8 @@ export class EarthArts {
         const c=e.capture;
         if(c){
           if(e.age<e.landTime){
-            const pulling=ease((e.age-e.spell.chargeTime)/.6),falling=ease((e.age-e.holdEnd)/e.spell.fallTime),top=e.orb[1]-1.72;
-            c.height=e.age<e.pullEnd?T.MathUtils.lerp(c.from[1]-1.72,this.centerHeight(e),ease((e.age-e.spell.chargeTime)/.18)):T.MathUtils.lerp(top,this.heightAt(e.center[0],e.center[2]),falling);
+            const pulling=ease((e.age-e.chargeTime)/.6),falling=ease((e.age-e.holdEnd)/e.spell.fallTime),top=e.orb[1]-1.72;
+            c.height=e.age<e.pullEnd?T.MathUtils.lerp(c.from[1]-1.72,this.centerHeight(e),ease((e.age-e.chargeTime)/.18)):T.MathUtils.lerp(top,this.heightAt(e.center[0],e.center[2]),falling);
             const p=[T.MathUtils.lerp(c.from[0],e.center[0],pulling),c.height+1.72,T.MathUtils.lerp(c.from[2],e.center[2],pulling)];setPosition(c.owner,p);c.fighter.earthControlTime=e.landTime-e.age;
           }
           if(!c.cageHit&&e.age>=e.pullEnd){c.cageHit=true;this.hit(e,{owner:c.owner,pos:[e.center[0],e.orb[1],e.center[2]]},e.spell.captureDamage,damage,blast);event('cage',e,victim);}
@@ -268,7 +269,7 @@ export class EarthArts {
     for(const e of this.effects){
       this.updateFractures(e);
       if(e.patch){
-        const growth=e.kind==='gravity'?ease((e.age-e.throwEnd)/(e.spell.chargeTime-e.throwEnd)):ease(e.age/.35),radius=(e.spell.craterRadius||e.spell.radius)*growth*ease(e.life/.35);
+        const growth=e.kind==='gravity'?ease((e.age-e.throwEnd)/(e.chargeTime-e.throwEnd)):ease(e.age/.35),radius=(e.spell.craterRadius||e.spell.radius)*growth*ease(e.life/.35);
         e.patch.visible=radius>.01;const p=e.patch.geometry.attributes.position;
         for(let i=0;i<p.count;i++){const x=e.patchCoordinates[i*3]*radius,z=e.patchCoordinates[i*3+2]*radius;p.setXYZ(i,x,this.heightAt(e.center[0]+x,e.center[2]+z)-e.center[1]+.14,z);}
         p.needsUpdate=true;e.patch.geometry.computeVertexNormals();
@@ -284,7 +285,7 @@ export class EarthArts {
         const packed=e.nodes.reduce((sum,n)=>sum+ease((this.rockProgress(e,n)-.7)/.3),0)/e.nodes.length;
         e.mass.visible=visible&&packed>.001;e.mass.position.set(e.orb[0],e.orb[1]-fall*fall*12,e.orb[2]);e.mass.scale.setScalar(3.7*Math.cbrt(packed)*(1-ease(fall/e.spell.fallTime)));
         e.core.visible=visible;e.core.position.fromArray(this.corePosition(e));e.core.scale.setScalar(.28+.22*ease(e.age/e.throwEnd));e.warning.visible=e.age>=e.throwEnd&&e.age<e.pullEnd;e.warning.position.y=this.heightAt(e.center[0]+e.spell.radius,e.center[2])+.18;
-        e.platform.visible=visible&&e.age>=e.spell.chargeTime;e.platform.position.set(e.center[0],this.centerHeight(e)-fall*fall*12,e.center[2]);e.platform.rotation.z=fall*.6;
+        e.platform.visible=visible&&e.age>=e.chargeTime;e.platform.position.set(e.center[0],this.centerHeight(e)-fall*fall*12,e.center[2]);e.platform.rotation.z=fall*.6;
         for(let i=0;i<e.nodes.length;i++){const n=e.nodes[i],pull=this.rockProgress(e,n);n.mesh.visible=visible&&e.age>=n.liftAt;
           n.mesh.position.fromArray(this.rockPosition(e,n));
           if(fall>0){n.mesh.position.x+=n.target[0]*fall*1.7;n.mesh.position.z+=n.target[2]*fall*1.7;n.mesh.position.y-=fall*fall*12;}
@@ -297,6 +298,6 @@ export class EarthArts {
     for(const b of this.bursts)for(const n of b.rocks){n.mesh.position.set(n.v[0]*b.age,n.v[1]*b.age-4*b.age*b.age,n.v[2]*b.age);n.mesh.scale.setScalar(.06*(1-b.age/.7));}
   }
   status(owner){return this.effects.filter(e=>e.owner===owner).map(e=>`${e.spell.name} ${e.life.toFixed(1)}s${e.kind==='wall'?' · '+Math.ceil(e.hp)+' bền':''}`).join(' · ');}
-  state(){return {revision:this.revision,effects:this.effects.map(e=>({id:e.id,owner:e.owner,kind:e.kind,style:e.spell.style,phase:e.phase,visualStage:e.kind==='gravity'?this.gravityStage(e):e.phase,age:e.age,life:e.life,center:[...e.center],radius:e.spell.radius||0,formationEndsAt:e.pullEnd??null,batchSize:e.spell.liftBatchSize||0,batchInterval:e.spell.liftBatchInterval||0,launchedBatches:e.kind==='gravity'?new Set(e.nodes.filter(n=>e.age>=n.liftAt).map(n=>n.batch)).size:0,landingAt:e.landTime??null,craterDuration:e.kind==='gravity'?e.spell.craterTime:null,hp:e.hp??null,ticks:e.ticks||0,orb:e.orb?[...e.orb]:null,corePosition:e.kind==='gravity'?this.corePosition(e):null,centralHeight:e.kind==='gravity'?this.centerHeight(e)-e.baseHeight:0,liftedFragments:e.kind==='gravity'?e.nodes.filter(n=>this.rockProgress(e,n)>0).length:0,gatheredFragments:e.kind==='gravity'?e.nodes.filter(n=>this.rockProgress(e,n)>=1).length:0,fractureSegments:e.fractures?.segments.filter(s=>this.fractureGrowth(e,s)>.001).length||0,trailRocks:e.trailRocks?.filter(n=>this.trailPulse(e,n.at)>.005).length||0,captured:e.capture?.owner||null,captureHeight:e.capture?.height||0,wallSegments:e.wallRefs?.length||0,spikeCount:e.nodes.filter(n=>n.delay!==undefined).length,visibleSpikes:e.nodes.filter(n=>n.delay!==undefined&&this.spikeHeight(e,n)>.001).length,travelPosition:e.headPosition?[...e.headPosition]:null,craterId:e.crater?.id||null})),bursts:this.bursts.length};}
+  state(){return {revision:this.revision,effects:this.effects.map(e=>({id:e.id,owner:e.owner,kind:e.kind,style:e.spell.style,phase:e.phase,visualStage:e.kind==='gravity'?this.gravityStage(e):e.phase,age:e.age,life:e.life,center:[...e.center],radius:e.spell.radius||0,throwEndsAt:e.throwEnd??null,chargeEndsAt:e.chargeTime??null,formationEndsAt:e.pullEnd??null,batchSize:e.spell.liftBatchSize||0,batchInterval:e.spell.liftBatchInterval||0,launchedBatches:e.kind==='gravity'?new Set(e.nodes.filter(n=>e.age>=n.liftAt).map(n=>n.batch)).size:0,landingAt:e.landTime??null,craterDuration:e.kind==='gravity'?e.spell.craterTime:null,hp:e.hp??null,ticks:e.ticks||0,orb:e.orb?[...e.orb]:null,corePosition:e.kind==='gravity'?this.corePosition(e):null,centralHeight:e.kind==='gravity'?this.centerHeight(e)-e.baseHeight:0,liftedFragments:e.kind==='gravity'?e.nodes.filter(n=>this.rockProgress(e,n)>0).length:0,gatheredFragments:e.kind==='gravity'?e.nodes.filter(n=>this.rockProgress(e,n)>=1).length:0,fractureSegments:e.fractures?.segments.filter(s=>this.fractureGrowth(e,s)>.001).length||0,trailRocks:e.trailRocks?.filter(n=>this.trailPulse(e,n.at)>.005).length||0,captured:e.capture?.owner||null,captureHeight:e.capture?.height||0,wallSegments:e.wallRefs?.length||0,spikeCount:e.nodes.filter(n=>n.delay!==undefined).length,visibleSpikes:e.nodes.filter(n=>n.delay!==undefined&&this.spikeHeight(e,n)>.001).length,travelPosition:e.headPosition?[...e.headPosition]:null,craterId:e.crater?.id||null})),bursts:this.bursts.length};}
   reset(walls=[]){for(const e of [...this.effects])this.remove(e,walls);for(const b of this.bursts)b.root.removeFromParent();this.bursts=[];this.revision++;}
 }

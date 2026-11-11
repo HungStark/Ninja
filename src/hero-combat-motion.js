@@ -1,3 +1,4 @@
+import {sealCycle} from './seal-timing.js';
 const clamp=v=>Math.max(0,Math.min(1,v)),mix=(a,b,t)=>a+(b-a)*t;
 const rest=[{pitch:.06,spread:0,flex:.16},{pitch:.06,spread:0,flex:.16}];
 const arm=(pitch,spread,flex)=>({pitch,spread,flex});
@@ -34,9 +35,9 @@ export function createHeroCombatMotion(){
         arms=[arm(thrust?-.65:pitch,.18,thrust?.85:flex),arm(pitch,-.18,flex)];
         lean=summon?-.08:.16;drop=summon?.03:.1;twist=thrust?.16:0;phase=action.age<.1?'gather':'release';
       }else{
-        const t=clamp((sealElapsed-.12)/.18),close=t*t*(3-2*t),gap=mix(.42,.14,close),reach=mix(.62,.48,close);
+        const cycle=sealCycle(sealElapsed),gap=mix(.42,.14,cycle.clasp),reach=mix(.62,.48,cycle.clasp);
         hands=[[gap,1.94,reach],[-gap,1.94,reach]];
-        arms=[arm(-.55,.15,.7),arm(-.55,-.15,.7)];drop=.04;weight=sealBlend;phase=sealElapsed<.12?'reach':sealElapsed<.3?'close':'seal';
+        arms=[arm(-.55,.15,.7),arm(-.55,-.15,.7)];drop=.04;weight=sealBlend;phase=cycle.phase;
       }
       if(reducedMotion){lean*=.3;twist*=.3;drop*=.3;}
       last={kind:action?.kind||'seal',style:action?.style||'',age:action?.age??sealElapsed,phase,weight,arms,lean,twist,drop,legs,hands};return last;

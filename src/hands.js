@@ -1,4 +1,5 @@
 import * as T from "three";
+import {SEAL_CYCLE_TIME,sealCycle} from './seal-timing.js';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { HAND_GLB_BASE64 } from "../assets/hand-data.js";
@@ -98,7 +99,7 @@ export async function createHands() {
     sealPulse = 1;
     shadow.show(poseIndex);
     shadow.update(0, handCenter);
-    if(poseIndex===7)lastPose=-2; // Repeat F opens and bumps the fists together again.
+    lastPose=-2; // Every input, including a repeated seal, starts a fresh cycle.
   }
   function cast() {
     clearEffects();
@@ -117,20 +118,19 @@ export async function createHands() {
     }
     transitionAge += dt;
     castAge += dt;
-    sealPulse = Math.max(0, sealPulse - dt * 2.2);
-    const pose = poses[poseIndex], duration = reducedMotion ? 0.12 : 0.26;
-    const progress = Math.min(1, transitionAge / duration), opening = 0.38;
+    sealPulse = Math.max(0, sealPulse - dt / SEAL_CYCLE_TIME);
+    const pose = poses[poseIndex], duration = reducedMotion ? 0.12 : SEAL_CYCLE_TIME;
+    const progress = Math.min(1, transitionAge / duration),cycle=sealCycle(transitionAge,duration);
     const smooth = (v) => v * v * (3 - 2 * v);
-    const close = smooth(Math.max(0, (progress - opening) / (1 - opening)));
-    const separate = smooth(Math.min(1, progress / opening));
+    const close = pose?cycle.close:smooth(progress),reopen=pose?cycle.open:0;
     const castPull = Math.exp(-castAge * 7) * Math.sin(Math.min(castAge, 0.5) * 9) * 0.07;
     for (const hand of hands) {
       const { side, wrapper, joints } = hand, p = pose ? pose.p : [.33, -.39, -.76], r = pose ? pose.r : [.10, .10, .47];
       const bob = reducedMotion ? 0 : Math.sin(time * (moving ? 9 : 1.6)) * (moving ? 6e-3 : 3e-3);
       const spreadX = Math.max(0.18, Math.abs(hand.fromPosition.x), p[0] + 0.08);
-      const outwardX = T.MathUtils.lerp(hand.fromPosition.x, side * spreadX, separate);
+      const closedX = T.MathUtils.lerp(hand.fromPosition.x, side * p[0], close);
       wrapper.position.set(
-        T.MathUtils.lerp(outwardX, side * p[0], close) + side * castPull * 0.8,
+        T.MathUtils.lerp(closedX,side*spreadX,reopen) + side * castPull * 0.8,
         T.MathUtils.lerp(hand.fromPosition.y, p[1], close) + bob - castPull * 0.5,
         T.MathUtils.lerp(hand.fromPosition.z, p[2], close) + castPull
       );
