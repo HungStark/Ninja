@@ -20,6 +20,12 @@ for(const from of [[0,1.72,-24],[0,1.72,-7],[0,1.72,7]]){
   for(const to of [[0,0,-100],[0,0,100]]){const p=stepPracticePoint(from,to,100);assert.ok(p[2]>=b.minZ-1e-9&&p[2]<=b.maxZ+1e-9,'after skill displacement, walking cannot cross the next fence or snap back home');}
 }
 const scene=new T.Scene(),view=createPracticeOverhead(scene),camera=new T.PerspectiveCamera(68,1.5,.05,220),canvas={getBoundingClientRect:()=>({left:0,top:0,width:1440,height:960})};
+for(const aspect of [1,1.5,16/9,21/9]){
+  camera.aspect=aspect;view.camera(camera,canvas);const direction=camera.getWorldDirection(new T.Vector3());
+  assert.ok(Math.abs(Math.asin(-direction.y)-Math.PI/4)<1e-6,'Tactical camera looks diagonally down at 45 degrees');assert.ok(Math.abs(direction.x)>.1,'Camera shows the side of characters');
+  for(const x of [-16,16])for(const z of [-26,12])for(const y of [0,6]){const p=new T.Vector3(x,y,z).project(camera);assert.ok(Math.abs(p.x)<=.85+1e-6&&Math.abs(p.y)<=.82+1e-6,'Arena and standing characters remain in frame across aspect ratios');}
+}
+camera.aspect=1.5;
 view.camera(camera,canvas);const target=new T.Vector3(7,0,-9).project(camera);view.pointer((target.x+1)*720,(1-target.y)*480,camera,canvas);const cursor=view.point();assert.ok(Math.hypot(cursor[0]-7,cursor[2]+9)<1e-6);
 view.move();assert.equal(view.target()[2],practiceMovementBounds('player').minZ);assert.deepEqual(view.point(),cursor,'movement bounds do not restrict aiming into the opponent section');view.stop();assert.equal(view.target(),null);
 const dividers=scene.children.flatMap(o=>o.children.filter(c=>c.name==='practice-divider'));assert.equal(dividers.length,2);assert.deepEqual(dividers.map(o=>o.position.z),PRACTICE_DIVIDERS);
