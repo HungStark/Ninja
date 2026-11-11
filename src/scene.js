@@ -49,8 +49,8 @@ export function createWorld() {
     }
     animated.push({ type: "cloud", object: cloud, origin: cloud.position.clone(), phase: range(0, 6) });
   }
-  // Dim the environment lights rather than the renderer exposure so spell brightness stays intact.
-  scene.add(new T.HemisphereLight("#aebfd8", "#4b535c", 0.38));
+  const ambient = new T.HemisphereLight("#aebfd8", "#4b535c", 0.38);
+  scene.add(ambient);
   const sun = new T.DirectionalLight("#dbc4a9", 0.7);
   sun.position.set(-22, 34, -18);
   sun.target.position.set(0, 0, -10);
@@ -64,6 +64,12 @@ export function createWorld() {
   const fill = new T.DirectionalLight("#9eb8d7", 0.16);
   fill.position.set(10, 10, 20);
   scene.add(fill);
+  // Lift terrain and character shadows in third-person combat without changing spell exposure.
+  function setCombatBrightness(brighter){
+    ambient.intensity=brighter?.85:.38;
+    sun.intensity=brighter?1.3:.7;
+    fill.intensity=brighter?.38:.16;
+  }
   const groundTex = canvasTexture(512, (c, n) => {
     c.fillStyle = "#a4b88a";
     c.fillRect(0, 0, n, n);
@@ -185,5 +191,5 @@ export function createWorld() {
     if(arena){arena.visible=!!active;arena.traverse(o=>{if(['interior-ceiling','arena-ceiling-beam','arena-ceiling-lamp'].includes(o.name))o.visible=!overhead;});}
     scene.fog=active?new T.Fog('#26322d',35,95):defaultFog;scene.background=active?new T.Color('#26322d'):defaultBackground;
   }
-  return {get arenaActive(){return arenaActive;},setArena, scene, sky, sun, fill, grass, opponentSpawn, plantReferenceHeight, update, environment, outlines, setInkViewport, terrain };
+  return {get arenaActive(){return arenaActive;},setArena,setCombatBrightness, scene, sky, sun, fill, grass, opponentSpawn, plantReferenceHeight, update, environment, outlines, setInkViewport, terrain };
 }

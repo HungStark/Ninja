@@ -4,6 +4,7 @@ import {botHealth,PRACTICE_BOT_HP} from './enemy-balance.js';
 import {spellImage} from './spell-art.js';
 import {configureOpponent} from './opponent-balance.js';
 import {GUARDIAN_BOSS_DESIGNS} from './guardian-boss-designs.js';
+import {GUARDIAN_BOSS_DESIGNS as LEGACY_DESIGNS} from './guardian-legacy-designs.js';
 
 export const PRACTICE_GUARDIANS=['fire','water','lightning','wind','earth','light','dark','wood','ice'];
 export function validPracticeOpponent(value,spells){
@@ -16,7 +17,7 @@ export function practiceOpponentEncounter(value,spells){
   return configureOpponent({kind:'boss',beastOnly:true,guardianForm:'beast',village:id,element:id,name:GUARDIAN_FORMS[id].name,guardianName:GUARDIAN_FORMS[id].name,hp:botHealth(REGIONS[id].boss.hp),phases:id==='dark'?3:2,spellIds,phaseSpellIds:spellIds,damageMultiplier:1,balancePractice:true});
 }
 
-export function createPracticeOpponentPicker({spells,elements,defaultLoadout,getLearnedSpells,renderSpell,onConfirm,onBack}){
+export function createPracticeOpponentPicker({spells,elements,defaultLoadout,getLearnedSpells,renderSpell,onConfirm,onBack,getThirdPerson=()=>true}){
   let value={type:'ninja',spells:[...defaultLoadout],guardian:'fire'},filter='all',learning='all',open=false;
   const root=document.createElement('section');root.id='practiceOpponentScreen';root.className='overlay hidden';root.tabIndex=-1;root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','TẬP LUYỆN · CHỌN ĐỐI THỦ');
   root.innerHTML=`<div class="scroll-book"><div class="scroll-roller scroll-roller-left" aria-hidden="true"></div><div class="scroll-roller scroll-roller-right" aria-hidden="true"></div><div class="scroll-paper">
@@ -40,8 +41,8 @@ export function createPracticeOpponentPicker({spells,elements,defaultLoadout,get
     const learned=getLearnedSpells(),visible=spells.filter(s=>(filter==='all'||s.element===filter)&&(learning==='all'||learned.has(s.id)===(learning==='learned')));
     $('practiceEnemySpells').innerHTML=visible.length?visible.map((s,i)=>renderSpell(s,i,value.spells).replace('data-equip=','data-practice-spell=')).join(''):'<p class="catalog-empty" role="status">'+(learning==='unlearned'?'Không có chiêu chưa học.':'Chưa có chiêu đã học.')+'</p>';
     $('practiceGuardianChoices').innerHTML=PRACTICE_GUARDIANS.map(id=>{const e=elements.find(e=>e.id===id);return '<button type="button" data-practice-guardian="'+id+'" aria-pressed="'+(value.guardian===id)+'" style="--element:'+e.color+'"><b>'+e.glyph+'</b><strong>'+e.name+'</strong><span class="equip-mark" aria-hidden="true">'+(value.guardian===id?'✓':'+')+'</span></button>';}).join('');
-    const e=elements.find(e=>e.id===value.guardian),design=GUARDIAN_BOSS_DESIGNS[value.guardian];
-    $('practiceGuardianSelected').innerHTML='<div class="practice-guardian-selected" style="--element:'+e.color+'"><b>'+e.glyph+'</b><strong>'+GUARDIAN_FORMS[value.guardian].name+'</strong></div><div class="guardian-tactics"><p>'+('★'.repeat(design.difficulty)+'☆'.repeat(5-design.difficulty))+' · '+design.passive+'</p><ol>'+design.skills.map(s=>'<li>'+s.name+'</li>').join('')+'</ol><p>'+design.counter+'</p></div>';
+    const e=elements.find(e=>e.id===value.guardian),design=(getThirdPerson()?GUARDIAN_BOSS_DESIGNS:LEGACY_DESIGNS)[value.guardian];
+    $('practiceGuardianSelected').innerHTML='<div class="practice-guardian-selected" style="--element:'+e.color+'"><b>'+e.glyph+'</b><strong>'+GUARDIAN_FORMS[value.guardian].name+'</strong></div><div class="guardian-tactics">'+(design.title?'<p>'+design.title+' · '+design.role+'</p>':'')+'<p>'+('★'.repeat(design.difficulty)+'☆'.repeat(5-design.difficulty))+' · '+design.passive+'</p><ol>'+design.skills.map(s=>'<li>'+s.name+'</li>').join('')+'</ol><p>'+design.counter+'</p></div>';
   }
   root.addEventListener('click',event=>{
     if(!open)return;

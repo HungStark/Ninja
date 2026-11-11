@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as T from 'three';
 import '../game-core.js';
 import {createGuardianPhases} from '../src/guardian-phases.js';
-import {GUARDIAN_BOSS_DESIGNS} from '../src/guardian-boss-designs.js';
+import {GUARDIAN_BOSS_DESIGNS} from '../src/guardian-legacy-designs.js';
 const {Fighter}=SealGameCore;
 const scene=new T.Scene(),g=createGuardianPhases(scene),boss=[0,2.4,-13],center=[0,1.72,7];
 let f,hits,controls;

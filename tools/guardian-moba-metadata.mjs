@@ -1,0 +1,38 @@
+export const guardianMobaLabels={
+ maxCount:'Số lượng tối đa',zoneLife:'Vùng hiệu ứng tồn tại (giây)',zoneDps:'Sát thương vùng mỗi giây',homingTime:'Thời gian đuổi mục tiêu (giây)',blastRadius:'Bán kính nổ (m)',growth:'Hệ số mở rộng khi kết hợp',fanDamage:'Sát thương quạt cuối chiêu',fanRadius:'Tầm quạt (m)',
+ range:'Tầm chiêu (m)',pushSpeed:'Tốc độ đẩy lùi (m/giây)',coneAngle:'Nửa góc nón cuối tia (radian)',endRadius:'Bán kính cuối (m)',pullSpeed:'Tốc độ kéo về tâm (m/giây)',centerTime:'Đứng ở tâm bao lâu thì bị hất (giây)',absorbRange:'Tầm hút vũng nước (m)',waveWidth:'Bề ngang sóng (m)',trailWidth:'Nửa bề rộng vệt trên mặt đất (m)',
+ explosionDamage:'Sát thương nổ tương tác',returnAt:'Phân thân quay về sau (giây)',returnSpeed:'Tốc độ phân thân quay về (m/giây)',linkDps:'Sát thương đường nối mỗi giây',slow:'Tỉ lệ giảm tốc độ (0–1)',slowTime:'Thời gian làm chậm (giây)',linkWidth:'Bề rộng đường nối (m)',speedBoost:'Hệ số / tỉ lệ tăng tốc theo mô tả chiêu',lifeBoost:'Hệ số tăng tầm tồn tại',gustDamage:'Sát thương luồng gió khi đáp',gustSpeed:'Tốc độ luồng gió khi đáp (m/giây)',gustRadius:'Bán kính luồng gió khi đáp (m)',
+ bounces:'Số lần đổi hướng tối đa',armorFraction:'Lượng giáp / máu tối đa',fanAngle:'Góc rải lông (radian)',featherLife:'Lông cắm đất tồn tại (giây)',finalDamage:'Sát thương đòn cuối',cooldownReduction:'Hệ số hồi chiêu khi trúng dấu ấn',attackAt:'Phân thân bắt đầu chuẩn bị đánh (giây)',delay:'Thời gian chờ phát nổ (giây)',seedCount:'Hạt giống mỗi hoa',healFraction:'Tỉ lệ hồi máu Mộc Linh',thornDamage:'Sát thương vòng gai',thornRadius:'Bán kính vòng gai (m)',linkMultiplier:'Tăng hồi phục theo mỗi Mộc Linh',rootInterval:'Khoảng cách giữa các đợt rễ (giây)',shardDamage:'Sát thương mỗi mảnh',shardCount:'Số mảnh bắn ra',
+ moveSpeed:'Tốc độ di chuyển boss (m/giây)',engageRange:'Khoảng cách giao tranh mong muốn (m)',explosionRadius:'Bán kính nổ dấu ấn (m)',puddleInterval:'Chu kỳ tạo vũng nước (giây)',puddleLife:'Vũng nước tồn tại (giây)',puddleRadius:'Bán kính vũng nước (m)',energyDistance:'Khoảng di chuyển để tích 1 Lôi Năng (m)',energyCap:'Lôi Năng cần để phóng điện',chainCount:'Số mục tiêu lan điện tối đa',chainRange:'Phạm vi lan điện (m)',chainDamage:'Sát thương điện lan',markTime:'Thời gian dấu ấn (giây)',markDamage:'Sát thương khi đổi kỹ năng trúng dấu',
+ speedPerCast:'Tăng tốc theo mỗi lần thi triển (0–1)',speedCap:'Số tầng tăng tốc tối đa',windInterval:'Chu kỳ tạo luồng gió (giây)',windLife:'Luồng gió tồn tại (giây)',windSpeed:'Tốc độ luồng gió (m/giây)',windWidth:'Nửa bề rộng luồng gió (m)',stationaryTime:'Đứng yên để giảm sát thương (giây)',armorReduction:'Giảm giáp theo mỗi dấu ấn (0–1)',bonusDamage:'Sát thương khi tiêu thụ đủ dấu ấn',hideAfter:'Ngoài giao tranh để ẩn thân (giây)',firstHitBonus:'Sát thương cộng thêm sau ẩn thân (0–1)',spiritInterval:'Chu kỳ tạo Mộc Linh (giây)',spiritCap:'Số Mộc Linh tối đa',ragePerSpirit:'Tăng sát thương theo Nộ Mộc (0–1)',rageCap:'Nộ Mộc tối đa',slowPerStack:'Làm chậm theo mỗi tầng (0–1)',freezeImmunity:'Miễn đóng băng sau khi tan băng (giây)',
+ healthThreshold:'Mất máu tối đa để thức tỉnh đuôi / tạo giáp (0–1)',stackCount:'Số tầng để kích hoạt nội tại',stackDuration:'Thời gian giữ tầng (giây)'
+};
+export const guardianMobaNotes={
+ 'fox-pillars':'Một cột theo mục tiêu, các cột còn lại có ngẫu nhiên và chừa lối né. Số cột tăng theo đuôi thức tỉnh, tối đa số lượng đã chỉnh; vùng cháy còn 3 giây theo mặc định.',
+ 'fox-homing':'Một cầu đuổi trong 3 giây, hai cầu dự đoán chuyển động; thêm đạn theo đuôi. Đi qua lửa thì tăng kích thước và bán kính nổ.',
+ 'fox-firestorm':'Đợt đầu phủ vị trí mọi mục tiêu trong tầm; các đợt sau tránh vùng đã cháy. Kết thúc quét quạt và kích nổ các vùng lửa còn tồn tại.',
+ 'dragon-pressure':'Cảnh báo vị trí dự đoán, sát thương tính mỗi giây và đẩy lùi. Qua vũng nước thì nở hình nón ở cuối tia.',
+ 'dragon-vortices':'Một xoáy theo người chơi và hai xoáy ngẫu nhiên. Kéo 2,5 giây, đứng tâm quá 1 giây bị hất. Hút vũng nước để tăng bán kính; dấu xoáy còn lại chờ sóng kích nổ.',
+ 'dragon-tsunami':'Ba đợt, đợt cuối gồm hai sóng cắt nhau dùng chung vùng an toàn. Sóng đi qua xoáy sẽ kích nổ xoáy.',
+ 'wolf-dashes':'Tối đa ba lần lao có cảnh báo; một lần theo mục tiêu, các lần còn lại đổi góc. Mỗi đường lao để lại điện trường.',
+ 'wolf-bolts':'Một tia nhắm mục tiêu và ba tia ngẫu nhiên; điện trường trúng sét mở rộng và phát nổ.',
+ 'wolf-clones':'Ba phân thân có HP. Chạm mục tiêu thì nổ; còn sống sau 5 giây quay về, tạo đường nối gây sát thương và làm chậm.',
+ 'eagle-blades':'Năm dao: hai hướng vào mục tiêu, ba góc ngẫu nhiên. Dao xuyên nhiều mục tiêu, qua luồng gió thì tăng tốc và tầm.',
+ 'eagle-tornadoes':'Ba lốc; một lốc bám mục tiêu, hai lốc đi đường cong. Lốc hút dao gió và phóng lại; tâm lốc gây hất tung.',
+ 'eagle-dive':'Không thể bị tấn công khi bay lên. Khóa điểm đáp sau cảnh báo 1,2 giây; tạo sáu luồng gió và hút các lốc còn sống về kích nổ.',
+ 'turtle-pillars':'Bốn cột đá: một cột theo người chơi. Cột trồi lên hất tung rồi trở thành vật cản có HP trong 5 giây.',
+ 'turtle-quake':'Vòng địa chấn, vết nứt hướng tới mục tiêu, rồi kích hoạt các vết nứt theo thứ tự ngẫu nhiên. Cột đá trúng địa chấn vỡ ra thành mảnh.',
+ 'turtle-ram':'Lao sau cảnh báo, đổi hướng khi va tường hoặc đá. Mỗi va chạm tạo quạt chấn động; phá cột nhận giáp tạm thời.',
+ 'gold-feathers':'Chín lông vũ: ba nhắm người chơi, sáu rải trong hình quạt. Lông xuyên giáp; lông không trúng cắm đất để dùng lại.',
+ 'gold-arcs':'Hai cung chém, hướng thứ hai có ngẫu nhiên. Cung chém hất lông cắm đất bay tiếp; chỉ trúng cả hai cung mới bị làm chậm.',
+ 'gold-swords':'Thu lông cắm đất thành vòng kiếm; thiếu lông vẫn tạo số tối thiểu. Vòng khép dần, phóng kiếm bất ngờ và kết bằng đại kiếm có cảnh báo.',
+ 'shadow-dashes':'Hai lần lướt; lần hai cắt đường rút lui. Trúng mục tiêu có U Minh Ấn giảm hồi chiêu; đòn đầu sau ẩn thân nhận thưởng sát thương.',
+ 'shadow-clones':'Ba ảnh có HP và cùng động tác chuẩn bị: một ảnh lao thật ngẫu nhiên, hai ảnh nổ nhỏ. Có thể phá trước khi chúng đánh.',
+ 'shadow-domain':'Vùng bóng tối 6 giây làm chậm và giảm tầm nhìn. Boss dịch chuyển giữa ba điểm đã đánh dấu; ảnh còn sống phối hợp đánh khi boss xuất hiện.',
+ 'stag-vines':'Một cụm theo mục tiêu, hai cụm ngẫu nhiên. Trúng gây sát thương và trói chân; gần Mộc Linh tăng phạm vi và thời gian tồn tại.',
+ 'stag-flowers':'Bốn hoa có HP; nổ sau 2 giây thành sáu hạt. Hạt làm chậm người chơi; trúng Mộc Linh thì hồi máu và phát vòng gai.',
+ 'stag-tree':'Cổ thụ giữa sân có HP, hồi máu 6 giây và gọi rễ mỗi 2 giây. Mộc Linh liên kết tăng hồi phục; phá cây làm boss choáng.',
+ 'tiger-claws':'Ba vuốt: trực tiếp, lệch trái/phải và dự đoán. Mỗi vuốt để lại vệt băng 4 giây làm chậm.',
+ 'tiger-spikes':'Năm mũi băng, hai mũi theo mục tiêu và ba mũi ngẫu nhiên, báo trước 1 giây. Tồn tại như vật cản; mọc trên vệt băng thì vỡ thành mảnh.',
+ 'tiger-blizzard':'Bão quanh boss nở trong 5 giây, bắn băng mỗi giây và tăng tốc truy đuổi. Kết thúc kích nổ mũi băng còn lại; đủ ba tầng Hàn Khí chịu làm chậm mạnh.'
+};

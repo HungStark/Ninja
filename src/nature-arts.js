@@ -101,7 +101,7 @@ export class NatureArts {
     const fragments=Array.from({length:48},(_,i)=>{const a=i*2.399,y=hash(i+98)*2-1,r=Math.sqrt(1-y*y),axis=[Math.cos(a)*r,y,Math.sin(a)*r];return {origin:mul(axis,ball.spell.radius*.6),v:add(mul(axis,3+hash(i+43)*5),[0,2,0]),scale:.15+hash(i+52)*.5};});
     this.snowBursts.push({owner:ball.owner,root,material,chunks,fragments,age:0,life:1.2});this.removeBall(ball);
   }
-  advance(dt,actors,setPosition=()=>{},walls=[],impact,onWallHit=()=>{}){
+  advance(dt,actors,setPosition=()=>{},walls=[],impact,onWallHit=()=>{},intercept=null){
     if(dt<=0)return null;this.time+=dt;
     this.wood.advance(dt,actors,walls,impact);
     const windyTime=Math.max(0,...this.blizzards.map(b=>Math.min(dt,b.life)));this.snowfallTime+=dt+windyTime*.8;this.snowWindTime+=windyTime*1.1;
@@ -132,6 +132,7 @@ export class NatureArts {
       const blocked=crossWalls(attack,walls,this.intersect,(w,p,r)=>{if(r.remaining<=1e-7)b.p=[...p];onWallHit(w,p,r,attack);});
       b.damage=attack.damage;
       if(blocked){this.shatter(b);continue;}
+      if(intercept?.(attack)){b.p=[...attack.p];this.shatter(b);continue;}
       if(first){
         const {victim,t}=first;b.p=add(before,mul(delta,t));
         const hit={...attack,victimId:victim.id};

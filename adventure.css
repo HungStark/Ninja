@@ -350,3 +350,6 @@ body[data-journey=opening] #journeyToast{display:none}
 .opening-next{display:block;margin:10px 0 0 auto;padding:7px 15px;background:#dec38e;color:#182c30;border:0;border-radius:4px;font:600 13px "Segoe UI",Arial,sans-serif;cursor:pointer}
 .opening-subtitle[hidden],.opening-next[hidden]{display:none}
 @media(max-height:500px){.opening-subtitle{bottom:7vh;padding:10px 16px;width:min(720px,88vw)}.opening-subtitle p{margin-top:4px;font-size:15px;line-height:1.4;min-height:2.8em;max-height:21vh}.opening-subtitle strong{font-size:12px}.opening-next{margin-top:6px;padding:5px 12px}.opening-skip{padding:6px 12px;top:6vh}}
+
+/* Visibility reduction belongs only to a third-person guardian shadow field. */
+#guardianNightVeil{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle 190px at var(--guardian-vision-x,50%) var(--guardian-vision-y,60%),transparent 25%,#090611d9 85%,#090611ef 100%)}#guardianNightVeil[hidden]{display:none}

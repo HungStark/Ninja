@@ -47,24 +47,28 @@ export function createGuardianPhases(scene){
     shell.position.set(boss[0]+pose.x,boss[1]+pose.y,boss[2]+pose.z);shell.rotation.y+=dt*.6;
   }
   const api={
-    reset(next=null,fighter=null){clear();config=next;phase=next?.basicOnly||next?.beastOnly?2:1;health=next?[...(next.phaseHealth||guardianPhaseHealth(next.hp,next.village))]:[];transition=null;clock=cycle=attacks=totalDamage=armor=0;wait=next?.basicOnly?1.5:2;history.length=0;if(usesDistinct())distinct.reset(next.village,phase);if(fighter)fighter.incomingElementMultipliers=phase===2&&next?guardianElementMultipliers(next.village):{};if(next&&fighter){fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;}},
+    reset(next=null,fighter=null){clear();config=next;phase=next?.basicOnly||next?.beastOnly?2:1;health=next?[...(next.phaseHealth||guardianPhaseHealth(next.hp,next.village))]:[];transition=null;clock=cycle=attacks=totalDamage=armor=0;wait=next?.basicOnly?1.5:2;history.length=0;if(usesDistinct())distinct.reset(next.village,phase,!!next.thirdPerson);if(fighter)fighter.incomingElementMultipliers=phase===2&&next?guardianElementMultipliers(next.village):{};if(next&&fighter){fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;}},
     beginTransition(fighter,position=[0,0,-13]){if(!config||config.beastOnly||transition||phase>=health.length||fighter.hp>0)return false;clear();armor=0;transition={age:0,from:phase,to:phase+1,switched:false,position:[...position]};return true;},
     advanceTransition(dt,fighter,onPhase){if(!transition)return;transition.age+=dt;const t=transition.age;
       if(!transition.rings){transition.rings=Array.from({length:3},(_,i)=>{const m=mesh(ring,[0,0,0],[1,1,1],.6);m.rotation.x=-Math.PI/2+i*.6;return m;});transition.shell=mesh(sphere,[0,0,0],[1,1,1],.2);}
       transition.rings.forEach((m,i)=>{m.position.set(transition.position[0],.6+i*.9,transition.position[2]);m.rotation.z+=dt*(i+1);m.scale.setScalar(1.4+(t*(i+1))%3);m.material.opacity=Math.max(0,Math.sin(t/3.2*Math.PI))*.75;});transition.shell.position.set(transition.position[0],2.1,transition.position[2]);transition.shell.scale.setScalar(1+Math.sin(t/3.2*Math.PI)*2.5);transition.shell.material.opacity=Math.max(0,1-Math.abs(t-1.35)/.6)*.8;
-      if(t>=1.35&&!transition.switched){transition.switched=true;phase=transition.to;fighter.incomingElementMultipliers=phase===2?guardianElementMultipliers(config.village):{};fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;fighter.shield=fighter.shieldTime=fighter.reflect=0;fighter.burns=[];fighter.staticCharges=[];fighter.snowBuried=false;for(const key of ['waterControlTime','darkControlTime','windControlTime','earthControlTime','iceControlTime','woodControlTime','lightningControlTime','boatControlTime','magneticTime','ignitionTime','invulnerableTime'])fighter[key]=0;if(usesDistinct())distinct.reset(config.village,phase);onPhase(phase);}if(t>=3.2){for(const m of transition.rings)dispose(m);dispose(transition.shell);transition=null;wait=2;}},
+      if(t>=1.35&&!transition.switched){transition.switched=true;phase=transition.to;fighter.incomingElementMultipliers=phase===2?guardianElementMultipliers(config.village):{};fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;fighter.shield=fighter.shieldTime=fighter.reflect=0;fighter.burns=[];fighter.staticCharges=[];fighter.snowBuried=false;for(const key of ['waterControlTime','darkControlTime','windControlTime','earthControlTime','iceControlTime','woodControlTime','lightningControlTime','boatControlTime','magneticTime','ignitionTime','invulnerableTime'])fighter[key]=0;if(usesDistinct())distinct.reset(config.village,phase,!!config.thirdPerson);onPhase(phase);}if(t>=3.2){for(const m of transition.rings)dispose(m);dispose(transition.shell);transition=null;wait=2;}},
     damageMultiplier(shot,p){return usesDistinct()?distinct.defense(shot,p).multiplier:armor>0?.65:1;},
     defense(shot,p){return usesDistinct()?distinct.defense(shot,p):{multiplier:armor>0?.65:1,reflect:0};},
     onDamage(amount,shot,p){totalDamage+=Math.max(0,amount);if(usesDistinct())distinct.onDamage(amount,shot,p);},
-    slowAt(p){return usesDistinct()?distinct.slowAt(p):action?.type==='frost'&&action.age>1.6&&Math.hypot(p[0]-action.target[0],p[2]-action.target[2])<4?.65:1;},
+    slowAt(p,...args){return usesDistinct()?distinct.slowAt(p,...args):action?.type==='frost'&&action.age>1.6&&Math.hypot(p[0]-action.target[0],p[2]-action.target[2])<4?.65:1;},
     hidden(){return usesDistinct()&&distinct.hidden();},
     lockable(){return !usesDistinct()||distinct.lockable();},
     breakPrison(damage){return usesDistinct()&&distinct.breakPrison(damage);},
     intercept(shot,scale){return usesDistinct()&&distinct.intercept(shot,scale);},
     areaDamage(shot,p,r,scale){if(usesDistinct())distinct.areaDamage(shot,p,r,scale);},
-    update(dt,fighter,player,boss,impact,{enabled=true,controlled=false,mouthPosition=null,control=null,playerHitboxScale=1,interceptProjectile=null}={}){
+    absorbDamage(amount,...args){return usesDistinct()?distinct.absorbDamage(amount,...args):amount;},
+    constrainMovement(from,to,...args){return usesDistinct()?distinct.constrainMovement(from,to,...args):to;},
+    targetStatus(key){return usesDistinct()?distinct.targetStatus(key):null;},
+    obscures(p){return usesDistinct()&&distinct.obscures(p);},
+    update(dt,fighter,player,boss,impact,{enabled=true,controlled=false,mouthPosition=null,control=null,playerHitboxScale=1,interceptProjectile=null,...tacticalOptions}={}){
       if(!config||phase===1||transition||fighter.hp<=0||!enabled)return;
-      if(usesDistinct()){distinct.update(dt,fighter,player,boss,impact,{enabled,controlled,control,playerHitboxScale,interceptProjectile});return;}
+      if(usesDistinct()){distinct.update(dt,fighter,player,boss,impact,{enabled,controlled,control,playerHitboxScale,interceptProjectile,...tacticalOptions});return;}
       clock+=dt;armor=Math.max(0,armor-dt);
       for(const s of [...scars]){s.age+=dt;s.m.material.opacity=.72*Math.min(1,(7-s.age)/2);if(s.age>=7){dispose(s.m);scars.splice(scars.indexOf(s),1);}}
       // Monster attacks stop under control; aura attacks are independent of the human.

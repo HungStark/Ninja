@@ -1,3 +1,4 @@
+import {guardianMobaLabels,guardianMobaNotes} from './guardian-moba-metadata.mjs';
 import vm from 'node:vm';
 import {GUARDIAN_BOSS_DESIGNS} from '../src/guardian-boss-designs.js';
 import {GUARDIAN_FORMS} from '../src/guardian-beasts.js';
@@ -19,6 +20,7 @@ const labels={
   healthThreshold:'Mất bao nhiêu máu tối đa để tăng một đuôi (0–1)',tailCap:'Số đuôi bùng cháy tối đa',damagePerTail:'Tăng sát thương mỗi đuôi (0–1)',tideMin:'Mực nước thấp nhất (m)',tideAmplitude:'Biên độ thủy triều (m)',tideFrequency:'Tốc độ thủy triều (radian/giây)',slowPerLevel:'Làm chậm theo mỗi mét nước (0–1)',
   stackCount:'Số tầng cần để khống chế',stackDuration:'Thời gian giữ tầng (giây)',airborneReduction:'Giảm sát thương lúc bay (0–1)',vulnerability:'Hệ số sát thương khi lộ điểm yếu',shellReduction:'Giảm sát thương phần mai (0–1)',headMultiplier:'Hệ số sát thương đánh đầu',legMultiplier:'Hệ số sát thương đánh chân',toppleThreshold:'Sát thương vào chân / máu tối đa để làm ngã (0–1)',toppleDuration:'Thời gian ngã (giây)',toppleMultiplier:'Hệ số sát thương lúc ngã',hideCycle:'Chu kỳ ẩn thân (giây)',hideDuration:'Ẩn thân mỗi chu kỳ (giây)',lampRadius:'Bán kính đèn làm lộ boss (m)',healRadius:'Khoảng cách tới cỏ để hồi máu (m)'
 };
+Object.assign(labels,guardianMobaLabels);
 const notes={
  'fox-homing':'Mỗi quả cầu gây một lần sát thương; có tự đuổi. Nội tại đuôi nhân thêm sát thương.',
  'fox-illusions':'Ba hình hồ gồm một bản thể và hai ảnh giả. Số đợt là số loạt bắn; chỉ hỏa cầu bản thể gây sát thương.',
@@ -48,9 +50,12 @@ const notes={
  'tiger-crystals':'Sát thương mỗi tinh thể nổ. Phá đủ HP trước khi nổ sẽ đổi thành vùng trú ẩn.',
  'tiger-blizzard':'Sát thương mỗi nhịp ngoài nơi trú. Đóng băng toàn vùng có thời điểm và thời gian riêng; luôn có hai nơi trú sẵn.'
 };
+Object.assign(notes,guardianMobaNotes);
 const integerKeys=new Set(['count','rootCount','waveCount','feathersPerLane','tailCap','stackCount']);
+for(const key of ['maxCount','energyCap','chainCount','shardCount','seedCount','spiritCap','rageCap','speedCap','bounces'])integerKeys.add(key);
 const damageLabels={'fox-homing':'Sát thương mỗi hỏa cầu','fox-illusions':'Sát thương hỏa cầu bản thể','fox-nine-pillars':'Sát thương mỗi cột lửa','dragon-prison':'Sát thương mỗi nhịp giam','dragon-tsunami':'Sát thương một lần sóng trúng','wolf-tempest':'Sát thương cú lao trong bão','eagle-crescents':'Sát thương mỗi lưỡi gió','eagle-tornadoes':'Sát thương mỗi nhịp / mỗi lốc','turtle-quake':'Sát thương mỗi vòng sóng','turtle-mountains':'Sát thương mỗi cột đá','gold-feathers':'Sát thương mỗi lông vũ','gold-wingblades':'Sát thương mỗi đao','shadow-pack':'Sát thương mỗi bóng sói','shadow-night':'Sát thương mỗi bóng sói','stag-spirits':'Sát thương mỗi lần rễ trúng','stag-forest':'Sát thương mỗi mầm / mỗi đợt','tiger-claws':'Sát thương mỗi cú vuốt','tiger-crystals':'Sát thương mỗi tinh thể nổ','tiger-blizzard':'Sát thương mỗi nhịp ngoài chỗ trú'};
 const ratioKeys=new Set(['damageReduction','reflection','airborneReduction','shellReduction','healthThreshold','damagePerTail','slowPerLevel','toppleThreshold','healRate']);
+for(const key of ['armorFraction','armorReduction','cooldownReduction','firstHitBonus','ragePerSpirit','slow','slowPerStack','speedPerCast','healFraction'])ratioKeys.add(key);
 function limits(key){
  let min=0,max=3600,step='any';
  if(integerKeys.has(key)){min=1;max=30;step=1;}
@@ -66,6 +71,12 @@ function limits(key){
  if(key==='tailCap')max=9;
  if(key==='feathersPerLane')max=15;
  if(key==='travelAmplitude')max=5.5;
+ if(/Damage$|Dps$/.test(key))max=100000;
+ if(['moveSpeed','returnSpeed','gustSpeed','pullSpeed','pushSpeed','windSpeed'].includes(key))max=100;
+ if(['growth','lifeBoost','speedBoost','linkMultiplier'].includes(key))max=10;
+ if(/Radius$|Range$|Width$/.test(key))max=key==='waveWidth'?80:40;
+ if(['energyDistance','puddleInterval','spiritInterval','windInterval','rootInterval','stationaryTime','hideAfter','freezeImmunity'].includes(key))min=.05;
+ if(key==='gapWidth'){min=1;max=5;}
  return {min,max,step};
 }
 export function guardianBalanceDocument(source){
@@ -81,25 +92,23 @@ export function guardianBalanceDocument(source){
     if(column)columns[column].push(f);else extra.push(f);
    }
    rows.push({id:key,name,beast,element:id,elementName:beast,color:design.color,rank:kind==='passive'?'Nội tại':'Kỹ năng',kind,columns,extra,defaults,
-    note:notes[key]||'Thông số nội tại dùng chung cho ba kỹ năng của linh thú này.',description:kind==='passive'?design.counter:notes[key]});
+    note:notes[key]||'Nội tại và thông số di chuyển trong góc nhìn thứ ba.',description:kind==='passive'?design.counter:notes[key]});
   }
  }
  return {version:1,kind:'guardian-skills',revision:revisionOf(source),elements,overrides,rows};
 }
 function validateRelations(id,s){
  const require=(ok,message)=>{if(!ok)throw Error(id+': '+message);};
- if(s.hideCycle!==undefined)require(s.hideDuration<=s.hideCycle,'thời gian ẩn thân phải nằm trong chu kỳ.');
- if(s.beamDuration!==undefined)require(s.windup+s.beamDuration<=s.duration+1e-8,'thời gian thi triển phải đủ phần chuẩn bị và phun tia.');
- if(s.rushDuration!==undefined)require(s.windup+s.rushDuration<=s.duration+1e-8,'thời gian thi triển phải đủ phần chuẩn bị và lao tới.');
- if(s.returnStart!==undefined)require(s.returnStart>=s.windup+s.rushDuration&&s.returnStart+s.returnDuration<=s.duration+1e-8,'mốc quay về phải sau khi đáp và hoàn tất trong thời gian thi triển.');
- if(id==='shadow-ambush')require(s.warningStart<=s.reappearAt&&s.reappearAt<=s.strikeAt&&s.strikeAt<=s.retreatAt&&s.retreatAt<=s.duration,'các mốc phải theo thứ tự báo trước → hiện hình → đánh → rút về → hết chiêu.');
- if(id==='tiger-crystals')require(s.detonateAfter<=s.life,'tinh thể phải tồn tại đủ lâu để nổ.');
- if(id==='tiger-blizzard')require(s.windup<=s.freezeAt&&s.freezeAt<=s.duration,'thời điểm đóng băng phải sau khi bão bắt đầu và trước khi hết chiêu.');
- const scheduled=['fox-homing','fox-illusions','wolf-marks','gold-feathers','shadow-pack','shadow-night','stag-vines','tiger-claws','turtle-quake','eagle-crescents'];
- if(scheduled.includes(id))require((s.windup||0)+(s.count-1)*s.interval<s.duration+1e-8,'thời gian thi triển quá ngắn để phát đủ số đợt.');
- if(id==='wolf-tempest')require(s.boltStart+(s.count-1)*s.interval<s.duration+1e-8,'thời gian thi triển quá ngắn để gọi đủ sét.');
- if(id==='stag-spirits')require(s.windup+(s.rootCount-1)*s.interval<s.duration+1e-8,'thời gian thi triển quá ngắn để gọi đủ rễ.');
- if(id==='stag-forest')require(s.windup+(s.waveCount-1)*s.interval<s.duration+1e-8,'thời gian thi triển quá ngắn để tạo đủ đợt cây.');
+ if(s.beamDuration!==undefined)require(s.windup+s.beamDuration<=s.duration+1e-8,'thời gian thi triển phải đủ chuẩn bị và phun tia.');
+ if(['wolf-dashes','shadow-dashes'].includes(id))require(s.windup+(s.count-1)*s.interval+s.rushDuration<=s.duration+1e-8,'phải đủ thời gian cho tất cả lần lao.');
+ if(id==='eagle-dive')require(s.windup+s.rushDuration<=s.duration,'phải đủ thời gian bay và đáp.');
+ if(id==='wolf-clones')require(s.returnAt<s.life,'phân thân phải còn thời gian quay về.');
+ if(id==='shadow-clones')require(s.attackAt+s.warning<s.life,'phân thân phải kịp chuẩn bị và tấn công.');
+ if(id==='gold-swords')require(s.windup+s.life<=s.duration,'phải đủ thời gian khép vòng kiếm.');
+ if(id==='tiger-blizzard')require(s.windup+s.life<=s.duration,'phải đủ thời gian bão tuyết và vụ nổ cuối.');
+ if(id==='fox-pillars')require(s.count<=s.maxCount,'số cột cơ bản không vượt số tối đa.');
+ if(id==='turtle-ram')require(s.windup<s.duration,'phải còn thời gian lao sau chuẩn bị.');
+ if(['eagle-blades','gold-feathers','gold-arcs','tiger-claws','dragon-tsunami','fox-firestorm'].includes(id))require((s.windup||0)+(s.count-1)*s.interval<s.duration+1e-8,'phải đủ thời gian phát tất cả các đợt.');
 }
 export function updateGuardianSource(source,overrides){
  if(!overrides||typeof overrides!=='object'||Array.isArray(overrides))throw Error('Dữ liệu bảng không hợp lệ.');

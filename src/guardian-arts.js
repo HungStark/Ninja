@@ -1,5 +1,5 @@
 import {BOT_HEALTH_SCALE} from './enemy-balance.js';
-import {GUARDIAN_BOSS_DESIGNS} from './guardian-boss-designs.js';
+import {GUARDIAN_BOSS_DESIGNS} from './guardian-legacy-designs.js';
 export const GUARDIAN_BASIC_TIMING=Object.freeze({charge:1.5,breathRecoil:.28,breathDuration:3.3,slamWindup:1,slamAscent:.45,slamDescent:.16,slamFlight:.61,armor:6});
 export function guardianLeap(age){
  const t=age-GUARDIAN_BASIC_TIMING.slamWindup,{slamAscent:up,slamDescent:down}=GUARDIAN_BASIC_TIMING;
