@@ -7,6 +7,7 @@ const clamp=v=>Math.max(0,Math.min(1,v)),ease=v=>{v=clamp(v);return v*v*(3-2*v);
 const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),mul=(a,s)=>a.map(v=>v*s);
 const unit=v=>mul(v,1/(Math.hypot(...v)||1)),distance=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
 const up=new T.Vector3(0,1,0);
+const MAX_POISON_RADIUS=5;
 const hash=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);};
 
 // Mature plant height follows the arena gate. Growth only scales these models
@@ -35,7 +36,7 @@ export class WoodGarden {
   empower(owner,spell){
     if(spell.element!=='wood'||spell.style==='woodseed')return spell;
     const growth=this.growth(owner),power=1+2*growth;
-    return {...spell,damage:spell.damage*power,shield:Math.round(spell.shield*power),duration:spell.duration?spell.duration+2*growth:undefined,controlDuration:spell.controlDuration?spell.controlDuration+4*growth:undefined,treePower:power,plantScale:this.scale(owner),growth,poisonRadius:2+3*growth};
+    return {...spell,damage:spell.damage*power,shield:Math.round(spell.shield*power),duration:spell.duration?spell.duration+2*growth:undefined,controlDuration:spell.controlDuration?spell.controlDuration+4*growth:undefined,treePower:power,plantScale:this.scale(owner),growth,poisonRadius:2+(MAX_POISON_RADIUS-2)*growth};
   }
   plantModel(kind,heightLimit=Infinity,sizeVariation=1){
     const root=new T.Group(),parts={};
@@ -115,11 +116,27 @@ export class WoodGarden {
         let reach=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)))+plant.height*.14+.12;
         const limit=Math.min(b.maxX-b.minX,b.maxZ-b.minZ)/2-.1;
         if(reach>limit){const ratio=limit/reach;plant.parts.normalization*=ratio;plant.height*=ratio;plant.model.scale.setScalar(plant.parts.normalization);reach=limit;}
+        plant.footprint=reach;
         plant.p[0]=Math.max(b.minX+reach,Math.min(b.maxX-reach,plant.p[0]));plant.p[2]=Math.max(b.minZ+reach,Math.min(b.maxZ-reach,plant.p[2]));plant.p[1]=this.floor(plant.p[0],plant.p[2]);
       }
       const anchor=this.group(root);anchor.position.fromArray(plant.p);anchor.add(plant.model);plant.anchor=anchor;
       readyAt=Math.max(readyAt,plant.landAt+.3);
     });
+    if(zones){
+      // Give the twelve poison flowers their own evenly spaced 6 × 2 grid.
+      // Alternating species in the mixed grid left all flowers in three strips.
+      const flowers=plants.filter(p=>p.kind==='flower'),b=zones.opponent;
+      // Fit the largest blooms near the edges without enlarging poison damage areas.
+      const footprintLimit=MAX_POISON_RADIUS/Math.SQRT2-.15;
+      for(const flower of flowers)if(flower.footprint>footprintLimit){const ratio=footprintLimit/flower.footprint;flower.parts.normalization*=ratio;flower.height*=ratio;flower.model.scale.setScalar(flower.parts.normalization);flower.footprint=footprintLimit;}
+      const inset=Math.max(...flowers.map(p=>p.footprint));
+      const stepX=(b.maxX-b.minX-2*inset)/5,stepZ=b.maxZ-b.minZ-2*inset;
+      flowers.forEach((flower,i)=>{
+        const row=Math.floor(i/6);flower.p[0]=b.minX+inset+(i%6)*stepX;
+        flower.p[2]=owner==='player'?b.maxZ-inset-row*stepZ:b.minZ+inset+row*stepZ;
+        flower.p[1]=this.floor(flower.p[0],flower.p[2]);flower.anchor.position.fromArray(flower.p);
+      });
+    }
     const garden={owner,spell,root,plants,p:[...victim.pos],origin:[...pos],axis,side,age:0,readyAt};this.gardens.push(garden);return true;
   }
   nutModel(root){
