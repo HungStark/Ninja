@@ -79,7 +79,7 @@ async function main() {
   const world = createWorld(), hands = await createHands();
   const practiceHandInset=createPracticeHandInset(renderer,hands);
   const scene = world.scene, opponent = await createOpponent(scene, world.opponentSpawn);
-  const practiceOverhead=createPracticeOverhead(scene,{actorScale:PRACTICE_CHARACTER_SCALE});
+  const practiceOverhead=createPracticeOverhead(scene,{actorScale:PRACTICE_CHARACTER_SCALE,environment:world.environment});
   let practiceView='overhead',choosingPracticeView=false,practiceOpponentConfirmed=false,practiceEncounter=null;
   let mobileTargetId='primary',mobileMoveVector=[0,0],mobileManualAim=null,mobileAimHold=0;
   const practiceOpponentPicker=createPracticeOpponentPicker({spells,elements,defaultLoadout,getLearnedSpells:()=>learnedSpells,renderSpell:(s,i,ids)=>spellMarkup(s,i,true,ids,true),onConfirm:event=>{practiceOpponentConfirmed=true;start(event);},onBack:()=>{practiceOpponentConfirmed=false;$('startButton').focus();}});
@@ -1287,8 +1287,8 @@ async function main() {
     // Intro/loading ticks can return early. Set the combat camera before every
     // world render so the first exposed frame never uses the first-person view.
     syncCombatView();
-    if(!windView&&!overheadPractice())darkDomain.intro.updateCamera(camera3d);
     guardianCamera();
+    darkDomain.intro.updateCamera(camera3d);
     damageFeedback.render([{id:'player',root:playerAvatar.group},{id:'primary',root:opponent.group},...squad.actors().map(a=>({id:a.id,root:squad.root(a.id)}))],overheadPractice()&&started);
     renderer.info.reset(); renderer.clear(); composer.render();
     enemyNameplates.update(camera3d,[{id:'primary',position:opponent.group.position.toArray(),height:(opponent.group.userData.height||3)*characterScale(),visible:opponent.group.visible,fighter:enemy},...squad.state().map(s=>({...s,position:[s.position[0],s.position[1]-1.72,s.position[2]],fighter:squad.fighter(s.id),sequence:s.sealTrace,cast:s.traceCast}))],started&&!won,{compact:mobileTactical(),selectedId:mobileTargetId,onSelect:id=>{if(!paused){mobileTargetId=id;mobileAim(null);updateUI();}}});

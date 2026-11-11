@@ -18,7 +18,7 @@ export function practiceMovementBounds(owner,clearance=.65,from){const edges=[PR
 export function clampPracticeActorPoint(p,owner='player',clearance=.65,from){const b=practiceMovementBounds(owner,clearance,from);return [T.MathUtils.clamp(p[0],b.minX,b.maxX),p[1],T.MathUtils.clamp(p[2],b.minZ,b.maxZ)];}
 export function stepPracticePoint(from,to,distance,clearance=.65){const goal=clampPracticeActorPoint(to,'player',clearance,from),dx=goal[0]-from[0],dz=goal[2]-from[2],length=Math.hypot(dx,dz),t=length>0?Math.min(1,distance/length):0;return clampPracticeActorPoint([from[0]+dx*t,from[1],from[2]+dz*t],'player',clearance,from);}
 
-export function createPracticeOverhead(scene,{actorScale=1}={}){
+export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
   const root=new T.Group();scene.add(root);root.visible=false;
   const material=new T.MeshBasicMaterial({color:'#71e6e7',transparent:true,opacity:.7,depthWrite:false,side:T.DoubleSide});
   const strip=new T.Mesh(new T.PlaneGeometry(1,1),material);strip.rotation.x=-Math.PI/2;root.add(strip);
@@ -28,6 +28,7 @@ export function createPracticeOverhead(scene,{actorScale=1}={}){
   const playerMarker=new T.Mesh(new T.RingGeometry(.7,.79,48),new T.MeshBasicMaterial({color:'#a6f4b9',transparent:true,opacity:.9,depthWrite:false,side:T.DoubleSide}));playerMarker.rotation.x=-Math.PI/2;scene.add(playerMarker);playerMarker.visible=false;
   playerMarker.scale.setScalar(actorScale);
   const fence=new T.Group(),wood=new T.MeshStandardMaterial({color:'#85664b',roughness:.9});scene.add(fence);fence.visible=false;
+  environment?.push(fence);
   for(const z of [PRACTICE_ARENA.minZ,...PRACTICE_DIVIDERS,PRACTICE_ARENA.maxZ]){const row=new T.Group();row.name=PRACTICE_DIVIDERS.includes(z)?'practice-divider':'practice-end-fence';row.position.z=z;fence.add(row);for(const y of [.55,1.25]){const rail=new T.Mesh(new T.BoxGeometry(32,.12,.15),wood);rail.position.set(0,y,0);row.add(rail);}for(let x=-16;x<=16;x+=4){const post=new T.Mesh(new T.BoxGeometry(.25,1.7,.25),wood);post.position.set(x,.85,0);row.add(post);}}
   const ray=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,1,0),0),hit=new T.Vector3();
   const focus=new T.Vector3(0,0,-7),back=new T.Vector3(Math.sin(CAMERA_YAW)*Math.cos(CAMERA_PITCH),Math.sin(CAMERA_PITCH),Math.cos(CAMERA_YAW)*Math.cos(CAMERA_PITCH));

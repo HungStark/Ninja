@@ -12,7 +12,7 @@ export class DarkDomain {
   constructor(world,reducedMotion=false) {
     this.world=world;this.scene=world.scene;this.reducedMotion=reducedMotion;
     this.active=false;this.transition=null;this.life=0;this.clones=[];this.projectiles=new Map();this.ripples=[];this.serial=0;this.bindings=[];this.dives=[];this.recoveries=[];
-    this.saved=null;this.group=new T.Group();this.group.name='BlackInkDomain';this.group.visible=false;this.scene.add(this.group);
+    this.group=new T.Group();this.group.name='BlackInkDomain';this.group.visible=false;this.scene.add(this.group);
     this.overlay=document.getElementById('darkEyelids');
     this.header=document.querySelector('.header-center');this.headerText=this.header.innerHTML;
     this.clock={value:0};this.submerge={value:0};
@@ -31,20 +31,7 @@ export class DarkDomain {
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
     }`});
-    const floor=new T.Mesh(new T.PlaneGeometry(230,230,120,100),this.ink);floor.rotation.x=-Math.PI/2;floor.position.y=.035;this.group.add(floor);
-    const sky=new T.Mesh(new T.SphereGeometry(170,24,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,
-      vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-      fragmentShader:`varying vec3 p;void main(){float h=normalize(p).y;vec3 c=mix(vec3(.039,.032,.057),vec3(.004,.005,.011),smoothstep(0.,.48,h));gl_FragColor=vec4(c,1.);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>}`}));sky.renderOrder=-10;this.group.add(sky);
-    this.group.add(new T.HemisphereLight('#8f819c','#13101e',1.5));
-    const light=new T.DirectionalLight('#b7a6d3',1.15);light.position.set(-8,16,9);this.group.add(light);
-    const poolMat=new T.MeshBasicMaterial({color:'#020306',transparent:true,opacity:.8,depthWrite:false});
-    const pools=new T.InstancedMesh(new T.CircleGeometry(1,24),poolMat,38),dummy=new T.Object3D();
-    for(let i=0;i<38;i++){
-      dummy.position.set(Math.sin(i*19.17)*35,.075,Math.cos(i*13.49)*38-8);dummy.rotation.set(-Math.PI/2,0,i*2.7);
-      dummy.scale.set(1.2+(i%5)*.9,.7+(i%4)*.45,1);dummy.updateMatrix();pools.setMatrixAt(i,dummy.matrix);
-    }pools.instanceMatrix.needsUpdate=true;this.group.add(pools);
+    const floor=new T.Mesh(new T.PlaneGeometry(230,230,120,100),this.ink);floor.rotation.x=-Math.PI/2;floor.position.y=.035;floor.visible=false;this.floor=floor;this.group.add(floor);
     this.cloneMaterial=vfxToon('#38232f', { emissive:'#701822', emissiveIntensity:.24 });
     this.summonMaterial=vfxToon('#f4f0e8',{emissive:'#fff5e5',emissiveIntensity:.16});
     this.accentMaterial=vfxToon('#c92338',{emissive:'#e62b3e',emissiveIntensity:.2});
@@ -57,7 +44,7 @@ export class DarkDomain {
     this.ringMaterial=new T.MeshBasicMaterial({color:'#71638a',transparent:true,opacity:.35,depthWrite:false});
     this.geometries={sphere:new T.SphereGeometry(1,14,10),cylinder:new T.CylinderGeometry(1,1,1,10),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,12),pool:new T.CircleGeometry(1,32),ring:new T.TorusGeometry(1,.018,5,48)};
     this.cloneGroup=new T.Group();this.cloneGroup.name='ShadowSummons';this.scene.add(this.cloneGroup);
-    this.intro=new DarkDomainIntro(world,floor,sky,reducedMotion);
+    this.intro=new DarkDomainIntro(world,reducedMotion);
   }
   get usable(){return this.active&&!this.transition;}
   sustain(owner='enemy'){this.permanent=true;this.owner=owner;this.transition=null;this.intro.reset();this.life=Infinity;this.switchEnvironment(true);}
@@ -69,19 +56,11 @@ export class DarkDomain {
     this.transition={age:0,destination:'ink',changed:false};return true;
   }
   switchEnvironment(ink) {
-    if(ink) {
-      if(!this.saved){this.saved={fog:this.scene.fog,background:this.scene.background,visibility:this.world.environment.map(o=>[o,o.visible])};}
-      for(const [o] of this.saved.visibility)o.visible=false;
-      this.scene.fog=new T.FogExp2('#0c0914',.025);this.scene.background=new T.Color('#06060c');
-    } else if(this.saved) {
-      for(const [o,visible] of this.saved.visibility)o.visible=visible;
-      this.scene.fog=this.saved.fog;this.scene.background=this.saved.background;this.saved=null;
-    }
-    this.active=ink;this.group.visible=ink;document.body.classList.toggle('dark-domain',ink);
+    this.active=ink;this.group.visible=ink;this.intro.setActive(ink);if(!ink)this.floor.visible=false;document.body.classList.toggle('dark-domain',ink);
     if(!ink){this.clearDomainArts();for(const c of [...this.clones])if(c.mode==='respawning')this.removeClone(c);this.header.innerHTML=this.headerText;}
   }
   advance(dt,time) {
-    this.clock.value=time;
+    this.clock.value=time;this.intro.uniforms.uDomainTime.value=this.reducedMotion?0:time;
     if(this.active&&!this.permanent){this.life=Math.max(0,this.life-dt);if(this.life<=1e-6&&!this.transition)this.transition={age:0,destination:'world',changed:false};}
     let lid=0,phase='idle';
     if(this.transition) {
@@ -342,6 +321,7 @@ export class DarkDomain {
   updateSubmergeView(depth,eyeHeight){
     this.submerge.value=clamp(-depth/3);
     const below=eyeHeight<.07&&depth<0;
+    this.floor.visible=below&&this.active;
     this.ink.transparent=below;this.ink.depthWrite=!below;
   }
   releaseBinding(b){b.root.removeFromParent();this.bindings.splice(this.bindings.indexOf(b),1);if(b.victim){b.victim.fighter.darkControlTime=0;this.recoveries.push({owner:b.victim.owner,sink:b.sink,age:0});}}
