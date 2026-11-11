@@ -32,6 +32,7 @@ await Promise.all(files.map(file => fs.copyFile(path.join(root, file), path.join
 await fs.cp(path.join(root,'assets','portraits'),path.join(output,'assets','portraits'),{recursive:true});
 await fs.mkdir(path.join(output,'assets','ui'),{recursive:true});
 await fs.copyFile(path.join(root,'assets','ui','attack-button.png'),path.join(output,'assets','ui','attack-button.png'));
+await fs.cp(path.join(root,'assets','ui','spells'),path.join(output,'assets','ui','spells'),{recursive:true});
 console.log(`Prepared ${files.length} static files for Vercel in dist/`);
 
 // AAPT transparently expands .gz assets; use .tgz and remove old generated names.

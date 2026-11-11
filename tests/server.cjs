@@ -15,6 +15,8 @@ const assert = require("node:assert/strict");
       assert.ok((await res.arrayBuffer()).byteLength > 0);
     }
     for (const url of ["/.git/config", "/package-lock.json", "/src/main.js", "/%2e%2e/server.cjs"]) assert.equal((await fetch("http://127.0.0.1:4319" + url)).status, 404);
+    const {SPELL_ART_FILES}=await import('../src/spell-icon-manifest.js');for(const file of Object.values(SPELL_ART_FILES)){const icon=await fetch('http://127.0.0.1:4319/'+file);assert.equal(icon.status,200,file);assert.match(icon.headers.get('content-type'),/image\/png/);assert.ok((await icon.arrayBuffer()).byteLength>1000);}
+    assert.equal((await fetch('http://127.0.0.1:4319/assets/ui/spells-v2.prompt.md')).status,404);
     const {PORTRAIT_IMAGES}=await import('../src/portrait-images.js');const portrait=await fetch('http://127.0.0.1:4319/assets/portraits/'+Object.values(PORTRAIT_IMAGES)[0]);assert.equal(portrait.status,200);assert.match(portrait.headers.get('content-type'),/image\/webp/);assert.match(portrait.headers.get('cache-control'),/immutable/);assert.equal((await fetch('http://127.0.0.1:4319/assets/portraits/report.json')).status,404);
     console.log("PASS: local server assets, MIME types and source/metadata isolation.");
   } finally {
