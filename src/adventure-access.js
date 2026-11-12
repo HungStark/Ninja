@@ -14,7 +14,7 @@ export function createAdminSession(){
   let baseline=null;
   return {
     get active(){return baseline!==null;},
-    enter(save){if(baseline)return save;baseline=structuredClone(save);const draft=structuredClone(save);draft.gold=Infinity;draft.learnedSpells=[...ALL_ADVENTURE_SPELLS];return draft;},
+    enter(save){if(baseline)return save;baseline=structuredClone(save);const draft=structuredClone(save);draft.gold=Infinity;draft.learnedSpells=[...ALL_ADVENTURE_SPELLS];draft.story.plotPreview=true;return draft;},
     leave(){if(!baseline)return null;const restored=baseline;baseline=null;return restored;}
   };
 }

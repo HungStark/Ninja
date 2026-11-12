@@ -6,6 +6,7 @@ import {SKILL_LEVELS,spellElement,gainExperience,addBooks} from './progression.j
 import {QUEST_ITEM_MODELS} from './quest-items.js';
 import {botHealth} from './enemy-balance.js';
 import {VILLAGE_EVENTS} from './village-events.js';
+import {PLOT_VERSION,WAR_VILLAGES,ALLIANCE_VILLAGES,plotEventComplete} from './campaign-plot.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
@@ -13,13 +14,13 @@ export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa Vũ Liên Châu',ele
 export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:botHealth(85),spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
 export const FIRST_VILLAGES=['water','fire','lightning'];
 const STAGES=['mother','chief','guardian','report','infiltrate'];
-export function newStory(){return {revision:1,stage:'mother',starter:null,guardianRestored:false,peaceSeals:[],guardianOrders:[],treaties:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false}};}
+export function newStory(){return {revision:1,plotVersion:PLOT_VERSION,stage:'mother',starter:null,guardianRestored:false,sealCore:false,sealTraces:[],homecomingDone:false,alliances:[],peaceSeals:[],guardianOrders:[],treaties:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false,phase:'with-party'}};}
 export function readStory(raw,save){
   const s=newStory();
   if(raw?.revision!==1){
     // Existing journeys keep their unlocked campaign and all learned techniques.
     s.stage='infiltrate';s.guardianRestored=true;s.starter=save.learnedSpells.find(id=>STARTER_CHOICES.some(c=>c.id===id))||'water-barrier';
-    s.peaceSeals=Object.keys(save.bosses).filter(id=>id!=='nameless');if(save.expeditions?.fire===3)s.questItems.push('fire:lotus-medicine');return s;
+    s.peaceSeals=Object.keys(save.bosses).filter(id=>id!=='nameless');s.sealCore=true;s.questItems.push('nameless:seal-core');if(save.expeditions?.fire===3)s.questItems.push('fire:lotus-medicine');return s;
   }
   s.stage=STAGES.includes(raw.stage)?raw.stage:'mother';
   s.guardianOrders=[...new Set((Array.isArray(raw.guardianOrders)?raw.guardianOrders:[]).filter(id=>REGIONS[id]&&id!=='nameless'))];
@@ -33,7 +34,7 @@ export function readStory(raw,save){
   for(const [id,status] of Object.entries(raw.sidequests||{}))if(validQuests.has(id)&&[1,2,3].includes(status))s.sidequests[id]=status;
   s.earlyTargets=[...new Set((Array.isArray(raw.earlyTargets)?raw.earlyTargets:[]).filter(id=>validQuests.has(id)&&(!s.sidequests[id]||s.sidequests[id]===2)))];
   s.earlyVillageQuests=[...new Set((Array.isArray(raw.earlyVillageQuests)?raw.earlyVillageQuests:[]).filter(id=>REGIONS[id]&&save.quests[id]===2))];
-  s.questItems=[...new Set((Array.isArray(raw.questItems)?raw.questItems:[]).filter(id=>(validQuests.has(id)&&(s.earlyTargets.includes(id)||s.sidequests[id]===2))||(id==='fire:hong-lien'&&save.expeditions?.fire!==3)||(id==='fire:lotus-medicine'&&raw.villageEvents?.fire!==4)))];
+  s.questItems=[...new Set((Array.isArray(raw.questItems)?raw.questItems:[]).filter(id=>(validQuests.has(id)&&(s.earlyTargets.includes(id)||s.sidequests[id]===2))||(id==='fire:hong-lien'&&save.expeditions?.fire!==3)||(id==='fire:lotus-medicine'&&(raw.villageEvents?.fire||0)<4)))];
   for(const id of s.earlyTargets)if(!s.questItems.includes(id))s.questItems.push(id);
   for(const id of Object.keys(REGIONS))for(const q of villageSidequests(id))if(s.sidequests[q.id]===2&&!s.questItems.includes(q.id))s.questItems.push(q.id);
   if(save.expeditions?.fire===2&&!s.questItems.includes('fire:hong-lien'))s.questItems.push('fire:hong-lien');
@@ -41,9 +42,21 @@ export function readStory(raw,save){
   s.trackedQuest=validQuests.has(raw.trackedQuest)?raw.trackedQuest:null;
   for(const [id,step] of Object.entries(raw.villageEvents||{}))if(VILLAGE_EVENTS[id]&&Number.isInteger(step)&&step>=0&&step<=VILLAGE_EVENTS[id].stages.length)s.villageEvents[id]=step;
   // Previously turned-in flowers already produced medicine; keep that progress.
-  if(s.villageEvents.fire!==4&&save.expeditions?.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.questItems.push('fire:lotus-medicine');
+  if((s.villageEvents.fire||0)<4&&save.expeditions?.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.questItems.push('fire:lotus-medicine');
   if(s.villageEvents.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.villageEvents.fire=2;
-  s.companion.recruited=s.villageEvents.fire===VILLAGE_EVENTS.fire.stages.length;return s;
+  if(raw.plotVersion!==PLOT_VERSION){
+    // Keep earned gear, levels, chief victories and the original four rescue steps.
+    // New investigations are played instead of treating old seal collection as the new ending.
+    s.villageEvents.water=Math.min(4,s.villageEvents.water||0);s.villageEvents.fire=Math.min(4,s.villageEvents.fire||0);
+    for(const id of ['lightning',...ALLIANCE_VILLAGES,'nameless'])delete s.villageEvents[id];
+  }
+  s.sealCore=raw.sealCore===true||s.guardianRestored;
+  if(s.sealCore&&!s.questItems.includes('nameless:seal-core'))s.questItems.push('nameless:seal-core');
+  s.homecomingDone=raw.plotVersion===PLOT_VERSION&&raw.homecomingDone===true&&save.campaign?.treatySigned===true;
+  s.sealTraces=[...new Set((Array.isArray(raw.sealTraces)?raw.sealTraces:[]).filter(key=>{if(typeof key!=='string')return false;const [id,step]=key.split(':');return VILLAGE_EVENTS[id]?.stages[Number(step)]?.sealTrace&&Number(step)<(s.villageEvents[id]||0);}))];
+  s.alliances=raw.plotVersion===PLOT_VERSION?[...new Set((Array.isArray(raw.alliances)?raw.alliances:[]).filter(id=>ALLIANCE_VILLAGES.includes(id)&&plotEventComplete({story:s},id)))]:[];
+  s.companion.recruited=(s.villageEvents.fire||0)>=4;
+  s.companion.phase=(s.villageEvents.light||0)>=4&&(s.villageEvents.dark||0)<3?'separated':'with-party';return s;
 }
 export function promiseMother(save){if(save.story.stage!=='mother')return false;save.story.stage='chief';return true;}
 export function chooseStarter(save,id){
@@ -63,7 +76,7 @@ export function reportGuardian(save){
   save.story.stage='infiltrate';save.gold+=100;return true;
 }
 export function negotiatePeace(save,id,document){
-  if(id==='nameless'||save.village!==id||!save.bosses[id]||save.story.peaceSeals.includes(id))return false;
+  if(!WAR_VILLAGES.includes(id)||save.village!==id||!save.bosses[id]||!plotEventComplete(save,id)||save.story.peaceSeals.includes(id))return false;
   if(document&&!storeTreaty(save,id,document))return false;
   save.story.peaceSeals.push(id);save.gold+=100;return true;
 }

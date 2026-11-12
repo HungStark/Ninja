@@ -7,9 +7,25 @@ import {HA_LY,HA_LY_MOTHER,currentVillageEvent} from './village-events.js';
 import {ninjaProfile} from './ninja.js';
 import {encounterAppearance} from './encounter-appearance.js';
 import {questForNPC} from './journey-story.js';
+import {PLOT} from './campaign-plot.js';
 export const speakerPortrait=portraitMarkup;
 
 export function heroSpeaker(save){return {name:save.hero.name,role:'Người giữ ấn',coat:save.hero.coat,hair:save.hero.hair,armor:armorById(save.equipment?.armor),equipment:equipmentState(save),id:'hero'};}
+
+export function campaignLines(script,save,id=save.village){
+  const hero=heroSpeaker(save),leaderNames={water:'Hải Châu',fire:'Xích Nham',lightning:'Chấn Thiên',dark:'Vô Nguyệt'};
+  const person=(key,name,region=id,kind='lore',extra={})=>({id:'plot-'+key,name,role:region,appearance:villagerAppearance(region,{kind,...extra}),...extra});
+  const chiefs=region=>person('chief-'+region,leaderNames[region]||'Trưởng làng',region,'chief');
+  const speakers={hero,chief:chiefs(id),haly:{...HA_LY,appearance:ninjaProfile(HA_LY)},mother:person('mother','Mẹ','nameless','mourner',{female:true,age:'elder'}),
+    beast:{id:'nameless-beast',name:'Vô Danh Thú',role:'Linh thú giữ phong ấn',appearance:{kind:'creature',id:'nameless'}},
+    guide:person('guide-'+id,PLOT.villages[id]?.speaker||'Người làm chứng'),mage:person('mage','Thiếu nữ bên kia cánh cổng','ice','healer',{female:true}),
+    narrator:{...hero,id:'plot-memory',name:'Ký ức của người trở về',role:'Một kiếp sống khác'},
+    unknown:{id:'plot-unknown',name:'Kẻ bí ẩn',role:'Ký ức kiếp trước',appearance:ninjaProfile({village:'dark',coat:'#28212f'})},
+    gatekeeper:{id:'plot-gatekeeper',name:'Kẻ Mở Cổng',role:'Thế lực xâm lược',appearance:ninjaProfile({village:'dark',coat:'#38213f'})},
+    illusion:{id:'plot-illusion',name:'Ảo ảnh trong gương',role:'Ký ức bị phơi bày',appearance:ninjaProfile({village:'dark'})},
+    water:chiefs('water'),fire:chiefs('fire'),lightning:chiefs('lightning')};
+  return (script||[]).map(([key,text])=>({speaker:speakers[key]||speakers.guide,text}));
+}
 
 export function dialogueCast(item,save,region,biome){
   if(!item||!['npc','lore','healer','mentor','expedition-giver','envoy','treaty','boss','quest','shop','intro-guardian','village-guard','village-event','companion','story-witness'].includes(item.kind))return null;
@@ -31,7 +47,7 @@ export function dialogueCast(item,save,region,biome){
 export function conversationLines(item,save,cast,body){
   const {hero,npc}=cast,line=(speaker,text)=>({speaker,text});
   if(['village-event','companion','story-witness'].includes(item.kind))return [line(npc,body)];
-  if(item.id==='nameless-resident-war-cemetery'&&save.story?.stage==='mother')return [line(hero,'Mẹ, con nhớ cha và em. Con muốn làm điều gì đó để cuộc chiến này chấm dứt.'),line(npc,body),line(npc,'Mẹ chỉ mong con trở về bình an. Nếu con quyết tâm lên đường, hãy hứa với mẹ: đừng để lòng thù hận dẫn lối. Hãy đem hòa bình về cho những người còn sống.')];
+  if(item.id==='nameless-resident-war-cemetery'&&save.story?.stage==='mother')return campaignLines(PLOT.mother,save,'nameless');
   if(item.kind==='npc')return save.quests[save.village]===2?[line(hero,'Kẻ phá hoại đã bị chặn lại. Tôi trở về báo tin để mọi người yên tâm.'),line(npc,body)]:[line(npc,body)];
   if(item.kind==='expedition-giver')return [line(hero,save.expeditions.fire===3?'Thuốc Hồng Liên đã sẵn sàng để chữa thương cho Hạ Ly chưa?':save.story.questItems?.includes('fire:hong-lien')?'Tôi đã mang Hồng Liên về. Cô có thể điều chế thuốc cứu Hạ Ly không?':'Hạ Ly đang bị thương trong ngục. Tôi có thể tìm Hồng Liên trên đỉnh núi để cứu nàng không?'),line(npc,body)];
   if(item.kind==='envoy')return [line(hero,'Tôi đến để chuyển lời từ ba làng Thủy, Hỏa và Lôi.'),line(npc,body)];

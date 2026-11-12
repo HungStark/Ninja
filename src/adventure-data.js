@@ -1,3 +1,4 @@
+import {PLOT,WAR_VILLAGES,ALLIANCE_VILLAGES,PLOT_ORDER,plotVillageComplete,nextPlotVillage,canProgressPlot,invasionAvailable} from './campaign-plot.js';
 import {storeTreaty} from './peace-treaties.js';
 import {confrontationObjective,guardianOrdered,nextGuardianGuard} from './village-confrontation.js';
 import {newFlask,readFlask} from './healing-flask.js';
@@ -43,79 +44,46 @@ export const QUESTS={
 };
 for(const id of ['water','fire','lightning','wind','earth','ice','wood','light','dark']){QUESTS[id].x*=2;QUESTS[id].z*=2;}QUESTS.water.x=82;QUESTS.water.z=38;
 export const CAMPAIGN_REGIONS=Object.freeze(['wind','earth','wood','ice','light']);
-const firstLeaders=['water','fire','lightning'];
 const treatyDelivered=(save,id)=>save.campaign?.deliveries?.includes(id)===true;
-const regionArtsLearned=(save,id)=>save.mentors?.[id]===true;
 export function campaignStage(save) {
-  if(save.story&&save.story.stage!=='infiltrate')return 'opening';
-  if(!save.story?.peaceSeals?.includes('water'))return 'water';
-  if(!['fire','lightning'].every(id=>save.story?.peaceSeals?.includes(id)))return 'fire-lightning';
+  if(save.story?.stage!=='infiltrate')return 'opening';
+  if(!plotVillageComplete(save,'water'))return 'water';
+  if(!WAR_VILLAGES.every(id=>plotVillageComplete(save,id)))return 'fire-lightning';
   if(!save.campaign?.treatySigned)return 'treaty';
-  if(!CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.story?.peaceSeals?.includes(id)))return 'envoy';
-  return save.bosses?.dark?(save.story.peaceSeals.includes('dark')?'complete':'dark-report'):'dark';
+  if(!save.story.homecomingDone)return 'homecoming';
+  if(!ALLIANCE_VILLAGES.slice(0,-1).every(id=>plotVillageComplete(save,id)))return 'envoy';
+  if(!plotVillageComplete(save,'dark'))return 'dark';
+  return villageEventComplete(save,'nameless')?'complete':'invasion';
 }
 export function canTravel(save,target) {
   if(!village(target))return {allowed:false,reason:'Miền đất này không tồn tại trên địa đồ.'};
   if(target==='nameless'||target===save.village)return {allowed:true,reason:''};
-  if(save.story&&save.story.stage!=='infiltrate')return {allowed:false,reason:'Gặp mẹ, học thuật từ trưởng làng, giải cứu hộ vệ rồi trở về báo cáo trước khi rời quê nhà.'};
-  const previous=JOURNEY_ORDER.slice(0,JOURNEY_ORDER.indexOf(target)).find(id=>!save.story?.peaceSeals?.includes(id));
-  if(previous&&!save.visited?.includes(target)&&!save.story?.peaceSeals?.includes(target))return {allowed:false,reason:'Hoàn thành sứ mệnh hòa bình tại '+village(previous).name+' trước khi tới '+village(target).name+'.'};
-  if(target==='dark'){
-    const ready=save.campaign?.treatySigned&&CAMPAIGN_REGIONS.every(id=>treatyDelivered(save,id)&&save.story?.peaceSeals?.includes(id));
-    return {allowed:!!ready,reason:ready?'Hòa ước đã nối liền năm miền. Đã đến lúc đối mặt kẻ chủ mưu.':'Trao hòa ước và đánh bại thế lực canh giữ tại Phong, Thổ, Mộc, Băng, Quang trước khi tới Làng Ám.'};
-  }
-  if(FIRST_VILLAGES.includes(target))return {allowed:true,reason:''};
-  if(!save.campaign?.treatySigned)return {allowed:false,reason:'Thuyết phục thủ lĩnh Hỏa và Lôi, rồi trở về Làng Vô Danh để ba làng ký hòa ước.'};
+  if(save.story?.stage!=='infiltrate')return {allowed:false,reason:'Gặp mẹ, học thuật từ trưởng làng, giải cứu hộ vệ rồi trở về báo cáo trước khi rời quê nhà.'};
+  // Previously visited regions stay reachable so a migrated save can return to its next investigation.
+  if(save.visited?.includes(target))return {allowed:true,reason:''};
+  const index=PLOT_ORDER.indexOf(target),previous=PLOT_ORDER.slice(0,index).find(id=>!plotVillageComplete(save,id));
+  if(previous)return {allowed:false,reason:'Hoàn thành câu chuyện tại '+village(previous).name+' trước khi tới '+village(target).name+'.'};
+  if(!WAR_VILLAGES.includes(target)&&(!save.campaign?.treatySigned||!save.story.homecomingDone))return {allowed:false,reason:'Trở về Vô Danh ký đình chiến và gặp mẹ trước khi tiếp tục điều tra.'};
   return {allowed:true,reason:''};
 }
-export function canSignTreaty(save) {
-  return save.village==='nameless'&&!save.campaign?.treatySigned&&firstLeaders.every(id=>save.story?.peaceSeals?.includes(id));
-}
-export function signTreaty(save,document) {
-  if(!canSignTreaty(save))return false;
-  if(document&&!storeTreaty(save,'nameless',document))return false;
-  save.campaign??={treatySigned:false,deliveries:[]};
-  save.campaign.treatySigned=true;save.campaign.deliveries??=[];return true;
-}
-export function deliverTreaty(save,id) {
+export function canSignTreaty(save){return save.village==='nameless'&&!save.campaign?.treatySigned&&WAR_VILLAGES.every(id=>plotVillageComplete(save,id));}
+export function signTreaty(save,document){if(!canSignTreaty(save))return false;if(document&&!storeTreaty(save,'nameless',document))return false;save.campaign??={deliveries:[]};save.campaign.treatySigned=true;save.campaign.deliveries??=[];return true;}
+export function deliverTreaty(save,id){
+  // Copies can still be handed to envoys; alliance progress comes from each region's actual mission.
   if(!save.campaign?.treatySigned||save.village!==id||!CAMPAIGN_REGIONS.includes(id)||treatyDelivered(save,id))return false;
   save.campaign.deliveries??=[];save.campaign.deliveries.push(id);return true;
 }
-export function campaignObjective(save,{localOnly=false}={}) {
-  const lesson=id=>({title:`Học thuật tại ${village(id).name}`,description:REGIONS[id].mentor.clue,targetVillage:id,targetKind:'mentor'});
-  const challenge=id=>({title:`Đối mặt ${REGIONS[id].boss.name}`,description:`Tìm hộ vệ tại sân nhà họp của làng. Chiến thắng để nhận bí thuật và tiếp tục hành trình.`,targetVillage:id,targetKind:'boss'});
-  const infiltrate=id=>!save.bosses[id]&&!villageEventComplete(save,id)?villageEventObjective(save,id):save.bosses[id]?{title:'Thương lượng dấu ấn hòa bình',description:'Hộ vệ đã bị khuất phục. Gặp trưởng '+village(id).name+' để đối thoại và nhận dấu ấn hòa bình.',targetVillage:id,targetKind:'npc'}:{title:'Khuất phục hộ vệ '+village(id).name,description:'Thâm nhập làng, đánh bại cảnh vệ trên đường và đối mặt '+REGIONS[id].boss.name+'. Có thể tìm cao nhân và giúp cư dân để chuẩn bị.',targetVillage:id,targetKind:'boss'};
-  const villageObjective=id=>!save.bosses[id]&&villageEventComplete(save,id)?confrontationObjective(save,id):infiltrate(id);
-  if(localOnly){
-    const id=save.village;
-    if(id==='nameless'){
-      const opening=openingObjective(save);if(opening)return opening;
-      if(canSignTreaty(save))return campaignObjective(save);
-
-    }else{
-      const event=villageEventObjective(save);if(event)return event;
-      if(!save.bosses[id]||!save.story.peaceSeals.includes(id))return villageObjective(id);
-      if(!save.mentors[id])return lesson(id);
-    }
-    return {title:'Đã hoàn thành nhiệm vụ tại '+village(id).name,description:'Bạn có thể tiếp tục khám phá hoặc dịch chuyển tới làng khác để thử tuyến nhiệm vụ tại đó.',targetVillage:id,targetKind:'complete'};
-  }
-  const opening=openingObjective(save);if(opening)return opening;
-  const local=villageEventObjective(save);if(local&&(FIRST_VILLAGES.includes(save.village)||save.village==='dark'||treatyDelivered(save,save.village)||save.bosses[save.village]))return local;
-  if(save.village!=='nameless'&&!save.bosses[save.village]&&(FIRST_VILLAGES.includes(save.village)||save.village==='dark'||treatyDelivered(save,save.village))&&(!guardianOrdered(save)||nextGuardianGuard(save)))return confrontationObjective(save,save.village);
+export function campaignObjective(save,{localOnly=false}={}){
+  const opening=openingObjective(save);if(opening&&!localOnly)return opening;
   const stage=campaignStage(save);
-  if(stage==='water'||stage==='fire-lightning'){
-    const id=FIRST_VILLAGES.includes(save.village)&&!save.story.peaceSeals.includes(save.village)?save.village:FIRST_VILLAGES.find(id=>!save.story.peaceSeals.includes(id));return villageObjective(id);
-  }
-  if(stage==='treaty')return {title:'Ba làng ký hòa ước',description:'Hải Châu, Xích Nham và Chấn Thiên đang chờ ở Làng Vô Danh. Trở về dự lễ ký kết và nhận hòa ước để mang tới năm miền.',targetVillage:'nameless',targetKind:'treaty'};
-  if(stage==='envoy'){
-    const unfinished=id=>!treatyDelivered(save,id)||!save.story.peaceSeals.includes(id);
-    const id=CAMPAIGN_REGIONS.includes(save.village)&&unfinished(save.village)?save.village:CAMPAIGN_REGIONS.find(unfinished);
-    if(!treatyDelivered(save,id))return {title:`Trao hòa ước cho ${village(id).name}`,description:'Mang bản hòa ước đã ký tới sứ giả thường trú, giúp người dân chống các thế lực phá ấn và học nghệ thuật của miền đất này.',targetVillage:id,targetKind:'envoy'};
-    return villageObjective(id);
-  }
-  if(stage==='dark-report')return {title:'Báo tin và ký cam kết với Làng Ám',description:'Vô Nguyệt đã thất bại. Gặp trưởng Làng Ám để báo chiến thắng, ký kết và đóng dấu hòa bình cuối cùng.',targetVillage:'dark',targetKind:'npc'};
-  if(stage==='dark')return regionArtsLearned(save,'dark')?villageObjective('dark'):lesson('dark');
-  return {title:'Hòa ước của chín miền',description:'Vô Nguyệt đã thất bại. Chín làng nối lại thủy lộ và đường núi; những người thầy vẫn chờ bạn trên hành trình tự do.',targetVillage:'nameless',targetKind:'complete'};
+  if(!localOnly&&stage==='treaty')return {title:'Ba cường quốc đình chiến',description:'Đưa đại diện Thủy, Hỏa và Lôi trở về Vô Danh để ký cam kết rút quân.',targetVillage:'nameless',targetKind:'treaty'};
+  if(!localOnly&&stage==='homecoming')return {title:'Lời hứa đầu tiên với mẹ',description:'Trở về nghĩa trang gặp mẹ cùng Hạ Ly. Từ đây, ký ức tương lai không còn chỉ sẵn đường đi.',targetVillage:'nameless',targetKind:'lore',targetId:'nameless-resident-war-cemetery'};
+  if(!localOnly&&stage==='complete')return {title:'Chiến đấu cùng thế giới',description:'Liên quân đã giữ được phong ấn. Một tương lai khác được lựa chọn cùng nhau; bạn có thể tiếp tục khám phá.',targetVillage:'nameless',targetKind:'complete'};
+  const id=localOnly?save.village:stage==='invasion'?'nameless':nextPlotVillage(save);
+  const event=villageEventObjective(save,id);if(event)return event;
+  if(WAR_VILLAGES.includes(id))return save.bosses[id]?{title:'Cam kết rút quân khỏi Vô Danh',description:'Gặp trưởng làng để thương lượng đình chiến sau cuộc thách đấu.',targetVillage:id,targetKind:'npc'}:confrontationObjective(save,id);
+  if(ALLIANCE_VILLAGES.includes(id)&&!save.story.alliances?.includes(id))return {title:id==='dark'?'Sự thật từ Vô Nguyệt':'Vai trò của '+village(id).name+' trong liên minh',description:'Mang kết quả điều tra tới trưởng làng. Hợp tác bằng hành động thay cho một cuộc thách đấu.',targetVillage:id,targetKind:'npc'};
+  return {title:'Tiếp tục hành trình',description:'Gặp cư dân, học thuật và khám phá những miền đất đã được giải phóng.',targetVillage:save.village,targetKind:'complete'};
 }
 
 export const INTERACTION_RANGE = 3;
@@ -221,7 +189,7 @@ export function resolveBattle(save,encounter,victory) {
     if(advanceVillageEvent(save,encounter.village,encounter.eventStep,{victory:true}).ok)save.wins++;
   }
   else if(victory&&encounter.kind==='intro-trio'){
-    if(save.story.stage==='guardian'){save.story.stage='report';save.story.guardianRestored=true;save.bosses.nameless=true;save.gold+=120;save.xp+=140;save.wins++;for(const reward of combatExperienceRewards({...encounter,squad:encounter.squad||INTRO_SQUAD},120))gainExperience(save.progression,reward.element,reward.xp);}
+    if(save.story.stage==='guardian'){save.story.stage='report';save.story.guardianRestored=true;save.story.sealCore=true;if(!save.story.questItems.includes('nameless:seal-core'))save.story.questItems.push('nameless:seal-core');save.bosses.nameless=true;save.gold+=120;save.xp+=140;save.wins++;for(const reward of combatExperienceRewards({...encounter,squad:encounter.squad||INTRO_SQUAD},120))gainExperience(save.progression,reward.element,reward.xp);}
   }
   else if(victory&&encounter.kind==='village-guard'){
     const guards=encounter.guardIds||[encounter.guardId],fresh=guards.filter(id=>!save.story.defeatedGuards.includes(id));

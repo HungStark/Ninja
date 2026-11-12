@@ -8,7 +8,7 @@
 - Gương dùng độ bền hiện tại và phản từ mặt trước; tinh linh cần hoàn thành tạo hình, còn thời gian và đón đòn từ phía trước. Tường thường vẫn chặn cú lao.
 - Chín thương hội nguyên tố bán hai áo và hai găng: thường 5%, tinh anh 10%, chỉ áp dụng hệ của làng. Áo giảm sát thương nhận vào; găng tăng sát thương thuật gây ra, không tăng phi tiêu. Vô Danh bán một áo và một găng, mỗi món có chỉ số 2% Hỏa/Thủy/Lôi theo công dụng tương ứng.
 - ID đồ cũ vẫn đọc và trang bị được. Các mẫu cũ không còn bán được chuẩn hóa chỉ số theo hệ/cấp tương ứng; không xóa món đã mua.
-- Đi/chạy và tự đi phiêu lưu tăng 1,5 lần. Di chuyển thường của địch chính, địch trong nhóm và linh thú ở chế độ nhìn từ trên tăng 1,3 lần.
+- Phiêu lưu: đi thường và tự đi 6 m/s, chạy 10 m/s, đi lùi 5 m/s; đi chéo được chuẩn hóa để không nhanh hơn. Cảnh vệ ngoài bản đồ truy đuổi 8 m/s. Hạ Ly tự theo tốc độ người chơi. Di chuyển thường của địch chính, địch trong nhóm và linh thú ở chế độ nhìn từ trên tăng 1,3 lần.
 - Ninja địch dùng lướt 5 m khi dự đoán đòn sắp trúng, hồi 10 giây riêng mỗi địch; tôn trọng biên sân, vật cản, làm chậm, khống chế và vùng cấm lướt. Đang kết ấn sẽ không bắt đầu lướt. Hồi chiêu/lướt của người chơi giữ mức hiện tại.
 
 ## Kiểm tra

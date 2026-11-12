@@ -1,4 +1,5 @@
 import {SYSTEMS,regionElement} from './progression.js';
+import {plotHostile} from './campaign-plot.js';
 
 // The victim determines combat XP, regardless of the attacker's art or equipment.
 export function combatExperienceElement(encounter,victimId='primary'){
@@ -12,4 +13,4 @@ export function combatExperienceRewards(encounter,amount){
   for(const opponent of opponents){const element=combatExperienceElement(opponent);if(element)totals.set(element,(totals.get(element)||0)+amount/opponents.length);}
   return [...totals].map(([element,xp])=>({element,xp}));
 }
-export function requiresGuardBattle(save,encounter){return encounter?.kind==='village-guard'&&save.village!=='nameless'&&!save.story?.peaceSeals?.includes(encounter.village);}
+export function requiresGuardBattle(save,encounter){return encounter?.kind==='village-guard'&&plotHostile(save,encounter.village);}

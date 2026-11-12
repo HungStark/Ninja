@@ -5,7 +5,7 @@ import {DarkDomain} from '../src/dark-domain.js';
 import {LightArts} from '../src/light-arts.js';
 import {WindArts} from '../src/wind-arts.js';
 import {createEnemyMovement,ENEMY_DASH_COOLDOWN} from '../src/enemy-movement.js';
-import {ENEMY_MOVE_MULTIPLIER,ADVENTURE_MOVE_MULTIPLIER} from '../src/game-pace.js';
+import {ENEMY_MOVE_MULTIPLIER,ADVENTURE_WALK_SPEED,ADVENTURE_RUN_SPEED,ADVENTURE_BACKWARD_SPEED} from '../src/game-pace.js';
 import {ARMORS,ARM_GUARDS,shopStock,readEquipment,newEquipment,damageMultiplierFor} from '../src/equipment.js';
 import {resistanceText,bonusText} from '../src/equipment-ui.js';
 const {Fighter,spells,intersectFireWall}=SealGameCore,spell=id=>spells.find(s=>s.id===id),close=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
@@ -21,7 +21,7 @@ for(const village of ['nameless','water','fire','lightning','earth','wind','wood
 }
 const old={...newEquipment(),armor:'water-elite-focus',armguard:'fire-bracers-elite-triad',ownedArmor:['water-elite-focus'],ownedArmguards:['fire-bracers-elite-triad']};assert.equal(readEquipment(old).armor,old.armor);assert.equal(readEquipment(old).armguard,old.armguard);assert.ok(ARMORS.find(i=>i.id===old.armor).legacy);assert.ok(ARM_GUARDS.find(i=>i.id===old.armguard).legacy);assert.ok(!shopStock('water').some(i=>i.id===old.armor));
 
-assert.equal(ADVENTURE_MOVE_MULTIPLIER,1.5);assert.equal(ENEMY_MOVE_MULTIPLIER,1.3);assert.equal(ENEMY_DASH_COOLDOWN,10);
+assert.equal(ADVENTURE_WALK_SPEED,6);assert.equal(ADVENTURE_RUN_SPEED,10);assert.equal(ADVENTURE_BACKWARD_SPEED,5);assert.equal(ENEMY_MOVE_MULTIPLIER,1.3);assert.equal(ENEMY_DASH_COOLDOWN,10);
 const move=createEnemyMovement(()=>.75);close(move.update(1,{position:[0,1.72,-24]})[0],1.3);move.reset();const free=move.update(1,{position:[0,1.72,-24],bounds:{minX:-100,maxX:100,minZ:-100,maxZ:100},moveSpeed:2});close(Math.hypot(free[0],free[2]+24),2.6);
 const incoming={owner:'player',p:[0,1.72,-20],v:[0,0,-25],life:10,size:.2};move.reset();let p=move.update(1/60,{position:[0,1.72,-24],shots:[incoming]});assert.equal(move.state().dashBoost.uses,1);close(move.state().dashBoost.cooldown,10);assert.ok(move.state().dashBoost.dashing>0);
 for(let i=0;i<60;i++)p=move.update(1/60,{position:p,shots:[incoming]});assert.equal(move.state().dashBoost.uses,1);close(move.state().dashBoost.cooldown,9);
@@ -48,4 +48,4 @@ function reflection(kind,{reverse=false,forming=false,expired=false,weak=false,d
 }
 for(const kind of ['light','wind']){reflection(kind);reflection(kind,{reverse:true});reflection(kind,{expired:true});reflection(kind,{bull:true});reflection(kind,{domainActive:true});}
 reflection('light',{weak:true});reflection('wind',{forming:true});
-console.log('PASS: exact regional shop tiers/percentages, old ownership, defense/offense math, 1.5x adventure/1.3x enemy speeds, 10s enemy dash/control/reset, real mirror/spirit dog+bull return damage, side/expiry/formation/durability and domain respawn.');
+console.log('PASS: exact regional shop tiers/percentages, old ownership, defense/offense math, adventure 6/10/5m/s and 1.3x enemy speeds, 10s enemy dash/control/reset, real mirror/spirit dog+bull return damage, side/expiry/formation/durability and domain respawn.');

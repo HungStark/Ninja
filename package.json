@@ -77,7 +77,7 @@
     "test:armguards": "node tests/armguards-core.mjs && node tests/armguards-browser.cjs",
     "test:dash": "node tests/dash-boost.mjs && node tests/enemy-movement-core.mjs && node tests/enemy-balance-core.mjs && node tests/dash-boost-browser.cjs && node tests/enemy-balance-browser.cjs",
     "test:residents": "node tests/residents-core.mjs && node tests/residents-browser.cjs",
-    "test:story": "node tests/journey-story-core.mjs && node tests/campaign-core.mjs && node tests/journey-story-browser.cjs && node tests/journey-encounters-browser.cjs",
+    "test:story": "npm run test:campaign-rewrite",
     "test:ambush": "node tests/guard-ambush-core.mjs && node tests/guard-reinforcements-core.mjs && node tests/guard-ambush-browser.cjs",
     "test:presentation": "node tests/presentation-core.mjs && node tests/presentation-browser.cjs",
     "test:spell-presentation": "node tests/spell-presentation-core.mjs && node tests/spell-presentation-browser.cjs",
@@ -134,7 +134,8 @@
     "test:clinic-revision": "node tests/character-damage-feedback-core.mjs && node tests/village-civic-core.mjs && node tests/clinic-revision-browser.cjs",
     "test:water-network": "node tests/water-network-core.mjs && node tests/water-network-browser.cjs",
     "test:mobile-combat-revision": "node tests/mobile-combat-revision-core.mjs && node tests/armguards-core.mjs && node tests/enemy-movement-core.mjs && node tests/dash-boost.mjs && node tests/shadow-charge-core.mjs && node tests/guardian-moba-core.mjs && node tools/build-android.mjs && node tests/mobile-combat-revision-browser.cjs",
-    "test:village-main-story": "node tests/campaign-core.mjs && node tests/village-events-core.mjs && node tests/village-peace-revision-core.mjs && node tools/build-android.mjs && node tests/village-main-story-browser.cjs && node tests/village-peace-revision-browser.cjs"
+    "test:village-main-story": "npm run test:campaign-rewrite",
+    "test:campaign-rewrite": "node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tools/build-android.mjs && node tests/campaign-rewrite-browser.cjs && node tests/campaign-presentation-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

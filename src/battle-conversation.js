@@ -1,4 +1,4 @@
-import {heroSpeaker} from './adventure-dialogue.js';
+import {heroSpeaker,campaignLines} from './adventure-dialogue.js';
 import {encounterAppearance} from './encounter-appearance.js';
 import {ninjaProfile} from './ninja.js';
 import {village} from './adventure-data.js';
@@ -9,14 +9,13 @@ import {villagerAppearance} from './villager-appearance.js';
 export function battleConversation(encounter,save){
   const hero=heroSpeaker(save),lines=[],say=(speaker,text)=>lines.push({speaker,text});
   const opponent=(entry=encounter,index=0)=>{const look=encounterAppearance({...encounter,...entry});return {id:'challenge-'+look.id+'-'+index,name:entry.name||encounter.name,role:village(look.village||look.id).name,appearance:look.kind==='creature'?look:ninjaProfile(look)};};
-  const enemy=encounter.possessedChief?{id:'possessed-chief-'+encounter.village,name:'Trưởng '+village(encounter.village).name,role:village(encounter.village).name,appearance:villagerAppearance(encounter.village,{kind:'chief'})}:opponent();
+  const enemy=encounter.kind==='boss'?{id:'chief-'+encounter.village,name:encounter.name,role:village(encounter.village).name,appearance:villagerAppearance(encounter.village,{kind:'chief'})}:opponent();
   if(encounter.kind==='guardian-order'){
     const beast=opponent({kind:'boss',guardianForm:'beast'});
-    say(beast,'Đứng lại! Kẻ lạ mặt nào lại dám đột nhập vào đây?');
-    say(hero,'Tôi đến từ Làng Vô Danh. Chiến tranh đã cướp đi người thân của tôi. Tôi muốn gặp trưởng làng để bàn chuyện hòa bình, không phải để gây hại.');
-    say(beast,'Những lời ngon ngọt đó không lừa được ta. Hai hộ vệ đâu! Bắt kẻ đột nhập này lại! Tả vệ, hữu vệ cùng tiến lên!');
-    say(hero,'Xin hãy nghe tôi giải thích! Tôi không muốn phải giao chiến với các người.');
-    say(beast,'Nếu còn sống sót, tới phòng họp mà nói tiếp. Ta sẽ nhập vào trưởng làng và đích thân chờ ngươi ở đó!');
+    say(beast,'Trưởng làng đã nhận lời thách đấu. Hai hộ vệ sẽ cùng kiểm tra bản lĩnh của ngươi trước khi ngươi bước vào phòng họp.');
+    say(hero,'Ta đã mang chứng cứ và cứu những người gặp nạn. Giờ ta sẽ giữ lời hứa với Làng Vô Danh.');
+    say(beast,'Tả vệ, hữu vệ, cùng tiến lên. Đây là cuộc so tài; dừng tay khi đối phương nhận thua.');
+    say(hero,'Ta đã sẵn sàng.');
   }else if(encounter.kind==='intro-trio'){
     const foes=encounter.squad.map(opponent);
     say(hero,'Các người dừng lại đi! Đây là làng của tôi, không phải nơi để các người thanh toán lẫn nhau!');
@@ -32,7 +31,6 @@ export function battleConversation(encounter,save){
     say(enemy,'Đừng giữ sức. Nếu không trụ nổi, cứ nhận thua!');
     say(hero,'Tôi sẽ chiến đấu hết mình. Xin chỉ giáo!');
   }else if(encounter.kind==='boss'){
-    if(encounter.possessedChief)say(enemy,'Không ngờ ngươi đánh bại được hai hộ vệ của ta. Chúng đều là tinh nhuệ!');
     say(hero,'Tôi đến để chấm dứt chiến tranh giữa các làng. Xin hãy nghe tôi nói.');
     say(enemy,'Một kẻ lữ hành mà đòi quyết định vận mệnh của '+enemy.role+' sao? Lời nói của ngươi có sức nặng gì?');
     say(hero,'Tôi không muốn thêm ai bị thương. Nhưng nếu phải vượt qua ông để bảo vệ họ, tôi sẽ không lùi bước.');
@@ -44,6 +42,15 @@ export function battleConversation(encounter,save){
     say(enemy,'Ta không tin những lời hứa suông. Chịu thua đi, hoặc cho ta thấy bản lĩnh của ngươi!');
     say(hero,'Nếu không thể thuyết phục bằng lời nói, tôi sẽ chứng minh bằng hành động.');
   }else if(encounter.kind==='village-event'){
+    const scripts={
+      'water-base':[['hero','Thả những ninja đang bị rút chakra ra! Ta sẽ phá thiết bị này.'],['guide','Nguồn năng lượng phải tiếp tục chạy. Không ai được bước tới tinh thể!']],
+      'fire-general':[['haly','Quân lệnh giả và mật mã đều dẫn tới ngươi. Lần này, ngươi sẽ không thể bịt miệng nhân chứng.'],['guide','Ta đã giam được ngươi một lần. Đừng tưởng kẻ ngoài làng này sẽ cứu được ngươi mãi.'],['haly','Ta tự đến để bắt ngươi chịu trách nhiệm.']],
+      'wind-courier':[['haly','Những bức thư đã bị thay nội dung. Ngươi đang làm các làng tin rằng hòa ước đã bị phá vỡ.'],['guide','Tin tức thuộc về kẻ kiểm soát được đường đi của nó.'],['hero','Chúng ta sẽ mang sự thật trở lại.']],
+      'wind-eagle':[['haly','Phong ấn đang khống chế Phong Ưng. Đừng làm nó bị thương quá nặng!'],['hero','Mảnh lõi đã tìm ra điểm bất thường. Ta sẽ phá ấn để giải thoát nó.']],
+      'earth-base':[['haly','Khoáng thạch này hấp thụ cả chakra lẫn ma lực. Các ngươi định chế tạo thứ vũ khí gì?'],['guide','Những chuyến hàng đã rời đi. Các ngươi đến quá muộn!'],['hero','Nhưng chúng ta vẫn có thể cứu những người bị giữ ở đây.']],
+      'gatekeeper':[['gatekeeper','Các ngươi vẫn có thể quay lưng với nhau như lần trước.'],['haly','Liên minh đã ở đây. Lần này chúng ta cùng giữ phong ấn.'],['hero','Ta sẽ chiến đấu cùng thế giới.']]
+    };
+    if(scripts[encounter.storyBattle])return campaignLines(scripts[encounter.storyBattle],save,encounter.village);
     const protecting=encounter.village==='fire';
     say(hero,protecting?'Mở cửa nhà lao và thả Hạ Ly ra! Cô ấy đã bị thương. Tôi đã hứa với mẹ cô ấy sẽ đưa cô ấy trở về.':'Ta đã lần ra dấu vết của ngươi. Đừng tiếp tục che giấu sự thật sau màn sương này.');
     say(enemy,protecting?'Muốn lấy chìa khóa ư? Đánh bại chúng ta trước đã. Không ai được đưa tù nhân ra khỏi đây!':'Ngươi biết quá nhiều rồi. Đừng mong rời khỏi đây để kể lại chuyện này.');

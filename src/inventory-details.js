@@ -32,8 +32,8 @@ export function inventoryItemDetails(save,kind,id){
   }else if(kind==='quest'){
     if(!save.story.questItems.includes(id))return null;
     const q=Object.keys(REGIONS).flatMap(v=>villageSidequests(v)).find(q=>q.id===id);
-    title=id==='fire:hong-lien'?'Hồng Liên':id==='fire:lotus-medicine'?'Thuốc Hồng Liên':q?.targetName||id;
-    description=id==='fire:hong-lien'?'Mang Hồng Liên tới Y nữ Đan để điều chế thuốc cứu Hạ Ly.':id==='fire:lotus-medicine'?'Thuốc đã điều chế. Mang tới chữa thương cho Hạ Ly trong nhà lao.':q?.description||'Vật phẩm nhiệm vụ. Mang về cho người nhờ giúp để nhận thưởng.';
+    title=id==='nameless:seal-core'?'Mảnh lõi ấn Vô Danh':id==='fire:hong-lien'?'Hồng Liên':id==='fire:lotus-medicine'?'Thuốc Hồng Liên':q?.targetName||id;
+    description=id==='nameless:seal-core'?'Vô Danh Thú trao sau khi được cứu. Cộng hưởng với phong ấn bất thường; dùng tại các dấu vết trong tuyến truyện chính để phát hiện ma lực.':id==='fire:hong-lien'?'Mang Hồng Liên tới Y nữ Đan để điều chế thuốc cứu Hạ Ly.':id==='fire:lotus-medicine'?'Thuốc đã điều chế. Mang tới chữa thương cho Hạ Ly trong nhà lao.':q?.description||'Vật phẩm nhiệm vụ. Mang về cho người nhờ giúp để nhận thưởng.';
     stats=q?['Người giao việc: '+q.giverName]:[];visual='<span class="inventory-item-symbol">'+(id==='fire:hong-lien'?'✿':id==='fire:lotus-medicine'?'⚱':'▣')+'</span>';
   }else return null;
   const compare=current?`<aside class="inventory-item-current"><small>Đang sử dụng</small><strong>${esc(current.name)}</strong><p>${esc(kind==='armor'?resistanceText(current):bonusText(current))}</p></aside>`:'';

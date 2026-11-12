@@ -356,3 +356,6 @@ body[data-journey=opening] #journeyToast{display:none}
 
 body[data-journey=village-map] #startScreen,body[data-journey=treatment] #startScreen{display:none!important}
 body[data-journey=treatment] #worldLabels{visibility:hidden}
+.journey-opening.past-life{background:radial-gradient(ellipse at 50% 30%,#553b38 0%,#211820 65%,#08090e 100%)}
+.journey-opening.past-life:before{content:"";position:absolute;inset:20% 0 10%;height:auto;background:linear-gradient(148deg,transparent 48%,#9a693b22 49%,transparent 51%),linear-gradient(24deg,transparent 47%,#79554133 48%,transparent 50%);clip-path:polygon(0 68%,10% 54%,14% 65%,18% 32%,22% 34%,27% 70%,35% 54%,39% 77%,47% 61%,52% 15%,56% 18%,60% 70%,69% 63%,74% 38%,78% 41%,84% 73%,93% 60%,100% 70%,100% 100%,0 100%);background-color:#11131a;pointer-events:none}
+.journey-opening.past-life .opening-subtitle{z-index:1;opacity:1}

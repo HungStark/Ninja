@@ -1,0 +1,31 @@
+﻿const assert=require('node:assert/strict'),fs=require('node:fs/promises'),{spawn}=require('node:child_process'),{build}=require('esbuild'),{chromium}=require('playwright');
+(async()=>{
+  const {campaignFixtures}=await import('./campaign-fixtures.mjs'),fixtures=campaignFixtures();
+  const bundle=await build({entryPoints:['src/main.js'],bundle:true,write:false,format:'iife',plugins:[{name:'campaign-inspect',setup(b){b.onLoad({filter:/[/\\]src[/\\]adventure\.js$/},async({path})=>({contents:(await fs.readFile(path,'utf8')).replace('const world=createAdventureScene();','const world=window.__storyWorld=createAdventureScene();'),loader:'js'}));}}]});
+  const server=spawn(process.execPath,['server.cjs'],{env:{...process.env,PORT:'4389'},windowsHide:true,stdio:['ignore','pipe','pipe']}),out='test-results/campaign-rewrite';await fs.mkdir(out,{recursive:true});let browser,page,checkpoint='load';const errors=[];
+  try{
+    await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);});
+    browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(60000);page.on('pageerror',e=>errors.push(e.stack));
+    await page.route('**/game.js',r=>r.fulfill({contentType:'text/javascript',body:bundle.outputFiles[0].text}));
+    await page.addInitScript(()=>{const pending=sessionStorage.getItem('campaign-pending');if(pending){localStorage.setItem('anhoa-adventure-v1',pending);sessionStorage.removeItem('campaign-pending');}});
+    const state=()=>page.evaluate(()=>__AN_HOA__.adventure()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t);
+    const load=async key=>{checkpoint=key;console.log('CHECK '+key);await page.evaluate(s=>sessionStorage.setItem('campaign-pending',JSON.stringify(s)),fixtures[key]);await page.goto('http://127.0.0.1:4389/?test=1&adventure=1');await page.waitForFunction(()=>document.body.dataset.ready==='true');await page.locator('#continueJourney').click();await page.waitForFunction(()=>!__AN_HOA__.adventure().loading);await page.evaluate(()=>{__AN_HOA__.explore.setRandom(false);__AN_HOA__.audio.configure({readDialogue:false});__storyWorld.advanceGuards=()=>[];__storyWorld.caughtGuard=()=>null;});};
+    const finish=async()=>{for(let i=0;i<45;i++){const d=(await state()).dialogue;if(!d.active||d.complete)return;await page.locator('#dialogNext').click();}throw Error('Incomplete dialogue');};
+    const event=async()=>{await page.evaluate(()=>{const w=__storyWorld,i=w.interactives.find(i=>i.kind==='village-event');if(!i)throw Error('Missing event');w.hero.root.position.set(i.x,i.y??w.heightAt(i.x,i.z),i.z);__AN_HOA__.explore.interact('village-event');});await finish();};
+    const action=()=>page.locator('#dialogActions button').first().click();
+    await page.goto('http://127.0.0.1:4389/?test=1');
+    for(const key of ['water:5','wood:1','ice:2','light:3','dark:1','dark:2','nameless:1']){
+      await load(key);await event();assert.equal((await state()).phase,'dialog');
+      if(key==='wood:1'||key==='ice:2'||key==='dark:1'){await page.locator('[data-event-choice="1"]').click();assert.equal((await state()).save.story.villageEvents[key.split(':')[0]],Number(key.split(':')[1]));await action();await finish();}
+      if(key==='nameless:1'){const names=await page.evaluate(()=>{const a=[];__storyWorld.scene.traverse(o=>{if(o.name?.startsWith('coalition-'))a.push(o.name);});return a;});assert.equal(names.length,9);await page.screenshot({path:out+'/coalition-dialogue.png'});}
+      await action();const s=await state();assert.equal(s.save.story.villageEvents[key.split(':')[0]],Number(key.split(':')[1])+1);
+      if(key==='light:3')assert.equal(s.save.story.companion.phase,'separated');
+      if(key==='dark:2')assert.equal(s.save.story.companion.phase,'with-party');
+    }
+    await load('wind:3');await event();await action();await finish();await action();await advance(.01);await page.locator('#startButton').click();await page.waitForFunction(()=>__AN_HOA__.state().started);await advance(4);let combat=await page.evaluate(()=>__AN_HOA__.state());assert.equal(combat.enemyAppearance.kind,'creature');assert.ok(combat.campaignAlly.active);await page.screenshot({path:out+'/wind-eagle.png'});
+    await load('nameless:2');await event();await action();await finish();await action();await advance(.01);await page.locator('#startButton').click();await page.waitForFunction(()=>__AN_HOA__.state().started);await advance(4);combat=await page.evaluate(()=>__AN_HOA__.state());assert.ok(combat.campaignAlly.active);assert.equal(combat.squad.length,2);assert.ok(combat.guardianAlly.active||combat.guardianAlly.visible);await page.evaluate(()=>{__AN_HOA__.setHealth('player',30);});await advance(.1);combat=await page.evaluate(()=>__AN_HOA__.state());assert.ok(combat.campaignAlly.rescued);assert.ok(combat.shield>0);await page.screenshot({path:out+'/final-battle.png'});
+    await page.evaluate(()=>{__AN_HOA__.setHealth('primary',0);for(const a of __AN_HOA__.state().squad)__AN_HOA__.setHealth(a.id,0);});await advance(1);await page.waitForFunction(()=>__AN_HOA__.state().won);await page.locator('#nextButton').click();await page.waitForFunction(()=>!__AN_HOA__.adventure().loading);assert.equal((await state()).save.story.villageEvents.nameless,3);
+    await load('nameless:3');await event();await action();assert.equal((await state()).save.story.villageEvents.nameless,4);assert.match(await page.locator('#campaignSummary').innerText(),/Chiến đấu cùng thế giới/);await page.screenshot({path:out+'/complete.png'});assert.deepEqual(errors,[]);console.log('PASS: actual dialogue choices, seal sensing, separation/reunion, nine-village rally, Wind beast battle, final squad, Hạ Ly rescue, victory and ending.');
+  }catch(error){await page?.screenshot({path:out+'/failure.png'}).catch(()=>{});await fs.writeFile(out+'/failure.json',JSON.stringify({checkpoint,message:error.message,errors,state:await page?.evaluate(()=>__AN_HOA__?.adventure()).catch(()=>null)},null,2));throw error;}finally{await browser?.close();server.kill();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
+

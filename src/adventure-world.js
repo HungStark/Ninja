@@ -216,7 +216,7 @@ const leaders={
   water:{name:'Thủy Ảnh Hải Châu',title:'Thủ lĩnh Làng Thủy',story:'Hải Châu thử thách người mang thủy thuật và gọi Thủy Long làm hộ vệ. Thắng cuộc đấu này, bạn sẽ nhận lời cam kết đầu tiên cho hòa ước.'},
   fire:{name:'Hỏa Ảnh Xích Nham',title:'Thủ lĩnh Làng Hỏa',story:'Xích Nham cùng Cửu Viêm Hồ bảo vệ danh dự Hỏa làng. Chỉ khi vượt qua cuộc thử sức, bạn mới thuyết phục được ông trở về Vô Danh bàn việc hòa bình.'},
   lightning:{name:'Lôi Ảnh Chấn Thiên',title:'Thủ lĩnh Làng Lôi',story:'Chấn Thiên đứng bên Lôi Thần Lang trên đỉnh giông. Chiến thắng là lời chứng cho ý chí liên minh của bạn trước hội đồng Lôi làng.'},
-  dark:{name:'Ám Ảnh Vô Nguyệt',title:'Thủ lĩnh Làng Ám · Kẻ chủ mưu',story:'Vô Nguyệt đứng sau những vụ phá ấn và chia rẽ các làng. U Minh Lang là hộ vệ cuối cùng của hắn. Mang hòa ước đã trao khắp năm miền tới đây để khép lại âm mưu.'}
+  dark:{name:'Ám Ảnh Vô Nguyệt',title:'Thủ lĩnh Làng Ám · Người giữ hồ sơ phong ấn',story:'Vô Nguyệt biết về thế giới phép thuật và sự xâm nhập của tổ chức trăng khuyết vào Hội đồng Ninja. Những dấu vết dẫn tới Làng Ám đã bị sắp đặt để che giấu Kẻ Mở Cổng.'}
 };
 for(const [id,leader] of Object.entries(leaders)){
   const boss=REGIONS[id].boss;boss.guardian=boss.name;Object.assign(boss,leader);

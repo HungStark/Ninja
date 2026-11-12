@@ -20,7 +20,7 @@ for(const disguise of ['stump','bush','rock']){
  hero.z=9.9;assert.ok(guard.update(.05,{hero}));smoke.update(.05);assert.equal(guard.state().phase,'revealing');assert.equal(smoke.state().color,'#ffffff');assert.equal(smoke.state().active.length,1);assert.equal(char.root.visible,false);
  guard.update(.16,{hero});assert.equal(char.root.visible,true);assert.equal(guard.disguise.visible,false);assert.equal(physics.overlaps(0,0,0,2.85,.36),false);
  const origin={...guard.state().home};for(let i=0;i<150&&!guard.caught();i++){guard.update(.02,{hero});smoke.update(.02);const p=char.root.position;assert.equal(nav(p.x,p.z),false,'pursuit cannot cross the obstacle');}
- assert.ok(guard.caught());assert.ok(Math.hypot(char.root.position.x-origin.x,char.root.position.z-origin.z)>5);assert.equal(smoke.state().active.length,0);assert.equal(smoke.state().bursts,1);assert.equal(guard.state().alertRadius,10);assert.equal(guard.state().runSpeed,5.8);guard.dismiss();assert.equal(guard.caught(),false);assert.equal(guard.state().phase,'withdrawn');
+ assert.ok(guard.caught());assert.ok(Math.hypot(char.root.position.x-origin.x,char.root.position.z-origin.z)>5);assert.equal(smoke.state().active.length,0);assert.equal(smoke.state().bursts,1);assert.equal(guard.state().alertRadius,10);assert.equal(guard.state().runSpeed,8);guard.dismiss();assert.equal(guard.caught(),false);assert.equal(guard.state().phase,'withdrawn');
 }
 
 const save=newJourney();promiseMother(save);chooseStarter(save,'water-barrier');save.story.stage='infiltrate';save.village='fire';
@@ -37,8 +37,8 @@ for(const id of Object.keys(REGIONS))for(const q of villageSidequests(id)){
 
 globalThis.innerWidth=1200;globalThis.innerHeight=800;const world=createAdventureScene();
 for(const id of Object.keys(REGIONS)){
- const s=newJourney();s.village=id;s.position=[0,7];world.load(id,s);const guards=world.guardsState();assert.equal(guards.length,id==='nameless'?0:10);
- for(const g of guards){const standing=g.guardRole==='guardian';assert.equal(g.phase,standing?'guarding':'hidden');assert.equal(g.ninjaVisible,standing);assert.equal(g.disguiseVisible,!standing);assert.equal(g.revealed,standing);assert.equal(g.alertRadius,10);if(!standing)assert.ok(world.solids.some(s=>s.name==='guard-disguise'&&s.x===g.x&&s.z===g.z));}
+ const s=newJourney();s.village=id;s.position=[0,7];world.load(id,s);const guards=world.guardsState();assert.equal(guards.length,id==='nameless'?0:12);
+ for(const g of guards){const standing=['guardian','gate','jailer'].includes(g.guardRole);assert.equal(g.phase,standing?'guarding':'hidden');assert.equal(g.ninjaVisible,standing);assert.equal(g.disguiseVisible,!standing);assert.equal(g.revealed,standing);assert.equal(g.alertRadius,10);if(!standing)assert.ok(world.solids.some(s=>s.name==='guard-disguise'&&s.x===g.x&&s.z===g.z));}
  if(guards.length)assert.deepEqual(new Set(guards.filter(g=>g.guardRole==='hidden').map(g=>g.disguise)),new Set(['stump','bush','rock']));
 }
-console.log('PASS: all three solid disguises, 10m detection, white smoke before human reveal, collider removal, obstacle-aware 5.8m/s pursuit, contact and peace-seal retreat policy; per-opponent/squad XP; Nameless gold-only quests and regional skill books; hidden guards in all nine villages.');
+console.log('PASS: all three solid disguises, 10m detection, white smoke before human reveal, collider removal, obstacle-aware 8m/s pursuit, contact and peace-seal retreat policy; per-opponent/squad XP; Nameless gold-only quests and regional skill books; hidden guards in all nine villages.');
