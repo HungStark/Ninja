@@ -1,3 +1,4 @@
+import {queryWaterway,waterLandSector} from './water-network.js';
 import {levelVillageTerrain} from './village-zoning.js';
 import {GUARDIAN_FORMS} from './guardian-beasts.js';
 // Authored places, people and terrain. Base coordinates expand per region below.
@@ -263,8 +264,8 @@ export const LANDSCAPES={
 };
 function baseRiverAt(id,z){const r=LANDSCAPES[id]?.river;if(!r)return null;return {x:r[0]+Math.sin(z*r[2]+r[3])*r[1],width:r[4]*(1+.1*Math.sin(z*.11+r[3])),y:r[5]+z*r[6],bank:4.5};}
 export function riverAt(id,z){const scale=regionMetrics(id).scale,r=baseRiverAt(id,z/scale);return r?{...r,x:r.x*scale,width:r.width*scale,bank:r.bank*scale,...(id==='water'?{y:-.7}:{} )}:null;}
-export function waterwayAt(x,z){const main=riverAt('water',z),east=46+Math.sin(z*.025)*9;return [{distance:Math.abs(x-main.x),width:main.width,y:main.y,axis:'z',center:main.x},{distance:Math.abs(x-east),width:7,y:-.7,axis:'z',center:east}].sort((a,b)=>(a.distance-a.width)-(b.distance-b.width))[0];}
-export function waterSector(x,z){const main=riverAt('water',z),east=46+Math.sin(z*.025)*9;return x<main.x?'west':x>east?'east':'center';}
+export function waterwayAt(x,z){return queryWaterway(x,z);}
+export function waterSector(x,z){return waterLandSector(x,z);}
 export const MAX_WADING_DEPTH=1.15;
 export function waterDepthAt(x,z){return Math.max(0,waterwayAt(x,z).y-terrainHeight('water',x,z));}
 export function isDeepWater(x,z){return waterDepthAt(x,z)>MAX_WADING_DEPTH;}
@@ -301,7 +302,7 @@ function baseTerrainHeight(id,x,z){
   if(distance<river.width+river.bank)return river.y+(ground-river.y)*smooth((distance-river.width)/river.bank);
   return ground;
 }
-export function terrainHeight(id,x,z){const scale=regionMetrics(id).scale;let h=baseTerrainHeight(id,x/scale,z/scale);if(id==='water'){const w=waterwayAt(x,z);h=Math.max(h,-.15);if(w.distance<w.width)h=w.y-4.5*(1-smooth(w.distance/w.width));else if(w.distance<w.width+6)h=w.y+(h-w.y)*smooth((w.distance-w.width)/6);}if(id==='ice')h+=(-.6-h)*smooth((z-86)/8);return levelVillageTerrain(id,x,z,h);}
+export function terrainHeight(id,x,z,waterBranches=true){const scale=regionMetrics(id).scale;let h=baseTerrainHeight(id,x/scale,z/scale);if(id==='water'){const w=waterBranches?waterwayAt(x,z):queryWaterway(x,z,{original:true});h=Math.max(h,-.15);if(w.distance<w.width)h=w.y-4.5*(1-smooth(w.distance/w.width));else if(w.distance<w.width+6)h=w.y+(h-w.y)*smooth((w.distance-w.width)/6);}if(id==='ice')h+=(-.6-h)*smooth((z-86)/8);h=levelVillageTerrain(id,x,z,h);if(id==='water'&&waterBranches){const branch=queryWaterway(x,z,{branchesOnly:true});if(branch.clearance<0)h=branch.y-4.5*(1-smooth(branch.distance/branch.width));else if(branch.clearance<4)h=branch.y+(h-branch.y)*smooth(branch.clearance/4);}return h;}
 
 export function districtAt(id,x,z) {
   const zones=REGIONS[id]?.zones;

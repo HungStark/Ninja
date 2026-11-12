@@ -1,3 +1,4 @@
+import {queryWaterway,waterFootprintDry,nearestDryWaterPoint} from './water-network.js';
 import * as T from 'three';
 import {REGIONS,regionMetrics,terrainHeight,riverAt,waterwayAt,waterDepthAt} from './adventure-world.js';
 import {buildHouse,buildGabledRoof} from './adventure-landmarks.js';
@@ -49,6 +50,11 @@ export function planVillageCivic(id){
     const score=remaining.length*10-((quarter+id.length)%4)*.01;if(score>best){best=score;campuses=candidate;}
   }
   if(!campuses)throw Error('No separated campus layout: '+id);
+  if(id==='water')for(const campus of Object.values(campuses)){
+    if(waterFootprintDry(campus.x,campus.z,{w:campus.reserveW,d:campus.reserveD,padding:2,branchesOnly:true}))continue;
+    const point=nearestDryWaterPoint(campus.x,campus.z,{w:campus.reserveW,d:campus.reserveD,padding:2,branchesOnly:true,valid:(x,z)=>!Object.values(campuses).some(p=>p!==campus&&Math.abs(x-p.x)<(campus.reserveW+p.reserveW)/2+3&&Math.abs(z-p.z)<(campus.reserveD+p.reserveD)/2+3)});
+    if(!point)throw Error('No dry civic plot: '+campus.kind);Object.assign(campus,point);
+  }
   const clinics=['school','hall'].map((kind,index)=>{const campus=campuses[kind],w=7,d=6.5,yaw=campus.yaw,swap=Math.abs(Math.sin(yaw))>.5;return {kind:'clinic',id:id+'-clinic-'+index,...civicPoint(campus,15,campus.d/2+7),w,d,yaw,floors:1,reserveW:swap?d:w,reserveD:swap?w:d};});
   const plots=[...Object.values(campuses),...clinics],removed=region.zones.filter(z=>!['great-cave','cave-crystals','heart-tree-house'].includes(z.id)&&plots.some(p=>overlapsLandmark(p,z)));
   const removedIds=new Set(removed.map(z=>z.id)),visible=region.zones.filter(z=>!removedIds.has(z.id));if(!visible.length)throw Error('No remaining village landmarks: '+id);
@@ -60,13 +66,13 @@ export function planVillageCivic(id){
   const angle=campuses.school.yaw,resCenter=rotate(0,52,angle),swap=Math.abs(Math.sin(angle))>.5,residential={...resCenter,w:264,d:160,yaw:angle,reserveW:swap?160:264,reserveD:swap?264:160};
   const intersectArea=p=>Math.max(0,Math.min(residential.x+residential.reserveW/2,p.x+p.reserveW/2)-Math.max(residential.x-residential.reserveW/2,p.x-p.reserveW/2))*Math.max(0,Math.min(residential.z+residential.reserveD/2,p.z+p.reserveD/2)-Math.max(residential.z-residential.reserveD/2,p.z-p.reserveD/2));
   residential.area=residential.w*residential.d-plots.reduce((sum,p)=>sum+intersectArea(p),0);
-  const dry=(x,z,pad=.5)=>id==='water'?waterwayAt(x,z).distance>waterwayAt(x,z).width+pad:id==='ice'||Math.abs(x-riverAt(id,z).x)>riverAt(id,z).width+pad;
+  const dry=(x,z,pad=.5)=>id==='water'?queryWaterway(x,z,{original:true}).clearance>pad:id==='ice'||Math.abs(x-riverAt(id,z).x)>riverAt(id,z).width+pad;
   function available(x,z,w,d,clear=3){
     if(Math.abs(x)+w/2>limit-6||Math.abs(z)+d/2>limit-6||Math.hypot(x,z)<15||!insidePlot(residential,x,z,-Math.max(w,d)/2))return null;
     if(plots.some(p=>insidePlot(p,x,z,Math.max(w,d)/2+clear)))return null;
     if(protectedSite&&Math.hypot(x-protectedSite.x,z-protectedSite.z)<protectedSite.r+Math.hypot(w,d)/2)return null;
     if(visible.some(zone=>Math.hypot(x-zone.x,z-zone.z)<Math.min(zone.radius,9)+Math.hypot(w,d)/2)||region.npcs.some(n=>Math.hypot(x-n.x,z-n.z)<Math.hypot(w,d)/2+3))return null;
-    const heights=[];for(const a of [-1,1])for(const b of [-1,1]){const px=x+a*w/2,pz=z+b*d/2;if(!dry(px,pz))return null;heights.push(terrainHeight(id,px,pz));}
+    const heights=[];for(const a of [-1,1])for(const b of [-1,1]){const px=x+a*w/2,pz=z+b*d/2;if(!dry(px,pz))return null;heights.push(terrainHeight(id,px,pz,id!=='water'));}
     if(Math.max(...heights)-Math.min(...heights)>2.8)return null;return {x,z,w,d,base:Math.max(...heights)};
   }
   let shop=null,shopScore=Infinity;
@@ -74,7 +80,19 @@ export function planVillageCivic(id){
   if(!shop)throw Error('No residential market: '+id);shop={...shop,kind:'shop',entry:{x:shop.x,z:shop.z+12}};plots.push({...shop,z:shop.z+2,reserveW:16,reserveD:20});
   const candidates=[];for(let x=-122;x<=122;x+=12)for(let z=-122;z<=122;z+=12){const p=available(x,z,7,7,5);if(p)candidates.push(p);}
   const houses=[];while(houses.length<20&&candidates.length){let bestIndex=-1,score=-Infinity;for(let i=0;i<candidates.length;i++){const p=candidates[i],spacing=houses.length?Math.min(...houses.map(h=>Math.hypot(h.x-p.x,h.z-p.z))):Math.hypot(p.x-shop.x,p.z-shop.z);if(spacing>score){score=spacing;bestIndex=i;}}if(houses.length&&score<22)break;const p=candidates.splice(bestIndex,1)[0];p.kind='house';p.yaw=Math.atan2(shop.x-p.x,shop.z-p.z);houses.push(p);}
-  if(houses.length!==20)throw Error('No twenty-home residential district: '+id+'/'+houses.length);plots.push(...houses);
+  if(houses.length!==20)throw Error('No twenty-home residential district: '+id+'/'+houses.length);
+  if(id==='water'){
+    // Select the established layout against the old banks first. Dry homes keep
+    // their exact positions and identities; only flooded footprints are moved.
+    const movable=[shop,...houses];
+    for(const object of movable){
+      if(waterFootprintDry(object.x,object.z,{w:object.w,d:object.d,padding:1}))continue;
+      const from={x:object.x,z:object.z},point=nearestDryWaterPoint(from.x,from.z,{w:object.w,d:object.d,padding:1,valid:(x,z)=>insidePlot(residential,x,z,-Math.max(object.w,object.d)/2)&&!plots.some(p=>p.kind!=='shop'&&insidePlot(p,x,z,Math.max(object.w,object.d)/2+3))&&!movable.some(p=>p!==object&&Math.hypot(p.x-x,p.z-z)<(p.kind==='shop'||object.kind==='shop'?Math.hypot(p.w+object.w,p.d+object.d)/2+3:22))&&!visible.some(p=>Math.hypot(p.x-x,p.z-z)<Math.min(p.radius,9)+Math.hypot(object.w,object.d)/2)});
+      if(!point)throw Error('No dry home/market');Object.assign(object,point,{waterOriginal:from,waterRelocated:true,base:terrainHeight(id,point.x,point.z)});
+      if(object===shop){shop.entry={x:shop.x,z:shop.z+12};Object.assign(plots.find(p=>p.kind==='shop'),{x:shop.x,z:shop.z+2});}
+    }
+  }
+  plots.push(...houses);
   function block(campus,kind,x,z,w,d){return {kind,...civicPoint(campus,x,z),w,d,yaw:campus.yaw,base:campus.base,campus};}
   const hall=block(campuses.hall,'hall',0,-17,38,24),school=block(campuses.school,'school',0,-19,30,14);
   school.floors=2;hall.style=HALL_STYLES[id];for(const p of [hall,school,...clinics])p.entry={...civicPoint(p,0,p.d/2+2),y:p.base+(p===hall&&id==='water'?.955:0)};
@@ -89,6 +107,12 @@ export function planVillageCivic(id){
   const oldMentor=region.mentor.zoneIds;region.mentor.zoneIds=oldMentor.filter(key=>!removedIds.has(key));if(region.mentor.zoneIds.length<Math.min(2,visible.length))region.mentor.zoneIds=[...new Set([...region.mentor.zoneIds,...visible.map(z=>z.id)])].slice(0,2);
   if(oldMentor.some(key=>removedIds.has(key)))region.mentor.clue='Khám phá '+region.mentor.zoneIds.map(key=>visible.find(z=>z.id===key).name).join(' và ')+', rồi trở lại gặp ta.';
   if(id==='fire'){Object.assign(FIRE_PRISON_SITE,military.prison);Object.assign(FIRE_MOTHER_SITE,civicPoint(military,0,military.d/2+7));Object.assign(FIRE_MEDICINE_SITE,{x:shop.entry.x+4,z:shop.entry.z+3});}
+  if(id==='water'){
+    // Preserve authored identities; only wet footprints are shifted to a nearby bank.
+    const move=(object,w,d)=>{if(waterFootprintDry(object.x,object.z,{w,d,padding:1}))return;const from={x:object.x,z:object.z},point=nearestDryWaterPoint(from.x,from.z,{w,d,padding:1,valid:(x,z)=>!plots.some(p=>insidePlot(p,x,z,Math.max(w,d)/2+1))});if(!point)throw Error('No dry village object: '+object.id);Object.assign(object,point,{waterRelocated:true,waterOriginal:from});};
+    for(const zone of visible)move(zone,7,7);
+    for(const person of region.npcs){move(person,1.5,1.5);if(person.waterRelocated){delete person.elevation;delete person.platform;}}
+  }
   layouts.set(id,layout);return layout;
 }
 

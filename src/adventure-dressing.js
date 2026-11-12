@@ -1,3 +1,4 @@
+import {waterFootprintDry,nearestDryWaterPoint} from './water-network.js';
 import * as T from 'three';
 import {waterwayAt,riverAt} from './adventure-world.js';
 
@@ -7,7 +8,8 @@ export function dressVillage(c,region,rand){
   const {id,land,M,box,cyl,mesh,heightAt}=c,wood=c.surfaces?.wood||M('#6c5a42'),stone=c.surfaces?.stone||M('#8c8371'),cloth=M(id==='nameless'?'#6b6451':c.v.color),clay=M(id==='fire'?'#a86643':'#a68b67'),iron=M('#4d5558'),placed=[];
   const candidates=[];land.traverse(o=>{if(o.userData.footprint){const {x,z,w,d,yaw}=o.userData.footprint;for(const side of [-1,1]){const lx=side*(w/2+1.9),lz=d*.15;candidates.push([x+Math.cos(yaw)*lx+Math.sin(yaw)*lz,z-Math.sin(yaw)*lx+Math.cos(yaw)*lz]);}}});
   for(const zone of region.zones.filter(z=>!z.platform))for(let k=0;k<14;k++){const a=k*2.4,r=zone.radius+3+k%3*2;candidates.push([zone.x+Math.sin(a)*r,zone.z+Math.cos(a)*r]);}
-  for(const [x,z] of candidates){
+  for(let [x,z] of candidates){
+    if(id==='water'&&!waterFootprintDry(x,z,{w:3,d:3,padding:1.2})){const point=nearestDryWaterPoint(x,z,{w:3,d:3,padding:1.2,valid:(x,z)=>!c.clearCorridor(x,z,1.35)&&!c.blocked(x,z)&&!c.interactives.some(i=>Math.hypot(x-i.x,z-i.z)<4)&&!placed.some(p=>Math.hypot(x-p.x,z-p.z)<5)});if(!point)continue;x=point.x;z=point.z;}
     if(placed.length>=44)break;
     const river=id==='water'?waterwayAt(x,z):riverAt(id,z),distance=id==='water'?river.distance:Math.abs(x-river.x),y=heightAt(x,z);
     if(distance<river.width+2.4||Math.abs(x)>c.limit-4||Math.abs(z)>c.limit-4||c.clearCorridor(x,z,1.35)||c.blocked(x,z)||c.physics.overlaps(x,z,y,2.6,1.45,true)||c.interactives.some(i=>Math.hypot(x-i.x,z-i.z)<4)||placed.some(p=>Math.hypot(x-p.x,z-p.z)<5))continue;

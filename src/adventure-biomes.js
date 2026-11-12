@@ -1,3 +1,5 @@
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {waterFootprintDry,nearestDryWaterPoint} from './water-network.js';
 import {gameAudio} from './game-audio.js';
 import * as T from 'three';
 import {REGIONS,riverAt,waterSector,waterwayAt,regionMetrics} from './adventure-world.js';
@@ -36,8 +38,8 @@ export function planExpedition(from,to,{id,surface=null,targetSurface=null,route
     // Estate walls and graded riverbanks can change which docks connect on
     // foot. Search actual walking legs instead of assuming old water sectors.
     const queue=[{at:from,legs:[]}],seen=new Set();
-    while(queue.length){const node=queue.shift(),final=walk(node.at,to,null);if(final.length||Math.hypot(node.at[0]-to[0],node.at[1]-to[1])<.1)return [...node.legs,...(final.length?[{kind:'walk',path:final}]:[])];
-      for(const route of routes)for(const side of [0,1]){const key=route.id+':'+side;if(seen.has(key))continue;const dock=side?route.to:route.from,path=walk(node.at,dock,null);if(!path.length&&Math.hypot(node.at[0]-dock[0],node.at[1]-dock[1])>.1)continue;seen.add(key);queue.push({at:side?route.from:route.to,legs:[...node.legs,...(path.length?[{kind:'walk',path}]:[]),{kind:'traverse',id:route.id,side}]});}
+    while(queue.length){const node=queue.shift(),final=waterSector(...node.at)===waterSector(...to)?walk(node.at,to,null):[];if(final.length||Math.hypot(node.at[0]-to[0],node.at[1]-to[1])<.1)return [...node.legs,...(final.length?[{kind:'walk',path:final}]:[])];
+      for(const route of routes)for(const side of [0,1]){const key=route.id+':'+side;if(seen.has(key))continue;const dock=side?route.to:route.from;if(waterSector(...node.at)!==waterSector(...dock))continue;const path=walk(node.at,dock,null);if(!path.length&&Math.hypot(node.at[0]-dock[0],node.at[1]-dock[1])>.1)continue;seen.add(key);queue.push({at:side?route.from:route.to,legs:[...node.legs,...(path.length?[{kind:'walk',path}]:[]),{kind:'traverse',id:route.id,side}]});}
     }
     return null;
   }
@@ -51,12 +53,13 @@ export function planExpedition(from,to,{id,surface=null,targetSurface=null,route
 export function buildBiome(c,routes){
   const {id,land,box,cyl,mesh,M,heightAt,animated}=c,fixtures=[];
   const beam=(parent,material,a,b,width=.09)=>{const delta=b.clone().sub(a),o=box(parent,material,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,width,width,delta.length());o.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),delta.normalize());return o;};
-  const raft=()=>{const g=new T.Group();g.name='fishing-raft';for(let k=-3;k<=3;k++){const pole=cyl(g,M('#b4a46f'),k*.32,0,0,.18,3.4,7);pole.rotation.x=Math.PI/2;}for(const z of [-1,1])box(g,M('#605841'),0,.15,z,2.6,.12,.14);cyl(g,M('#705f49'),.8,1.8,.5,.065,3.5,6);box(g,M('#d1c29b'),.8,2.4,.5,1.5,1.5,.04);land.add(g);return g;};
+  const raft=()=>{const g=new T.Group();g.name='fishing-raft';for(let k=-3;k<=3;k++){const pole=cyl(g,M('#b4a46f'),k*.32,0,0,.18,3.4,7);pole.rotation.x=Math.PI/2;}for(const z of [-1,1])box(g,M('#605841'),0,.15,z,2.6,.12,.14);cyl(g,M('#705f49'),.8,1.8,.5,.065,3.5,6);box(g,M('#d1c29b'),.8,2.4,.5,1.5,1.5,.04);land.add(g);const groups=new Map();g.updateMatrixWorld(true);for(const child of [...g.children])if(child.isMesh){const geometry=child.geometry.clone();geometry.applyMatrix4(child.matrixWorld);if(!groups.has(child.material))groups.set(child.material,[]);groups.get(child.material).push(geometry);child.geometry.dispose();g.remove(child);}for(const [material,parts] of groups){const merged=mergeGeometries(parts),body=new T.Mesh(merged,material);body.castShadow=body.receiveShadow=true;g.add(body);for(const part of parts)part.dispose();}return g;};
   for(const r of routes){r.fromY=heightAt(...r.from);r.toY=r.top??(r.rise?r.fromY+r.rise:heightAt(...r.to));if(r.id==='red-cliff')buildFireCliff(c,r);
     for(const side of [0,1]){const p=side?r.to:r.from,y=side?r.toY:r.fromY;fixtures.push({kind:'traversal',id:`${r.id}:${side}`,routeId:r.id,side,x:p[0],z:p[1],y,label:r.kind==='raft'?r.name:side?'Đi xuống · '+r.name:r.name,platform:side?r.platform?.id:null});}
     if(r.kind==='raft'){
       r.boat=raft();r.boat.visible=false;
-      for(const p of [r.from,r.to]){const w=waterwayAt(...p),y=w.y+.35;for(let j=-2;j<=2;j++)box(land,M('#877457'),p[0]+j*.45,y-.1,p[1],.42,.2,3.3);for(const sx of [-1,1])cyl(land,M('#554c3c'),p[0]+sx*1.25,y+.1,p[1],.1,2.3,6);const idle=raft();idle.position.set(p[0],w.y+.18,p[1]);r.idleBoats??=[];r.idleBoats.push(idle);}
+      const heading=Math.atan2(r.to[0]-r.from[0],r.to[1]-r.from[1]);r.boat.rotation.y=heading;
+      for(const [side,p]of [r.from,r.to].entries()){const w=waterwayAt(...p),y=w.y+.35,dock=new T.Group();dock.name='ferry-landing';dock.userData.routeId=r.id;dock.position.set(p[0],y,p[1]);dock.rotation.y=heading;land.add(dock);for(let j=-2;j<=2;j++)box(dock,M('#877457'),j*.45,-.1,0,.42,.2,3.3);for(const sx of [-1,1])cyl(dock,M('#554c3c'),sx*1.25,.1,0,.1,2.3,6);const idle=raft(),direction=side?-1:1;idle.position.set(p[0]+Math.sin(heading)*direction*1.5,w.y+.18,p[1]+Math.cos(heading)*direction*1.5);idle.rotation.y=heading+(side?Math.PI:0);r.idleBoats??=[];r.idleBoats.push(idle);}
     }else if(r.id==='red-cliff'){
       for(let k=0;k<9;k++){const a=k*2.4,p=mesh(new T.OctahedronGeometry(.28),M('#e09861',.3),land,88+Math.sin(a)*3,36.5,-96+Math.cos(a)*3);p.scale.y=.5;}
     }else if(r.kind==='climb'){
@@ -77,8 +80,8 @@ export function buildBiome(c,routes){
     }
   }
   if(id==='water'){
-    {const positions=[],indices=[];for(let k=0;k<=300;k++){const z=k-150,center=46+Math.sin(z*.025)*9;for(const side of [-1,1])positions.push(center+side*7,-.675,z);if(k<300){const n=k*2;indices.push(n,n+2,n+1,n+1,n+2,n+3);}}const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();const canal=mesh(geometry,new T.MeshStandardMaterial({color:'#5f9eaf',metalness:.22,roughness:.22,transparent:true,opacity:.87}),land);canal.name='fishing-village-canal';}
-    for(let k=0;k<22;k++){const z=-118+k*11,w=riverAt(id,z),side=k%2?1:-1,x=w.x+side*(w.width+2),y=heightAt(x,z);if(c.clearCorridor(x,z,4))continue;const g=new T.Group();g.name='fishing-shed';g.position.set(x,y,z);land.add(g);for(const sx of [-1,1])cyl(g,M('#625b48'),sx*2,1.45,0,.1,4.1,6);box(g,M('#bba87c'),0,3.5,0,5,.16,3);for(let j=0;j<7;j++)beam(g,M('#817f66'),new T.Vector3(-2+j*.65,.4,.1),new T.Vector3(-2+j*.65,2.4,.1),.025);for(let j=0;j<6;j++){const fish=mesh(new T.OctahedronGeometry(.23),M('#a2bbb7'),g,-1.7+j*.62,1.3+Math.sin(j)*.2,.2);fish.scale.set(.5,1.4,.4);}for(let j=0;j<3;j++)cyl(g,M('#877457'),j*.8-1,.3,1.1,.38,.6,8);}
+
+    for(let k=0;k<22;k++){const z=-118+k*11,w=riverAt(id,z),side=k%2?1:-1,rawX=w.x+side*(w.width+2),point=waterFootprintDry(rawX,z,{w:5,d:4,padding:.5})?{x:rawX,z}:nearestDryWaterPoint(rawX,z,{w:5,d:4,padding:.5,valid:(x,z)=>!c.clearCorridor(x,z,4)});if(!point||c.clearCorridor(point.x,point.z,4))continue;const x=point.x,pz=point.z,y=heightAt(x,pz);const g=new T.Group();g.name='fishing-shed';g.position.set(x,y,pz);g.userData.footprint={x,z:pz,w:5,d:4,yaw:0};land.add(g);for(const sx of [-1,1])cyl(g,M('#625b48'),sx*2,1.45,0,.1,4.1,6);box(g,M('#bba87c'),0,3.5,0,5,.16,3);for(let j=0;j<7;j++)beam(g,M('#817f66'),new T.Vector3(-2+j*.65,.4,.1),new T.Vector3(-2+j*.65,2.4,.1),.025);for(let j=0;j<6;j++){const fish=mesh(new T.OctahedronGeometry(.23),M('#a2bbb7'),g,-1.7+j*.62,1.3+Math.sin(j)*.2,.2);fish.scale.set(.5,1.4,.4);}for(let j=0;j<3;j++)cyl(g,M('#877457'),j*.8-1,.3,1.1,.38,.6,8);}
   }
   if(id==='ice'){const sea=box(land,M('#9ec9d6'),0,-.64,116,280,.1,56);sea.name='polar-frozen-sea';for(let k=0;k<28;k++){const x=-127+k*9.3,z=94+(k%4)*11;if(c.clearCorridor(x,z,5))continue;const ice=mesh(new T.DodecahedronGeometry(2.5+k%3),M(k%2?'#cde2e7':'#a9cfdb'),land,x,.5,z);ice.scale.set(1,1+k%3*.6,1.5);} }
   if(id==='earth'){

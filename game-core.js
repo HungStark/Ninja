@@ -113,9 +113,6 @@
   const balanceDefaults=JSON.parse(JSON.stringify(spells));
   // Edited by the local balance table. Kept inside the core for offline builds.
   const spellBalanceOverrides=/* spell-balance:start */{
-  "dark-domain": {
-    "duration": 35
-  },
   "dark-lance": {
     "cooldown": 4
   },
@@ -157,7 +154,6 @@
     "damage": 7
   },
   "dark-reflect": {
-    "duration": 4,
     "cost": 30
   },
   "water-reflect": {
