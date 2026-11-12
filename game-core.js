@@ -114,17 +114,19 @@
   // Edited by the local balance table. Kept inside the core for offline builds.
   const spellBalanceOverrides=/* spell-balance:start */{
   "dark-lance": {
-    "cooldown": 4
+    "cooldown": 4,
+    "cost": 25
   },
   "dark-orb": {
     "cooldown": 3,
     "upgradeDamage": 15,
-    "damage": 10
+    "damage": 10,
+    "cost": 20
   },
   "dark-volley": {
-    "cost": 50,
+    "cost": 55,
     "duration": 1,
-    "damage": 95
+    "damage": 100
   },
   "fire-lance": {
     "cost": 50,
@@ -142,13 +144,13 @@
     "cost": 30
   },
   "water-tsunami": {
-    "damage": 80,
+    "damage": 100,
     "cost": 70
   },
   "water-volley": {
-    "damage": 110,
     "cost": 55,
-    "cooldown": 21
+    "cooldown": 21,
+    "damage": 100
   },
   "fire-volley": {
     "damage": 7
@@ -312,7 +314,8 @@
   },
   "ice-orb": {
     "cost": 60,
-    "cooldown": 20
+    "cooldown": 20,
+    "damage": 200
   }
 }/* spell-balance:end */;
   for(const spell of spells){
