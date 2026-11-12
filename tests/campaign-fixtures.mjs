@@ -12,6 +12,7 @@ export function campaignFixtures(){
     save.village=id;save.visited.push(id);syncCompanionGrowth(save);
     while(currentVillageEvent(save)){const e=currentVillageEvent(save);if(id==='fire'&&e.step===2)save.story.questItems.push('fire:lotus-medicine');saves[id+':'+e.step]=structuredClone(save);if(e.requiresTournament){registerTournament(save,()=>.3);while(pendingTournamentMatch(save.arena)){const m=pendingTournamentMatch(save.arena);resolveTournamentMatch(save,{tournamentRun:save.arena.run,tournamentMatch:m.id},true,()=>.3);}}if(e.battle)resolveBattle(save,{kind:'village-event',...villageEventEncounter(id,e.step)},true);else advanceVillageEvent(save,id,e.step);}
     saves[id+':report']=structuredClone(save);
+    if(id==='earth'){saves['earth:trial']=structuredClone(save);resolveBattle(save,{kind:'boss',village:id,friendlyTrial:true},true);}
     if(WAR_VILLAGES.includes(id)){resolveBattle(save,{kind:'boss',village:id},true);negotiatePeace(save,id);}else if(id!=='nameless')acceptAlliance(save,id);
   }
   saves.complete=structuredClone(save);return saves;

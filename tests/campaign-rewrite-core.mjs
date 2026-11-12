@@ -29,7 +29,7 @@ for(const id of PLOT_ORDER){
     save=load(save);assert.ok(save);assert.equal(save.story.villageEvents[id],event.step+1);assert.ok(save.gold>=gold);stepCount++;
   }
   if(WAR_VILLAGES.includes(id)){assert.ok(orderGuardianGuards(save));resolveBattle(save,{kind:'boss',village:id},true);assert.equal(campaignObjective(save).targetKind,'npc');assert.ok(negotiatePeace(save,id));assert.equal(negotiatePeace(save,id),false);}
-  else{assert.equal(orderGuardianGuards(save),false);assert.equal(requiresGuardBattle(save,{kind:'village-guard',village:id}),false);assert.equal(save.bosses[id],undefined,'later regions do not require a chief fight');assert.equal(campaignObjective(save).targetKind,'npc');assert.ok(acceptAlliance(save,id));assert.equal(acceptAlliance(save,id),false);assert.equal(negotiatePeace(save,id),false,'later alliance role replaces seal collection');}
+  else{assert.equal(orderGuardianGuards(save),false);assert.equal(requiresGuardBattle(save,{kind:'village-guard',village:id}),false);assert.equal(save.bosses[id],undefined,'later chiefs have no prior victory');assert.equal(campaignObjective(save).targetKind,'npc');if(id==='earth'){assert.equal(acceptAlliance(save,id),false);assert.equal(canTravel(save,'wood').allowed,false);resolveBattle(save,{kind:'boss',village:id,friendlyTrial:true},true);}assert.ok(acceptAlliance(save,id));assert.equal(acceptAlliance(save,id),false);assert.equal(negotiatePeace(save,id),false,'later alliance role replaces seal collection');}
   save=load(save);assert.ok(save);
 }
 assert.deepEqual(save.story.peaceSeals,WAR_VILLAGES);assert.deepEqual(save.story.alliances,ALLIANCE_VILLAGES);assert.equal(campaignStage(save),'invasion');assert.ok(invasionAvailable(save));save.village='nameless';

@@ -55,7 +55,7 @@
       {"title":"Pull the Survivors Free","body":"Pass a rope through the rocks and pull out the survivors. Ha Ly discovers strange crystals in the remaining explosives."},
       {"title":"A Crystal from Another World","body":"The core resonates with magical crystals. Ha Ly notices you recognize something no ninja has recorded before.","script":["This is no ordinary explosive.","Have you seen it before?","Never.","I have.","Where?","...","Are you hiding things from me again?"]},
       {"title":"Ore That Absorbs Both Powers","body":"A base beneath the mine extracts ore that absorbs chakra and magic. Defeat the miners' captors and destroy the weapons operation.","enemy":"Crescent mining squad"},
-      {"title":"The Shipment Already Left","body":"The base is destroyed, but some ore has already been shipped. Bring the weapons records and testimony to the chief to organize defenses."}
+      {"title":"The Shipment Already Left","body":"The base is destroyed, but some ore has already been shipped. Bring the weapons records and testimony to the Earth chief. After organizing defenses, he and Mountain Tortoise will offer a final friendly trial before you leave the continent and sail to the islands."}
     ]},
     "wood":{"title":"The Price of Salvation","speaker":"Healer Linh Chi","stages":[
       {"title":"The Ancient Tree Is Dying","body":"The central tree bearing the treehouse is poisoned. Meet Linh Chi at its roots; the core fragment reveals mana eroding its chakra. The eight-village tournament is being held at the school."},

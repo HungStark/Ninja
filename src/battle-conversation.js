@@ -3,10 +3,12 @@ import {encounterAppearance} from './encounter-appearance.js';
 import {ninjaProfile} from './ninja.js';
 import {village} from './adventure-data.js';
 import {villagerAppearance} from './villager-appearance.js';
+import {isEarthDepartureTrial,EARTH_DEPARTURE_TRIAL} from './earth-departure-trial.js';
 
 // Combat setup stays in the encounter. The conversation only contains what
 // these characters would actually say to one another in the world.
 export function battleConversation(encounter,save){
+  if(isEarthDepartureTrial(encounter))return campaignLines(EARTH_DEPARTURE_TRIAL.opening,save,'earth');
   const hero=heroSpeaker(save),lines=[],say=(speaker,text)=>lines.push({speaker,text});
   const opponent=(entry=encounter,index=0)=>{const look=encounterAppearance({...encounter,...entry});return {id:'challenge-'+look.id+'-'+index,name:entry.name||encounter.name,role:village(look.village||look.id).name,appearance:look.kind==='creature'?look:ninjaProfile(look)};};
   const enemy=encounter.kind==='boss'?{id:'chief-'+encounter.village,name:encounter.name,role:village(encounter.village).name,appearance:villagerAppearance(encounter.village,{kind:'chief'})}:opponent();

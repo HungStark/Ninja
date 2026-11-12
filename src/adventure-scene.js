@@ -290,7 +290,7 @@ export function createAdventureScene(){
     const quest=QUESTS[id];interactives.push(...gates,{kind:'save',x:0,z:5,label:'Ấn hồi sinh'},...(id==='nameless'?[{kind:'npc',x:-4,z:5,label:'Trưởng làng'}]:[]),{kind:'quest',x:quest.x??8,z:quest.z??-9.5,label:quest.enemy});
     for(const zone of region.zones.filter(z=>z.platform!=='earth-cave'))interactives.push({kind:'landmark',id:zone.id,x:zone.x,z:zone.z,platform:zone.platform,label:zone.name});
     for(const person of region.npcs.filter(p=>p.platform!=='earth-cave'))interactives.push({kind:person.kind,id:person.id,x:person.x,z:person.z,label:person.name,...(person.platform?{platform:person.platform}:{}),...(person.elevation!==undefined?{y:person.elevation}:{})});
-    if(id!=='nameless'&&!guardianOrdered(save,id)&&!save.bosses?.[id])interactives.push({kind:'boss',id:region.boss.id,x:region.boss.x,z:region.boss.z,label:region.boss.name});
+    if(id!=='nameless'&&!guardianOrdered(save,id)&&!save.bosses?.[id])interactives.push({kind:'boss',id:region.boss.id,x:region.boss.x,z:region.boss.z,label:id==='earth'?'Sơn Quy · Thử thách trước biển':region.boss.name});
     const treatyReady=['water','fire','lightning'].every(key=>save.story?.peaceSeals?.includes(key));
     if(id==='nameless'){
       interactives.push({kind:'home',id:'family-home',x:HOME.spawn[0],z:HOME.spawn[1],label:'Ngôi nhà của gia đình'});

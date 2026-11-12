@@ -1,5 +1,6 @@
 import {PLOT,WAR_VILLAGES,ALLIANCE_VILLAGES,PLOT_ORDER,plotVillageComplete,nextPlotVillage,canProgressPlot,invasionAvailable} from './campaign-plot.js';
 import {companionUnconscious} from './companion-health.js';
+import {isEarthDepartureTrial,earthDepartureTrialPending,EARTH_DEPARTURE_TRIAL} from './earth-departure-trial.js';
 import {storeTreaty} from './peace-treaties.js';
 import {confrontationObjective,guardianOrdered,nextGuardianGuard} from './village-confrontation.js';
 import {newFlask,readFlask} from './healing-flask.js';
@@ -64,6 +65,7 @@ export function canTravel(save,target) {
   // Previously visited regions stay reachable so a migrated save can return to its next investigation.
   if(save.visited?.includes(target))return {allowed:true,reason:''};
   const index=PLOT_ORDER.indexOf(target),previous=PLOT_ORDER.slice(0,index).find(id=>!plotVillageComplete(save,id));
+  if(index>PLOT_ORDER.indexOf('earth')&&earthDepartureTrialPending(save)&&villageEventComplete(save,'earth'))return {allowed:false,reason:'Vượt qua thử thách của trưởng làng Thổ và Sơn Quy trước khi ra khơi tới các đảo.'};
   if(previous)return {allowed:false,reason:'Hoàn thành câu chuyện tại '+village(previous).name+' trước khi tới '+village(target).name+'.'};
   if(!WAR_VILLAGES.includes(target)&&(!save.campaign?.treatySigned||!save.story.homecomingDone))return {allowed:false,reason:'Trở về Vô Danh ký đình chiến và gặp mẹ trước khi tiếp tục điều tra.'};
   return {allowed:true,reason:''};
@@ -84,6 +86,7 @@ export function campaignObjective(save,{localOnly=false}={}){
   if(!localOnly&&stage==='complete')return {title:'Chiến đấu cùng thế giới',description:'Liên quân đã giữ được phong ấn. Một tương lai khác được lựa chọn cùng nhau; bạn có thể tiếp tục khám phá.',targetVillage:'nameless',targetKind:'complete'};
   const id=localOnly?save.village:stage==='invasion'?'nameless':nextPlotVillage(save);
   const event=villageEventObjective(save,id);if(event)return event;
+  if(id==='earth'&&earthDepartureTrialPending(save))return {title:EARTH_DEPARTURE_TRIAL.title,description:EARTH_DEPARTURE_TRIAL.description,targetVillage:id,targetKind:'npc'};
   if(WAR_VILLAGES.includes(id))return save.bosses[id]?{title:'Cam kết rút quân khỏi Vô Danh',description:'Gặp trưởng làng để thương lượng đình chiến sau cuộc thách đấu.',targetVillage:id,targetKind:'npc'}:confrontationObjective(save,id);
   if(ALLIANCE_VILLAGES.includes(id)&&!save.story.alliances?.includes(id))return {title:id==='dark'?'Sự thật từ Vô Nguyệt':'Vai trò của '+village(id).name+' trong liên minh',description:'Mang kết quả điều tra tới trưởng làng. Hợp tác bằng hành động thay cho một cuộc thách đấu.',targetVillage:id,targetKind:'npc'};
   return {title:'Tiếp tục hành trình',description:'Gặp cư dân, học thuật và khám phá những miền đất đã được giải phóng.',targetVillage:save.village,targetKind:'complete'};
@@ -183,6 +186,7 @@ export function completeLesson(save,id) {
 }
 export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
 export function resolveBattle(save,encounter,victory) {
+  if(isEarthDepartureTrial(encounter)&&!victory)return save;
   if(encounter.kind==='arena'){
     if(resolveTournamentMatch(save,encounter,victory))awardTournamentEquipment(save);
     return save;

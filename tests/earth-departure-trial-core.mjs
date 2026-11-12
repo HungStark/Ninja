@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import * as T from 'three';
+import '../game-core.js';
+import {campaignFixtures} from './campaign-fixtures.mjs';
+import {campaignObjective,canTravel,resolveBattle,readJourney} from '../src/adventure-data.js';
+import {plotHostile,plotVillageComplete,acceptAlliance} from '../src/campaign-plot.js';
+import {isEarthDepartureTrial,EARTH_DEPARTURE_TRIAL} from '../src/earth-departure-trial.js';
+import {orderGuardianGuards} from '../src/village-confrontation.js';
+import {encounterProfile} from '../src/progression.js';
+import {configureOpponent} from '../src/opponent-balance.js';
+import {battleConversation} from '../src/battle-conversation.js';
+import {enterInterior} from '../src/adventure-interiors.js';
+import {createGuardianPhases} from '../src/guardian-phases.js';
+const fixtures=campaignFixtures(),save=structuredClone(fixtures['earth:report']),profile=encounterProfile(save,'boss','earth'),battle=configureOpponent({...profile,kind:'boss',village:'earth',name:'Trưởng làng Thổ',friendlyTrial:true});
+assert.ok(isEarthDepartureTrial(battle));assert.equal(battle.phases,2);assert.equal(battle.phaseHealth.length,2);assert.equal(plotHostile(save,'earth'),false);assert.equal(orderGuardianGuards(save,'earth'),false);assert.equal(plotVillageComplete(save,'earth'),false);assert.equal(acceptAlliance(save,'earth'),false);assert.equal(campaignObjective(save).title,EARTH_DEPARTURE_TRIAL.title);
+for(const id of ['wood','ice','light','dark']){assert.equal(canTravel(save,id).allowed,false);assert.match(canTravel(save,id).reason,/Sơn Quy/);}
+assert.equal(canTravel(save,'wind').allowed,true);assert.equal(canTravel(save,'nameless').allowed,true);
+const baseline=configureOpponent({...profile,kind:'boss',village:'earth'});assert.deepEqual(battle.phaseHealth,baseline.phaseHealth);assert.deepEqual(battle.spellIds,baseline.spellIds);assert.deepEqual(battle.balanceStages,baseline.balanceStages,'original two-phase boss balance is retained');
+const lines=battleConversation(battle,save);assert.deepEqual(lines.map(l=>l.text),EARTH_DEPARTURE_TRIAL.opening.map(l=>l[1]));assert.ok(lines.some(l=>l.text.includes('dừng tay')));
+const fighter=new SealGameCore.Fighter(battle.hp),phases=createGuardianPhases(new T.Scene());phases.reset({...battle,thirdPerson:true},fighter);assert.equal(phases.state().phase,1);assert.equal(fighter.maxHp,battle.phaseHealth[0]);fighter.hp=0;assert.ok(phases.beginTransition(fighter,[0,0,-13]));for(let i=0;i<300&&phases.transitioning;i++)phases.advanceTransition(1/60,fighter,()=>{});assert.equal(phases.state().phase,2);assert.equal(fighter.maxHp,battle.phaseHealth[1]);
+save.position=[0,-10];enterInterior(save,'earth-council-hall',{position:[54,65],surface:null,elevation:0});save.position=[0,-10];save.healthFraction=.37;const before=JSON.stringify(save);resolveBattle(save,battle,false);assert.equal(JSON.stringify(save),before,'friendly defeat preserves room, position, checkpoint, health and rewards');assert.equal(canTravel(save,'wood').allowed,false);
+resolveBattle(save,battle,true);assert.ok(save.bosses.earth);assert.equal(save.story.peaceSeals.includes('earth'),false);assert.equal(save.story.alliances.includes('earth'),false);const won=JSON.stringify(save);resolveBattle(save,battle,true);assert.equal(JSON.stringify(save),won,'replayed result awards nothing');assert.ok(acceptAlliance(save,'earth'));assert.ok(plotVillageComplete(save,'earth'));assert.ok(canTravel(save,'wood').allowed);const restored=readJourney({getItem:()=>JSON.stringify(save)});assert.ok(restored.bosses.earth);assert.ok(restored.story.alliances.includes('earth'));assert.ok(canTravel(restored,'wood').allowed);
+const early=structuredClone(fixtures['earth:0']);assert.equal(acceptAlliance(early,'earth'),false);assert.notEqual(campaignObjective(early).title,EARTH_DEPARTURE_TRIAL.title,'investigation remains first');
+const legacy=structuredClone(fixtures['wood:0']);assert.ok(legacy.bosses.earth);assert.ok(plotVillageComplete(readJourney({getItem:()=>JSON.stringify(legacy)}),'earth'));
+console.log('PASS: friendly Earth chief -> Mountain Tortoise, unchanged phase balance, investigation before trial, no hostile guards/treaty, nonfatal defeat/retry, unique rewards, victory+alliance before sailing, persisted progress and old victories.');
