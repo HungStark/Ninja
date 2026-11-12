@@ -90,7 +90,7 @@ export class LightArts {
     const root=this.rayRoot(),buildTime=kind==='dome'?spell.domeBuildTime:0,assembly=kind==='dome'?this.domeModel(root,data.radius,buildTime):null;if(!assembly)this.model(root,kind,data.radius);root.position.fromArray(data.center);
     if(kind==='mirror')root.quaternion.setFromUnitVectors(forward,new T.Vector3(...data.normal));
     const o={...data,id:++this.serial,spell,root,hp:kind==='mirror'?(spell.shield||120):undefined,life:spell.duration+buildTime,age:0,buildTime,assembly,trapped:new Set(),rays:[],reflections:0};
-    if(kind==='dome')for(const actor of actors)if(actor.owner!==owner&&Math.hypot(actor.pos[0]-data.center[0],actor.pos[2]-data.center[2])<data.radius-.35)o.trapped.add(actor.owner);
+    if(kind==='dome')for(const actor of actors)if(actor.owner!==owner&&Math.hypot(actor.pos[0]-data.center[0],actor.pos[2]-data.center[2])<data.radius-.35)o.trapped.add(actor.untargetable?actor.id:actor.owner);
     if(kind==='dome'){o.collider=new T.Mesh(this.geo.dome,this.glass);o.collider.position.fromArray(data.center);o.collider.scale.setScalar(data.radius);o.collider.updateMatrixWorld(true);}
     this.optics.push(o);return o;
   }
@@ -152,7 +152,7 @@ export class LightArts {
     }
     return path;
   }
-  hit(owner,spell,power,dir,pos,damage){return damage({owner,element:'light',style:spell.style,color:power>1?palette[2]:'#fff2bd',damage:spell.damage*power,v:dir,unreflectable:true,spectrum:power>1?7:0},pos);}
+  hit(owner,spell,power,dir,pos,damage,victimId){return damage({owner,victimId,element:'light',style:spell.style,color:power>1?palette[2]:'#fff2bd',damage:spell.damage*power,v:dir,unreflectable:true,spectrum:power>1?7:0},pos);}
   bouncePath(dome,entry,direction,power,spectrum=power>1?7:0){
     const path=[];let pos=add(entry,mul(direction,EPS)),dir=unit(direction);
     for(let i=0;i<14;i++){
@@ -168,9 +168,9 @@ export class LightArts {
   resolve(p,actors,walls,damage,intercept){
     p.path=this.trace(p.owner,p.pos,p.dir,walls,p.spell.range,p.spell.damage,intercept);const hitOwners=new Set();
     for(const leg of p.path){
-      const victim=actors.find(a=>a.owner!==leg.owner);
-      if(victim&&!hitOwners.has(leg.owner)){const along=dot(sub(victim.pos,leg.start),leg.dir),reach=dist(leg.start,leg.end);
-        if(along>=0&&along<=reach&&dist(add(leg.start,mul(leg.dir,along)),victim.pos)<=actorHitRadius(victim,.67)){this.hit(leg.owner,p.spell,leg.multiplier,leg.dir,victim.pos,damage);hitOwners.add(leg.owner);}}
+      for(const victim of actors.filter(a=>a.owner!==leg.owner&&a.fighter.hp>0)){const hitKey=leg.owner+':'+(victim.id||victim.owner);
+      if(victim&&!hitOwners.has(hitKey)){const along=dot(sub(victim.pos,leg.start),leg.dir),reach=dist(leg.start,leg.end);
+        if(along>=0&&along<=reach&&dist(add(leg.start,mul(leg.dir,along)),victim.pos)<=actorHitRadius(victim,.67)){this.hit(leg.owner,p.spell,leg.multiplier,leg.dir,victim.pos,damage,victim.id);hitOwners.add(hitKey);}}}
       if(leg.wall)this.flash(leg.end,.3);
       if(leg.event==='mirror'&&leg.optic.hp>0){leg.optic.reflections++;this.reflections++;this.flash(leg.end,.6);}
       if(leg.event==='dome'){const dome=leg.optic;dome.rays.push({age:0,ticks:0,power:leg.multiplier,spectrum:leg.spectrum,path:this.bouncePath(dome,leg.end,leg.dir,leg.multiplier,leg.spectrum)});this.flash(leg.end,.5);}
@@ -198,10 +198,10 @@ export class LightArts {
   }
   advance(dt,actors,walls,damage,intercept){
     for(const o of [...this.optics]){const step=Math.min(dt,o.life);o.age+=step;o.life-=step;
-      if(o.kind==='dome')for(const actor of actors)if(actor.owner!==o.owner&&Math.hypot(actor.pos[0]-o.center[0],actor.pos[2]-o.center[2])<o.radius-.5)o.trapped.add(actor.owner);
+      if(o.kind==='dome')for(const actor of actors)if(actor.owner!==o.owner&&Math.hypot(actor.pos[0]-o.center[0],actor.pos[2]-o.center[2])<o.radius-.5)o.trapped.add(actor.untargetable?actor.id:actor.owner);
       if(o.kind==='dome')for(const ray of o.rays){ray.age+=step;const total=Math.floor(ray.age+1e-6);
-        while(ray.ticks<total){ray.ticks++;const victim=actors.find(a=>a.owner!==o.owner);
-          if(victim&&this.domeContact(o,victim.pos).inside)this.hit(o.owner,o.spell,ray.power,[0,0,-1],victim.pos,damage);}}
+        while(ray.ticks<total){ray.ticks++;for(const victim of actors.filter(a=>a.owner!==o.owner&&a.fighter.hp>0)){
+          if(victim&&this.domeContact(o,victim.pos).inside)this.hit(o.owner,o.spell,ray.power,[0,0,-1],victim.pos,damage,victim.id);}}}
       if(o.life<=1e-6)this.remove(this.optics,o);
     }
     for(const p of [...this.pulses]){p.age+=dt;if(!p.ticks&&p.age+1e-6>=p.spell.chargeTime){p.ticks=1;this.resolve(p,actors,walls,damage,intercept);}if(p.age>=p.spell.chargeTime+.32)this.remove(this.pulses,p);}

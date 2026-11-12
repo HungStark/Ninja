@@ -6,13 +6,14 @@ import {villagerAppearance} from './villager-appearance.js';
 import {HA_LY,HA_LY_MOTHER,FIRE_PRISON,currentVillageEvent,eventSpot,villageEventStep} from './village-events.js';
 import {createFirePrison} from './fire-prison.js';
 import {createCompanionFollow,FOLLOW_GAP} from './companion-follow.js';
+import {carryingCompanion} from './companion-health.js';
 import {companionPresent} from './campaign-plot.js';
 
 export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>!blocked(p.x,p.z),addSolid,removeSolid=()=>{}}){
   const root=new T.Group();root.name='village-story-actors';scene.add(root);
   let follower=null,follow=null,entry=null,activeEvent=null,current='nameless',list=[],moving=false,clock=0;
   let stationary=[],prison=null,captive=null,mother=null;
-  let syncedKey=null,syncedList=null;
+  let syncedKey=null,syncedList=null,carrying=false;
   const sense=new T.Group(),senseMaterial=new T.MeshBasicMaterial({color:'#8ee8e0',transparent:true,opacity:0,depthWrite:false});sense.name='core-seal-sense';sense.visible=false;scene.add(sense);let senseLife=0;
   for(let i=0;i<3;i++){const ring=new T.Mesh(new T.TorusGeometry(1,.035,6,40),senseMaterial);ring.rotation.x=Math.PI/2;ring.position.y=.2+i*.55;sense.add(ring);}
   const dispose=g=>{const gs=new Set(),ms=new Set();g.traverse(o=>{if(o.geometry)gs.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])ms.add(m);});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());g.removeFromParent();};
@@ -29,9 +30,9 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
     for(let i=0;i<3;i++){const x=(i-1)*.85;mesh(parent,style==='earth'?new T.DodecahedronGeometry(.65):new T.CylinderGeometry(.16,.25,1.6,7),color,[x,.8,-.4],[1,1+i*.12,1]);}
   }
   function addActor(id,p,wounded=false){const model=createNinja(HA_LY);model.root.name=wounded?'ha-ly-wounded':'ha-ly-companion';model.root.position.set(p.x,p.y,p.z);root.add(model.root);if(wounded)stationary.push(model);return model;}
-  function reset(keepFollower=false){syncedKey=null;syncedList=null;for(const s of prison?.colliders||[])removeSolid(s);prison=null;for(const actor of stationary){actor.dispose?.();actor.root.userData.villager=null;dispose(actor.root);}stationary=[];captive=null;mother=null;if(!keepFollower)follower?.dispose();for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;follow=null;entry=null;}activeEvent=null;moving=false;}
+  function reset(keepFollower=false){hero.setCarrying(false);carrying=false;syncedKey=null;syncedList=null;for(const s of prison?.colliders||[])removeSolid(s);prison=null;for(const actor of stationary){actor.dispose?.();actor.root.userData.villager=null;dispose(actor.root);}stationary=[];captive=null;mother=null;if(!keepFollower&&follower){follower.dispose();dispose(follower.root);}for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;follow=null;entry=null;}activeEvent=null;moving=false;}
   function sync(save,id,interactives,inInterior=false){
-    const key=JSON.stringify([id,inInterior,villageEventStep(save,id),companionPresent(save)]);
+    const key=JSON.stringify([id,inInterior,villageEventStep(save,id),companionPresent(save),carryingCompanion(save)]);
     if(key===syncedKey&&interactives===syncedList)return;
     reset(current===id&&!!follower&&companionPresent(save));current=id;list=interactives;for(let i=list.length-1;i>=0;i--)if(['village-event','story-witness','companion'].includes(list[i].kind))list.splice(i,1);
     activeEvent=inInterior?null:currentVillageEvent(save,id);
@@ -53,14 +54,14 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
       const mark=mesh(g,new T.OctahedronGeometry(.18),'#f4d88d',[0,3.6,0]);mark.name='story-event-marker';
       list.push({kind:'village-event',id:`story-${id}-${activeEvent.step}`,eventVillage:id,step:activeEvent.step,x:p.x,z:p.z,y:p.y,label:activeEvent.title});
     }
-    if(companionPresent(save)){if(!follower){const hp=hero.root.position,yaw=hero.root.rotation.y,p=safePoint({x:hp.x-Math.sin(yaw)*FOLLOW_GAP,y:hp.y,z:hp.z-Math.cos(yaw)*FOLLOW_GAP});follower=addActor(HA_LY.id,p);follower.root.rotation.y=yaw;entry={kind:'companion',id:HA_LY.id,label:'Hạ Ly · Bạn đồng hành',x:p.x,z:p.z,y:p.y};follow=createCompanionFollow({position:follower.root.position,canOccupy:canFollow,safePoint});follow.reset(hp,{yaw});}list.push(entry);}
+    if(companionPresent(save)){if(!follower){const hp=hero.root.position,yaw=hero.root.rotation.y,p=safePoint({x:hp.x-Math.sin(yaw)*FOLLOW_GAP,y:hp.y,z:hp.z-Math.cos(yaw)*FOLLOW_GAP});follower=addActor(HA_LY.id,p);follower.root.rotation.y=yaw;entry={kind:'companion',id:HA_LY.id,label:'Hạ Ly · Bạn đồng hành',x:p.x,z:p.z,y:p.y};follow=createCompanionFollow({position:follower.root.position,canOccupy:canFollow,safePoint});follow.reset(hp,{yaw});}if(carryingCompanion(save)){carrying=true;hero.setCarrying(true);hero.root.add(follower.root);follower.root.name='ha-ly-carried';follower.root.position.set(1.25,1.55,.7);follower.root.rotation.set(0,0,Math.PI/2);follower.setStoryPose('carried');follow=null;}else if(follower.root.parent!==root){root.add(follower.root);follower.root.name='ha-ly-companion';follower.root.rotation.z=0;follower.setStoryPose('standing');const hp=hero.root.position;follower.root.position.copy(hp);follow=createCompanionFollow({position:follower.root.position,canOccupy:canFollow,safePoint});follow.reset(hp,{yaw:hero.root.rotation.y});}list.push(entry);}
     syncedKey=key;syncedList=interactives;
   }
   function update(dt,time,paused=false,riding=false,budget=null,leader={}){
     if(!paused&&senseLife>0){senseLife=Math.max(0,senseLife-dt);sense.visible=senseLife>0;senseMaterial.opacity=Math.min(.8,senseLife*.5);sense.children.forEach((ring,i)=>ring.scale.setScalar(1+(2-senseLife)*2+i*.4));}
-    clock=time;for(const actor of stationary){const slot=budget?.prepare(actor,hero.root.position,dt);if(!slot||slot.tick)actor.update(time,false,null,paused?0:slot?.dt||dt);}if(!follower)return;
+    clock=time;for(const actor of stationary){const slot=budget?.prepare(actor,hero.root.position,dt);if(!slot||slot.tick)actor.update(time,false,null,paused?0:slot?.dt||dt);}if(!follower)return;if(carrying){follower.update(time,false,null,paused?0:dt);const p=follower.root.getWorldPosition(new T.Vector3());Object.assign(entry,{x:p.x,y:hero.root.position.y,z:p.z});return;}
     const p=follower.root.position,state=paused?follow.state():follow.update(dt,hero.root.position,{...leader,yaw:hero.root.rotation.y,riding,groundAt:(x,z,y)=>floor(x,z,y+.03)});moving=!paused&&state.moving;
     follower.root.rotation.y=state.pose.yaw??follower.root.rotation.y;follower.root.visible=true;follower.update(clock,moving,paused?null:state.velocity,paused?0:dt,state.pose);Object.assign(entry,{x:p.x,z:p.z,y:p.y});
   }
-  return {sync,reset,update,senseSeal(){const item=list.find(i=>i.kind==='village-event');if(!item||!activeEvent?.sealTrace)return false;sense.position.set(item.x,item.y??floor(item.x,item.z),item.z);senseLife=2;sense.visible=true;return true;},actors:()=>[...stationary,...(follower?[follower]:[])],state:()=>({sealSense:senseLife>0,event:activeEvent?{village:current,step:activeEvent.step,title:activeEvent.title}:null,prison:prison?{opened:prison.opened,position:[prison.point.x,prison.point.y,prison.point.z]}:null,captive:captive?{pose:captive.root.userData.storyPose,modelReady:captive.modelReady,position:captive.root.position.toArray()}:null,mother:mother?{id:HA_LY_MOTHER.id,position:mother.root.position.toArray()}:null,recruited:!!follower,visible:!!follower?.root.visible,position:follower?.root.position.toArray()||null,female:follower?.profile.female||false,moving,distance:follower?follower.root.position.distanceTo(hero.root.position):null,catchups:follow?.state().catchups||0,following:follow?{...follow.state(),pose:{...follow.state().pose}}:null})};
+  return {sync,reset,update,senseSeal(){const item=list.find(i=>i.kind==='village-event');if(!item||!activeEvent?.sealTrace)return false;sense.position.set(item.x,item.y??floor(item.x,item.z),item.z);senseLife=2;sense.visible=true;return true;},actors:()=>[...stationary,...(follower?[follower]:[])],state:()=>({carrying,sealSense:senseLife>0,event:activeEvent?{village:current,step:activeEvent.step,title:activeEvent.title}:null,prison:prison?{opened:prison.opened,position:[prison.point.x,prison.point.y,prison.point.z]}:null,captive:captive?{pose:captive.root.userData.storyPose,modelReady:captive.modelReady,position:captive.root.position.toArray()}:null,mother:mother?{id:HA_LY_MOTHER.id,position:mother.root.position.toArray()}:null,recruited:!!follower,visible:!!follower?.root.visible,position:follower?.root.getWorldPosition(new T.Vector3()).toArray()||null,female:follower?.profile.female||false,moving,distance:follower?follower.root.position.distanceTo(hero.root.position):null,catchups:follow?.state().catchups||0,following:follow?{...follow.state(),pose:{...follow.state().pose}}:null})};
 }

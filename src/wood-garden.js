@@ -208,7 +208,7 @@ export class WoodGarden {
       e.age+=dt;const victim=actors.find(a=>a.owner!==e.owner);
       if(e.kind==='vinebind'&&!e.hit[0]&&e.age>=.85){
         e.hit[0]=true;e.connected=distance(victim.pos,e.target)<1.65+.3*e.growth+actorHitPadding(victim);
-        if(e.connected)this.hit({owner:e.owner,element:'wood',style:'vinehit',color:'#75b94d',damage:e.spell.damage,controlDuration:e.spell.controlDuration,unreflectable:true,v:[0,0,0]},victim.pos,actors,impact);
+        for(const a of actors.filter(a=>a.owner!==e.owner&&a.fighter.hp>0))if(distance(a.pos,e.target)<1.65+.3*e.growth+actorHitPadding(a))this.hit({owner:e.owner,victimId:a.id,element:'wood',style:'vinehit',color:'#75b94d',damage:e.spell.damage,controlDuration:e.spell.controlDuration,unreflectable:true,v:[0,0,0]},a.pos,actors,impact);
       }
       const life=e.connected ? .85+e.spell.controlDuration : 1.6;
       if(e.age>=life){this.dispose(e.root);this.attacks.splice(this.attacks.indexOf(e),1);}
@@ -219,14 +219,14 @@ export class WoodGarden {
       const radius=this.cloudRadius(c);
       for(const actor of actors){
         if(actor.owner===c.owner||c.age<.35||distance(actor.pos,c.center)>radius+actorHitPadding(actor)||actor.pos[1]-this.floor(actor.pos[0],actor.pos[2])>c.height)continue;
-        c.inside.add(actor.owner);const key=c.owner+':'+actor.owner,amount=c.damageRate*elapsed,current=exposure.get(key);
+        c.inside.add(actor.untargetable?actor.id:actor.owner);const key=c.owner+':'+(actor.id||actor.owner),amount=c.damageRate*elapsed,current=exposure.get(key);
         if(!current||current.amount<amount)exposure.set(key,{cloud:c,actor,amount});
       }
       if(c.life<=1e-6){this.dispose(c.root);this.clouds.splice(this.clouds.indexOf(c),1);}
     }
     // Overlapping smoke from one forest expands coverage, without multiplying
     // damage merely because several transparent puffs occupy the same space.
-    for(const {cloud,actor,amount} of exposure.values())this.hit({owner:cloud.owner,element:'wood',style:'poisontick',color:'#ad51d1',damage:amount,ignoreShield:true,unreflectable:true,v:[0,0,0]},actor.pos,actors,impact);
+    for(const {cloud,actor,amount} of exposure.values())this.hit({owner:cloud.owner,victimId:actor.id,element:'wood',style:'poisontick',color:'#ad51d1',damage:amount,ignoreShield:true,unreflectable:true,v:[0,0,0]},actor.pos,actors,impact);
     this.bindings=this.bindings.filter(b=>b.fighter.woodControlTime>0);
   }
   visuals(actors,reducedMotion=false,camera=null,quality=1){

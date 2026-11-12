@@ -7,6 +7,7 @@ import {QUEST_ITEM_MODELS} from './quest-items.js';
 import {botHealth} from './enemy-balance.js';
 import {VILLAGE_EVENTS} from './village-events.js';
 import {PLOT_VERSION,WAR_VILLAGES,ALLIANCE_VILLAGES,plotEventComplete} from './campaign-plot.js';
+import {readCompanionHealth,companionUnconscious} from './companion-health.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
@@ -14,7 +15,7 @@ export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa Vũ Liên Châu',ele
 export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:botHealth(85),spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
 export const FIRST_VILLAGES=['water','fire','lightning'];
 const STAGES=['mother','chief','guardian','report','infiltrate'];
-export function newStory(){return {revision:1,plotVersion:PLOT_VERSION,stage:'mother',starter:null,guardianRestored:false,sealCore:false,sealTraces:[],homecomingDone:false,alliances:[],peaceSeals:[],guardianOrders:[],treaties:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false,phase:'with-party'}};}
+export function newStory(){return {revision:1,plotVersion:PLOT_VERSION,stage:'mother',starter:null,guardianRestored:false,sealCore:false,sealTraces:[],homecomingDone:false,alliances:[],peaceSeals:[],guardianOrders:[],treaties:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false,phase:'with-party',...readCompanionHealth()}};}
 export function readStory(raw,save){
   const s=newStory();
   if(raw?.revision!==1){
@@ -56,7 +57,7 @@ export function readStory(raw,save){
   s.sealTraces=[...new Set((Array.isArray(raw.sealTraces)?raw.sealTraces:[]).filter(key=>{if(typeof key!=='string')return false;const [id,step]=key.split(':');return VILLAGE_EVENTS[id]?.stages[Number(step)]?.sealTrace&&Number(step)<(s.villageEvents[id]||0);}))];
   s.alliances=raw.plotVersion===PLOT_VERSION?[...new Set((Array.isArray(raw.alliances)?raw.alliances:[]).filter(id=>ALLIANCE_VILLAGES.includes(id)&&plotEventComplete({story:s},id)))]:[];
   s.companion.recruited=(s.villageEvents.fire||0)>=4;
-  s.companion.phase=(s.villageEvents.light||0)>=4&&(s.villageEvents.dark||0)<3?'separated':'with-party';return s;
+  s.companion.phase=(s.villageEvents.light||0)>=4&&(s.villageEvents.dark||0)<3?'separated':'with-party';Object.assign(s.companion,readCompanionHealth(raw.companion,save.visited));return s;
 }
 export function promiseMother(save){if(save.story.stage!=='mother')return false;save.story.stage='chief';return true;}
 export function chooseStarter(save,id){
@@ -76,7 +77,7 @@ export function reportGuardian(save){
   save.story.stage='infiltrate';save.gold+=100;return true;
 }
 export function negotiatePeace(save,id,document){
-  if(!WAR_VILLAGES.includes(id)||save.village!==id||!save.bosses[id]||!plotEventComplete(save,id)||save.story.peaceSeals.includes(id))return false;
+  if(companionUnconscious(save)||!WAR_VILLAGES.includes(id)||save.village!==id||!save.bosses[id]||!plotEventComplete(save,id)||save.story.peaceSeals.includes(id))return false;
   if(document&&!storeTreaty(save,id,document))return false;
   save.story.peaceSeals.push(id);save.gold+=100;return true;
 }

@@ -33,7 +33,7 @@ export function createGuardianBossCombat(scene){
  const target=key=>targets().find(t=>t.id===key);
  function status(key){if(!stats.has(key))stats.set(key,{stacks:0,stackTime:0,markTime:0,markSkill:null,wetTime:0,slow:0,slowTime:0,rootTime:0,freezeImmune:0});return stats.get(key);}
  function choose(nearest=false){
-  const list=targets();if(!list.length)return null;
+  const list=targets().filter(t=>!t.untargetable);if(!list.length)return null;
   if(id==='dark'){const marked=list.filter(t=>status(t.id).markTime>0);if(marked.length)return marked.sort((a,b)=>distance(body,a.pos)-distance(body,b.pos))[0];}
   return nearest?[...list].sort((a,b)=>distance(body,a.pos)-distance(body,b.pos))[0]:list[Math.floor(random()*list.length)];
  }
@@ -179,7 +179,7 @@ export function createGuardianBossCombat(scene){
   action={...values,...skill,index,age:0,castId:++castSerial,targetId:chosen.id,target:[...chosen.pos],origin:[...body],events:new Set(),visuals:[],power};
   if(id==='dark'){if(hidden())ambushReady=true;revealUntil=clock+(values.windup||.6)+.4;}
   if(id==='wind')speedStacks=Math.min(passive.speedCap,speedStacks+1);
-  attacks++;history.push({type:skill.type,name:skill.name,phase,at:clock,combo:comboSerial});if(history.length>48)history.shift();
+  attacks++;history.push({targetId:chosen.id,type:skill.type,name:skill.name,phase,at:clock,combo:comboSerial});if(history.length>48)history.shift();
   cooldowns[index]=clock+values.duration+(values.cooldown||0)*(enraged?AI.enrageCooldown:1);
   gameAudio.cast({element:id,rank:index===2?'SS':'S',style:skill.type});return skill.name;
  }
@@ -326,7 +326,7 @@ export function createGuardianBossCombat(scene){
   if(entities.length>320)for(const e of entities.slice(0,entities.length-320))destroy(e);
  }
  const skillContext={
-  get body(){return body;},get targets(){return targets();},get passive(){return passive;},get tails(){return tailCount;},get pose(){return pose;},get clock(){return clock;},
+  get body(){return body;},get targets(){return targets();},get aimTargets(){return targets().filter(t=>!t.untargetable);},get passive(){return passive;},get tails(){return tailCount;},get pose(){return pose;},get clock(){return clock;},
   target,choose,predict,random,randomPoint,bounds,attackBounds,fit,source,once,all,warning,zone,trail,object,projectile,radial,wave,feather,flash,telegraphLine,area,attackLine,cone,emit,control,applySlow,moveTarget,moveBody,teleport,dash,gainArmor,destroy,explodeObject,overlaps,status,
   parameters:a=>guardianSkillStats(a.type),get maxHp(){return ctx?.fighter.maxHp||1000;},get designColor(){return design.color;},
   setBody(p){body=[...p];},reveal(seconds){revealUntil=Math.max(revealUntil,clock+seconds);},
@@ -383,7 +383,7 @@ export function createGuardianBossCombat(scene){
   obscures(p){return all('dark').some(e=>overlaps(e,p));},
   get offset(){return {x:body&&origin?body[0]-origin[0]:0,y:0,z:body&&origin?body[2]-origin[2]:0,lean:stagger>0?.5:0,...pose};},
   state(){return {
-   action:action?{type:action.type,name:action.name,age:action.age,stage:action.age<(action.windup||action.warning||.6)?'warning':'active',parameters:guardianSkillStats(action.type)}:null,
+   action:action?{targetId:action.targetId,type:action.type,name:action.name,age:action.age,stage:action.age<(action.windup||action.warning||.6)?'warning':'active',parameters:guardianSkillStats(action.type)}:null,
    signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor,armorLevels,stationary,tailCount,energy,speedStacks,rage,enraged,recovery:wait,skillCooldowns:design?.skills.map((s,i)=>Math.max(0,(cooldowns[i]||0)-clock))||[],combo:[...combo],comboCursor,comboSerial,
    aiOwnedMovement:!!design,bossPosition:body?[...body]:null,moving:movement>.002,difficulty:design?.difficulty||0,title:design?.title||'',role:design?.role||'',passive:design?.passive||'',counter:design?.counter||'',skills:design?.skills.map(s=>s.name)||[],passiveParameters:{...passive},
    statuses:[...stats].map(([key,s])=>({id:key,stacks:s.stacks,stackTime:s.stackTime,markTime:s.markTime,slow:s.slow,slowTime:s.slowTime,rootTime:s.rootTime,freezeImmune:s.freezeImmune})),

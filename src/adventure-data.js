@@ -1,4 +1,5 @@
 import {PLOT,WAR_VILLAGES,ALLIANCE_VILLAGES,PLOT_ORDER,plotVillageComplete,nextPlotVillage,canProgressPlot,invasionAvailable} from './campaign-plot.js';
+import {companionUnconscious} from './companion-health.js';
 import {storeTreaty} from './peace-treaties.js';
 import {confrontationObjective,guardianOrdered,nextGuardianGuard} from './village-confrontation.js';
 import {newFlask,readFlask} from './healing-flask.js';
@@ -66,7 +67,7 @@ export function canTravel(save,target) {
   if(!WAR_VILLAGES.includes(target)&&(!save.campaign?.treatySigned||!save.story.homecomingDone))return {allowed:false,reason:'Trở về Vô Danh ký đình chiến và gặp mẹ trước khi tiếp tục điều tra.'};
   return {allowed:true,reason:''};
 }
-export function canSignTreaty(save){return save.village==='nameless'&&!save.campaign?.treatySigned&&WAR_VILLAGES.every(id=>plotVillageComplete(save,id));}
+export function canSignTreaty(save){return !companionUnconscious(save)&&save.village==='nameless'&&!save.campaign?.treatySigned&&WAR_VILLAGES.every(id=>plotVillageComplete(save,id));}
 export function signTreaty(save,document){if(!canSignTreaty(save))return false;if(document&&!storeTreaty(save,'nameless',document))return false;save.campaign??={deliveries:[]};save.campaign.treatySigned=true;save.campaign.deliveries??=[];return true;}
 export function deliverTreaty(save,id){
   // Copies can still be handed to envoys; alliance progress comes from each region's actual mission.
@@ -74,6 +75,7 @@ export function deliverTreaty(save,id){
   save.campaign.deliveries??=[];save.campaign.deliveries.push(id);return true;
 }
 export function campaignObjective(save,{localOnly=false}={}){
+  if(companionUnconscious(save))return {title:'Đưa Hạ Ly tới trạm y tế',description:'Hạ Ly đang bất tỉnh. Bế cô ấy tới trạm y tế và chữa trị đủ 60 giây trước khi tiếp tục tuyến truyện chính.',targetVillage:save.village,targetKind:'clinic'};
   const opening=openingObjective(save);if(opening&&!localOnly)return opening;
   const stage=campaignStage(save);
   if(!localOnly&&stage==='treaty')return {title:'Ba cường quốc đình chiến',description:'Đưa đại diện Thủy, Hỏa và Lôi trở về Vô Danh để ký cam kết rút quân.',targetVillage:'nameless',targetKind:'treaty'};

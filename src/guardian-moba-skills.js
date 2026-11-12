@@ -1,9 +1,9 @@
 // Skill choreography uses combat primitives supplied by the simulation. Every
 // delayed event is an encounter-owned entity or a cast event, so pause/reset is exact.
 const dot=(a,b)=>a.reduce((n,v,i)=>n+v*b[i],0);
-function aimed(a,c){return c.target(a.targetId)||c.choose(true)||c.targets[0];}
+function aimed(a,c){return c.target(a.targetId)||c.choose(true)||c.aimTargets[0];}
 function points(a,c,count,targeted=1,avoid=null){
- const chosen=aimed(a,c),list=[chosen,...c.targets.filter(t=>t.id!==chosen?.id)].filter(Boolean),result=[];
+ const chosen=aimed(a,c),list=[chosen,...c.aimTargets.filter(t=>t.id!==chosen?.id)].filter(Boolean),result=[];
  for(let i=0;i<count;i++){const t=list[i%list.length];let p=i<targeted&&t?[...t.pos]:c.randomPoint({avoid,radius:a.radius||1});if(i>0&&i<targeted&&list.length===1)p=c.fit(c.add(c.predict(t,.5),[1.4,0,0]));result.push(p);}return result;
 }
 function warn(a,c,p,shape,extra={},after=null,delay=a.warning||.8){
@@ -23,14 +23,14 @@ export function updateGuardianSkill(a,c,dt){
  case 'fox-homing':{
   const count=a.count+c.tails;
   for(let i=0;i<count;i++)at(i,a.windup+i*a.interval,()=>{
-   const t=i===0?c.choose(true):c.targets[i%c.targets.length],p=c.add(origin,[(i-count/2)*.25,0,0]),destination=i===0?t.pos:c.predict(t,.65);
+   const t=i===0?c.choose(true):c.aimTargets[i%c.aimTargets.length],p=c.add(origin,[(i-count/2)*.25,0,0]),destination=i===0?t.pos:c.predict(t,.65);
    shoot(a,c,p,c.sub(destination,p),{style:'fireball',targetId:i===0?t.id:null,homing:i===0?a.homing:0,homingTime:a.homingTime,blastRadius:a.blastRadius,growth:a.growth});
   });break;
  }
  case 'fox-firestorm':
   c.pose.tailSpread=1;
   for(let i=0;i<a.count;i++)at(i,a.windup+i*a.interval,()=>{
-   const destinations=i===0?c.targets.filter(t=>c.distance(t.pos,c.body)<45).map(t=>t.pos):points(a,c,Math.min(5,3+c.tails),0,'fire');
+   const destinations=i===0?c.aimTargets.filter(t=>c.distance(t.pos,c.body)<45).map(t=>t.pos):points(a,c,Math.min(5,3+c.tails),0,'fire');
    for(const p of destinations)warn(a,c,p,'flame',{},e=>c.zone('fire',e.p,e.r,a.zoneLife,{dps:a.zoneDps,applyStacks:true,src}));
   });
   at('finale',a.duration-.45,()=>{c.cone(c.body,direction(c,c.body,target.pos),a.fanRadius,Math.PI*1.3,a.fanDamage,{},src);for(const fire of [...c.all('fire')]){c.area(fire.p,fire.r,a.damage,{},src);c.destroy(fire);}});break;
@@ -61,7 +61,7 @@ export function updateGuardianSkill(a,c,dt){
    }
   });break;
  case 'wolf-dashes':
-  at('plans',0,()=>{a.plans=Array.from({length:a.count},(_,i)=>{const t=c.targets[i%c.targets.length];return i===0?[...t.pos]:c.fit(c.add(t.pos,[(c.random()-.5)*8,0,(c.random()-.5)*6]));});});
+  at('plans',0,()=>{a.plans=Array.from({length:a.count},(_,i)=>{const t=c.aimTargets[i%c.aimTargets.length];return i===0?[...t.pos]:c.fit(c.add(t.pos,[(c.random()-.5)*8,0,(c.random()-.5)*6]));});});
   for(let i=0;i<a.count;i++){
    const destination=a.plans[i];
    const d=c.dash(a,i,destination,a.windup+i*a.interval,a.rushDuration,a.radius,a.damage);
@@ -72,10 +72,10 @@ export function updateGuardianSkill(a,c,dt){
    for(const field of c.all('electric'))if(c.overlaps(field,e.p,e.r)){field.r*=a.growth;for(const m of field.root.children)m.scale.x*=a.growth;c.area(field.p,field.r+1,a.explosionDamage,{},src);field.life=Math.max(field.life,field.age+.75);}
   }));break;
  case 'wolf-clones':
-  at('clones',a.windup,()=>{for(let i=0;i<a.count;i++){const theta=i*Math.PI*2/a.count,t=c.targets[i%c.targets.length],p=c.fit(c.add(c.body,[Math.sin(theta)*2,0,Math.cos(theta)*2]));c.object('clone',p,a.hp,a.radius,a.life,{family:'lightning',targetId:t.id,guided:true,origin:[...p],seed:theta,tick:0,src,...c.parameters(a)});}});break;
+  at('clones',a.windup,()=>{for(let i=0;i<a.count;i++){const theta=i*Math.PI*2/a.count,t=c.aimTargets[i%c.aimTargets.length],p=c.fit(c.add(c.body,[Math.sin(theta)*2,0,Math.cos(theta)*2]));c.object('clone',p,a.hp,a.radius,a.life,{family:'lightning',targetId:t.id,guided:true,origin:[...p],seed:theta,tick:0,src,...c.parameters(a)});}});break;
  case 'eagle-blades':
   for(let i=0;i<a.count;i++)at(i,a.windup+i*a.interval,()=>{
-   const t=c.targets[i%c.targets.length],theta=i<2?c.angle(origin,c.predict(t,.4))+(i?-.08:.08):c.random()*Math.PI*2;
+   const t=c.aimTargets[i%c.aimTargets.length],theta=i<2?c.angle(origin,c.predict(t,.4))+(i?-.08:.08):c.random()*Math.PI*2;
    shoot(a,c,origin,[Math.sin(theta),0,Math.cos(theta)],{style:'windblade',piercing:true,range:a.range,speedBoost:a.speedBoost,lifeBoost:a.lifeBoost});
   });break;
  case 'eagle-tornadoes':
@@ -86,14 +86,14 @@ export function updateGuardianSkill(a,c,dt){
   else if(a.age<a.windup+a.rushDuration){const q=(a.age-a.windup)/a.rushDuration;c.setBody(c.add(a.start,c.mul(c.sub(c.flat(a.locked),a.start),q)));c.setAirborne(8*(1-q));}
   at('land',a.windup+a.rushDuration,()=>{
    c.teleport(a.locked);c.setAirborne(0);c.area(a.locked,a.radius,a.damage,{},src);
-   for(let i=0;i<a.count;i++){const t=c.targets[i%c.targets.length],theta=i<2?c.angle(c.body,t.pos)+(i?-.35:.35):c.random()*Math.PI*2;shoot(a,c,[c.body[0],1.1,c.body[2]],[Math.sin(theta),0,Math.cos(theta)],{style:'gust',damage:a.gustDamage,speed:a.gustSpeed,r:a.gustRadius,life:3});}
+   for(let i=0;i<a.count;i++){const t=c.aimTargets[i%c.aimTargets.length],theta=i<2?c.angle(c.body,t.pos)+(i?-.35:.35):c.random()*Math.PI*2;shoot(a,c,[c.body[0],1.1,c.body[2]],[Math.sin(theta),0,Math.cos(theta)],{style:'gust',damage:a.gustDamage,speed:a.gustSpeed,r:a.gustRadius,life:3});}
    for(const tornado of c.all('tornado')){tornado.pullTo=[...c.body];tornado.collapseAt=tornado.age+.4;tornado.collapseSource=src;}
   });break;
  case 'turtle-pillars':
   at('pillars',0,()=>{for(const p of points(a,c,a.count))warn(a,c,p,'pillar',{air:a.controlDuration},e=>c.object('rock',e.p,a.hp,a.radius,a.life,{solid:true,fromPillar:true,src}));});break;
  case 'turtle-quake':
   at('ring',a.windup,()=>{const e=c.entity('quake-ring',[...c.body],{r:.2,life:1.5,speed:a.speed,damage:a.damage,hit:new Set(),src});const ring=c.circle([0,0,0],1,undefined,false,e.root);e.update=step=>{const old=e.r;e.r+=e.speed*step;ring.scale.setScalar(e.r);for(const t of c.targets)if(!e.hit.has(t.id)&&c.distance(t.pos,e.p)>=old-a.radius&&c.distance(t.pos,e.p)<=e.r+a.radius){e.hit.add(t.id);c.emit(e.damage,t,{ground:true},src);}eruptRocks(a,c,r=>c.distance(r.p,e.p)>=old-r.r&&c.distance(r.p,e.p)<=e.r+r.r);};});
-  at('cracks',a.windup+a.interval,()=>{a.cracks=[];for(const t of c.targets)for(let j=-1;j<=1;j++){const from=[...c.body],to=c.fit(c.add(t.pos,[j*2,0,0]));a.cracks.push({from,to});c.telegraphLine(from,to,.15,a.interval+a.warning,'#e0bd8d');}});
+  at('cracks',a.windup+a.interval,()=>{a.cracks=[];for(const t of c.aimTargets)for(let j=-1;j<=1;j++){const from=[...c.body],to=c.fit(c.add(t.pos,[j*2,0,0]));a.cracks.push({from,to});c.telegraphLine(from,to,.15,a.interval+a.warning,'#e0bd8d');}});
   at('activate',a.windup+a.interval*2,()=>{const shuffled=[...(a.cracks||[])].sort(()=>c.random()-.5);shuffled.forEach((crack,i)=>c.warning(crack.to,1,a.warning+i*.13,()=>{c.attackLine(crack.from,crack.to,a.radius,a.damage,{ground:true},src);eruptRocks(a,c,r=>c.along(r.p,crack.from,crack.to)<r.r+a.radius);},'pillar',0,src));});break;
  case 'turtle-ram':
   at('warning',0,()=>{a.dir=direction(c,c.body,target.pos);a.bounceCount=0;a.hit=new Set();a.visuals.push(c.telegraphLine(c.body,c.add(c.body,c.mul(a.dir,15)),.25,a.windup));});
@@ -112,7 +112,7 @@ export function updateGuardianSkill(a,c,dt){
    }
   }break;
  case 'gold-feathers':
-  for(let i=0;i<a.count;i++)at(i,a.windup+i*a.interval,()=>{const theta=c.angle(origin,c.predict(c.targets[i%c.targets.length],.4))+(i<3?(i-1)*.06:(c.random()-.5)*a.fanAngle);shoot(a,c,origin,[Math.sin(theta),0,Math.cos(theta)],{style:'feather',armorPiercing:true,featherLife:a.featherLife});});break;
+  for(let i=0;i<a.count;i++)at(i,a.windup+i*a.interval,()=>{const theta=c.angle(origin,c.predict(c.aimTargets[i%c.aimTargets.length],.4))+(i<3?(i-1)*.06:(c.random()-.5)*a.fanAngle);shoot(a,c,origin,[Math.sin(theta),0,Math.cos(theta)],{style:'feather',armorPiercing:true,featherLife:a.featherLife});});break;
  case 'gold-arcs':
   for(let i=0;i<a.count;i++)at(i,a.windup+i*a.interval,()=>{const theta=c.angle(origin,c.choose(true).pos)+(i?(c.random()<.5?-1:1)*(.55+c.random()*.8):0);shoot(a,c,origin,[Math.sin(theta),0,Math.cos(theta)],{style:'goldarc',piercing:true,arcGroup:a.castId,arcSlow:a.slow,slowTime:a.slowTime});});break;
  case 'gold-swords':

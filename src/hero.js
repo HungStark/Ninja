@@ -220,7 +220,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
     const apply=(entry,x,z)=>{if(entry)entry.bone.quaternion.copy(entry.base).premultiply(new T.Quaternion().setFromEuler(new T.Euler(x,0,z)));};
     if(!avatarPose)return;apply(avatarPose.legs[i],hip,spread);apply(avatarPose.knees[i],knee,0);apply(avatarPose.feet[i],ankle,-spread);
   }
-  const combatMotion=createHeroCombatMotion();
+  let carrying=false;const combatMotion=createHeroCombatMotion();
   function update(time,moving,velocity=null,dt=1/60,sprinting=false,combatOptions=null){
     const state=motion.update(time,moving,velocity,dt,sprinting,root.rotation.y,airborne);({localX,localZ,stride,sprintBlend}=state);
     const {weight,side,forward,sprintLean,gait}=state;
@@ -241,6 +241,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
     body.rotation.x=forward*weight*.045*(1-sprintBlend)+sprintLean+combatLean;body.rotation.z=-side*weight*.05;body.rotation.y=combatTwist;body.position.y-=combatDrop;
     scarf.rotation.y=Math.sin(time*1.6)*.018+side*weight*.045;
     tails.forEach((tail,i)=>{tail.rotation.x=-.05-weight*.12+Math.sin(time*2.1+i*1.7)*(.025+weight*.045);tail.rotation.z=Math.sin(time*1.7+i)*.025+side*weight*.06;});
+    if(carrying)arms.forEach((a,i)=>{a.pivot.rotation.x=-1.15;a.pivot.rotation.z=(i===0?-1:1)*.25;a.elbow.rotation.x=-1.35;});
     if(avatarPose){
       const rotation=(x,y,z)=>new T.Quaternion().setFromEuler(new T.Euler(x,y,z));
       for(let i=0;i<2;i++){
@@ -251,7 +252,8 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
       if(avatarPose.spine)avatarPose.spine.bone.quaternion.copy(avatarPose.spine.base).premultiply(rotation((airborne?.08:-forward*weight*.018)+combatLean*.15,combatTwist*.35,airborne?0:side*weight*.018));
       if(avatarPose.chest)avatarPose.chest.bone.quaternion.copy(avatarPose.chest.base).premultiply(rotation((airborne?-.04:-forward*weight*.012)+combatLean*.1,combatTwist*.3,airborne?0:side*weight*.012));
     }
-    if(combat?.hands&&!airborne){
+    if(carrying){root.updateMatrixWorld(true);for(let i=0;i<2;i++){const side=i===0?1:-1,arm=arms.find(a=>a.side===side),upper=avatarPose?.arms[i]?.bone||arm.pivot,lower=avatarPose?.elbows[i]?.bone||arm.elbow,hand=avatarPose?.hands[i]?.bone||arm.hand;reachResidentHand(root,upper,lower,hand,[side*.55,1.45,.7],side,[side*.85,1.4,.25]);}}
+    if(!carrying&&combat?.hands&&!airborne){
       root.updateMatrixWorld(true);
       for(let i=0;i<2;i++){
         const side=i===0?1:-1,arm=arms.find(a=>a.side===side),upper=avatarPose?.arms[i]?.bone||arm.pivot,lower=avatarPose?.elbows[i]?.bone||arm.elbow,hand=avatarPose?.hands[i]?.bone||arm.hand;
@@ -263,5 +265,5 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
   }
   function airPose(v){setAirborne(true,v);legs.forEach((l,i)=>{l.pivot.rotation.x=-.3;l.pivot.rotation.z=0;l.knee.rotation.x=(v>0?.65:.38)+(i===0?.1:0);l.foot.rotation.x=-l.pivot.rotation.x-l.knee.rotation.x;avatarLeg(i,l.pivot.rotation.x,l.knee.rotation.x,l.foot.rotation.x);});arms.forEach((a,i)=>{a.pivot.rotation.x=-.6;a.pivot.rotation.z=-a.side*.22;a.elbow.rotation.x=-.35;avatarArm(i,-.6,i===0?.22:-.22,.35);});}
   function climbPose(t){arms.forEach((a,i)=>{a.pivot.rotation.x=-2+Math.sin(t*6+i*Math.PI)*.35;a.elbow.rotation.x=-.5;avatarArm(i,a.pivot.rotation.x,0,.5);});legs.forEach((l,i)=>{l.knee.rotation.x=.4+Math.sin(t*6+i*Math.PI)*.25;avatarLeg(i,-.15,l.knee.rotation.x,-l.knee.rotation.x+.15);});body.rotation.x=-.1;}
-  return {root,group:root,ready,setEyeOpening,get eyeOpening(){return eyeOpening;},facePosition(){root.updateMatrixWorld(true);return faceAnchor?faceAnchor.getWorldPosition(new T.Vector3()):root.localToWorld(new T.Vector3(0,2.64,.2));},get modelReady(){return root.userData.referenceAppearance===true;},cloth,hair,legs,arms,armorAnchors,get equippedArmorAnchors(){return avatarArmorAnchors||armorAnchors;},get pouch(){return pouch;},update,playCombatAction:(kind,style)=>combatMotion.play(kind,style),resetCombat:()=>combatMotion.reset(),combatState:()=>combatMotion.state(),airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
+  return {root,group:root,ready,setCarrying:value=>{carrying=!!value;root.userData.carryingCompanion=carrying;},setEyeOpening,get eyeOpening(){return eyeOpening;},facePosition(){root.updateMatrixWorld(true);return faceAnchor?faceAnchor.getWorldPosition(new T.Vector3()):root.localToWorld(new T.Vector3(0,2.64,.2));},get modelReady(){return root.userData.referenceAppearance===true;},cloth,hair,legs,arms,armorAnchors,get equippedArmorAnchors(){return avatarArmorAnchors||armorAnchors;},get pouch(){return pouch;},update,playCombatAction:(kind,style)=>combatMotion.play(kind,style),resetCombat:()=>combatMotion.reset(),combatState:()=>combatMotion.state(),airPose,setAirborne,climbPose,setEquipment,setInkViewport:(w,h)=>ink.uniforms.viewport.value.set(w,h),locomotionState:()=>({side:localX,forward:localZ,speed:Math.hypot(localX,localZ),stride,sprintBlend,arms:arms.map(a=>({shoulder:[a.pivot.rotation.x,a.pivot.rotation.z],elbow:a.elbow.rotation.x})),legs:legs.map(l=>({hip:[l.pivot.rotation.x,l.pivot.rotation.z],knee:l.knee.rotation.x,ankle:l.foot.rotation.x})),lean:[body.rotation.x,body.rotation.z]}),get equipment(){return equipment;}};
 }

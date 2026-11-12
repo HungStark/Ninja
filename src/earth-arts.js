@@ -198,7 +198,7 @@ export class EarthArts {
     return null;
   }
   hit(e,actor,amount,damage,blast){
-    const shot={owner:e.owner,element:'earth',style:e.spell.style,color:'#d9ae69',damage:amount,v:[0,1,0],unreflectable:true};
+    const shot={owner:e.owner,victimId:actor.id,element:'earth',style:e.spell.style,color:'#d9ae69',damage:amount,v:[0,1,0],unreflectable:true};
     const result=damage(shot,actor.pos);blast?.(e.owner,actor.pos,.9);return result;
   }
   burst(pos,scale=1){const root=this.group();root.position.fromArray(pos);const rocks=[];for(let i=0;i<12;i++){const a=i*2.399,mesh=this.mesh(root,'rock',i%2?this.rock:this.light,[0,0,0],[.06*scale,.06*scale,.06*scale]);rocks.push({mesh,v:[Math.cos(a)*scale*2,(1+i%3)*scale,Math.sin(a)*scale*2]});}this.bursts.push({root,age:0,rocks});}
@@ -208,19 +208,19 @@ export class EarthArts {
     if(this.effects.length)this.revision++;
     for(const e of [...this.effects]){
       if(!this.effects.includes(e))continue;
-      const old=e.age;e.age+=Math.min(dt,e.life);e.life=Math.max(0,e.life-dt);const victim=actors.find(a=>a.owner!==e.owner);
+      const old=e.age;e.age+=Math.min(dt,e.life);e.life=Math.max(0,e.life-dt);const victims=actors.filter(a=>a.owner!==e.owner&&a.fighter.hp>0),victim=victims[0];
       if(e.kind==='spikes'){
         if(e.eruptedAt===undefined){
           const from=e.travel,old=[...e.headPosition];e.travel=Math.min(e.spell.range,e.travel+e.spell.speed*dt);e.headPosition=add(e.origin,mul(e.axis,e.travel));
           if(intercept({owner:e.owner,old,p:[...e.headPosition],size:.45})){this.remove(e,walls);continue;}
-          if(victim){
+          for(const victim of victims){
             const delta=sub(victim.pos,e.origin),along=delta[0]*e.axis[0]+delta[2]*e.axis[2],nearest=clamp(along,from,e.travel),point=add(e.origin,mul(e.axis,nearest));
             if(distance(victim.pos,point)<1.2+actorHitPadding(victim)){
               e.eruptedAt=e.age;e.center=[victim.pos[0],this.heightAt(victim.pos[0],victim.pos[2]),victim.pos[2]];e.head.visible=false;e.life=e.spell.duration+.95;
               for(let i=0;i<5;i++){
                 const a=i*Math.PI/2,p=i===0?[...e.center]:add(e.center,[Math.cos(a)*.85,0,Math.sin(a)*.85]);
                 const mesh=this.mesh(e.root,'spike',i%3?this.rock:this.light);mesh.visible=false;e.nodes.push({p,mesh,delay:e.age+(i? .06:0),started:false});
-              }
+              }break;
             }
           }
           if(e.eruptedAt===undefined&&e.travel>=e.spell.range){this.remove(e,walls);continue;}
@@ -228,15 +228,15 @@ export class EarthArts {
         e.phase=e.eruptedAt===undefined?'tunneling':e.age-e.eruptedAt<.95?'erupting':'ridge';
         for(const node of e.nodes){const age=e.age-node.delay;
           if(age>=0&&!node.started){node.started=true;this.burst(node.p,.45);blast(e.owner,node.p,.8);}
-          if(age>=.12&&age<=.55&&victim&&!e.hitOwners.has(victim.owner)&&distance(victim.pos,node.p)<1.15+actorHitPadding(victim)&&victim.pos[1]-node.p[1]<2.8){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.owner);event('spike',e,victim);}
+          for(const victim of victims)if(age>=.12&&age<=.55&&!e.hitOwners.has(victim.id||victim.owner)&&distance(victim.pos,node.p)<1.15+actorHitPadding(victim)&&victim.pos[1]-node.p[1]<2.8){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.id||victim.owner);event('spike',e,victim);}
         }
       }else if(e.kind==='craterspikes'){
         e.phase=e.age<.45?'rising':'spiked';
-        if(e.age>=.25&&victim&&!e.hitOwners.has(victim.owner)&&distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+3.5){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.owner);event('spike',e,victim);}
+        for(const victim of victims)if(e.age>=.25&&!e.hitOwners.has(victim.id||victim.owner)&&distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+3.5){this.hit(e,victim,e.spell.damage,damage,blast);e.hitOwners.add(victim.id||victim.owner);event('spike',e,victim);}
       }else if(e.kind==='quake'){
         e.phase=e.age<e.spell.duration?'shifting':'rubble';
         const total=Math.min(e.spell.count,Math.floor((e.age+1e-6)*e.spell.count/e.spell.duration));e.ticks??=0;
-        while(e.ticks<total){e.ticks++;event('quake',e,victim);blast(e.owner,e.center,e.spell.radius);if(victim&&distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+2.8)this.hit(e,victim,e.spell.damage,damage,blast);}
+        while(e.ticks<total){e.ticks++;event('quake',e,victim);blast(e.owner,e.center,e.spell.radius);for(const victim of victims)if(distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.pos[1]<this.heightAt(victim.pos[0],victim.pos[2])+2.8)this.hit(e,victim,e.spell.damage,damage,blast);}
       }else if(e.kind==='wall'){
         e.phase=e.hp/e.maxHp<.4?'cracked':'wall';if(e.hp<=0){this.burst(e.center,2);event('wallbreak',e);this.remove(e,walls);continue;}
       }else if(e.kind==='gravity'){
@@ -244,12 +244,13 @@ export class EarthArts {
         if(old<e.throwEnd&&e.age>=e.throwEnd){this.burst(add(e.center,[0,.15,0]),.65);event('fracture',e,victim);}
         for(let i=0;i<e.nodes.length;i+=e.spell.liftBatchSize){const n=e.nodes[i];if(old<n.liftAt&&e.age>=n.liftAt)this.burst(add(n.source,[0,.5,0]),.5);}
         if(!e.captureChecked&&e.age>=e.chargeTime){
-          e.captureChecked=true;
+          e.captureChecked=true;e.collateral=victims.filter(a=>a.untargetable&&distance(a.pos,e.center)<e.spell.radius+actorHitPadding(a)&&a.fighter.invulnerableTime<=0).map(a=>({...a}));
           if(victim&&distance(victim.pos,e.center)<e.spell.radius+actorHitPadding(victim)&&victim.fighter.invulnerableTime<=0){
             for(const other of this.effects)if(other!==e&&other.capture?.owner===victim.owner){other.capture.fighter.earthControlTime=0;other.capture=null;}
             e.capture={owner:victim.owner,fighter:victim.fighter,from:[...victim.pos],height:victim.pos[1]-1.72};event('capture',e,victim);
           }
         }
+        for(const a of e.collateral||[]){if(a.fighter.hp<=0)continue;a.fighter.earthControlTime=Math.max(0,e.landTime-e.age);if(!a.cageHit&&e.age>=e.pullEnd){a.cageHit=true;this.hit(e,a,e.spell.captureDamage,damage,blast);}if(!a.fallHit&&e.age>=e.landTime){a.fallHit=true;this.hit(e,a,e.spell.fallDamage,damage,blast);}}
         const c=e.capture;
         if(c){
           if(e.age<e.landTime){

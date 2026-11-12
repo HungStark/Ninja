@@ -39,8 +39,10 @@ export function attachHaLy(root,profile,fallback){
       for(let i=0;i<2;i++)reachResidentHand(root,bones.arms[i],bones.elbows[i],bones.hands[i],[(i===0?1:-1)*.115,1.30+breath,.44],i===0?1:-1,[(i===0?1:-1)*.85,1.25,.12]);
       for(const f of bones.fingers)f.quaternion.copy(rest.get(f)).multiply(rotation(0,(f.name.includes('_L_')?-1:1)*.45,0));
     }
+    const unconscious=storyPose==='carried'||storyPose==='unconscious';
+    if(unconscious){bones.hips.position.y=hipsY;apply(bones.hips,rotation(.1));apply(bones.spine,rotation(.08));apply(bones.head,rotation(.25,0,.15));for(let i=0;i<2;i++){const side=i===0?1:-1;apply(bones.legs[i],rotation(-.45,0,side*.05));apply(bones.knees[i],rotation(.85));arm(i,-.1,side*.08,1.1);}}
     bonds.visible=storyPose==='captive';
-    visual.traverse(o=>{const d=o.morphTargetDictionary,v=o.morphTargetInfluences;if(!d||!v)return;const blink=time%4.8;for(const [name,value]of [['Fcl_EYE_Close',blink<.16?Math.sin(blink/.16*Math.PI):wounded?.12:0],['Fcl_BRW_Sorrow',wounded?.45:0],['Fcl_MTH_Small',wounded?.12:0]])if(d[name]!==undefined)v[d[name]]=value;});
+    visual.traverse(o=>{const d=o.morphTargetDictionary,v=o.morphTargetInfluences;if(!d||!v)return;const blink=time%4.8;for(const [name,value]of [['Fcl_EYE_Close',unconscious?1:blink<.16?Math.sin(blink/.16*Math.PI):wounded?.12:0],['Fcl_BRW_Sorrow',wounded?.45:0],['Fcl_MTH_Small',wounded?.12:0]])if(d[name]!==undefined)v[d[name]]=value;});
   }
   function update(time,moving,velocity=null,dt=1/60,locomotion={}){lastTime=time;lastState={...motion.update(time,moving,velocity,dt,locomotion.sprinting??(moving&&Math.hypot(velocity?.x||0,velocity?.z||0)>5.1),root.rotation.y,!!locomotion.airborne),airborne:!!locomotion.airborne,verticalSpeed:locomotion.verticalSpeed||0};pose(lastState,time);}
   const ready=typeof document==='undefined'?Promise.resolve(false):(sourcePromise??=new GLTFLoader().loadAsync(new URL('assets/ha-ly-simple.glb',document.baseURI).href).then(g=>prepareCharacterSource(g.scene))).then(source=>{

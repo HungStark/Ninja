@@ -234,7 +234,7 @@ export class DarkDomain {
   updateClones(dt,time,fighters,strike,crush,intercept=()=>false,block=()=>false,redirect=()=>false) {
     for(const c of [...this.clones]) {
       if(!this.clones.includes(c))continue;
-      c.age+=dt;const attacking=['windup','charging'].includes(c.mode),opponent=fighters.find(f=>f.owner!==c.owner&&!(f.fighter.hp<=0)&&(!attacking||(f.id??f.owner)===c.targetId));
+      c.age+=dt;const attacking=['windup','charging'].includes(c.mode),opponent=fighters.find(f=>!f.untargetable&&f.owner!==c.owner&&!(f.fighter.hp<=0)&&(!attacking||(f.id??f.owner)===c.targetId));
       if(!opponent||opponent.fighter.hp<=0){if(attacking)this.destroyClone(c);continue;}
       if(attacking)c.target=[opponent.pos[0],0,opponent.pos[2]];
       if(c.mode==='carried'){
@@ -275,6 +275,7 @@ export class DarkDomain {
         }
         if(intercept(attack)||block(attack)){this.destroyClone(c);continue;}
         c.chargeDamage=attack.damage;
+        const secondary=fighters.filter(f=>f.untargetable&&f.owner!==c.owner&&f.fighter.hp>0).find(f=>{const a=[previous[0],0,previous[2]],b=c.p,dx=b[0]-a[0],dz=b[2]-a[2],t=clamp(((f.pos[0]-a[0])*dx+(f.pos[2]-a[2])*dz)/(dx*dx+dz*dz||1));return Math.hypot(f.pos[0]-a[0]-dx*t,f.pos[2]-a[2]-dz*t)<c.hitRadius+actorHitPadding(f);});if(secondary){strike(c,secondary.pos,{...attack,victimId:secondary.id});this.destroyClone(c);continue;}
         if(distance(c.p,destination)<.15){
           if(distance(c.p,opponent.pos)<1.35+actorHitPadding(opponent)&&opponent.fighter.invulnerableTime<=0)strike(c,[opponent.pos[0],1.5,opponent.pos[2]],attack);
           this.destroyClone(c);continue;
@@ -307,6 +308,7 @@ export class DarkDomain {
           if(this.usable){b.victim=live;live.fighter.darkControlTime=b.duration;}
           const result=live.fighter.receive(b.damage,true,true,'dark');crush?.(b,live,result);
         }
+        for(const ally of fighters.filter(f=>f.untargetable&&f.owner!==b.owner&&f.fighter.hp>0))if(distance(b.p,ally.pos)<1.5+actorHitPadding(ally)&&ally.fighter.invulnerableTime<=0){const result=ally.fighter.receive(b.damage,true,true,'dark');crush?.({...b,victim:null},ally,result);}
         b.phase=b.victim?'pressing':'missed';this.splash(b.p);
       }
       if(!b.impactDone){b.elephant.position.y=13-11.3*fall*fall;b.elephant.scale.setScalar(1.6*(.7+.3*ease(b.age/.2)));}

@@ -3,6 +3,7 @@ import {REGIONS} from './adventure-world.js';
 import {gainExperience,regionElement,GUARD_ARSENALS} from './progression.js';
 import {FIRE_PRISON_SITE,FIRE_MOTHER_SITE} from './village-zoning.js';
 import {botHealth} from './enemy-balance.js';
+import {readCompanionHealth} from './companion-health.js';
 
 export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
 export const HA_LY_MOTHER={id:'fire-ha-ly-mother',name:'Bà Hồng',role:'Mẹ nuôi của Hạ Ly',kind:'healer',female:true,age:'elder',hair:'#bdb5a2',hairStyle:'bun',coat:'#7c594d',accent:'#b79e75',height:2.7,width:.94,shawl:true};
@@ -14,14 +15,14 @@ export function villageEventComplete(save,id){return !VILLAGE_EVENTS[id]||villag
 export function currentVillageEvent(save,id=save.village){const chapter=id==='nameless'&&!invasionAvailable(save)&&!save.story?.plotPreview?null:VILLAGE_EVENTS[id],step=villageEventStep(save,id);return chapter&&step<chapter.stages.length?{...chapter.stages[step],step,village:id,chapter:chapter.title,speaker:chapter.stages[step].speaker||chapter.speaker}:null;}
 export function villageEventObjective(save,id=save.village){const e=currentVillageEvent(save,id);return e?{title:e.title,description:e.body,targetVillage:id,targetKind:'village-event',targetId:`story-${id}-${e.step}`,storyStep:e.step+1,storyTotal:VILLAGE_EVENTS[id].stages.length} : null;}
 export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=false}={}){
-  const e=currentVillageEvent(save,id);if(!e||!canProgressPlot(save,id)||save.village!==id||e.step!==expectedStep)return {ok:false,reason:'stage'};
+  const e=currentVillageEvent(save,id);if(!e||!canProgressPlot(save,id,{battleResult:victory&&!!e.battle})||save.village!==id||e.step!==expectedStep)return {ok:false,reason:'stage'};
   if(e.sealTrace&&!save.story.sealCore&&!save.story.plotPreview)return {ok:false,reason:'seal-core'};
   if(id==='fire'&&[2,3].includes(e.step)&&!save.story.questItems?.includes('fire:lotus-medicine'))return {ok:false,reason:'medicine',message:'Hãy mang Hồng Liên trên đỉnh Vách Tro Hồng về cho Y nữ Đan điều chế thuốc cứu Hạ Ly.'};
   if(id==='fire'&&e.step===3)save.story.questItems=save.story.questItems.filter(item=>item!=='fire:lotus-medicine');
   if(e.battle&&!victory)return {ok:false,reason:'battle'};
   if(e.choices&&!e.choices[choiceIndex]?.correct)return {ok:false,reason:'choice',message:e.choices[choiceIndex]?.feedback||'Hãy xem lại những dấu vết vừa tìm được.'};
   save.story.villageEvents??={};save.story.villageEvents[id]=e.step+1;
-  if(e.recruit)save.story.companion={recruited:true,phase:'with-party'};
+  if(e.recruit)save.story.companion={recruited:true,phase:'with-party',...readCompanionHealth({},save.visited)};
   if(e.separate)save.story.companion={...save.story.companion,phase:'separated'};
   if(e.reconcile)save.story.companion={...save.story.companion,recruited:true,phase:'with-party'};
   if(e.sealTrace){save.story.sealTraces??=[];const trace=id+':'+e.step;if(!save.story.sealTraces.includes(trace))save.story.sealTraces.push(trace);}

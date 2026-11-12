@@ -4,6 +4,7 @@ import english from './locales/en.json' with {type:'json'};
 import {gameLanguage} from './language.js';
 import {REGIONS} from './adventure-world.js';
 import {addBooks} from './progression.js';
+import {companionUnconscious} from './companion-health.js';
 
 const translate=(value,patch)=>Array.isArray(value)?value.map((v,i)=>Array.isArray(v)&&v.length===2&&typeof patch?.[i]==='string'?[v[0],patch[i]]:translate(v,patch?.[i])):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([k,v])=>[k,translate(v,patch?.[k])])):typeof value==='string'?(typeof patch==='string'?patch:english[value]||value):value;
 export const PLOT=gameLanguage()==='en'?translate(data,translation):data;
@@ -17,7 +18,8 @@ export const nextPlotVillage=save=>PLOT_ORDER.find(id=>!plotVillageComplete(save
 export const companionPresent=save=>!!save.story?.companion?.recruited&&save.story?.companion?.phase!=='separated';
 export const invasionAvailable=save=>!!save.story?.homecomingDone&&ALLIANCE_VILLAGES.every(id=>plotVillageComplete(save,id));
 export const plotHostile=(save,id=save.village)=>WAR_VILLAGES.includes(id)&&!save.story?.peaceSeals?.includes(id);
-export function canProgressPlot(save,id){
+export function canProgressPlot(save,id,{battleResult=false}={}){
+  if(companionUnconscious(save)&&!battleResult)return false;
   if(save.story?.plotPreview)return true;
   if(save.story?.stage!=='infiltrate')return false;
   if(id==='nameless')return invasionAvailable(save);
