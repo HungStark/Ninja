@@ -11,9 +11,9 @@ for(const id of Object.keys(HALL_STYLES))INTERIORS[hallId(id)]={id:hallId(id),vi
 export const councilInterior=id=>INTERIORS[hallId(id)]||null;
 export const interiorForZone=(village,id)=>village==='earth'&&['great-cave','cave-crystals'].includes(id)?'earth-cave':null;
 export function interiorForSave(save){const room=INTERIORS[save.interior?.id];return room?.village===save.village?room:null;}
-export function enterInterior(save,id,standing){const room=INTERIORS[id];if(!room||room.village!==save.village||save.interior)return false;save.interior={id,...(room.kind==='council'?{layoutRevision:2}:{}),returnPosition:[...standing.position],returnSurface:standing.surface||null,returnElevation:standing.elevation};save.position=[...room.spawn];save.surface=null;save.elevation=0;return true;}
-export function leaveInterior(save){const room=interiorForSave(save);if(!room)return false;const from=save.interior;if(room.kind==='council'&&from.layoutRevision!==2){const entry=planVillageCivic(save.village).hall.entry;from.returnPosition=[entry.x,entry.z];from.returnSurface=null;from.returnElevation=entry.y;}save.position=[...from.returnPosition];save.surface=from.returnSurface;save.elevation=from.returnElevation;save.interior=null;return true;}
-export function readInterior(raw,village){const room=INTERIORS[raw?.id];if(!room||room.village!==village)return null;const p=raw.returnPosition,valid=Array.isArray(p)&&p.length===2&&p.every(n=>Number.isFinite(n)&&Math.abs(n)<140);return {id:room.id,...(room.kind==='council'?{layoutRevision:raw?.layoutRevision===2?2:0}:{}),returnPosition:valid?[...p]:[...room.exterior],returnSurface:room.surface,returnElevation:Number.isFinite(raw.returnElevation)&&raw.returnElevation>=-20&&raw.returnElevation<100?raw.returnElevation:null};}
+export function enterInterior(save,id,standing){const room=INTERIORS[id];if(!room||room.village!==save.village||save.interior)return false;save.interior={id,...(room.kind==='council'?{layoutRevision:3}:{}),returnPosition:[...standing.position],returnSurface:standing.surface||null,returnElevation:standing.elevation};save.position=[...room.spawn];save.surface=null;save.elevation=0;return true;}
+export function leaveInterior(save){const room=interiorForSave(save);if(!room)return false;const from=save.interior;if(room.kind==='council'&&from.layoutRevision!==3){const entry=planVillageCivic(save.village).hall.entry;from.returnPosition=[entry.x,entry.z];from.returnSurface=null;from.returnElevation=entry.y;}save.position=[...from.returnPosition];save.surface=from.returnSurface;save.elevation=from.returnElevation;save.interior=null;return true;}
+export function readInterior(raw,village){const room=INTERIORS[raw?.id];if(!room||room.village!==village)return null;const p=raw.returnPosition,valid=Array.isArray(p)&&p.length===2&&p.every(n=>Number.isFinite(n)&&Math.abs(n)<140);return {id:room.id,...(room.kind==='council'?{layoutRevision:raw?.layoutRevision===3?3:0}:{}),returnPosition:valid?[...p]:[...room.exterior],returnSurface:room.surface,returnElevation:Number.isFinite(raw.returnElevation)&&raw.returnElevation>=-20&&raw.returnElevation<100?raw.returnElevation:null};}
 
 // Only this room is built after the outdoor scene has been disposed.
 export function buildInterior(c,room){
@@ -28,6 +28,11 @@ export function buildInterior(c,room){
   const fixtures=[{kind:'interior-exit',id:room.id,x:room.exit[0],z:room.exit[1],y:0,label:room.kind==='council'?'Ra sân nhà họp':wood?'Ra hiên nhà trên cây':'Trở ra Làng Thổ'}];
   if(room.kind==='council'){
     const colors={water:'#76a7b5',fire:'#b46547',lightning:'#a795c7',earth:'#c2a071',wind:'#a0bda2',light:'#e1cd8f',ice:'#badbe1',wood:'#83a169',dark:'#89799e'},accent=M(colors[room.village]);
+    // Visible entrance on the inside face of the front wall.
+    const door=box(root,trim.clone(),0,2.6,b.maxZ-.08,4.6,5.2,.18);door.name='council-exit-door';
+    for(const side of [-1,1])box(root,warm,side*2.5,2.7,b.maxZ-.22,.24,5.6,.3);
+    box(root,warm,0,5.5,b.maxZ-.22,5.3,.28,.3);
+    box(root,accent,0,3,b.maxZ-.2,.08,4.5,.1);cyl(root,warm,1.5,2.5,b.maxZ-.32,.13,.25,8).rotation.x=Math.PI/2;
     // Central council table, chairs, records and a small private sleeping area.
     solid(box(root,trim,0,.65,-5,10,1.3,3.4),'council-table');box(root,M('#c9b38c'),0,1.34,-5,10.2,.12,3.6);
     for(const side of [-1,1])for(const x of [-4,-1.3,1.3,4]){const z=-5+side*3;solid(box(root,stone,x,.42,z,1.5,.84,1.5),'council-chair');box(root,trim,x,1.4,z+side*.6,1.5,1.1,.15);}

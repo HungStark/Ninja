@@ -353,3 +353,6 @@ body[data-journey=opening] #journeyToast{display:none}
 
 /* Visibility reduction belongs only to a third-person guardian shadow field. */
 #guardianNightVeil{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle 190px at var(--guardian-vision-x,50%) var(--guardian-vision-y,60%),transparent 25%,#090611d9 85%,#090611ef 100%)}#guardianNightVeil[hidden]{display:none}
+
+body[data-journey=village-map] #startScreen,body[data-journey=treatment] #startScreen{display:none!important}
+body[data-journey=treatment] #worldLabels{visibility:hidden}

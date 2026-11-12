@@ -130,7 +130,8 @@
     "test:inventory-map": "node tests/inventory-map-core.mjs && node tools/build-android.mjs && node tests/inventory-map-browser.cjs",
     "test:opening": "node tools/build-vercel.mjs && node tests/opening-cinematic-browser.cjs",
     "test:guardian-bosses": "node tests/guardian-moba-core.mjs && node tools/build-android.mjs && node tests/guardian-moba-browser.cjs && node tests/guardian-moba-integration.cjs",
-    "test:guardian-balance": "node tests/guardian-balance-core.mjs && node tests/guardian-moba-core.mjs && node tools/build-android.mjs && node tests/guardian-balance-editor.mjs"
+    "test:guardian-balance": "node tests/guardian-balance-core.mjs && node tests/guardian-moba-core.mjs && node tools/build-android.mjs && node tests/guardian-balance-editor.mjs",
+    "test:clinic-revision": "node tests/character-damage-feedback-core.mjs && node tests/village-civic-core.mjs && node tests/clinic-revision-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

@@ -1,6 +1,6 @@
 import {storeTreaty} from './peace-treaties.js';
 import {confrontationObjective,guardianOrdered,nextGuardianGuard} from './village-confrontation.js';
-import {newFlask,readFlask,refillFlask} from './healing-flask.js';
+import {newFlask,readFlask} from './healing-flask.js';
 import {JOURNEY_ORDER,ATLAS_LAYOUT} from './village-travel.js';
 import {arenaRound} from './enemy-seal-timing.js';
 import {readMines} from './spirit-mines.js';
@@ -121,7 +121,7 @@ export function campaignObjective(save,{localOnly=false}={}) {
 export const INTERACTION_RANGE = 3;
 export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
-  return {version:1,worldRevision:3,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},arena:{round:1},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
+  return {version:1,worldRevision:3,healthFraction:1,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},arena:{round:1},equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
 export function readJourney(storage) {
   try {
@@ -129,6 +129,7 @@ export function readJourney(storage) {
     if(s?.version!==1||!village(s.village)||!village(s.checkpoint)||typeof s.hero?.name!=='string')return null;
     const hex=c=>/^#[\da-f]{6}$/i.test(c);
     const clean=newJourney(s.hero.name,hex(s.hero.coat)?s.hero.coat:'#211e25',hex(s.hero.hair)?s.hero.hair:'#161821');
+    clean.healthFraction=Number.isFinite(s.healthFraction)?Math.max(0,Math.min(1,s.healthFraction)):1;
     clean.equipment=readEquipment(s.equipment);if(s.hero.look!=='crimson-wanderer-v2'){clean.hero.hair='#161821';clean.hero.coat='#211e25';}
     clean.village=s.village;clean.checkpoint=s.checkpoint;
     const limit=s.worldRevision>=2?regionMetrics(s.village).limit:70;
@@ -223,7 +224,8 @@ export function resolveBattle(save,encounter,victory) {
     if(save.story.stage==='guardian'){save.story.stage='report';save.story.guardianRestored=true;save.bosses.nameless=true;save.gold+=120;save.xp+=140;save.wins++;for(const reward of combatExperienceRewards({...encounter,squad:encounter.squad||INTRO_SQUAD},120))gainExperience(save.progression,reward.element,reward.xp);}
   }
   else if(victory&&encounter.kind==='village-guard'){
-    if(!save.story.defeatedGuards.includes(encounter.guardId)){save.story.defeatedGuards.push(encounter.guardId);save.gold+=35;save.xp+=75;save.wins++;for(const reward of combatExperienceRewards(encounter,75))gainExperience(save.progression,reward.element,reward.xp);}
+    const guards=encounter.guardIds||[encounter.guardId],fresh=guards.filter(id=>!save.story.defeatedGuards.includes(id));
+    if(fresh.length){save.story.defeatedGuards.push(...fresh);save.gold+=35*fresh.length;save.xp+=75*fresh.length;save.wins++;for(const reward of combatExperienceRewards(encounter,75*fresh.length))gainExperience(save.progression,reward.element,reward.xp);}
   }
   else if(victory&&encounter.kind==='sidequest'){
     const q=villageSidequests(encounter.village).find(q=>q.id===encounter.questId);if(q&&completeSidequestTarget(save,q)){save.wins++;for(const reward of combatExperienceRewards(encounter,35))gainExperience(save.progression,reward.element,reward.xp);}
@@ -238,7 +240,7 @@ export function resolveBattle(save,encounter,victory) {
     }
   }
   else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;for(const reward of combatExperienceRewards(encounter,encounter.kind==='quest'?65:45))gainExperience(save.progression,reward.element,reward.xp);if(encounter.kind==='quest'&&(save.quests[encounter.village]||0)<2){if(!save.quests[encounter.village]){save.story.earlyVillageQuests??=[];save.story.earlyVillageQuests.push(encounter.village);}save.quests[encounter.village]=2;}}
-  else{refillFlask(save);save.interior=null;save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
+  else{save.interior=null;save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
   return save;
 }
 

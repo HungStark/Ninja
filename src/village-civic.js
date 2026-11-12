@@ -37,7 +37,7 @@ export function civicWaterRoutes(layout,routes){
 
 export function planVillageCivic(id){
   if(id==='nameless')return null;if(layouts.has(id))return layouts.get(id);
-  const region=REGIONS[id];region.zones.forEach((z,i)=>{z.civicOriginalIndex??=i;});const limit=regionMetrics(id).limit,templates=[['hall',-86,-75,64,70],['military',-18,-75,58,68],['school',78,-65,84,92],['clinic',82,74,62,58]];
+  const region=REGIONS[id];region.zones.forEach((z,i)=>{z.civicOriginalIndex??=i;});const limit=regionMetrics(id).limit,templates=[['hall',-86,-75,64,70],['military',-18,-75,42,48],['school',78,-65,60,65]];
   const rotate=(x,z,angle)=>({x:Math.round(x*Math.cos(angle)+z*Math.sin(angle)),z:Math.round(-x*Math.sin(angle)+z*Math.cos(angle))});
   function campusSet(angle){return Object.fromEntries(templates.map(([kind,x,z,w,d])=>{const p=rotate(x,z,angle),yaw=angle+(kind==='clinic'?Math.PI:0),swap=Math.abs(Math.sin(yaw))>.5;return [kind,{kind,...p,w,d,yaw,reserveW:swap?d:w,reserveD:swap?w:d}];}));}
   let campuses,best=-Infinity;
@@ -49,7 +49,8 @@ export function planVillageCivic(id){
     const score=remaining.length*10-((quarter+id.length)%4)*.01;if(score>best){best=score;campuses=candidate;}
   }
   if(!campuses)throw Error('No separated campus layout: '+id);
-  const plots=Object.values(campuses),removed=region.zones.filter(z=>!['great-cave','cave-crystals','heart-tree-house'].includes(z.id)&&plots.some(p=>overlapsLandmark(p,z)));
+  const clinics=['school','hall'].map((kind,index)=>{const campus=campuses[kind],w=7,d=6.5,yaw=campus.yaw,swap=Math.abs(Math.sin(yaw))>.5;return {kind:'clinic',id:id+'-clinic-'+index,...civicPoint(campus,15,campus.d/2+7),w,d,yaw,floors:1,reserveW:swap?d:w,reserveD:swap?w:d};});
+  const plots=[...Object.values(campuses),...clinics],removed=region.zones.filter(z=>!['great-cave','cave-crystals','heart-tree-house'].includes(z.id)&&plots.some(p=>overlapsLandmark(p,z)));
   const removedIds=new Set(removed.map(z=>z.id)),visible=region.zones.filter(z=>!removedIds.has(z.id));if(!visible.length)throw Error('No remaining village landmarks: '+id);
   // Grade only the civic estates. Houses and surviving landmarks keep their
   // terrain; a twelve-unit apron makes every estate gate approachable.
@@ -75,13 +76,13 @@ export function planVillageCivic(id){
   const houses=[];while(houses.length<20&&candidates.length){let bestIndex=-1,score=-Infinity;for(let i=0;i<candidates.length;i++){const p=candidates[i],spacing=houses.length?Math.min(...houses.map(h=>Math.hypot(h.x-p.x,h.z-p.z))):Math.hypot(p.x-shop.x,p.z-shop.z);if(spacing>score){score=spacing;bestIndex=i;}}if(houses.length&&score<22)break;const p=candidates.splice(bestIndex,1)[0];p.kind='house';p.yaw=Math.atan2(shop.x-p.x,shop.z-p.z);houses.push(p);}
   if(houses.length!==20)throw Error('No twenty-home residential district: '+id+'/'+houses.length);plots.push(...houses);
   function block(campus,kind,x,z,w,d){return {kind,...civicPoint(campus,x,z),w,d,yaw:campus.yaw,base:campus.base,campus};}
-  const hall=block(campuses.hall,'hall',0,-17,38,24),school=block(campuses.school,'school',0,-28,40,18),clinic=block(campuses.clinic,'clinic',0,-10,34,22);
-  hall.style=HALL_STYLES[id];for(const p of [hall,school,clinic])p.entry={...civicPoint(p,0,p.d/2+2),y:p.base};
-  clinic.healer=civicPoint(clinic,2,clinic.d/2+2);
+  const hall=block(campuses.hall,'hall',0,-17,38,24),school=block(campuses.school,'school',0,-19,30,14);
+  school.floors=2;hall.style=HALL_STYLES[id];for(const p of [hall,school,...clinics])p.entry={...civicPoint(p,0,p.d/2+2),y:p.base+(p===hall&&id==='water'?.955:0)};
+  for(const clinic of clinics)clinic.healer={...civicPoint(clinic,0,clinic.d/2+1.5),y:clinic.base};
   for(const p of Object.values(campuses)){p.gate={...civicPoint(p,0,p.d/2+1),y:p.base};p.insideGate={...civicPoint(p,0,p.d/2-4),y:p.base};}
   const guardian=civicPoint(campuses.hall,0,12),guardianPosts=[-8,8].map(x=>civicPoint(campuses.hall,x,22));
   const military=campuses.military;military.prison={...civicPoint(military,10,7),y:military.base};military.jailers=[civicPoint(military,-11,15),civicPoint(military,17,20)];
-  const layout={id,hall,school,clinic,military,campuses,shop,residential,districts:[{id:id+'-residential',...residential}],houses,guardian,guardianPosts,plots,removedLandmarks:removed.map(z=>({id:z.id,name:z.name})),visibleLandmarks:visible};
+  const layout={id,hall,school,clinics,clinic:clinics[0],military,campuses,shop,residential,districts:[{id:id+'-residential',...residential}],houses,guardian,guardianPosts,plots,removedLandmarks:removed.map(z=>({id:z.id,name:z.name})),visibleLandmarks:visible};
   region.zones=visible;
   // Keep quest-giver IDs and their rewards when an old landmark is replaced.
   let moved=0;for(const n of region.npcs){if(n.kind==='healer')continue;if(removedIds.has(n.landmark)||Object.values(campuses).some(p=>insidePlot(p,n.x,n.z,3))){const home=houses[moved++%houses.length],p=civicPoint(home,0,7);Object.assign(n,p,{civicResident:true});delete n.platform;delete n.elevation;if(n.landmark)n.landmark=[...visible].sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z))[0].id;}}
@@ -91,12 +92,20 @@ export function planVillageCivic(id){
   layouts.set(id,layout);return layout;
 }
 
+let namelessClinics=null;
+export function planNamelessClinics(){
+  if(namelessClinics)return namelessClinics;
+  namelessClinics=[[-30,6],[12,22]].map(([x,z],index)=>{const w=7,d=6.5,base=Math.max(...[-1,1].flatMap(a=>[-1,1].map(b=>terrainHeight('nameless',x+a*w/2,z+b*d/2))))+.08;return {kind:'clinic',id:'nameless-clinic-'+index,x,z,w,d,yaw:0,floors:1,reserveW:w,reserveD:d,base,healer:{x,z:z+d/2+1.5,y:base}};});
+  setVillagePads('nameless',namelessClinics);return namelessClinics;
+}
+export function buildSmallClinics(c,clinics){for(const clinic of clinics)building(c,clinic,'clinic');return clinics.map(clinic=>({kind:'clinic',id:clinic.id,...clinic.healer,label:'Y Tá'}));}
+
 export function civicReserved(layout,x,z,pad=0){return !!layout?.plots.some(p=>Math.abs(x-p.x)<(p.reserveW||p.w)/2+pad&&Math.abs(z-p.z)<(p.reserveD||p.d)/2+pad);}
 
 function building(c,plot,kind){
   const {box,cyl,mesh,M}=c,g=c.group(plot.x,plot.z);g.position.y=plot.base;g.rotation.y=plot.yaw||0;g.name=kind==='hall'?'village-council-hall':'village-'+kind;g.userData={civic:true,kind,style:HALL_STYLES[c.id],plot:{...plot},noCollision:true};
   const wood=c.surfaces?.wood||M('#61503b'),stone=c.surfaces?.stone||M('#8b887c'),wall=kind==='hall'&&['water','wood'].includes(c.id)?wood:kind==='hall'&&c.id==='fire'?stone:c.surfaces?.wall||M('#c6b795'),roof=c.surfaces?.roof||M(c.v.roof),accent=M(c.v.color),w=plot.w,d=plot.d,floors=plot.floors||(kind==='school'||kind==='clinic'?3:2),h=kind==='hall'?14:floors*5.8;
-  if(kind==='hall'&&c.id==='water'){g.position.y+=1.2;box(g,wood,0,-.12,0,w+2,.24,d+2);for(const x of [-10,-5,5,10])for(const z of [-9,9])cyl(g,wood,x,-.7,z,.3,1.4,8);for(let k=0;k<5;k++)box(g,wood,0,-1.05+k*.23,d/2+3-k*.5,4,.23,1.1);}
+  if(kind==='hall'&&c.id==='water'){g.position.y+=1.2;box(g,wood,0,-.12,0,w+2,.24,d+2);for(const x of [-10,-5,5,10])for(const z of [-9,9])cyl(g,wood,x,-.7,z,.3,1.4,8);for(let k=0;k<5;k++){const step=box(g,wood,0,-1.05+k*.23,d/2+3-k*.5,4,.23,1.1);c.solidMesh(step,{name:'hall-entry-step-'+k,stepable:true});}}
   const foundation=box(g,stone,0,-1.05,0,w+.5,2.1,d+.5);c.solidMesh(foundation,{name:kind+'-foundation'});
   const shell=box(g,wall,0,h/2,0,w,h,d);c.solidMesh(shell,{name:kind+'-closed-building',stepable:false});
   if(kind==='hall'){
@@ -138,23 +147,22 @@ function campus(c,p){
 export function buildVillageCivic(c,layout){
   if(!layout)return [];
   for(const p of Object.values(layout.campuses))campus(c,p);
-  building(c,layout.hall,'hall');for(const kind of ['school','clinic'])building(c,layout[kind],kind);
+  building(c,layout.hall,'hall');building(c,layout.school,'school');for(const clinic of layout.clinics)building(c,clinic,'clinic');
   const block=(campus,kind,x,z,w,d,floors)=>building(c,{...civicPoint(campus,x,z),base:campus.base,yaw:campus.yaw,w,d,floors},kind);
   const school=layout.campuses.school;
-  block(school,'classroom-block',-31,-7,14,30,3);block(school,'classroom-block',31,-7,14,30,3);block(school,'functional-building',-29,29,18,14,2);block(school,'dormitory',29,29,18,18,4);
+  block(school,'classroom-block',-22,-5,10,20,2);block(school,'classroom-block',22,-5,10,20,2);block(school,'functional-building',-18,20,12,10,1);block(school,'dormitory',18,20,12,12,2);
   // The broad center is reserved for training and assembly, with clear lanes
   // between classroom blocks and a smaller sports/training court at the rear.
   const schoolYard=c.group(school.x,school.z);schoolYard.position.y=school.base+.05;schoolYard.rotation.y=school.yaw;schoolYard.name='school-training-yard';schoolYard.userData.noCollision=true;
-  for(const side of [-1,1])c.box(schoolYard,c.M('#d8ca9b'),side*18,.02,9,.1,.04,48);for(const z of [-15,33])c.box(schoolYard,c.M('#d8ca9b'),0,.02,z,36,.04,.1);for(const x of [-12,0,12]){c.cyl(schoolYard,c.surfaces.wood,x,1.6,25,.18,3.2,7);c.box(schoolYard,c.M('#b49367'),x,2.2,25,1.7,.22,.22);}
-  const clinic=layout.campuses.clinic;block(clinic,'medical-ward',-22,6,12,24,2);block(clinic,'pharmacy',22,6,12,24,2);
-  const military=layout.military;block(military,'military-barracks',0,-21,36,17,2);block(military,'military-store',-17,8,15,14,1);
+  for(const side of [-1,1])c.box(schoolYard,c.M('#d8ca9b'),side*12,.02,10,.1,.04,30);for(const z of [-5,25])c.box(schoolYard,c.M('#d8ca9b'),0,.02,z,24,.04,.1);for(const x of [-8,0,8]){c.cyl(schoolYard,c.surfaces.wood,x,1.6,20,.18,3.2,7);c.box(schoolYard,c.M('#b49367'),x,2.2,20,1.7,.22,.22);}
+  const military=layout.military;block(military,'military-barracks',0,-15,26,13,1);block(military,'military-store',-12,5,11,10,1);
   const prison=c.group(military.prison.x,military.prison.z);prison.position.y=military.base;prison.name='military-prison';prison.userData={noCollision:true,kind:'prison',village:c.id};
   // Open entrance and roof expose the cell and captive to the exploration view.
   for(const side of [-1,1]){const wall=c.box(prison,c.surfaces.stone,side*7,2.8,0,.8,5.6,11);c.solidMesh(wall,{name:'prison-building-wall',stepable:false});}const back=c.box(prison,c.surfaces.stone,0,2.8,-5.5,14,5.6,.8);c.solidMesh(back,{name:'prison-building-wall',stepable:false});c.box(prison,c.surfaces.wood,0,5.7,5.5,14,.4,.7);for(const side of [-1,1])c.box(prison,c.surfaces.wood,side*6.7,2.8,5.5,.6,5.6,.6);
   if(c.id!=='fire')createFirePrison(c.land,military.prison,false,c.physics.addBox,c.id+'-prison');
   for(const [index,p]of layout.houses.entries()){const house=buildHouse(c,p.x,p.z,4.4,4.2,index,p.yaw);house.userData.settlement=true;house.userData.district=layout.districts[0].id;c.obstacles.push({x:p.x,z:p.z,w:3.15,d:3.15});}
   const summary=new T.Group();summary.name='settlement-layout';summary.userData={village:c.id,houses:layout.houses.length,districts:layout.districts.map(d=>d.id),yards:0};c.land.add(summary);
-  return [{kind:'interior-enter',id:hallId(c.id),...layout.hall.entry,label:'Nhà họp · Trưởng làng'},{kind:'school',id:c.id+'-school',...layout.school.entry,label:'Trường học · Tu luyện'},{kind:'clinic',id:c.id+'-clinic',...layout.clinic.entry,label:'Trạm y tế · Bổ sung thuốc'},{kind:'military',id:c.id+'-military',...military.insideGate,label:'Khu quân sự · Trại lính và nhà lao'}].map(i=>({...i,y:c.heightAt(i.x,i.z)}));
+  return [{kind:'interior-enter',id:hallId(c.id),...layout.hall.entry,label:'Nhà họp · Trưởng làng'},{kind:'school',id:c.id+'-school',...layout.school.entry,label:'Trường học · Tu luyện'},...layout.clinics.map(clinic=>({kind:'clinic',id:clinic.id,...clinic.healer,label:'Y Tá'})),{kind:'military',id:c.id+'-military',...military.insideGate,label:'Khu quân sự · Trại lính và nhà lao'}].map(i=>({...i,y:c.physics.floorAt(i.x,i.z,c.heightAt(i.x,i.z)+1.3)}));
 }
 
 export function buildGateWatch(c,gates){

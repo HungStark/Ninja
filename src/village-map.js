@@ -1,14 +1,15 @@
 import {riverAt} from './adventure-world.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function villageMapMarkup({id,region,limit,gates,civic,hero}){
+export function villageMapMarkup({id,region,limit,gates,civic,hero,clinics=[]}){
   const size=900,pad=45,scale=(size-pad*2)/(limit*2),point=(x,z)=>({x:pad+(x+limit)*scale,y:pad+(z+limit)*scale});
   const markers=region.zones.map(z=>({id:'zone:'+z.id,type:'landmark',label:z.name,...point(z.x,z.z)}));
   for(const gate of gates)markers.push({id:'gate:'+gate.id,type:gate.kind==='dock'?'dock':'gate',label:(gate.kind==='dock'?'Bến thuyền · ':'Cổng · ')+(gate.label||gate.id),...point(gate.x,gate.z)});
-  const buildings=civic?[civic.hall,civic.school,civic.clinic,civic.military,civic.shop,...civic.houses]:region.houses.map(([x,z,w,d])=>({x,z,w,d}));
-  if(civic)for(const [kind,label] of [['hall','Nhà họp'],['school','Trường học'],['clinic','Trạm y tế'],['military','Khu quân sự'],['shop','Thương hội']]){
+  const buildings=civic?[civic.hall,civic.school,...civic.clinics,civic.military,civic.shop,...civic.houses]:[...region.houses.map(([x,z,w,d])=>({x,z,w,d})),...clinics];
+  if(civic)for(const [kind,label] of [['hall','Nhà họp'],['school','Trường học'],['military','Khu quân sự'],['shop','Thương hội']]){
     const building=civic[kind];markers.push({id:'building:'+kind,type:'building',label,...point(building.x,building.z)});
   }
+  for(const clinic of civic?.clinics||clinics)markers.push({id:'building:'+clinic.id,type:'building',label:'Trạm y tế',...point(clinic.x,clinic.z)});
   // Keep every name legible without allowing edge labels to leave the map.
   const occupied=[];
   for(const marker of markers){

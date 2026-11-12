@@ -19,6 +19,17 @@ export function traversalDefinitions(id){
 }
 export function traversalComponent(id,x,z,surface=null){if(id==='water')return waterSector(x,z);if(surface)return surface;if(id==='fire'&&Math.hypot(x-88,z+96)<12)return 'summit';return 'ground';}
 
+// Marker hints use only the small traversal graph. Full A* is reserved for
+// an explicit movement command, never quest rewards or HUD refreshes.
+export function markerTraversal(from,to,{id,surface=null,routes}){
+  const start=traversalComponent(id,from.x,from.z,surface),goal=traversalComponent(id,to.x,to.z,to.platform),queue=[{component:start,first:null}],seen=new Set([start]);
+  while(queue.length){const node=queue.shift();if(node.component===goal)return node.first;
+    for(const route of routes)for(const side of [0,1]){const a=side?route.to:route.from,b=side?route.from:route.to,ca=traversalComponent(id,...a,side?route.platform?.id:null),cb=traversalComponent(id,...b,side?null:route.platform?.id);
+      if(ca===node.component&&!seen.has(cb)){seen.add(cb);queue.push({component:cb,first:node.first||{id:route.id,side}});}
+    }
+  }return null;
+}
+
 // Plan walking legs and actual ferry/climbing legs separately. Water is never a walkable shortcut.
 export function planExpedition(from,to,{id,surface=null,targetSurface=null,routes,walk}){
   if(id==='water'){

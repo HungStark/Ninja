@@ -686,7 +686,7 @@ export function configureOpponent(profile,overrides=opponentBalanceOverrides){
   }else result.hp=result.balanceStages[0].hp??profile.hp;
   if(result.balanceStages[0].spellIds)result.spellIds=[...result.balanceStages[0].spellIds];
   if(profile.squad){
-    result.squad=profile.squad.map((member,i)=>configureOpponent({...member,kind:profile.kind,village:member.village||profile.village,balanceId:profile.kind==='intro-trio'?'intro:'+member.element:'event:'+profile.village+':'+i},overrides));
+    result.squad=profile.squad.map((member,i)=>configureOpponent({...member,kind:profile.kind,village:member.village||profile.village,guardRole:member.guardRole||profile.guardRole,balanceId:profile.kind==='intro-trio'?'intro:'+member.element:profile.guardRole==='guardian'?'ninja:guardian-guard:'+profile.village:'event:'+profile.village+':'+i},overrides));
     const first=result.squad[0];
     Object.assign(result,{hp:first.hp,spellIds:first.spellIds,balanceStages:first.balanceStages});
   }

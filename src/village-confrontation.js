@@ -15,6 +15,6 @@ export function confrontationObjective(save,id){
   if(id==='nameless'||save.bosses[id])return null;
   const guard=nextGuardianGuard(save,id);
   if(!guardianOrdered(save,id))return {title:'Linh thú chặn cổng sân phòng họp',description:'Đi qua cổng sân phòng họp và giải thích mục đích chuyến đi với linh thú.',targetVillage:id,targetKind:'boss'};
-  if(guard)return {title:guard.endsWith('-1')?'Đối đầu hộ vệ trái':'Đối đầu hộ vệ phải',description:'Hai hộ vệ được lệnh bắt bạn. Vượt qua từng người để tới phòng họp.',targetVillage:id,targetKind:'village-guard',targetId:guard};
+  if(guard)return {title:'Đối đầu hai hộ vệ',description:'Hai hộ vệ cùng được lệnh bắt bạn. Đánh bại cả hai trong một trận để tới phòng họp.',targetVillage:id,targetKind:'village-guard',targetId:guard};
   return {title:'Linh thú nhập vào trưởng làng',description:'Đi vào phòng họp và đối mặt trưởng làng đang bị linh thú chiếm hữu.',targetVillage:id,targetKind:'npc'};
 }

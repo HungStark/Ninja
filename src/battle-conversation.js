@@ -14,7 +14,7 @@ export function battleConversation(encounter,save){
     const beast=opponent({kind:'boss',guardianForm:'beast'});
     say(beast,'Đứng lại! Kẻ lạ mặt nào lại dám đột nhập vào đây?');
     say(hero,'Tôi đến từ Làng Vô Danh. Chiến tranh đã cướp đi người thân của tôi. Tôi muốn gặp trưởng làng để bàn chuyện hòa bình, không phải để gây hại.');
-    say(beast,'Những lời ngon ngọt đó không lừa được ta. Hai hộ vệ đâu! Bắt kẻ đột nhập này lại! Tả vệ tiến lên trước, hữu vệ tiếp ứng!');
+    say(beast,'Những lời ngon ngọt đó không lừa được ta. Hai hộ vệ đâu! Bắt kẻ đột nhập này lại! Tả vệ, hữu vệ cùng tiến lên!');
     say(hero,'Xin hãy nghe tôi giải thích! Tôi không muốn phải giao chiến với các người.');
     say(beast,'Nếu còn sống sót, tới phòng họp mà nói tiếp. Ta sẽ nhập vào trưởng làng và đích thân chờ ngươi ở đó!');
   }else if(encounter.kind==='intro-trio'){

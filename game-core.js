@@ -121,13 +121,13 @@
   },
   "dark-orb": {
     "cooldown": 3,
-    "upgradeDamage": 20,
-    "damage": 12
+    "upgradeDamage": 15,
+    "damage": 10
   },
   "dark-volley": {
     "cost": 50,
     "duration": 1,
-    "damage": 100
+    "damage": 95
   },
   "fire-lance": {
     "cost": 50,

@@ -12,10 +12,10 @@ assert.deepEqual(feedback.state().map(h=>h.id),['primary']);assert.equal(scene.c
 actors[1].root.position.x=8;feedback.render(actors,true);assert.equal(base.children[0],overlay);
 feedback.trigger('player');feedback.render(actors,true);assert.equal(feedback.state().length,2,'Simultaneous hits flash each damaged actor');
 feedback.advance(.1);assert.ok(feedback.state().every(h=>h.flashing));
-feedback.trigger('primary');feedback.render(actors,true);assert.equal(feedback.state().length,2,'Repeated damage refreshes the red flash');
-feedback.advance(.11);assert.equal(feedback.state().length,1,'Older flashes expire independently');assert.equal(actors[0].root.children[0].material,shared);
+feedback.trigger('primary');feedback.render(actors,true);assert.equal(feedback.state().length,2,'Repeated damage does not restart the flash');
+feedback.advance(.11);assert.equal(feedback.state().length,0,'Repeated damage never extends a flash');assert.equal(actors[0].root.children[0].material,shared);
 feedback.advance(.1);assert.deepEqual(feedback.state(),[]);assert.ok(actors.every(a=>a.root.children[0].material===shared&&a.root.children[0].children.length===0),'Red overlay disappears without changing original materials');
-feedback.trigger('primary',[8,12,20]);feedback.render(actors,true);assert.equal(scene.children.length,actors.length);feedback.render(actors,false);assert.deepEqual(feedback.state(),[]);assert.equal(actors[1].root.children[0].material,shared);
+feedback.trigger('primary');assert.deepEqual(feedback.state(),[],'No second flash inside one second');feedback.advance(.69);feedback.trigger('primary',[8,12,20]);feedback.render(actors,true);assert.equal(scene.children.length,actors.length);feedback.render(actors,false);assert.deepEqual(feedback.state(),[]);assert.equal(actors[1].root.children[0].material,shared);
 feedback.trigger('player');feedback.render(actors,true);feedback.reset();assert.equal(actors[0].root.children[0].material,shared);
 const skinned=new T.SkinnedMesh(geometry,shared),bone=new T.Bone();skinned.add(bone);skinned.bind(new T.Skeleton([bone]));actors[0].root.add(skinned);
 feedback.trigger('player');feedback.render(actors,true);const skinOverlay=skinned.children.find(m=>m.userData.damageOverlay);assert.ok(skinOverlay.isSkinnedMesh);assert.equal(skinOverlay.skeleton,skinned.skeleton);assert.ok(skinOverlay.matrix.equals(new T.Matrix4()));feedback.reset();
