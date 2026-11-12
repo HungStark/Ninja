@@ -160,7 +160,7 @@ export const REGIONS = {
       {id:'elder-tree',name:'Cội Cây Ngàn Tuổi',x:29,z:-35,radius:15,description:'Thân cây vĩ đại tách thành một cổng rễ. Ánh sinh lực xanh chảy trong từng kẽ vỏ.'}
     ],
     npcs:[
-      {id:'wood-loc',name:'Bác Lộc',role:'Người chăm cổ thụ',kind:'lore',x:-6,z:5,dialogue:'Làng không đốn cây để mở đường. Chúng ta học cách dựng nhà bên rễ, nên mỗi lối đi đều có câu chuyện riêng.'},
+      {id:'wood-loc',name:'Bác Lộc',role:'Người chăm cổ thụ',kind:'lore',x:-6,z:5,dialogue:'Cổ Thụ Linh Thiêng chính là cây có nhà trên cây ở giữa làng. Võ Đường Cửu Làng nằm trên đó; đến gần thang dây rồi nhấn E để tự leo lên hoặc xuống.'},
       {id:'wood-thao',name:'Dược nữ Thảo',role:'Chủ vườn Linh Chi',kind:'healer',x:25,z:19,dialogue:'Một chiếc lá đúng lúc quý hơn cả túi vàng. Cứ tới vườn khi cần nghỉ; cây ở đây nhận ra người biết giữ lời.'},
       {id:'wood-truc',name:'Trúc Ẩn',role:'Hiền sư rừng xanh',kind:'mentor',x:-25,z:-25,dialogue:'Hãy theo rễ qua xóm, rồi xem cách người làng chăm từng cây thuốc. Sự sống không nghe lệnh; nó đáp lại lòng kiên nhẫn.'}
     ],
@@ -245,7 +245,7 @@ for(const [id,zones] of Object.entries(extraZones))for(const [key,name,x,z,descr
 REGIONS.earth.subtitle='Thành đá đại ngàn · đại hang giữa lòng làng';REGIONS.ice.subtitle='Miền cực địa · biển băng, tuyết trắng và sông băng';REGIONS.wood.subtitle='Rừng cổ thụ · nhà trên cây giữa làng';
 REGIONS.earth.zones.push({id:'great-cave',name:'Đại Hang Địa Tâm',x:0,z:-32,radius:16,platform:'earth-cave',description:'Một hang động rộng, có nhũ đá, hồ ngầm và tinh khoáng. Nhấn E tại cửa hang giữa làng để vào bản đồ bên trong riêng.'},{id:'stone-wastes',name:'Bãi Đá Cổ',x:103,z:98,radius:16,description:'Những khối sa thạch lớn lộ ra giữa nền đất sỏi.'});
 REGIONS.ice.zones.push({id:'polar-sea',name:'Biển Băng Cực Bắc',x:-98,z:111,radius:18,description:'Băng trôi và những tảng băng xanh phủ một vùng biển đóng băng.'},{id:'snow-ridge',name:'Sống Núi Tuyết',x:106,z:-104,radius:15,description:'Tuyết bị gió nén thành các triền dốc. Hãy thận trọng vì nền băng hơi trơn.'});
-REGIONS.wood.zones.push({id:'heart-tree-house',name:'Nhà Trên Cây Trung Tâm',x:5,z:0,radius:5,platform:'heart-tree',description:'Cầu thang gỗ ôm quanh thân cổ thụ, dẫn lên hiên nhà. Nhấn E tại cửa để vào Võ Đường Cửu Làng ở bản đồ riêng.'},{id:'deep-canopy',name:'Rừng Tán Kín',x:104,z:-103,radius:18,description:'Những tầng cây rậm che bầu trời; đường đất len giữa các rễ lớn.'});
+REGIONS.wood.zones.push({id:'heart-tree-house',name:'Nhà trên Cổ Thụ Linh Thiêng',x:5,z:0,radius:5,platform:'heart-tree',description:'Cây cổ thụ bị độc trong tuyến truyện chính là cây này. Nhấn E gần thang dây để tự leo lên hoặc xuống. Nhấn E tại cửa nhà trên cây để vào Võ Đường Cửu Làng.'},{id:'deep-canopy',name:'Rừng Tán Kín',x:104,z:-103,radius:18,description:'Những tầng cây rậm che bầu trời; đường đất len giữa các rễ lớn.'});
 REGIONS.earth.zones.push({id:'cave-crystals',name:'Mạch Tinh Khoáng',x:11,z:-40,radius:4,platform:'earth-cave',description:'Tinh khoáng phát sáng trong nhánh sâu của Đại Hang.'});
 for(const [id,region] of Object.entries(REGIONS))region.npcs.push(...landmarkResidents(id,region.zones));
 

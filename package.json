@@ -136,7 +136,8 @@
     "test:mobile-combat-revision": "node tests/mobile-combat-revision-core.mjs && node tests/armguards-core.mjs && node tests/enemy-movement-core.mjs && node tests/dash-boost.mjs && node tests/shadow-charge-core.mjs && node tests/guardian-moba-core.mjs && node tools/build-android.mjs && node tests/mobile-combat-revision-browser.cjs",
     "test:village-main-story": "npm run test:campaign-rewrite",
     "test:campaign-rewrite": "node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tools/build-android.mjs && node tests/campaign-rewrite-browser.cjs && node tests/campaign-presentation-browser.cjs",
-    "test:companion-health": "node tests/companion-health-core.mjs && node tests/companion-collateral-core.mjs && node tools/build-android.mjs && node tests/companion-health-browser.cjs && node tests/companion-health-browser.cjs --mobile"
+    "test:companion-health": "node tests/companion-health-core.mjs && node tests/companion-collateral-core.mjs && node tools/build-android.mjs && node tests/companion-health-browser.cjs && node tests/companion-health-browser.cjs --mobile",
+    "test:sacred-tree-ladder": "node tests/sacred-tree-ladder-core.mjs && node tools/build-android.mjs && node tests/sacred-tree-ladder-browser.cjs && node tests/sacred-tree-ladder-browser.cjs --mobile"
   },
   "dependencies": {
     "three": "0.186.1"

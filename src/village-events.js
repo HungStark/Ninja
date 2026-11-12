@@ -4,6 +4,7 @@ import {gainExperience,regionElement,GUARD_ARSENALS} from './progression.js';
 import {FIRE_PRISON_SITE,FIRE_MOTHER_SITE} from './village-zoning.js';
 import {botHealth} from './enemy-balance.js';
 import {readCompanionHealth} from './companion-health.js';
+import {WOOD_SACRED_TREE} from './sacred-tree.js';
 
 export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
 export const HA_LY_MOTHER={id:'fire-ha-ly-mother',name:'Bà Hồng',role:'Mẹ nuôi của Hạ Ly',kind:'healer',female:true,age:'elder',hair:'#bdb5a2',hairStyle:'bun',coat:'#7c594d',accent:'#b79e75',height:2.7,width:.94,shawl:true};
@@ -31,6 +32,7 @@ export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=
   return {ok:true,completed,recruited:!!e.recruit,separated:!!e.separate,reconciled:!!e.reconcile};
 }
 export function eventSpot(id,event){
+  if(id==='wood')return {...WOOD_SACRED_TREE.eventSite};
   if(id==='nameless')return {x:REGIONS.nameless.boss.x+8,z:REGIONS.nameless.boss.z+7};
   if(id==='fire'&&event.spot==='prison-gate')return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+3.25};
   if(id==='fire'&&event.spot==='prison')return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+.65};
