@@ -9,7 +9,7 @@ import {planExpedition} from '../src/adventure-biomes.js';
 import {villageMapMarkup} from '../src/village-map.js';
 
 globalThis.innerWidth=1000;globalThis.innerHeight=700;
-assert.equal(WATER_CHANNELS.length,4);assert.ok(!WATER_CHANNELS.some(c=>c.id==='east'));assert.ok(waterFootprintDry(46,-90,{padding:0}));for(const x of [60,90,120,138])assert.ok(waterDepthAt(x,32)>3,'the blue-marked branch extends to the right boundary');
+assert.equal(WATER_CHANNELS.length,3);assert.ok(!WATER_CHANNELS.some(c=>['east','north-branch'].includes(c.id)));assert.ok(waterFootprintDry(46,-90,{padding:0}));for(const [x,z]of [[0,-42],[20,-44],[35,-47]]){assert.ok(waterFootprintDry(x,z,{padding:0}));assert.equal(isDeepWater(x,z),false,'the circled north branch is dry land again');}for(const x of [60,90,120,138])assert.ok(waterDepthAt(x,32)>3,'the blue-marked branch extends to the right boundary');
 for(const c of WATER_CHANNELS.filter(c=>c.axis==='x')){
  const origin=channelPoint(c,(c.min+c.max)/2),size={w:4,d:6,padding:1};assert.equal(waterFootprintDry(origin.x,origin.z,size),false);
  const p=nearestDryWaterPoint(origin.x,origin.z,size);assert.ok(p);assert.ok(waterFootprintDry(p.x,p.z,size));assert.deepEqual(nearestDryWaterPoint(origin.x,origin.z,size),p);
@@ -22,8 +22,8 @@ assert.deepEqual(world.civic.houses.map(p=>p.waterOriginal?[p.waterOriginal.x,p.
 assert.equal(world.civic.houses.length,20);const moved=world.civic.houses.filter(p=>p.waterRelocated);assert.ok(moved.length>=1);
 for(const house of moved){assert.ok(Math.hypot(house.x-house.waterOriginal.x,house.z-house.waterOriginal.z)<=24.001);assert.ok(waterFootprintDry(house.x,house.z,{w:house.w,d:house.d,padding:1}));}
 for(const c of WATER_CHANNELS.filter(c=>c.axis==='x')){const p=channelPoint(c,(c.min+c.max)/2);assert.ok(waterDepthAt(p.x,p.z)>3,'branch beds remain carved through terrain grading');assert.ok(isDeepWater(p.x,p.z));}
-const water=world.scene.getObjectByName('river-surface');assert.ok(water.userData.riverNetwork);assert.equal(water.userData.channels.length,4);assert.ok(water.geometry.attributes.position.count<2500);assert.equal(water.material.transparent,false,'overlapping junctions do not stack transparent surfaces');
-assert.equal(world.bridges.length,0);assert.equal(world.scene.getObjectsByProperty('name','river-bridge').length,0);assert.equal(world.routes.length,6);
+const water=world.scene.getObjectByName('river-surface');assert.ok(water.userData.riverNetwork);assert.equal(water.userData.channels.length,3);assert.ok(water.geometry.attributes.position.count<2500);assert.equal(water.material.transparent,false,'overlapping junctions do not stack transparent surfaces');
+assert.equal(world.bridges.length,0);assert.equal(world.scene.getObjectsByProperty('name','river-bridge').length,0);assert.equal(world.routes.length,5);assert.ok(!world.routes.some(r=>r.channel==='north-branch'));
 for(const c of WATER_CHANNELS)assert.ok(world.routes.some(r=>r.channel===c.id));
 for(const route of world.routes){
  assert.equal(route.kind,'raft');const middle=[(route.from[0]+route.to[0])/2,(route.from[1]+route.to[1])/2];assert.ok(world.blocked(...middle),'no invisible bridge across '+route.channel);assert.ok(route.boat.children.length<=4,'raft geometry stays batched');
@@ -36,10 +36,10 @@ const matrix=new T.Matrix4(),position=new T.Vector3(),scale=new T.Vector3(),quat
 const signature=()=>JSON.stringify({houses:world.civic.houses,people:world.residentsState().map(p=>({id:p.id,position:p.position})),targets:world.interactives.filter(i=>i.kind==='sidequest-target').map(i=>[i.id,i.x,i.z]),bridges:world.bridges});
 const before=signature();world.load('water',save);assert.equal(signature(),before,'reloads never accumulate drift or shuffle objects');
 for(const q of villageSidequests('water')){acceptSidequest(save,q);world.syncSidequests(save);const target=world.interactives.find(i=>i.kind==='sidequest-target'&&i.id===q.id);assert.ok(target);assert.ok(waterFootprintDry(target.x,target.z,{padding:0}));assert.ok(!world.blocked(target.x,target.z));completeSidequestTarget(save,q);world.syncSidequests(save);claimSidequest(save,q);world.syncSidequests(save);}
-save.position=[-35,-48+6*Math.sin(Math.PI*21/98)];save.elevation=0;world.load('water',save);assert.ok(Math.hypot(world.hero.root.position.x-save.position[0],world.hero.root.position.z-save.position[1])<15);assert.ok(waterFootprintDry(world.hero.root.position.x,world.hero.root.position.z,{padding:0}));
+save.position=[90,32];save.elevation=0;world.load('water',save);assert.ok(Math.hypot(world.hero.root.position.x-save.position[0],world.hero.root.position.z-save.position[1])<15);assert.ok(waterFootprintDry(world.hero.root.position.x,world.hero.root.position.z,{padding:0}));
 const svg=villageMapMarkup({id:'water',region:REGIONS.water,limit:140,gates:world.gates,civic:world.civic,routes:world.routes,hero:{x:0,z:7}}).svg;for(const c of WATER_CHANNELS)assert.ok(svg.includes('data-water-channel="'+c.id+'"'));
-assert.equal((svg.match(/data-river-ferry=/g)||[]).length,6);
-assert.equal((waterMapMarkup((x,z)=>({x,y:z})).match(/data-water-channel=/g)||[]).length,4);
+assert.equal((svg.match(/data-river-ferry=/g)||[]).length,5);assert.ok(!svg.includes('data-water-channel="north-branch"'));
+assert.equal((waterMapMarkup((x,z)=>({x,y:z})).match(/data-water-channel=/g)||[]).length,3);
 console.log(JSON.stringify({loadMs:Math.round(loadMs),pathMs:Math.round(pathMs),bridges:world.bridges.length,ferries:world.routes.length,movedHouses:moved.length,waterVertices:water.geometry.attributes.position.count,reachablePoints:points.length}));
-console.log('PASS: three connected river branches, common rendered/physical/map geometry, nearest dry footprints, preserved twenty homes, six working raft crossings with no bridges, dry objects and targets, stable reloads and all quest transitions.');
+console.log('PASS: circled north branch removed, two remaining connected branches, common rendered/physical/map geometry, nearest dry footprints, preserved twenty homes, five working raft crossings with no bridges, dry objects and targets, stable reloads and all quest transitions.');
 

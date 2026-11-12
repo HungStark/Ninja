@@ -8,7 +8,6 @@ const ORIGINAL_CHANNELS=Object.freeze([
 ]);
 export const WATER_CHANNELS=Object.freeze([
   ORIGINAL_CHANNELS[0],
-  {id:'north-branch',axis:'x',min:-56,max:42,width:3.6,center:t=>-48+6*Math.sin(Math.PI*(t+56)/98)},
   {id:'south-branch',axis:'x',min:-27,max:160,width:3.8,center:t=>32+4*Math.sin(Math.PI*Math.max(0,Math.min(1,(t+27)/80)))},
   {id:'west-branch',axis:'x',min:-160,max:-18,width:4.2,center:t=>76+8*Math.sin(Math.PI*(t+160)/142)}
 ]);

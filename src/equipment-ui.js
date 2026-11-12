@@ -1,4 +1,5 @@
 import {flaskState} from './healing-flask.js';
+import {shurikenIcon} from './shuriken-icon.js';
 import {SHURIKEN_TYPES,armorById,armguardById,bagById,ammoCount,equipmentState,shopStock,maxShurikenPurchase,shurikenPrice} from './equipment.js';
 import {combatStats} from './progression.js';
 import {villageSidequests} from './journey-story.js';
@@ -30,7 +31,7 @@ export function describeGear(container,kind,id){
   container.innerHTML='<strong>'+esc(item.name)+'</strong><p>'+(kind==='armor'?resistanceText(item):kind==='armguard'?bonusText(item):kind==='bag'?item.capacity+' chỗ đựng phi tiêu':kind==='shuriken'?item.damage+' sát thương':'')+'</p><small>'+esc(item.description||'')+'</small>';
 }
 const shopKind={shuriken:'Phi tiêu',armor:'Giáp kháng hệ',armguard:'Giáp tay tăng thuật',bag:'Túi phi tiêu',flask:'Bình thuốc'};
-const shopVisual=item=>['armor','armguard'].includes(item.kind)?icon(item.kind,item):item.kind==='shuriken'?'<svg viewBox="0 0 100 100" aria-hidden="true"><path d="m50 7 10 28 30-12-18 26 21 22-29-6-14 29-6-31-30 1 23-19-13-28 27 12Z" fill="currentColor" stroke="#e4e9de" stroke-opacity=".4" stroke-width="1.5"/><circle cx="50" cy="50" r="9" fill="#183037" stroke="currentColor" stroke-width="3"/><path d="m50 15 8 24 24-9-17 22 18 17-24-5-11 22-4-26-24 1 20-17-9-20 20 9" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="1"/></svg>':itemGlyph(item.kind);
+const shopVisual=item=>['armor','armguard'].includes(item.kind)?icon(item.kind,item):item.kind==='shuriken'?shurikenIcon({tinted:true,className:'shop-shuriken',hole:'#183037'}):itemGlyph(item.kind);
 const shopStats=text=>'<div class="shop-item-stats">'+text.split(' · ').map(s=>'<span>'+esc(s)+'</span>').join('')+'</div>';
 export function shopContent(save,tab='shuriken'){
   const e=save.equipment;equipmentState(save);const stock=tab==='flask'?[{kind:'flask'}]:shopStock(save.village).filter(i=>i.kind===tab),count=ammoCount(e),capacity=bagById(e.bag).capacity;

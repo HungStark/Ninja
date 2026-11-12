@@ -182,7 +182,17 @@
     "cost": 27
   },
   "lightning-barrier": {
-    "cost": 25
+    "cost": 25,
+    "stunDurations": [
+      1,
+      2,
+      3
+    ],
+    "magneticDurations": [
+      5,
+      7,
+      9
+    ]
   },
   "lightning-lance": {
     "damage": 24

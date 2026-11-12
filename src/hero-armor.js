@@ -116,6 +116,11 @@ export function createArmorWardrobe(anchors){
     for(const root of all){
       const groups=new Map(),parts=[];
       for(const o of [...root.children]){o.updateMatrix();const g=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrix);if(!groups.has(o.material))groups.set(o.material,[]);groups.get(o.material).push(g);parts.push(o.name);o.geometry.dispose();root.remove(o);}
+      if(anchors.shoulders.includes(root)){
+        // Leaf faces and ice crystals have different authored depths; center the whole cap on its joint.
+        const bounds=new T.Box3();for(const geometries of groups.values())for(const geometry of geometries){geometry.computeBoundingBox();bounds.union(geometry.boundingBox);}
+        if(!bounds.isEmpty()){const centerZ=(bounds.min.z+bounds.max.z)/2;for(const geometries of groups.values())for(const geometry of geometries)geometry.translate(0,0,-centerZ);}
+      }
       for(const [m,geometries] of groups){const geometry=mergeGeometries(geometries),mesh=new T.Mesh(geometry,m);mesh.name='armor-'+region;mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);triangles+=geometry.attributes.position.count/3;draws++;geometries.forEach(g=>g.dispose());}
       root.userData.parts=parts;
     }

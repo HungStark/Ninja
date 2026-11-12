@@ -187,7 +187,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
       const anchor=(parent,name)=>{const g=new T.Group();g.name=name;parent.add(g);if(parent!==root)g.scale.setScalar(1/scale);return g;};
       // Keep the authored standing fit, then let the actual joints carry each plate.
       const armorBodyAnchor=anchor(root,'avatar-armor-body');armorBodyAnchor.position.y=.18;(bones.chest||bones.spine||bones.hips||visual).attach(armorBodyAnchor);
-      const avatarShoulders=[-1,1].map((side,i)=>{const g=anchor(root,`avatar-armor-shoulder-${i}`);g.position.set(side*.32,2.32,.075);(bones.arms[side<0?1:0]||bones.chest||visual).attach(g);return g;});
+      const avatarShoulders=[-1,1].map((side,i)=>{const joint=bones.arms[side<0?1:0]||bones.chest||visual,g=anchor(root,`avatar-armor-shoulder-${i}`),jointPosition=root.worldToLocal(joint.getWorldPosition(new T.Vector3()));g.position.set(side*.32,2.32,jointPosition.z);joint.attach(g);return g;});
       avatarArmorAnchors={body:armorBodyAnchor,shoulders:avatarShoulders,bracers:bones.elbows.map((bone,i)=>anchor(bone||visual,`avatar-armor-bracer-${i}`)),shins:bones.knees.map((bone,i)=>anchor(bone||visual,`avatar-armor-shin-${i}`)),hips:bones.legs.map((bone,i)=>anchor(bone||visual,`avatar-armor-hip-${i}`))};
       if(bones.hips){
         root.add(pouchAnchor);pouchAnchor.position.copy(root.worldToLocal(bones.hips.getWorldPosition(new T.Vector3()))).add(new T.Vector3(-.34,.02,-.06));pouchAnchor.rotation.set(0,-Math.PI/2,0);pouchAnchor.scale.setScalar(1);bones.hips.attach(pouchAnchor);

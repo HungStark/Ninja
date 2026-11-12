@@ -1,3 +1,4 @@
+import {shurikenIcon} from './shuriken-icon.js';
 import {spellImage} from './spell-art.js';
 import {renderEnemySeals} from './battle-scroll.js';
 import {SHURIKEN_TYPES} from './equipment.js';
@@ -11,12 +12,7 @@ const dashFigure=`<svg class="tactical-dash-figure" viewBox="0 0 96 96" aria-hid
   <g fill="#bdeaff" filter="url(#tacticalDashGlow)" opacity=".7"><circle cx="72" cy="23" r="5.5"/><path d="M63 30L70 33L65 44L55 52L46 55L37 68L24 78L20 76L31 62L38 49L54 39Z"/></g>
   <g fill="#d8f4ff"><circle cx="72" cy="23" r="5.2"/><path d="M63 30Q67 28 70 33L65 44L55 52L46 55L37 68L24 78L20 76L31 62L38 49L54 39Z"/><path d="M64 32L76 39L84 31L88 33L79 46L65 42ZM61 32L45 35L31 46L28 44L41 30L57 27ZM52 48L67 55L68 61L55 69L46 81L41 79L49 64L58 59L46 55Z"/></g>
 </svg>`;
-const shuriken=`<svg class="tactical-shuriken" viewBox="0 0 96 96" aria-hidden="true">
-  <defs><linearGradient id="tacticalShurikenGold" x2=".8" y2="1"><stop stop-color="#fff5c9"/><stop offset=".48" stop-color="#ecdfb1"/><stop offset="1" stop-color="#baa56e"/></linearGradient></defs>
-  <path d="M79 7C65 21 63 33 67 39C77 42 85 53 89 72C74 63 62 63 56 67C52 77 42 85 23 89C32 74 32 62 28 56C17 52 9 42 6 23C21 32 33 32 39 28C43 17 57 10 79 7Z" fill="url(#tacticalShurikenGold)" stroke="#fff2c4" stroke-opacity=".45" stroke-width="1.2"/>
-  <path d="M79 7L48 40L39 28C43 17 57 10 79 7ZM89 72L56 49L67 39C77 42 85 53 89 72ZM23 89L46 56L56 67C52 77 42 85 23 89ZM6 23L39 46L28 56C17 52 9 42 6 23Z" fill="#fff1c3" opacity=".45"/>
-  <circle cx="48" cy="48" r="10.5" fill="#203c40" stroke="#f7e7b4" stroke-width="2.5"/>
-</svg>`;
+const shuriken=shurikenIcon();
 export function mobileSpellPosition(index,count){
   const angle=(165+(index+.5)*120/count)*Math.PI/180;
   return {x:Math.cos(angle)*.73,y:Math.sin(angle)*.73};
