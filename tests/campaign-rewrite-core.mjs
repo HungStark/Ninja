@@ -7,6 +7,7 @@ import {PLOT,PLOT_ORDER,WAR_VILLAGES,ALLIANCE_VILLAGES,acceptAlliance,companionP
 import {orderGuardianGuards} from '../src/village-confrontation.js';
 import {requiresGuardBattle} from '../src/combat-experience.js';
 import {encounterAppearance} from '../src/encounter-appearance.js';
+import {registerTournament,pendingTournamentMatch,resolveTournamentMatch} from '../src/wood-tournament.js';
 const load=s=>readJourney({getItem:()=>JSON.stringify(s)});let save=newJourney();
 assert.equal(PLOT.chapters.length,5);assert.ok(PLOT.opening.some(([,t])=>t.includes('hàng vạn')));assert.ok(PLOT.villages.dark.stages[1].script.some(([,t])=>t.includes('từng giết cô')));
 assert.equal(canTravel(save,'water').allowed,false);promiseMother(save);chooseStarter(save,'fire-volley');resolveBattle(save,{kind:'intro-trio',village:'nameless'},true);assert.ok(save.story.sealCore);assert.ok(save.story.questItems.includes('nameless:seal-core'));reportGuardian(save);assert.equal(canTravel(save,'water').allowed,true);assert.equal(canTravel(save,'fire').allowed,false);
@@ -16,7 +17,9 @@ for(const id of PLOT_ORDER){
   assert.equal(canTravel(save,id).allowed,true,id+' is unlocked in narrative order');save.village=id;
   assert.equal(campaignObjective(save).targetVillage,id);
   while(currentVillageEvent(save)){
-    const event=currentVillageEvent(save),gold=save.gold;assert.equal(campaignObjective(save).targetId,`story-${id}-${event.step}`);
+    const event=currentVillageEvent(save),gold=save.gold;
+    if(event.requiresTournament){assert.equal(campaignObjective(save).targetKind,'arena-host');assert.equal(advanceVillageEvent(save,id,event.step).reason,'tournament');registerTournament(save);while(pendingTournamentMatch(save.arena)){const m=pendingTournamentMatch(save.arena);resolveTournamentMatch(save,{tournamentRun:save.arena.run,tournamentMatch:m.id},true);}}
+    assert.equal(campaignObjective(save).targetId,`story-${id}-${event.step}`);
     if(event.choices){const before=JSON.stringify(save);assert.equal(advanceVillageEvent(save,id,event.step,{choiceIndex:1}).ok,false);assert.equal(JSON.stringify(save),before);}
     if(id==='fire'&&event.step===2)save.story.questItems.push('fire:lotus-medicine');
     if(event.sealTrace){const copy=structuredClone(save);copy.story.sealCore=false;assert.equal(advanceVillageEvent(copy,id,event.step).reason,'seal-core');}

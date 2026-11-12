@@ -1,7 +1,7 @@
 import * as T from 'three';
 
 export const WOOD_SACRED_TREE=Object.freeze({id:'wood-sacred-tree',x:5,z:0,eventSite:{x:5,z:6.8},ladderX:9.3,ladderZ:6.25});
-export const sacredTreeRecovered=save=>(save.story?.villageEvents?.wood||0)>=3;
+export const sacredTreeRecovered=save=>(save.story?.villageEvents?.wood||0)>=4;
 
 export function createSacredTreeStatus(root,bark,leaves){
   root.userData.sacredTreeId=WOOD_SACRED_TREE.id;

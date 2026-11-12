@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {buildMythicBracer} from './mythic-armor.js';
 
 const materials=new Map();
 function mat(color,metal=false){const key=color+metal;if(!materials.has(key))materials.set(key,new T.MeshStandardMaterial({color,metalness:metal?.55:0,roughness:metal?.42:.9,flatShading:true}));return materials.get(key);}
@@ -10,6 +11,7 @@ export function createArmguardModel(item={id:'bare-wrists',color:'#403640'}){
   const box=(m,x,y,z,w,h,d,angle=0)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.rotation.z=angle;root.add(o);return o;};
   for(const y of [-.09,-.30])box(cloth,0,y,.005,.205,.045,.19);
   if(item.id==='bare-wrists')box(shade,0,-.2,.108,.13,.19,.02);
+  else if(item.mythic)buildMythicBracer(root,mat);
   else{
     const region=item.village,rows=item.elite?4:3;
     for(let i=0;i<rows;i++){

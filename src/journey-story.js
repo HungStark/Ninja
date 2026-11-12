@@ -57,7 +57,7 @@ export function readStory(raw,save){
   s.sealTraces=[...new Set((Array.isArray(raw.sealTraces)?raw.sealTraces:[]).filter(key=>{if(typeof key!=='string')return false;const [id,step]=key.split(':');return VILLAGE_EVENTS[id]?.stages[Number(step)]?.sealTrace&&Number(step)<(s.villageEvents[id]||0);}))];
   s.alliances=raw.plotVersion===PLOT_VERSION?[...new Set((Array.isArray(raw.alliances)?raw.alliances:[]).filter(id=>ALLIANCE_VILLAGES.includes(id)&&plotEventComplete({story:s},id)))]:[];
   s.companion.recruited=(s.villageEvents.fire||0)>=4;
-  s.companion.phase=(s.villageEvents.light||0)>=4&&(s.villageEvents.dark||0)<3?'separated':'with-party';Object.assign(s.companion,readCompanionHealth(raw.companion,save.visited));return s;
+  s.companion.phase=s.villageEvents.wood===2||(s.villageEvents.light||0)>=4&&(s.villageEvents.dark||0)<3?'separated':'with-party';Object.assign(s.companion,readCompanionHealth(raw.companion,save.visited));return s;
 }
 export function promiseMother(save){if(save.story.stage!=='mother')return false;save.story.stage='chief';return true;}
 export function chooseStarter(save,id){

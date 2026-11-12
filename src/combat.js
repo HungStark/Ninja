@@ -10,6 +10,7 @@ export function crossWalls(shot,walls,intersect,onHit=()=>{}){
   const distance=p=>Math.hypot(...p.map((v,i)=>v-shot.old[i]));hits.sort((a,b)=>distance(a.point)-distance(b.point));
   for(const {wall,point} of hits){
     if(wall.hp<=0)continue;
+    if(shot.unstoppable){const absorbed=wall.hp;wall.hp=0;onHit(wall,point,{absorbed,remaining:shot.damage,broken:true});continue;}
     const result=absorbDurability(wall,shot.damage);shot.damage=result.remaining;onHit(wall,point,result);
     if(shot.damage<=1e-7)return true;
   }

@@ -186,7 +186,7 @@ export function buildVillageCivic(c,layout){
   if(c.id!=='fire')createFirePrison(c.land,military.prison,false,c.physics.addBox,c.id+'-prison');
   for(const [index,p]of layout.houses.entries()){const house=buildHouse(c,p.x,p.z,4.4,4.2,index,p.yaw);house.userData.settlement=true;house.userData.district=layout.districts[0].id;c.obstacles.push({x:p.x,z:p.z,w:3.15,d:3.15});}
   const summary=new T.Group();summary.name='settlement-layout';summary.userData={village:c.id,houses:layout.houses.length,districts:layout.districts.map(d=>d.id),yards:0};c.land.add(summary);
-  return [{kind:'interior-enter',id:hallId(c.id),...layout.hall.entry,label:'Nhà họp · Trưởng làng'},{kind:'school',id:c.id+'-school',...layout.school.entry,label:'Trường học · Tu luyện'},...layout.clinics.map(clinic=>({kind:'clinic',id:clinic.id,...clinic.healer,label:'Y Tá'})),{kind:'military',id:c.id+'-military',...military.insideGate,label:'Khu quân sự · Trại lính và nhà lao'}].map(i=>({...i,y:c.physics.floorAt(i.x,i.z,c.heightAt(i.x,i.z)+1.3)}));
+  return [{kind:'interior-enter',id:hallId(c.id),...layout.hall.entry,label:c.id==='wood'?'Nhà họp của làng':'Nhà họp · Trưởng làng'},{kind:'school',id:c.id+'-school',...layout.school.entry,label:'Trường học · Tu luyện'},...(c.id==='wood'?[{kind:'interior-enter',id:'wood-tournament',...civicPoint(school,0,14),label:'Giải đấu · Trường học Làng Mộc'}]:[]),...layout.clinics.map(clinic=>({kind:'clinic',id:clinic.id,...clinic.healer,label:'Y Tá'})),{kind:'military',id:c.id+'-military',...military.insideGate,label:'Khu quân sự · Trại lính và nhà lao'}].map(i=>({...i,y:c.physics.floorAt(i.x,i.z,c.heightAt(i.x,i.z)+1.3)}));
 }
 
 export function buildGateWatch(c,gates){

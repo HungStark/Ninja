@@ -46,6 +46,15 @@ export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,c
 export const ARM_GUARDS=[{id:'bare-wrists',name:'Băng tay lữ hành',price:0,color:'#403640',style:'wrap',bonuses:{},gloves:false},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-bracers'+(g.suffix==='guard'?'':g.suffix==='guard-focus'?'-focus':'-'+g.suffix),village:v,name:'Giáp tay '+name+g.label,description:g.elite?'Giáp tay kèm găng phủ bàn tay, khớp ngón vẫn linh hoạt.':'Giáp cổ tay và cẳng tay, để hở các ngón kết ấn.',price:g.price-40,color,style,intro:!!g.intro,elite:!!g.elite,legacy:g.legacy,bonuses:g.rates,gloves:!!g.elite})))];
 export const armorById=id=>ARMORS.find(a=>a.id===id);
 export const armguardById=id=>ARM_GUARDS.find(a=>a.id===id);
+export const TOURNAMENT_ARMOR='divine-ninja-armor',TOURNAMENT_ARMGUARD='divine-ninja-bracers';
+const allElements=Object.fromEntries(['fire','water','lightning','wind','earth','wood','ice','light','dark'].map(id=>[id,.1]));
+ARMORS.push({id:TOURNAMENT_ARMOR,name:'Giáp Thần Ninja Cực Phẩm',description:'Giáp lục sẫm viền vàng, vai cong, ấn xoắn và dây tua đỏ. Giảm 10% sát thương mọi hệ.',price:0,color:'#49503a',style:'mythic',elite:true,mythic:true,resistances:{...allElements}});
+ARM_GUARDS.push({id:TOURNAMENT_ARMGUARD,name:'Giáp Tay Thần Ninja Cực Phẩm',description:'Giáp tay lục sẫm khảm vàng, hoa văn mây, sóng và ấn xoắn. Tăng 10% sát thương mọi hệ.',price:0,color:'#49503a',style:'mythic',elite:true,mythic:true,gloves:false,bonuses:{...allElements}});
+export function awardTournamentEquipment(save){
+  if(save.arena.rewardClaimed||save.arena.status!=='champion')return false;
+  const e=save.equipment;if(!e.ownedArmor.includes(TOURNAMENT_ARMOR))e.ownedArmor.push(TOURNAMENT_ARMOR);if(!e.ownedArmguards.includes(TOURNAMENT_ARMGUARD))e.ownedArmguards.push(TOURNAMENT_ARMGUARD);
+  save.arena.rewardClaimed=true;return true;
+}
 export const bagById=id=>BAGS.find(b=>b.id===id);
 export const bestOwnedBag=e=>(e.ownedBags||[]).map(bagById).filter(Boolean).reduce((best,bag)=>bag.capacity>best.capacity?bag:best,BAGS[0]);
 export const shurikenById=id=>SHURIKEN_TYPES.find(s=>s.id===id);

@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {buildMythicArmor} from './mythic-armor.js';
 
 // Pieces are built in joint-local space, then merged by material for each joint.
 export function createArmorWardrobe(anchors){
@@ -7,7 +8,7 @@ export function createArmorWardrobe(anchors){
   const material=(color,metal=false)=>{const key=color+metal;if(!materials.has(key))materials.set(key,new T.MeshStandardMaterial({color,roughness:metal?.4:.92,metalness:metal?.55:.03,flatShading:true}));return materials.get(key);};
   function clear(){for(const root of all){root.traverse(o=>o.geometry?.dispose());root.clear();root.userData.parts=[];}}
   function build(armor){
-    clear();const region=armor.village||'nameless',elite=!!armor.elite,body=anchors.body;
+    clear();const region=armor.mythic?'mythic':armor.village||'nameless',elite=!!armor.elite,body=anchors.body;
     const plate=material(armor.color,true),shadow=material(new T.Color(armor.color).multiplyScalar(.54).getStyle(),true),cloth=material(new T.Color(armor.color).multiplyScalar(.7).getStyle()),trim=material(elite?'#cbb17c':'#a9aaa0',true),leather=material('#382e2d'),black=material('#211e27');
     const add=(parent,geometry,mat,x=0,y=0,z=0,name='plate')=>{const o=new T.Mesh(geometry,mat);o.position.set(x,y,z);o.name=name;o.castShadow=o.receiveShadow=true;parent.add(o);return o;};
     const box=(p,m,x,y,z,w,h,d,name)=>add(p,new T.BoxGeometry(w,h,d),m,x,y,z,name);
@@ -16,6 +17,7 @@ export function createArmorWardrobe(anchors){
     const ring=(p,m,x,y,z,r=.045,name='clasp')=>add(p,new T.TorusGeometry(r,.009,5,14),m,x,y,z,name);
     const jewel=(p,m,x,y,z,s=.06,name='crest')=>{const o=add(p,new T.OctahedronGeometry(s,0),m,x,y,z,name);o.scale.z=.4;return o;};
     const leaf=(p,m,x,y,z,size,tilt,name='leaf')=>{const o=panel(p,m,[[0,size*.55],[-size*.35,size*.08],[-size*.23,-size*.28],[0,-size*.6],[size*.23,-size*.28],[size*.35,size*.08]],0,.018,name);o.position.set(x,y,z);o.rotation.z=tilt;return o;};
+    if(armor.mythic)buildMythicArmor(anchors,material);else{
     // A rounded, segmented back gives the close exploration camera a finished rear view.
     if(!['wind','dark'].includes(region)){
       const back=add(body,new T.CylinderGeometry(.33,.285,.64,10,1,true,Math.PI/2,Math.PI),shadow,0,1.76,0,'curved-back');back.scale.z=.8;
@@ -111,6 +113,7 @@ export function createArmorWardrobe(anchors){
       panel(body,trim,[[-.085,2.04],[0,2.15],[.085,2.04],[0,1.86]],-.323,.012,crest);
       const front=region==='earth'?.405:region==='wind'?.309:region==='dark'?.318:.363;
       for(const side of [-1,1])line(body,trim,[side*.21,1.94,front],[side*.17,1.5,front],.008,'elite-edge');
+    }
     }
     let triangles=0,draws=0;
     for(const root of all){

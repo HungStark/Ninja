@@ -73,11 +73,11 @@ export function createEnemyMovement(random=Math.random){
   }
   const controller={
     reset(x=0){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;velocity=0;velocity2d=[0,0];targetPoint=null;region=null;mode='circling';target=direction*ENEMY_MOVEMENT_LIMIT;dashCooldown=dashing=dashUses=0;},
-    walk(dt,{position,heavy=false,blocked=false,slow=1,constrain=p=>p,shots=[],walls=[],optics=[],attacker,frontGuard=false,bounds=null,moveSpeed=STEP_DISTANCE/STEP_DURATION}){
+    walk(dt,{position,heavy=false,blocked=false,slow=1,constrain=p=>p,shots=[],walls=[],optics=[],attacker,frontGuard=false,bounds=null,moveSpeed=STEP_DISTANCE/STEP_DURATION,moveMultiplier=ENEMY_MOVE_MULTIPLIER}){
       velocity=0;velocity2d=[0,0];
       if(blocked){mode='idle';target=position[0];return position;}
       const cover=defensivePosition(position,walls,optics,attacker,bounds),danger=unblockableThreat(shots,position);
-      if(bounds)return freeMove(dt,{position,bounds,moveSpeed:moveSpeed*ENEMY_MOVE_MULTIPLIER,heavy,slow,constrain,cover,danger,frontGuard});
+      if(bounds)return freeMove(dt,{position,bounds,moveSpeed:moveSpeed*moveMultiplier,heavy,slow,constrain,cover,danger,frontGuard});
       if(frontGuard&&!danger){mode='sheltering';target=position[0];return position;}
       if(cover&&!danger){
         mode='sheltering';target=cover[0];const distance=Math.hypot(cover[0]-position[0],cover[2]-position[2]),step=Math.min(distance,dt*4*ENEMY_MOVE_MULTIPLIER*clamp(slow,0,1));
@@ -90,7 +90,7 @@ export function createEnemyMovement(random=Math.random){
         const next=constrain([position[0]+clamp(target-position[0],-dt*5.8*ENEMY_MOVE_MULTIPLIER*slow,dt*5.8*ENEMY_MOVE_MULTIPLIER*slow),position[1],position[2]]);velocity=dt>0?(next[0]-position[0])/dt:0;return next;
       }
       mode='circling';
-      const speed=(STEP_DISTANCE/STEP_DURATION)*ENEMY_MOVE_MULTIPLIER*(heavy?.8:1)*clamp(slow,0,1);
+      const speed=moveSpeed*moveMultiplier*(heavy?.8:1)*clamp(slow,0,1);
       let remaining=dt,x=clamp(position[0],-ENEMY_MOVEMENT_LIMIT,ENEMY_MOVEMENT_LIMIT);
       while(remaining>1e-8){
         if(directionTime<=1e-8){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;}

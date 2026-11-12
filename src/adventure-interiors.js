@@ -2,10 +2,12 @@ import {SPIRIT_ORES} from './spirit-mines.js';
 import * as T from 'three';
 import {REGIONS} from './adventure-world.js';
 import {HALL_STYLES,hallId,planVillageCivic} from './village-civic.js';
+import {buildTournamentNoticeboard} from './tournament-board.js';
 
 export const INTERIORS={
   'earth-cave':{id:'earth-cave',village:'earth',title:'Đại Hang Địa Tâm',spawn:[0,-14],bounds:{x:22,minZ:-58,maxZ:-8},center:[0,-33],exit:[0,-9.5],exterior:[0,-11.2],surface:null,zones:['great-cave','cave-crystals'],sky:'#111718',ambient:1.05},
-  'wood-arena':{id:'wood-arena',village:'wood',title:'Võ Đường Cửu Làng',spawn:[0,23],bounds:{x:25,minZ:-31,maxZ:31},center:[0,0],exit:[0,28.5],exterior:[1,2.25],surface:'heart-tree',zones:[],sky:'#26322d',ambient:1.7}
+  'wood-arena':{id:'wood-arena',kind:'treehouse',village:'wood',title:'Phòng tụ họp trên Cổ Thụ',spawn:[0,4.5],bounds:{x:6,minZ:-7,maxZ:7},center:[0,0],exit:[0,5.5],exterior:[1,2.25],surface:'heart-tree',zones:[],sky:'#26322d',ambient:1.7},
+  'wood-tournament':{id:'wood-tournament',kind:'arena',village:'wood',title:'Giải đấu tại Trường học Làng Mộc',spawn:[0,23],bounds:{x:25,minZ:-31,maxZ:31},center:[0,0],exit:[0,28.5],exterior:[0,7],surface:null,zones:[],sky:'#26322d',ambient:1.7}
 };
 for(const id of Object.keys(HALL_STYLES))INTERIORS[hallId(id)]={id:hallId(id),village:id,kind:'council',title:'Nhà họp · Trưởng làng',style:HALL_STYLES[id],spawn:[0,12],bounds:{x:16,minZ:-20,maxZ:18},center:[0,-1],exit:[0,15.5],exterior:[0,7],surface:null,zones:[],sky:'#555e57',ambient:1.7};
 export const councilInterior=id=>INTERIORS[hallId(id)]||null;
@@ -17,16 +19,27 @@ export function readInterior(raw,village){const room=INTERIORS[raw?.id];if(!room
 
 // Only this room is built after the outdoor scene has been disposed.
 export function buildInterior(c,room){
-  const oreNodes=new Map();const {land,box,cyl,mesh,M,physics}=c,root=new T.Group();root.name='interior-'+room.id;root.userData.style=room.style;land.add(root);const wood=room.id==='wood-arena'||room.kind==='council',b=room.bounds,center=(b.minZ+b.maxZ)/2,depth=b.maxZ-b.minZ;
+  const oreNodes=new Map();const {land,box,cyl,mesh,M,physics}=c,root=new T.Group();root.name='interior-'+room.id;root.userData.style=room.style;land.add(root);const wood=room.village==='wood'||room.kind==='council',b=room.bounds,center=(b.minZ+b.maxZ)/2,depth=b.maxZ-b.minZ;
   const solid=(o,name)=>c.solidMesh(o,{name,stepable:false});
   const stone=M(wood?'#68553e':'#5c5b50'),trim=M(wood?'#493a2d':'#373f3d'),warm=M('#e2bd73',.4);
   const floor=box(root,M(wood?'#99815c':'#777361'),0,-.18,center,b.x*2,.36,depth);floor.name='interior-floor';physics.addBox({name:'interior-floor',x:0,z:center,w:b.x*2,d:depth,bottom:-.36,top:0});
-  for(const side of [-1,1])solid(box(root,stone,side*(b.x+.3),5.5,center,.6,11,depth+1),'interior-side-wall');
-  for(const z of [b.minZ-.3,b.maxZ+.3])solid(box(root,stone,0,5.5,z,b.x*2+1,11,.6),'interior-end-wall');
+  const wallHeight=room.kind==='treehouse'?6:11;
+  for(const side of [-1,1])solid(box(root,stone,side*(b.x+.3),wallHeight/2,center,.6,wallHeight,depth+1),'interior-side-wall');
+  for(const z of [b.minZ-.3,b.maxZ+.3])solid(box(root,stone,0,wallHeight/2,z,b.x*2+1,wallHeight,.6),'interior-end-wall');
   // Back-side roof closes the room without exposing any landscape above it.
-  const roof=box(root,M(wood?'#4a4030':'#42483f'),0,12,center,b.x*2+1,.5,depth+1);roof.name='interior-ceiling';
-  const fixtures=[{kind:'interior-exit',id:room.id,x:room.exit[0],z:room.exit[1],y:0,label:room.kind==='council'?'Ra sân nhà họp':wood?'Ra hiên nhà trên cây':'Trở ra Làng Thổ'}];
-  if(room.kind==='council'){
+  const roof=box(root,M(wood?'#4a4030':'#42483f'),0,wallHeight+.5,center,b.x*2+1,.5,depth+1);roof.name='interior-ceiling';
+  const fixtures=[{kind:'interior-exit',id:room.id,x:room.exit[0],z:room.exit[1],y:0,label:room.kind==='council'?'Ra sân nhà họp':room.kind==='arena'?'Trở ra sân trường':wood?'Ra hiên nhà trên cây':'Trở ra Làng Thổ'}];let tournamentBoard=null;
+  if(room.kind==='treehouse'){
+    const tabletop=M('#b69b69'),leaf=M('#6b8353');
+    solid(box(root,trim,0,.75,-1,3.4,1.5,1.8),'treehouse-meeting-table');box(root,tabletop,0,1.55,-1,3.65,.15,2);
+    for(const [x,z]of [[-2.5,-1],[2.5,-1],[0,-3]]){solid(box(root,trim,x,.45,z,1.2,.9,1.2),'treehouse-chair');box(root,leaf,x,1.2,z-.5,1.2,.85,.15);}
+    for(let i=0;i<3;i++)box(root,M('#e1d3a9'),-.9+i*.8,1.65,-1,.6,.03,.7);
+    solid(box(root,trim,-4.8,1.35,-4.5,1.1,2.7,3),'treehouse-bookcase');for(let i=0;i<6;i++)box(root,M(i%2?'#ad956b':'#6f8458'),-4.15,.7+i%3*.7,-5.3+Math.floor(i/3)*1.4,.2,.5,.8);
+    for(const side of [-1,1]){box(root,trim,side*5.65,3,-1,.12,3,3.2);box(root,M('#c5d8b6',.08),side*5.55,3,-1,.06,2.7,2.9);}
+    box(root,trim,0,2,6.85,2,4,.15).name='treehouse-exit-door';box(root,warm,0,4.1,6.7,2.3,.18,.2);cyl(root,warm,.65,1.8,6.65,.1,.2,8).rotation.x=Math.PI/2;
+    const lamp=new T.PointLight('#ffe1ad',6,20,1.5);lamp.position.set(0,5,0);root.add(lamp);cyl(root,warm,0,5.4,0,.4,.45,8);
+    fixtures.push({kind:'npc',id:'wood-chief',x:2.7,z:-3.6,y:0,label:'Trưởng làng Mộc'});
+  }else if(room.kind==='council'){
     const colors={water:'#76a7b5',fire:'#b46547',lightning:'#a795c7',earth:'#c2a071',wind:'#a0bda2',light:'#e1cd8f',ice:'#badbe1',wood:'#83a169',dark:'#89799e'},accent=M(colors[room.village]);
     // Visible entrance on the inside face of the front wall.
     const door=box(root,trim.clone(),0,2.6,b.maxZ-.08,4.6,5.2,.18);door.name='council-exit-door';
@@ -44,7 +57,7 @@ export function buildInterior(c,room){
     solid(box(root,trim,7.5,1.5,-14, .18,3,7),'chief-private-screen');box(root,accent,7.6,1.7,-14,.07,2.3,6.2);
     for(const side of [-1,1]){box(root,trim,side*15.55,4,-2,.1,4,6);box(root,M('#c9d8d0',.15),side*15.45,4,-2,.08,3.6,5.6);}
     const light=new T.PointLight('#ffdfab',8,35,1.5);light.position.set(0,7,0);root.add(light);cyl(root,warm,0,8,0,.65,.45,8);
-    fixtures.push({kind:'npc',id:room.village+'-chief',x:0,z:-12,y:0,label:'Trưởng làng'});
+    if(room.village!=='wood')fixtures.push({kind:'npc',id:room.village+'-chief',x:0,z:-12,y:0,label:'Trưởng làng'});
   }else if(wood){
     for(let z=b.minZ+1;z<b.maxZ;z+=1.25)box(root,M(Math.round(z)%2?'#a28c67':'#917852'),0,.006,z,b.x*2-.4,.012,.035);
     for(const side of [-1,1])for(const z of [-24,-12,0,12,24])solid(box(root,trim,side*23,5.6,z,.75,11.2,.75),'arena-timber-column');
@@ -52,10 +65,12 @@ export function buildInterior(c,room){
     // The ring is flush with the surrounding floor; movement never catches a step.
     cyl(root,M('#c4b386'),0,.015,0,13,.03,64);const ring=mesh(new T.RingGeometry(12.4,12.62,64),M('#644d36'),root,0,.04,0);ring.rotation.x=-Math.PI/2;
     for(const side of [-1,1])for(let row=0;row<3;row++){const x=side*(17+row*2);solid(box(root,M(row%2?'#746047':'#826d50'),x,.5+row*.5,0,1.65,1+row,42),'arena-grandstand');for(const z of [-20,20])box(root,trim,x,1.25+row*.5,z,1.8,.12,.18);}
-    const villages=Object.keys(REGIONS).filter(id=>id!=='nameless');
-    villages.forEach((id,i)=>{const x=-20+i*5,cloth=box(root,M(({water:'#6296b2',fire:'#b85843',lightning:'#9182bb',earth:'#ab8a58',wind:'#85aa86',light:'#e0c984',ice:'#a5d5dc',wood:'#568764',dark:'#635577'})[id]),x,7.6,-30.55,2.5,4,.06);cloth.name='village-banner-'+id;box(root,warm,x,9.7,-30.4,2.8,.08,.12);});
+    const villages=Object.keys(REGIONS).filter(id=>!['light','dark'].includes(id));
+    villages.forEach((id,i)=>{const x=-20+i*5,cloth=box(root,M(({nameless:'#a89775',water:'#6296b2',fire:'#b85843',lightning:'#9182bb',earth:'#ab8a58',wind:'#85aa86',light:'#e0c984',ice:'#a5d5dc',wood:'#568764',dark:'#635577'})[id]),x,7.6,-30.55,2.5,4,.06);cloth.name='village-banner-'+id;box(root,warm,x,9.7,-30.4,2.8,.08,.12);});
     box(root,trim,0,.5,-24,7,1,2.5);box(root,M('#c9b585'),0,1.02,-24,6.8,.06,2.4);
-    fixtures.push({kind:'arena-host',id:'wood-arena-host',x:0,z:17,y:0,label:'Trọng tài · Giao hữu Cửu Làng'});
+    fixtures.push({kind:'arena-host',id:'wood-arena-host',x:0,z:17,y:0,label:'Trọng tài · Đăng ký giải đấu'});
+    fixtures.push({kind:'tournament-board',id:'school-tournament-board',x:9,z:18,y:0,label:'Bảng cặp đấu và kết quả'});
+    tournamentBoard=buildTournamentNoticeboard(c,root);
     for(const z of [-20,0,20]){const light=new T.PointLight('#ffdc9e',9,35,1.5);light.position.set(0,8,z);root.add(light);cyl(root,warm,0,8,z,.5,.65,8).name='arena-ceiling-lamp';}
     box(root,trim,0,2.3,30.65,4.6,4.6,.08);box(root,M('#e6d2a0',.35),0,4.9,30.5,5,.3,.3);
   }else{
@@ -71,5 +86,5 @@ export function buildInterior(c,room){
     fixtures.push(...room.zones.map(id=>{const z=REGIONS.earth.zones.find(z=>z.id===id);return {kind:'landmark',id,x:z.x,z:z.z,y:0,label:z.name};}));
     box(root,new T.MeshBasicMaterial({color:'#070a0b'}),0,2.5,b.maxZ-.05,5,5,.08);
   }
-  return {fixtures,root,oreNodes};
+  return {fixtures,root,oreNodes,tournamentBoard};
 }

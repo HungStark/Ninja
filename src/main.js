@@ -40,6 +40,7 @@ import {iceSpellStats} from './ice-spell-stats.js';
 import {configureOpponent,createOpponentRules,opponentStage,opponentDamageMultiplier,opponentBaseDamageMultiplier,scaleEnemySpell} from './opponent-balance.js';
 import { crossWalls } from './combat.js';
 import { sweepTsunami } from './tsunami.js';
+import {sweepSnowball} from './snowball-sweep.js';
 import { WaterBubbles } from './water-bubbles.js';
 import { createAdventure } from './adventure.js';
 import { physicalKey, textInputTarget } from './game-input.js';
@@ -153,6 +154,7 @@ async function main() {
   const activeBoss=()=>adventure?.inBattle?(adventure.encounter?.kind==='boss'?adventure.encounter:null):practiceEncounter?.kind==='boss'?practiceEncounter:null;
   const bossDamageMultiplier=()=>opponentDamageMultiplier(battleOpponent,activeBoss()?guardianPhases.state().phase:1);
   const baseEnemyDamageMultiplier=()=>opponentBaseDamageMultiplier(battleOpponent,activeBoss()?guardianPhases.state().phase:1);
+  const tournamentBattle=()=>!!adventure?.encounter?.tournamentStats;
   const currentEnemySettings=()=>opponentStage(battleOpponent,activeBoss()?guardianPhases.state().phase:1);
   const guardianPhases=createGuardianPhases(scene),battleIntro=createBattleIntro();
   const phaseTitle=document.createElement('div');phaseTitle.id='guardianPhaseTitle';phaseTitle.hidden=true;document.body.append(phaseTitle);
@@ -457,7 +459,7 @@ async function main() {
   }
   function launch(spell, owner, pos, dir, sourceProfile=null) {
     spell={...spell,speed:(spell.speed||0)*PROJECTILE_SPEED_MULTIPLIER};
-    if(owner==='enemy')spell=scaleEnemySpell(spell,(sourceProfile?opponentDamageMultiplier(sourceProfile):bossDamageMultiplier())/baseEnemyDamageMultiplier());
+    if(owner==='enemy')spell=scaleEnemySpell(spell,((sourceProfile?opponentDamageMultiplier(sourceProfile):bossDamageMultiplier())+(tournamentBattle()?battleOpponent.tournamentStats.elementBonuses?.[spell.element]||0:0))/baseEnemyDamageMultiplier());
     gameAudio.cast(spell,owner!=='player');
     if(!natureArts.canCast(owner,spell))return false;
     spell=natureArts.empower(owner,spell);if(owner==='player')playerAvatar.cast(spell);
@@ -716,7 +718,7 @@ async function main() {
     clearMeteorView();
     cameraImpacts.reset();
     setWorldFov(baseFov);
-    if(adventure?.inBattle){adventure.recordHealth(player.hp,player.maxHp);campaignAlly.record();adventure.recordCompanionHealth(campaignAlly.state().hp);}
+    if(adventure?.inBattle&&!tournamentBattle()){adventure.recordHealth(player.hp,player.maxHp);campaignAlly.record();adventure.recordCompanionHealth(campaignAlly.state().hp);}
     gameAudio.result(victory);
     won = true; dashBoost.cancelDash();dashAura.clear();enemyDashAura.clear();moveTargetX = camera.p[0]; moveDirection = 0; enemyPose = -1; releaseAimLock();
     salvos.length = 0;
@@ -725,7 +727,7 @@ async function main() {
     $('resultTitle').textContent = victory ? 'Bạn đã làm chủ trận đấu.' : 'Một trận đấu. Một bài học.';
     $('winStats').textContent = (victory ? 'Đã hạ đối thủ' : 'Bạn đã hết máu') + ' sau ' + Math.floor(battleTime) + ' giây · ' + rules.casts + ' lần thi triển · còn ' + Math.ceil(player.hp) + ' máu.';
     adventureVictory=victory;
-    $('nextButton').innerHTML=adventure?.inBattle?(victory?'TIẾP TỤC KHÁM PHÁ':'HỒI SINH TẠI ĐIỂM LƯU')+' <span>→</span>':'CHỌN CHIÊU · TRẬN TIẾP <span>→</span>';
+    $('nextButton').innerHTML=adventure?.inBattle?(tournamentBattle()?'TRỞ LẠI TRƯỜNG HỌC':victory?'TIẾP TỤC KHÁM PHÁ':'HỒI SINH TẠI ĐIỂM LƯU')+' <span>→</span>':'CHỌN CHIÊU · TRẬN TIẾP <span>→</span>';
     $('winScreen').classList.remove('hidden'); updateUI();
   }
   function interruptActor(owner){
@@ -1072,7 +1074,7 @@ async function main() {
     if(freeMovement&&beast&&guardianPhases.state().aiOwnedMovement){enemyMoving=guardianPhases.state().moving;return;}
     if(freeMovement&&beast&&guardianPhases.state().action){enemyMovement.update(0,{position:enemyPos(),blocked:true});return;}
     const rendered=enemyPos(),old=freeMovement&&beast&&guardianAnchor?[guardianAnchor.x,rendered[1],guardianAnchor.z]:rendered;
-    const next=enemyMovement.update(dt,{position:old,dashBlocked:lightArts.blocksDash('enemy',old),bounds:freeMovement?combatMovementBounds('enemy',old):null,moveSpeed:freeMovement?PRACTICE_BOT_MOVE_SPEED:undefined,shots,walls,optics:lightArts.optics,attacker:playerPos(),frontGuard:windArts.spirits.some(s=>s.owner==='enemy'&&s.life>0),beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(activeBoss().village),casting:!!aiSpell,blocked:enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2])*lightArts.slowAt('enemy',old)*natureArts.slowAt('enemy'),constrain:goal=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old)});
+    const next=enemyMovement.update(dt,{position:old,dashBlocked:lightArts.blocksDash('enemy',old),bounds:freeMovement?combatMovementBounds('enemy',old):null,moveSpeed:tournamentBattle()?PRACTICE_MOVE_SPEED:freeMovement?PRACTICE_BOT_MOVE_SPEED:undefined,moveMultiplier:tournamentBattle()?1:undefined,shots,walls,optics:lightArts.optics,attacker:playerPos(),frontGuard:windArts.spirits.some(s=>s.owner==='enemy'&&s.life>0),beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(activeBoss().village),casting:!!aiSpell,blocked:enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2])*lightArts.slowAt('enemy',old)*natureArts.slowAt('enemy'),constrain:goal=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old)});
     opponent.group.position.x=next[0];opponent.group.position.z=next[2];enemyMoving=Math.hypot(next[0]-old[0],next[2]-old[2])>.0001;
     if(beast){if(guardianAnchor){guardianAnchor.x=next[0]-guardianPhases.offset.x;if(freeMovement)guardianAnchor.z=next[2];}return;}
     aiRules.tick(dt); aiCastAge += dt;aiWeaponTimer=Math.max(0,aiWeaponTimer-dt);
@@ -1154,7 +1156,7 @@ async function main() {
       windArts.advance(dt,damageActors(),impact);
       earthArts.advance(dt,damageActors(),walls,impact,setEarthActorPosition,earthEvent,undefined,snowBlocks);
       const wasSnowReady=natureArts.snowReady('player');
-      natureArts.advance(dt,damageActors(),(owner,p)=>{if(owner==='player'){if(overheadPractice()){practiceOverhead.stop();dashBoost.cancelDash();}camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact,wallImpact,guardianObjectBlocks);
+      natureArts.advance(dt,damageActors(),(owner,p)=>{if(owner==='player'){if(overheadPractice()){practiceOverhead.stop();dashBoost.cancelDash();}camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact,wallImpact,guardianObjectBlocks,attack=>sweepSnowball(attack,{actors:damageActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,shots}));
       if(!wasSnowReady&&natureArts.snowReady('player'))announce('Đã tích đủ 35 tuyết · Z X rồi SPACE để dùng Tuyết táng!');
 
       if(overheadPractice()){
@@ -1603,6 +1605,7 @@ async function main() {
     clearDragonView();
     clearMeteorView();
     battlePlayerStats=adventure?.encounter?{...adventure.combatStats}:{maxHp:300,maxChakra:100,damageMultiplier:1};
+    if(tournamentBattle())battlePlayerStats.elementBonuses={...adventure.encounter.tournamentStats.elementBonuses};
     const cooldownOverrides=introductoryCooldowns(adventure?.state().save.learnedSpells,!!adventure?.encounter);
     rules = new GameRules(loadout,{maxChakra:battlePlayerStats.maxChakra,chakraRegen:battlePlayerStats.chakraRegen,cooldownOverrides}); player = new Fighter(battlePlayerStats.maxHp); enemy = new Fighter(adventure?.encounter?.hp||practiceEncounter?.hp||PRACTICE_BOT_HP);player.resistances={...(battlePlayerStats.resistances||{})};playerAvatar.setEquipment(adventure?.encounter?adventure.equipment:null);hands.setArmguard(adventure?.encounter?adventure.equipment.armguard:null);bossEnraged=false;aiWeaponTimer=4;
     if(adventure?.encounter){player.hp=adventure.healthFraction*player.maxHp;adventure.beginCombat();player.autoRestore=false;enemy.autoRestore=false;}
@@ -1612,6 +1615,7 @@ async function main() {
     aiRules = new GameRules(['wood','ice'].includes(el.id)?spells.filter(s=>s.element===el.id).map(s=>s.id):el.id==='earth'?['earth-orb','earth-lance','earth-volley','earth-barrier','earth-reflect']:el.id==='dark'?['dark-domain','dark-orb','dark-lance','dark-volley','dark-reflect']:el.id==='light'?['light-orb','light-barrier','light-reflect','light-lance','light-volley']:el.id==='wind'?['wind-orb','wind-lance','wind-volley','wind-barrier','wind-reflect']:[el.id+(el.id==='fire'?'-volley':el.id==='water'?'-tsunami':'-thunder'),el.id+'-lance',el.id+(el.id==='fire'?'-meteor':'-volley'),['fire','water','lightning'].includes(el.id)?el.id+'-barrier':support.id==='dark'?'dark-reflect':support.id+'-barrier',support.id+'-reflect'].filter((id,i,list)=>list.indexOf(id)===i));
     if(adventure?.inBattle)aiRules=new GameRules(adventure.encounter.spellIds);
     if(practiceEncounter)aiRules=new GameRules(practiceEncounter.spellIds);
+    if(tournamentBattle())adventure.encounter.tournamentStats.moveSpeed=PRACTICE_MOVE_SPEED;
     battleOpponent=configureOpponent(adventure?.encounter||practiceEncounter||{kind:'practice-ninja',hp:enemy.maxHp,spellIds:[...aiRules.loadout],element:el.id,balancePractice:true});
     const firstPhase=activeBoss()?.beastOnly?2:1;
     aiRules=createOpponentRules(GameRules,battleOpponent,firstPhase);enemy.maxHp=battleOpponent.hp;enemy.hp=enemy.maxHp;
@@ -1629,7 +1633,7 @@ async function main() {
     if(adventure?.inBattle&&adventure.encounter.squad){squad.start(adventure.encounter.squad,world.opponentSpawn);for(const actor of squad.actors())squad.root(actor.id).scale.setScalar(characterScale());aiTimer=adventure.encounter.squad[0].initialDelay;}
     if(activeBoss()){guardianPhases.reset({...activeBoss(),thirdPerson:overheadPractice()},enemy);guardianAnchor=opponent.group.position.clone();$('enemyElement').textContent=activeBoss().beastOnly?activeBoss().name:activeBoss().name+' · PHASE 1/'+activeBoss().phases+' · DẠNG NGƯỜI';}
     guardianAlly.reset(adventure?.inBattle&&(adventure.encounter.kind==='intro-trio'||adventure.encounter.coalition));
-    campaignAlly.reset(adventure?.inBattle&&companionPresent(adventure.state().save),adventure?.companionHealth,hp=>adventure?.recordCompanionHealth(hp),playerPos());
+    campaignAlly.reset(adventure?.inBattle&&!tournamentBattle()&&companionPresent(adventure.state().save),adventure?.companionHealth,hp=>adventure?.recordCompanionHealth(hp),playerPos());
     if(adventure?.encounter?.coalition){player.shield=Math.max(player.shield,40);player.shieldTime=Math.max(player.shieldTime,8);}
     if(adventure?.inBattle)aiTimer=4;
     $('score').textContent = '00'; $('roundText').textContent = 'Trận đấu ' + String(round).padStart(2, '0'); $('currentSeal').textContent = 'Sẵn sàng kết ấn';
@@ -1663,8 +1667,8 @@ async function main() {
   function toggleSound(){gameAudio.configure({muted:!gameAudio.settings().muted});}
   function nextBattle(){if(adventure?.inBattle){const victory=adventureVictory;adventure.finishBattle(victory);}else prepare(true);}
   potionButton=document.createElement('button');potionButton.id='potionButton';potionButton.type='button';potionButton.className='potion-button';document.querySelector('#hud>.status').append(potionButton);
-  function refreshFlaskUI(){if(potionButton){const f=adventure?.flask;potionButton.hidden=!adventure?.inBattle||!f?.owned;potionButton.textContent='T · Bình thuốc '+(f?.charges??0)+'/'+(f?.maxCharges??1)+' · '+((f?.fraction??.25)*100)+'%';potionButton.disabled=!f?.charges||player.hp>=player.maxHp||paused||won;}}
-  function healWithFlask(){if(!started||paused||won||cinematicActive()||!adventure?.inBattle)return;const r=adventure.useHealingFlask(player.hp,player.maxHp);if(!r.ok){announce(adventure.flask.charges?'Máu đang đầy.':'Bình thuốc đã hết · Nạp lại tại trạm y tế.');return;}player.hp=r.hp;refreshFlaskUI();gameAudio.tone(660,.13,'sine',.04);announce('Bình thuốc · +'+Math.round(r.heal)+' máu');updateUI();}
+  function refreshFlaskUI(){if(potionButton){const f=adventure?.flask;potionButton.hidden=!adventure?.inBattle||tournamentBattle()||!f?.owned;potionButton.textContent='T · Bình thuốc '+(f?.charges??0)+'/'+(f?.maxCharges??1)+' · '+((f?.fraction??.25)*100)+'%';potionButton.disabled=!f?.charges||player.hp>=player.maxHp||paused||won;}}
+  function healWithFlask(){if(tournamentBattle())return;if(!started||paused||won||cinematicActive()||!adventure?.inBattle)return;const r=adventure.useHealingFlask(player.hp,player.maxHp);if(!r.ok){announce(adventure.flask.charges?'Máu đang đầy.':'Bình thuốc đã hết · Nạp lại tại trạm y tế.');return;}player.hp=r.hp;refreshFlaskUI();gameAudio.tone(660,.13,'sine',.04);announce('Bình thuốc · +'+Math.round(r.heal)+' máu');updateUI();}
   potionButton.onclick=healWithFlask;
   function mobileControlState(){
     const common={started,paused,won,phase:adventure.phase,equipment:adventure.inBattle?adventure.equipment:null,tactical:mobileTactical()};if(!common.tactical)return common;

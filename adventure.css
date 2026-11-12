@@ -363,3 +363,24 @@ body[data-journey=treatment] #worldLabels{visibility:hidden}
 
 
 #companionTreatmentPanel{position:fixed;z-index:45;left:50%;top:88px;transform:translateX(-50%);width:min(340px,calc(100vw - 24px));padding:14px;display:grid;gap:8px;text-align:center;background:#183b40f2;color:#efdfbd;border:1px solid #b8cab3;border-radius:6px;font:13px "Segoe UI",sans-serif}#companionTreatmentPanel[hidden]{display:none}#companionTreatmentPanel #cancelCompanionTreatment{position:static;inset:auto;transform:none;width:auto;justify-self:center;padding:8px 14px;min-height:34px;background:#244747;color:#eddbc0;border:1px solid #b3c6b9;border-radius:4px}.android-ui.mobile-tactical #campaignAllyHud{left:50%;right:auto;top:10px;bottom:auto;transform:translateX(-50%);width:174px;z-index:31}@media(max-height:500px){#companionTreatmentPanel{top:10px;width:280px;padding:10px;font-size:11px}}
+.tournament-popup{box-sizing:border-box;width:min(1100px,96vw);max-height:90dvh;padding:22px;border:1px solid #9d9469;border-radius:12px;background:#18322f;color:#eee2bd;overflow:auto}
+.tournament-popup::backdrop{background:#091a1be0}
+.tournament-popup header{display:flex;align-items:center;justify-content:space-between;gap:18px;position:sticky;top:-22px;background:#18322f;z-index:1;padding:12px 0}
+.tournament-popup h2{font-size:20px;margin:0}.tournament-rules{line-height:1.6;color:#c3cbb7}
+.tournament-popup header h2{flex:1}.tournament-popup header button{flex:0 0 auto;width:auto;min-width:68px}
+.tournament-records{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0}
+.tournament-records span{display:flex;justify-content:space-between;gap:10px;background:#29473d;padding:10px;border-radius:5px}.tournament-records .is-player{color:#f7d17f}
+.tournament-rounds{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:12px;overflow-x:auto;padding-bottom:12px}.tournament-rounds h3{font-size:15px;min-height:38px}
+.tournament-match{display:flex;flex-direction:column;gap:9px;margin-bottom:12px;background:#233f37;padding:12px;border:1px solid #496254;border-radius:7px}.tournament-match small{font-size:10px;color:#a4b4a6}.tournament-match strong{font-size:12px;color:#b6d5b3}.tournament-match .is-winner{color:#a7e8a4}.tournament-match.is-next{border-color:#e2bf75}
+@media(max-width:700px){.tournament-popup{padding:12px}.tournament-popup header{top:-12px}.tournament-popup h2{font-size:16px}.tournament-records{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-height:550px){.tournament-popup{padding:12px}.tournament-popup header{top:-12px;padding:6px 0}.tournament-popup h2{font-size:16px}.tournament-popup p{margin:8px 0}.tournament-rules{font-size:12px;line-height:1.35}.tournament-records{gap:4px;margin:10px 0}.tournament-records span{padding:6px;font-size:11px}.tournament-rounds h3{min-height:24px;margin:10px 0}.tournament-match{padding:8px;gap:6px}}
+@media(max-height:550px){.tournament-popup{padding:12px}.tournament-popup header{top:-12px;padding:6px 0}.tournament-popup h2{font-size:16px}.tournament-popup p{margin:8px 0}.tournament-rules{font-size:12px;line-height:1.35}.tournament-records{gap:4px;margin:10px 0}.tournament-records span{padding:6px;font-size:11px}.tournament-rounds h3{min-height:24px;margin:10px 0}.tournament-match{padding:8px;gap:6px}}
+.tournament-popup{box-sizing:border-box;width:min(1100px,96vw);max-height:90dvh;padding:22px;border:1px solid #9d9469;border-radius:12px;background:#18322f;color:#eee2bd;overflow:auto}
+.tournament-popup::backdrop{background:#091a1be0}
+.tournament-popup header{display:flex;align-items:center;justify-content:space-between;gap:18px;position:sticky;top:-22px;background:#18322f;z-index:1;padding:12px 0}
+.tournament-popup h2{font-size:20px;margin:0}.tournament-rules{line-height:1.6;color:#c3cbb7}
+.tournament-records{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0}
+.tournament-records span{display:flex;justify-content:space-between;gap:10px;background:#29473d;padding:10px;border-radius:5px}.tournament-records .is-player{color:#f7d17f}
+.tournament-rounds{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:12px;overflow-x:auto;padding-bottom:12px}.tournament-rounds h3{font-size:15px;min-height:38px}
+.tournament-match{display:flex;flex-direction:column;gap:9px;margin-bottom:12px;background:#233f37;padding:12px;border:1px solid #496254;border-radius:7px}.tournament-match small{font-size:10px;color:#a4b4a6}.tournament-match strong{font-size:12px;color:#b6d5b3}.tournament-match .is-winner{color:#a7e8a4}.tournament-match.is-next{border-color:#e2bf75}
+@media(max-width:700px){.tournament-popup{padding:12px}.tournament-popup header{top:-12px}.tournament-popup h2{font-size:16px}.tournament-records{grid-template-columns:repeat(2,minmax(0,1fr))}}

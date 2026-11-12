@@ -10,7 +10,7 @@ let maxTriangles=0,maxDraws=0;
 for(const armor of ARMORS){
   hero.setEquipment({armor,bag:BAGS[0]});assert.equal(hero.root.userData.equipment.armor,armor.id);
   if(armor.id==='traveler')continue;
-  const shape=hero.root.userData.armorAppearance;assert.equal(shape.region,armor.village);assert.equal(shape.elite,!!armor.elite);assert.ok(shape.triangles<2000);assert.ok(shape.draws<=28);maxTriangles=Math.max(maxTriangles,shape.triangles);maxDraws=Math.max(maxDraws,shape.draws);shapes.set(armor.id,{signature:signature(),triangles:shape.triangles});
+  const shape=hero.root.userData.armorAppearance;assert.equal(shape.region,armor.mythic?'mythic':armor.village);assert.equal(shape.elite,!!armor.elite);assert.ok(shape.triangles<(armor.mythic?8000:2000));assert.ok(shape.draws<=28);maxTriangles=Math.max(maxTriangles,shape.triangles);maxDraws=Math.max(maxDraws,shape.draws);shapes.set(armor.id,{signature:signature(),triangles:shape.triangles});
   for(let i=0;i<2;i++){assert.equal(hero.armorAnchors.shoulders[i].parent,hero.arms[i].pivot);assert.equal(hero.armorAnchors.bracers[i].parent,hero.arms[i].elbow);assert.equal(hero.armorAnchors.shins[i].parent,hero.legs[i].knee);assert.equal(hero.armorAnchors.hips[i].parent,hero.legs[i].pivot);}
   for(const pose of ['walk','jump','climb']){hero.update(2,true,{x:2,z:-2},.1);if(pose==='jump')hero.airPose(1);if(pose==='climb')hero.climbPose(2);hero.root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(hero.root);assert.ok([...bounds.min.toArray(),...bounds.max.toArray()].every(Number.isFinite));assert.ok(bounds.max.y<3.6);}
 }

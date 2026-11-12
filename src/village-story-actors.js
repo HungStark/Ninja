@@ -33,10 +33,15 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
   function addActor(id,p,wounded=false){const model=createNinja(HA_LY);model.root.name=wounded?'ha-ly-wounded':'ha-ly-companion';model.root.position.set(p.x,p.y,p.z);root.add(model.root);if(wounded)stationary.push(model);return model;}
   function reset(keepFollower=false){hero.setCarrying(false);carrying=false;syncedKey=null;syncedList=null;for(const s of prison?.colliders||[])removeSolid(s);prison=null;for(const actor of stationary){actor.dispose?.();actor.root.userData.villager=null;dispose(actor.root);}stationary=[];captive=null;mother=null;if(!keepFollower&&follower){follower.dispose();dispose(follower.root);}for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;follow=null;entry=null;}activeEvent=null;moving=false;}
   function sync(save,id,interactives,inInterior=false){
-    const key=JSON.stringify([id,inInterior,villageEventStep(save,id),companionPresent(save),carryingCompanion(save)]);
+    const key=JSON.stringify([id,inInterior,villageEventStep(save,id),companionPresent(save),carryingCompanion(save),save.arena?.completedRuns]);
     if(key===syncedKey&&interactives===syncedList)return;
     reset(current===id&&!!follower&&companionPresent(save));current=id;list=interactives;for(let i=list.length-1;i>=0;i--)if(['village-event','story-witness','companion'].includes(list[i].kind))list.splice(i,1);
-    activeEvent=inInterior?null:currentVillageEvent(save,id);
+    const event=currentVillageEvent(save,id),roomId=typeof inInterior==='string'?inInterior:inInterior?save.interior?.id:null;
+    activeEvent=event&&((event.interior||null)===(roomId||null))&&(!event.requiresTournament||save.arena?.completedRuns>0)?event:null;
+    if(id==='wood'&&roomId==='wood-arena'&&villageEventStep(save,'wood')===2&&!companionPresent(save)){
+      const actor=addActor(HA_LY.id,safePoint({x:-2.8,y:0,z:-3.8}));actor.root.name='ha-ly-waiting-treehouse';stationary.push(actor);
+      list.push({kind:'story-witness',id:'ha-ly-treehouse',x:-2.8,z:-3.8,y:0,label:'Hạ Ly · Chờ gặp lại'});
+    }
     if(id==='fire'&&!inInterior){
       const step=villageEventStep(save,id),p={...FIRE_PRISON,y:floor(FIRE_PRISON.x,FIRE_PRISON.z)};
       prison=createFirePrison(root,p,step>=2,addSolid);
@@ -48,7 +53,7 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
       }
     }
     if(activeEvent){const giver=id==='fire'&&activeEvent.style==='medicine'?list.find(i=>i.kind==='expedition-giver'):null,original=giver||eventSpot(id,activeEvent),dry=id==='water'&&!waterFootprintDry(original.x,original.z,{w:4,d:4,padding:.8})?nearestDryWaterPoint(original.x,original.z,{w:4,d:4,padding:.8,valid:(x,z)=>!blocked(x,z)}):null,p=safePoint(dry||original);const g=new T.Group();g.position.set(p.x,p.y,p.z);root.add(g);
-      if(id!=='fire'){if(id!=='wood'||activeEvent.style==='medicine')props(g,activeEvent.style);if(!['medicine','letter','crate','rope'].includes(activeEvent.style)){const actor=createVillager(villagerAppearance(id,{id:'story-guide-'+id,kind:'lore'}));actor.root.position.set(1.8,0,0);g.add(actor.root);stationary.push(actor);}}
+      if(id!=='fire'){if(id!=='wood'||activeEvent.style==='medicine'&&!roomId)props(g,activeEvent.style);if(!['medicine','letter','crate','rope'].includes(activeEvent.style)){const actor=createVillager(villagerAppearance(id,{id:'story-guide-'+id,kind:'lore'}));actor.root.position.set(1.8,0,0);g.add(actor.root);stationary.push(actor);}}
       if(id==='dark'&&!companionPresent(save)&&save.story.companion.recruited){const actor=addActor(HA_LY.id,safePoint({x:p.x-2,z:p.z+1}));actor.root.name='ha-ly-investigating';stationary.push(actor);}
       if(activeEvent.rally){for(const [i,region]of ['water','fire','lightning','wind','earth','wood','ice','light','dark'].entries()){const angle=(i-4)*.23,pos=safePoint({x:p.x+Math.sin(angle)*9,z:p.z+6+Math.cos(angle)*4}),actor=createNinja({village:region});actor.root.name='coalition-'+region;actor.root.position.set(pos.x,pos.y,pos.z);root.add(actor.root);stationary.push(actor);}}
 

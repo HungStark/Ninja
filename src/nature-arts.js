@@ -101,7 +101,7 @@ export class NatureArts {
     const fragments=Array.from({length:48},(_,i)=>{const a=i*2.399,y=hash(i+98)*2-1,r=Math.sqrt(1-y*y),axis=[Math.cos(a)*r,y,Math.sin(a)*r];return {origin:mul(axis,ball.spell.radius*.6),v:add(mul(axis,3+hash(i+43)*5),[0,2,0]),scale:.15+hash(i+52)*.5};});
     this.snowBursts.push({owner:ball.owner,root,material,chunks,fragments,age:0,life:1.2});this.removeBall(ball);
   }
-  advance(dt,actors,setPosition=()=>{},walls=[],impact,onWallHit=()=>{},intercept=null){
+  advance(dt,actors,setPosition=()=>{},walls=[],impact,onWallHit=()=>{},intercept=null,sweep=null){
     if(dt<=0)return null;this.time+=dt;
     this.wood.advance(dt,actors,walls,impact);
     const windyTime=Math.max(0,...this.blizzards.map(b=>Math.min(dt,b.life)));this.snowfallTime+=dt+windyTime*.8;this.snowWindTime+=windyTime*1.1;
@@ -112,6 +112,7 @@ export class NatureArts {
     for(const e of [...this.iceWalls]){e.age+=dt;e.wall.height=e.height*ease(e.age/e.formation);if(!walls.includes(e.wall)||e.wall.hp<=0||e.wall.life<=0)this.removeIceWall(e,walls);}
     for(const b of [...this.bindings])if(b.fighter.iceControlTime<=0){b.root.removeFromParent();this.bindings.splice(this.bindings.indexOf(b),1);}
     for(const b of [...this.balls]){
+      if(!this.balls.includes(b))continue;
       const target=actors.find(a=>(a.id??a.owner)===b.targetId&&a.owner!==b.owner&&a.fighter.hp>0);
       if(!target){this.removeBall(b);continue;}
       b.age+=dt;let motionDt=dt;
@@ -128,15 +129,17 @@ export class NatureArts {
         let t=0;if(c>0){if(length2<1e-12)continue;const projection=offset.reduce((n,v,i)=>n+v*delta[i],0),disc=projection*projection-length2*c;if(disc<0)continue;t=(-projection-Math.sqrt(disc))/length2;if(t<0||t>1)continue;}
         if(!first||t<first.t)first={victim,t};
       }
-      const attack={owner:b.owner,element:'ice',style:'snowball',old:before,p:first?add(before,mul(delta,first.t)):[...b.p],size:b.spell.radius,damage:b.damage,color:b.spell.color,unreflectable:true,v:[...b.axis]};
+      const attack={owner:b.owner,element:'ice',style:'snowball',old:before,p:first?add(before,mul(delta,first.t)):[...b.p],size:b.spell.radius,damage:b.damage,color:b.spell.color,unreflectable:true,unstoppable:true,ignoreShield:true,v:[...b.axis]};
       const blocked=crossWalls(attack,walls,this.intersect,(w,p,r)=>{if(r.remaining<=1e-7)b.p=[...p];onWallHit(w,p,r,attack);});
       b.damage=attack.damage;
       if(blocked){this.shatter(b);continue;}
-      if(intercept?.(attack)){b.p=[...attack.p];this.shatter(b);continue;}
+      sweep?.(attack);
+      if(!attack.unstoppable&&intercept?.(attack)){b.p=[...attack.p];this.shatter(b);continue;}
       if(first){
         const {victim,t}=first;b.p=add(before,mul(delta,t));
         const hit={...attack,victimId:victim.id};
-        if(impact)impact(hit,victim.pos);else victim.fighter.receive(hit.damage,true,false,'ice');
+        victim.fighter.shield=victim.fighter.shieldTime=victim.fighter.reflect=0;
+        if(impact)impact(hit,victim.pos);else victim.fighter.receive(hit.damage,true,true,'ice');
         this.shatter(b);
       }else if(b.travel>=b.range)this.removeBall(b);
     }

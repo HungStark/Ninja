@@ -674,6 +674,7 @@ function stageSettings(profile,phase,overrides){
     ...(value.hp!==undefined?{hp:value.hp}:{}),...(!beast&&value.spellIds?{spellIds:[...value.spellIds]}:{})};
 }
 export function configureOpponent(profile,overrides=opponentBalanceOverrides){
+  if(profile.tournamentStats){const s=profile.tournamentStats;return {...profile,balanceApplied:true,hp:s.maxHp,damageMultiplier:s.damageMultiplier,moveSpeed:s.moveSpeed,balanceStages:[{id:'school-tournament',mana:s.maxChakra,chakraRegen:s.chakraRegen,infiniteMana:false,sealDelay:profile.sealDelay??.9,baseDamagePercent:s.damageMultiplier*100}]};}
   if(profile.balanceApplied)return profile;
   const result={...profile,balanceApplied:true};
   const count=profile.kind==='boss'?(profile.village==='dark'?3:2):1;
@@ -699,7 +700,7 @@ export function opponentBaseDamageMultiplier(profile,phase=1){
 }
 export function opponentDamageMultiplier(profile,phase=1){const percent=opponentStage(profile,phase).baseDamagePercent;return percent===undefined?opponentBaseDamageMultiplier(profile,phase):percent/100;}
 export function createOpponentRules(GameRules,profile,phase=1){
-  const settings=opponentStage(profile,phase),ids=settings.spellIds||(phase>1?profile.phaseSpellIds:profile.spellIds),rules=new GameRules(ids,{maxChakra:Math.max(100,settings.mana)});
+  const settings=opponentStage(profile,phase),ids=settings.spellIds||(phase>1?profile.phaseSpellIds:profile.spellIds),rules=new GameRules(ids,{maxChakra:Math.max(100,settings.mana),chakraRegen:settings.chakraRegen});
   rules.maxChakra=settings.mana;rules.chakra=settings.mana;
   if(settings.infiniteMana)rules.spells=rules.spells.map(s=>({...s,cost:0}));
   return rules;

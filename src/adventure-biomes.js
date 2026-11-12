@@ -67,7 +67,7 @@ export function buildBiome(c,routes){
       for(let k=0;k<30;k++){const t=k/29,x=r.from[0]+(r.to[0]-r.from[0])*t,y=r.fromY+(r.toY-r.fromY)*t,z=r.from[1]+(r.to[1]-r.from[1])*t;for(const side of [-1,1]){const grip=mesh(new T.DodecahedronGeometry(.42,0),rock,land,x+side*.65,y,z+.2);grip.scale.set(1.1,.5,.8);grip.userData.noCollision=true;}if(k%5===0)cyl(land,rope,x,y,z+.4,.065,1.5,5);}
       for(let k=0;k<9;k++){const a=k*2.4,p=mesh(new T.OctahedronGeometry(.28),M('#e09861',.3),land,88+Math.sin(a)*3,36.5,-96+Math.cos(a)*3);p.scale.y=.5;}
     }else{
-      if(id==='wood'){const tree=buildTreeHouse(c,r);c.setSacredTree?.(tree.userData.sacredTree);fixtures.push({kind:'interior-enter',id:'wood-arena',x:1,z:2.25,y:r.toY,platform:'heart-tree',label:'Vào Võ Đường Cửu Làng'});continue;}
+      if(id==='wood'){const tree=buildTreeHouse(c,r);c.setSacredTree?.(tree.userData.sacredTree);fixtures.push({kind:'interior-enter',id:'wood-arena',x:1,z:2.25,y:r.toY,platform:'heart-tree',label:'Vào phòng tụ họp trên cổ thụ'});continue;}
       const {platform:p}=r,y=r.toY;
       const local={...c,id:id==='wood'?'wood':'wind',heightAt:null,obstacle:()=>{},group:(x,z)=>{const g=new T.Group();g.position.set(x,y,z);land.add(g);return g;}};
       const house=buildHouse(local,p.x,p.z,4.2,3.4,1);house.name='balloon-house';

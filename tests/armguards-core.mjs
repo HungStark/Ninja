@@ -5,13 +5,13 @@ import {createHero} from '../src/hero.js';
 import {createHands} from '../src/hands.js';
 import {newJourney} from '../src/adventure-data.js';
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
-assert.equal(ARMORS.length,53);assert.equal(ARM_GUARDS.length,53);
+assert.equal(ARMORS.length,54);assert.equal(ARM_GUARDS.length,54);
 for(const catalogue of [ARMORS,ARM_GUARDS])for(const region of new Set(catalogue.filter(i=>i.village).map(i=>i.village))){
  const stock=catalogue.filter(i=>i.village===region&&!i.legacy);assert.equal(stock.length,region==='nameless'?1:2);if(stock.length===2)assert.ok(stock.find(i=>i.elite).price>stock.find(i=>!i.elite).price);
 }
 for(const item of [...ARMORS,...ARM_GUARDS]){
  const rates=Object.values(item.resistances||item.bonuses).sort((a,b)=>b-a);if(!rates.length)continue;
- assert.deepEqual(rates,item.village==='nameless'?[.02,.02,.02]:[item.elite?.1:.05],item.id);
+ assert.deepEqual(rates,item.mythic?Array(9).fill(.1):item.village==='nameless'?[.02,.02,.02]:[item.elite?.1:.05],item.id);
 }
 const legacy={...newEquipment()};delete legacy.armguard;delete legacy.ownedArmguards;
 assert.equal(readEquipment(legacy).armguard,'bare-wrists');assert.equal(readEquipment({...legacy,armguard:'water-bracers-elite',ownedArmguards:['fake']}).armguard,'bare-wrists');
