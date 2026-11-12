@@ -34,21 +34,16 @@ export const ARMOR_DESIGNS={
   wood:'Lá giáp xếp chồng, vỏ cây đan và đai sợi',
   dark:'Giáp lệch vai, áo quấn bất đối xứng và khóa trăng'
 };
-const elements=['water','fire','lightning','earth','wind','light','ice','wood','dark'];
 const standardGearPrice=140;
 function gearVariants(v,legacy){
-  const keys=Object.keys(legacy),primary=keys[0],pair=keys.slice(0,2),triad=[...new Set([...keys,...elements])].slice(0,3),rates=(ids,values)=>Object.fromEntries(ids.map((id,i)=>[id,values[i]]));
-  if(v==='nameless')return [{suffix:'guard',intro:true,label:' Hỏa – Thủy',price:standardGearPrice,rates:{fire:.05,water:.05}},{suffix:'water-lightning',intro:true,label:' Thủy – Lôi',price:standardGearPrice,rates:{water:.05,lightning:.05}},{suffix:'lightning-fire',intro:true,label:' Lôi – Hỏa',price:standardGearPrice,rates:{lightning:.05,fire:.05}},{suffix:'guard-focus',label:' chuyên hệ',price:160,rates:{water:.08}},{suffix:'elite',label:' tinh anh',price:390,elite:true,rates:{water:.11,fire:.08}},{suffix:'elite-focus',label:' tinh anh chuyên hệ',price:430,elite:true,rates:{water:.14}},{suffix:'elite-triad',label:' tinh anh tam hệ',price:350,elite:true,rates:{water:.08,fire:.08,lightning:.08}}];
-  return [
-    {suffix:'guard',label:'',price:standardGearPrice,rates:rates(pair,[.05,.05])},
-    {suffix:'guard-focus',label:' chuyên hệ',price:160,rates:{[primary]:.08}},
-    {suffix:'elite',label:' tinh anh',price:390,elite:true,rates:rates(pair,[.11,.08])},
-    {suffix:'elite-focus',label:' tinh anh chuyên hệ',price:430,elite:true,rates:{[primary]:.14}},
-    {suffix:'elite-triad',label:' tinh anh tam hệ',price:350,elite:true,rates:rates(triad,[.08,.08,.08])}
-  ];
+  // Keep old IDs readable so owned equipment survives, but only sell the two regional tiers.
+  const primary=Object.keys(legacy)[0],rates=high=>v==='nameless'?{fire:.02,water:.02,lightning:.02}:{[primary]:high?.1:.05};
+  const variants=[{suffix:'guard',intro:v==='nameless',label:'',price:standardGearPrice},{suffix:'elite',label:' tinh anh',price:390,elite:true},{suffix:'guard-focus',label:' chuyên hệ',price:160,legacy:true},{suffix:'elite-focus',label:' tinh anh chuyên hệ',price:430,elite:true,legacy:true},{suffix:'elite-triad',label:' tinh anh tam hệ',price:350,elite:true,legacy:true}];
+  if(v==='nameless')variants.push({suffix:'water-lightning',label:' Thủy – Lôi',price:standardGearPrice,legacy:true},{suffix:'lightning-fire',label:' Lôi – Hỏa',price:standardGearPrice,legacy:true});
+  return variants.map(g=>({...g,legacy:!!g.legacy||v==='nameless'&&g.suffix!=='guard',rates:rates(g.elite)}));
 }
-export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#29252c',style:'wrap',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-'+g.suffix,village:v,name:'Giáp '+name+g.label,description:ARMOR_DESIGNS[v],price:g.price,color,style,intro:!!g.intro,elite:!!g.elite,resistances:g.rates})))];
-export const ARM_GUARDS=[{id:'bare-wrists',name:'Băng tay lữ hành',price:0,color:'#403640',style:'wrap',bonuses:{},gloves:false},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-bracers'+(g.suffix==='guard'?'':g.suffix==='guard-focus'?'-focus':'-'+g.suffix),village:v,name:'Giáp tay '+name+g.label,description:g.elite?'Giáp tay kèm găng phủ bàn tay, khớp ngón vẫn linh hoạt.':'Giáp cổ tay và cẳng tay, để hở các ngón kết ấn.',price:g.price-40,color,style,intro:!!g.intro,elite:!!g.elite,bonuses:g.rates,gloves:!!g.elite})))];
+export const ARMORS=[{id:'traveler',name:'Áo nhẫn giả lữ hành',price:0,color:'#29252c',style:'wrap',resistances:{}},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-'+g.suffix,village:v,name:'Giáp '+name+g.label,description:ARMOR_DESIGNS[v],price:g.price,color,style,intro:!!g.intro,elite:!!g.elite,legacy:g.legacy,resistances:g.rates})))];
+export const ARM_GUARDS=[{id:'bare-wrists',name:'Băng tay lữ hành',price:0,color:'#403640',style:'wrap',bonuses:{},gloves:false},...regions.flatMap(([v,name,color,style,resistances])=>gearVariants(v,resistances).map(g=>({id:v+'-bracers'+(g.suffix==='guard'?'':g.suffix==='guard-focus'?'-focus':'-'+g.suffix),village:v,name:'Giáp tay '+name+g.label,description:g.elite?'Giáp tay kèm găng phủ bàn tay, khớp ngón vẫn linh hoạt.':'Giáp cổ tay và cẳng tay, để hở các ngón kết ấn.',price:g.price-40,color,style,intro:!!g.intro,elite:!!g.elite,legacy:g.legacy,bonuses:g.rates,gloves:!!g.elite})))];
 export const armorById=id=>ARMORS.find(a=>a.id===id);
 export const armguardById=id=>ARM_GUARDS.find(a=>a.id===id);
 export const bagById=id=>BAGS.find(b=>b.id===id);
@@ -73,7 +68,7 @@ export function cycleShuriken(save){const e=save.equipment,available=SHURIKEN_TY
 export const ammoCount=equipment=>Object.values(equipment.ammo).reduce((a,b)=>a+b,0);
 export function equipmentState(save){const e=save.equipment;e.bag=bestOwnedBag(e).id;return {hero:{...save.hero},armor:armorById(e.armor),armguard:armguardById(e.armguard)||ARM_GUARDS[0],bag:bagById(e.bag),shuriken:shurikenById(e.shuriken),ammo:{...e.ammo},count:ammoCount(e),available:e.ammo[e.shuriken]||0};}
 export function damageMultiplierFor(stats,element){return (stats.damageMultiplier||1)+(element==='weapon'?0:stats.elementBonuses?.[element]||0);}
-export function shopStock(village){return [...SHURIKEN_TYPES.filter(s=>village!=='nameless'||s.id!=='chakra').map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village&&(village!=='nameless'||a.intro)).map(a=>({...a,kind:'armor'})),...ARM_GUARDS.filter(a=>a.village===village&&(village!=='nameless'||a.intro)).map(a=>({...a,kind:'armguard'})),...BAGS.filter(b=>b.price>0&&(village!=='nameless'||b.capacity<=20)).map(b=>({...b,kind:'bag'}))];}
+export function shopStock(village){return [...SHURIKEN_TYPES.filter(s=>village!=='nameless'||s.id!=='chakra').map(s=>({...s,kind:'shuriken'})),...ARMORS.filter(a=>a.village===village&&!a.legacy).map(a=>({...a,kind:'armor'})),...ARM_GUARDS.filter(a=>a.village===village&&!a.legacy).map(a=>({...a,kind:'armguard'})),...BAGS.filter(b=>b.price>0&&(village!=='nameless'||b.capacity<=20)).map(b=>({...b,kind:'bag'}))];}
 // Keep the former ten-piece price, rounded up once for the selected quantity.
 export const shurikenPrice=(item,quantity)=>Math.ceil(item.price*quantity/item.quantity);
 export function maxShurikenPurchase(save,id){

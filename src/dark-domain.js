@@ -199,7 +199,7 @@ export class DarkDomain {
       const center=new T.Vector3(pos[0],0,pos[2]).lerp(new T.Vector3(victim.pos[0],0,victim.pos[2]),.25);
       for(const slot of slots.slice(0,count)){
         const p=center.clone().addScaledVector(right,(slot-1)*2.2);
-        this.makeClone(owner,p.toArray(),victim.pos,spell,slot);
+        const clone=this.makeClone(owner,p.toArray(),victim.pos,spell,slot);clone.summonerOwner=owner;clone.summonerFighter=fighter;
       }
     }else if(spell.style==='shadowcommand'){
       if(!victim||victim.fighter.hp<=0)return false;
@@ -231,7 +231,7 @@ export class DarkDomain {
     c.waveCarry={wave,target:[c.p[0]+wave.normal[0]*ahead,0,c.p[2]+wave.normal[2]*ahead]};
     c.mode='carried';c.age=0;c.body.visible=true;c.body.position.y=0;this.splash(c.p);
   }
-  updateClones(dt,time,fighters,strike,crush,intercept=()=>false,block=()=>false) {
+  updateClones(dt,time,fighters,strike,crush,intercept=()=>false,block=()=>false,redirect=()=>false) {
     for(const c of [...this.clones]) {
       if(!this.clones.includes(c))continue;
       c.age+=dt;const attacking=['windup','charging'].includes(c.mode),opponent=fighters.find(f=>f.owner!==c.owner&&!(f.fighter.hp<=0)&&(!attacking||(f.id??f.owner)===c.targetId));
@@ -265,7 +265,14 @@ export class DarkDomain {
       const delta=[destination[0]-c.p[0],destination[2]-c.p[2]],dist=Math.hypot(...delta);
       if(moving){
         const previous=[c.p[0],c.hitHeight,c.p[2]],speed=c.form==='bull'?SHADOW_CHARGE.bullSpeed:SHADOW_CHARGE.dogSpeed,travel=Math.min(dist,dt*speed);if(dist>.001){c.p[0]+=delta[0]/dist*travel;c.p[2]+=delta[1]/dist*travel;}
-        const attack={owner:c.owner,victimId:opponent.id,element:'dark',style:'shadowstrike',damage:c.chargeDamage??c.damage,old:previous,p:[c.p[0],c.hitHeight,c.p[2]],size:c.hitRadius,unreflectable:true};
+        const attack={owner:c.owner,victimId:opponent.id,element:'dark',style:'shadowstrike',damage:c.chargeDamage??c.damage,old:previous,p:[c.p[0],c.hitHeight,c.p[2]],v:[delta[0]/(dist||1)*speed,0,delta[1]/(dist||1)*speed],life:dist/speed+1,size:c.hitRadius};
+        if(redirect(attack)){
+          if(attack.life<=0||attack.consumedByDefense){this.destroyClone(c);continue;}
+          const caster=fighters.find(f=>f.owner===c.owner&&f.fighter===c.summonerFighter)||fighters.find(f=>f.owner===c.owner);
+          if(!caster){this.destroyClone(c);continue;}
+          c.owner=attack.owner;c.targetId=caster.id??caster.owner;c.target=[caster.pos[0],0,caster.pos[2]];c.p=[attack.p[0],0,attack.p[2]];c.chargeDamage=attack.damage;c.reflected=true;c.age=0;
+          c.root.position.fromArray(c.p);c.root.rotation.y=Math.atan2(c.target[0]-c.p[0],c.target[2]-c.p[2]);continue;
+        }
         if(intercept(attack)||block(attack)){this.destroyClone(c);continue;}
         c.chargeDamage=attack.damage;
         if(distance(c.p,destination)<.15){
@@ -285,7 +292,7 @@ export class DarkDomain {
   // Only a summon's own attack consumes it; incoming damage never does.
   destroyClone(c){
     this.splash(c.p);
-    if(this.active){c.mode='respawning';c.age=0;c.p=[...c.home];c.root.position.fromArray(c.p);c.body.visible=false;}
+    if(this.active){c.owner=c.summonerOwner??c.owner;c.reflected=false;c.mode='respawning';c.age=0;c.p=[...c.home];c.root.position.fromArray(c.p);c.body.visible=false;}
     else this.removeClone(c);
   }
   updateDomainArts(dt,fighters,crush,intercept=()=>false){

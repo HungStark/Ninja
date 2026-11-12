@@ -1,6 +1,6 @@
 import * as T from "three";
 import {buildInterior,INTERIORS} from "./adventure-interiors.js";
-import { toon, canvasTexture, windyDepth, glowTexture, windTime } from "./materials.js";
+import { toon, canvasTexture, windyDepth, glowTexture, windTime, withWind } from "./materials.js";
 import { inkMaterial, addInkOutline } from './ink-outline.js';
 import { createTerrainGrid, TerrainSurface } from './terrain-surface.js';
 import { createGrassGeometry } from './grass.js';
@@ -138,8 +138,9 @@ export function createWorld() {
     }
   });
   mats.wood.map = barkTex;
-  const grassGeo = createGrassGeometry();
-  const grassMat = toon('#ffffff', { vertexColors: true, side: T.DoubleSide, wind: true, rim: .02 });
+  const grassGeo = createGrassGeometry('#527c57','#9daf7b');
+  // Stable matte color: spell lights and toon lighting bands must not flash across thin blades.
+  const grassMat = withWind(new T.MeshBasicMaterial({vertexColors:true,side:T.DoubleSide}));
   const grass = new T.InstancedMesh(grassGeo, grassMat, 1700), dummy = new T.Object3D();
   for (let i = 0; i < grass.count; i++) {
     let x, z;
@@ -150,7 +151,7 @@ export function createWorld() {
     dummy.updateMatrix();
     grass.setMatrixAt(i, dummy.matrix);
   }
-  grass.castShadow = grass.receiveShadow = true;
+  grass.castShadow = grass.receiveShadow = false;
   grass.customDepthMaterial = windyDepth();
   grass.frustumCulled = false;
   scene.add(grass);

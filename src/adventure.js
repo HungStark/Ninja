@@ -1,3 +1,4 @@
+import {ADVENTURE_MOVE_MULTIPLIER} from './game-pace.js';
 import {waterMapMarkup,waterFerryMapMarkup} from './water-network.js';
 import {createOpeningCinematic} from './opening-cinematic.js';
 import {villageMapMarkup} from './village-map.js';
@@ -635,12 +636,12 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       if(world.riding){const completed=world.advanceTraversal(dt,forward,automaticJourney);if(completed){persist();if(waypoint)markWaypoint(waypoint,waypointSource);}}
       else {
         if(forward||side||save.village==='ice'&&Math.hypot(momentum.x,momentum.z)>.015){
-          path=[];journeyLegs=[];automaticJourney=false;action=null;world.destination.visible=false;const axes=world.movementAxes(),dx=axes.forward[0]*forward+axes.right[0]*side,dz=axes.forward[1]*forward+axes.right[1]*side,length=Math.hypot(dx,dz)||1,speed=4.6*(forward<0?.75:sprinting&&forward>0?1.6:1),blend=save.village==='ice'?1-Math.exp(-dt*(forward||side?9:5.5)):1;
+          path=[];journeyLegs=[];automaticJourney=false;action=null;world.destination.visible=false;const axes=world.movementAxes(),dx=axes.forward[0]*forward+axes.right[0]*side,dz=axes.forward[1]*forward+axes.right[1]*side,length=Math.hypot(dx,dz)||1,speed=4.6*ADVENTURE_MOVE_MULTIPLIER*(forward<0?.75:sprinting&&forward>0?1.6:1),blend=save.village==='ice'?1-Math.exp(-dt*(forward||side?9:5.5)):1;
           momentum.x+=(dx/length*speed-momentum.x)*blend;momentum.z+=(dz/length*speed-momentum.z)*blend;
           const delta=world.moveHero(momentum.x*dt,momentum.z*dt);if(Math.abs(delta.x)<.0001)momentum.x=0;if(Math.abs(delta.z)<.0001)momentum.z=0;moving=Math.hypot(delta.x,delta.z)>.001;if(moving){world.faceView();distance+=Math.hypot(delta.x,delta.z);}
         }
         nextJourneyLeg();
-        if(path.length){const p=world.hero.root.position,target=path[0],dx=target[0]-p.x,dz=target[1]-p.z,d=Math.hypot(dx,dz),speed=5.3*regionMetrics(save.village).scale,step=Math.min(d,speed*dt);moving=d>.01;
+        if(path.length){const p=world.hero.root.position,target=path[0],dx=target[0]-p.x,dz=target[1]-p.z,d=Math.hypot(dx,dz),speed=5.3*ADVENTURE_MOVE_MULTIPLIER*regionMetrics(save.village).scale,step=Math.min(d,speed*dt);moving=d>.01;
           if(d>.001){const delta=world.moveHero(dx/d*step,dz/d*step),travelled=Math.hypot(delta.x,delta.z);world.hero.root.rotation.y=Math.atan2(dx,dz);world.followHeading(world.hero.root.rotation.y,dt);distance+=travelled;
             // A saved position used to conceal this riverbank/low-ledge stop by
             // teleporting the hero after dialogue. Follow the planned route physically.

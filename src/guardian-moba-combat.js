@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {ENEMY_MOVE_MULTIPLIER} from './game-pace.js';
 import {GUARDIAN_BOSS_DESIGNS} from './guardian-boss-designs.js';
 import {guardianSkillStats,guardianPassiveStats,GUARDIAN_AI_DEFAULTS as AI} from './guardian-balance.js';
 import {gameAudio} from './game-audio.js';
@@ -216,7 +217,7 @@ export function createGuardianBossCombat(scene){
   let destination=[...body];
   if(d>range+1.4)destination=[...t.pos];else if(!melee&&d<range*.65)destination=add(body,mul(unit(flat(sub(body,t.pos))),4));
   else if(!melee&&!casting){const theta=angle(body,t.pos)+(Math.floor(clock/3)%2?1:-1)*Math.PI/2;destination=add(body,[Math.sin(theta)*1.5,0,Math.cos(theta)*1.5]);}
-  let speed=passive.moveSpeed||2;
+  let speed=(passive.moveSpeed||2)*ENEMY_MOVE_MULTIPLIER;
   if(id==='water'&&all('puddle').some(e=>overlaps(e,body)))speed*=1+passive.speedBoost;
   if(id==='wind')speed*=1+speedStacks*passive.speedPerCast;
   if(id==='dark'&&hidden())speed*=1+passive.speedBoost;

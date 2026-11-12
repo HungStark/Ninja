@@ -188,9 +188,9 @@ async function main() {
     player[key]=Math.max(player[key]||0,duration);interruptActor('player');
   }
 
-  const squad=createEncounterSquad(scene,{GameRules,Fighter,keys,random:rand,getPlayer:playerPos,getShots:()=>shots,
+  const squad=createEncounterSquad(scene,{GameRules,Fighter,keys,random:rand,getPlayer:playerPos,getShots:()=>shots,dashBlocked:p=>lightArts.blocksDash('enemy',p),
     constrainMovement:(old,goal)=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old),movementSlow:p=>earthArts.slowAt(p[0],p[2])*lightArts.slowAt('enemy',p)*natureArts.slowAt('enemy'),
-    launch:(member,spell,pos,dir)=>{const before=shots.length;launch(spell,'enemy',pos,dir,member.profile);for(const shot of shots.slice(before))shot.sourceId=member.id;},
+    launch:(member,spell,pos,dir)=>{const before=shots.length,cloneSerial=darkDomain.serial;launch(spell,'enemy',pos,dir,member.profile);for(const shot of shots.slice(before))shot.sourceId=member.id;for(const clone of darkDomain.clones)if(clone.id>cloneSerial)clone.summonerFighter=member.fighter;},
     throwWeapon:(member,weapon,pos,dir)=>{const before=shots.length;launchShuriken('enemy',weapon,pos,dir,member.profile);for(const shot of shots.slice(before))shot.sourceId=member.id;}
   });
   const guardianAlly=createNamelessGuardianAlly(scene),allyHud=document.createElement('div');allyHud.id='guardianAllyHud';allyHud.hidden=true;document.body.append(allyHud);
@@ -266,8 +266,8 @@ async function main() {
     world.sun.shadow.map?.dispose();
     world.sun.shadow.map = null;
     world.grass.count = q.grass;
-    renderer.shadowMap.enabled = index !== 2;
-    world.sun.castShadow = index !== 2;
+    renderer.shadowMap.enabled = true;
+    world.sun.castShadow = true;
     adventure?.world.setQuality(index);
     for (const s of [scene, hands.scene]) s.traverse((o) => {
       if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.needsUpdate = true;
@@ -1060,7 +1060,7 @@ async function main() {
     if(freeMovement&&beast&&guardianPhases.state().aiOwnedMovement){enemyMoving=guardianPhases.state().moving;return;}
     if(freeMovement&&beast&&guardianPhases.state().action){enemyMovement.update(0,{position:enemyPos(),blocked:true});return;}
     const rendered=enemyPos(),old=freeMovement&&beast&&guardianAnchor?[guardianAnchor.x,rendered[1],guardianAnchor.z]:rendered;
-    const next=enemyMovement.update(dt,{position:old,bounds:freeMovement?combatMovementBounds('enemy',old):null,moveSpeed:freeMovement?PRACTICE_BOT_MOVE_SPEED:undefined,shots,walls,optics:lightArts.optics,attacker:playerPos(),frontGuard:windArts.spirits.some(s=>s.owner==='enemy'&&s.life>0),beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(activeBoss().village),casting:!!aiSpell,blocked:enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2])*lightArts.slowAt('enemy',old)*natureArts.slowAt('enemy'),constrain:goal=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old)});
+    const next=enemyMovement.update(dt,{position:old,dashBlocked:lightArts.blocksDash('enemy',old),bounds:freeMovement?combatMovementBounds('enemy',old):null,moveSpeed:freeMovement?PRACTICE_BOT_MOVE_SPEED:undefined,shots,walls,optics:lightArts.optics,attacker:playerPos(),frontGuard:windArts.spirits.some(s=>s.owner==='enemy'&&s.life>0),beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(activeBoss().village),casting:!!aiSpell,blocked:enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2])*lightArts.slowAt('enemy',old)*natureArts.slowAt('enemy'),constrain:goal=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old)});
     opponent.group.position.x=next[0];opponent.group.position.z=next[2];enemyMoving=Math.hypot(next[0]-old[0],next[2]-old[2])>.0001;
     if(beast){if(guardianAnchor){guardianAnchor.x=next[0]-guardianPhases.offset.x;if(freeMovement)guardianAnchor.z=next[2];}return;}
     aiRules.tick(dt); aiCastAge += dt;aiWeaponTimer=Math.max(0,aiWeaponTimer-dt);
@@ -1183,7 +1183,7 @@ async function main() {
       updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);guardianAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),(actor,amount)=>{const r=actor.fighter.receive(amount,true,false,'wind');if(r.damage>0){enemyHit=.25;hitTimer=.1;if(overheadPractice())damageFeedback.trigger(actor.id,actor.pos);}return r.damage;},!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);battleMetrics.observeWalls(walls);
       enemyDashAura.update(dt,[opponent.group.position.x,earthFloor('enemy',opponent.group.position.x,opponent.group.position.z),opponent.group.position.z],enemy.hp>0&&enemyMovement.state().dashBoost.dashing>0,reducedMotion);
       if(!won)darkDomain.updateClones(dt,animationTime,windActors(),
-        (clone,pos,attack)=>impact({...attack,v:vnorm(vsub(pos,clone.p))},pos),shadowCrushImpact,snowBlocks,shot=>crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot)));
+        (clone,pos,attack)=>impact({...attack,v:vnorm(vsub(pos,clone.p))},pos),shadowCrushImpact,snowBlocks,shot=>crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot)),shot=>lightArts.redirect(shot,windActors(),walls)||windArts.redirect(shot,windActors()));
       if(checkGuardianDefeat()){updateUI();return;}
       if(adventure?.inBattle&&!won&&(player.hp<=0||allEnemiesDefeated())){finish(player.hp>0);return;}
       messageTime -= dt;

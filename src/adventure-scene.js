@@ -56,7 +56,7 @@ export function createAdventureScene(){
   const shadowOffset=new T.Vector3(-38,62,26);
   function focusSun(){const p=hero.root.position,texel=64/sun.shadow.mapSize.x,x=Math.round(p.x/texel)*texel,z=Math.round(p.z/texel)*texel,y=Math.round(p.y/2)*2;sun.target.position.set(x,y,z);sun.position.copy(sun.target.position).add(shadowOffset);}
   function setQuality(index){
-    visualQuality=index;characterBudget.setQuality(index);const size=[2048,1024,512][index]||1024;sun.castShadow=index!==2;
+    visualQuality=index;characterBudget.setQuality(index);const size=[2048,1024,512][index]||1024;sun.castShadow=true;
     if(sun.shadow.mapSize.x!==size){sun.shadow.mapSize.set(size,size);sun.shadow.map?.dispose();sun.shadow.map=null;}sun.shadow.needsUpdate=true;
     for(const m of Object.values(surfaces||{}).flat())if(m?.isMaterial){if(m.bumpMap&&!reliefMaps.has(m))reliefMaps.set(m,m.bumpMap);const bump=index===2?null:reliefMaps.get(m)||null;if(m.bumpMap!==bump){m.bumpMap=bump;m.needsUpdate=true;}}
     groundCover?.update(camera,index,time);

@@ -1,5 +1,7 @@
 import {flightDistanceAt,flightTimeAt} from './projectile-motion.js';
-import {STEP_DISTANCE} from './dash-boost.js';
+import {STEP_DISTANCE,DASH_DISTANCE,DASH_DURATION} from './dash-boost.js';
+import {ENEMY_MOVE_MULTIPLIER} from './game-pace.js';
+export const ENEMY_DASH_COOLDOWN=10;
 const STEP_DURATION=.2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
@@ -42,6 +44,7 @@ export function createEnemyMovement(random=Math.random){
   const choose=()=>random()<.5?-1:1;
   let direction=choose(),directionTime=ENEMY_DIRECTION_INTERVAL,velocity=0,mode='circling',target=direction*ENEMY_MOVEMENT_LIMIT;
   let targetPoint=null,region=null,velocity2d=[0,0];
+  let dashCooldown=0,dashing=0,dashUses=0,dashDirection=[0,0,0];
   function freeMove(dt,{position,bounds,moveSpeed,heavy,slow,constrain,cover,danger,frontGuard}){
     const limit=p=>[clamp(p[0],bounds.minX,bounds.maxX),position[1],clamp(p[2],bounds.minZ,bounds.maxZ)],distance=p=>Math.hypot(p[0]-position[0],p[2]-position[2]);
     const key=[bounds.minX,bounds.maxX,bounds.minZ,bounds.maxZ].join(':');
@@ -68,26 +71,26 @@ export function createEnemyMovement(random=Math.random){
     if(step>0&&Math.hypot(next[0]-position[0],next[2]-position[2])<1e-6)targetPoint=null;
     return next;
   }
-  return {
-    reset(x=0){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;velocity=0;velocity2d=[0,0];targetPoint=null;region=null;mode='circling';target=direction*ENEMY_MOVEMENT_LIMIT;},
-    update(dt,{position,heavy=false,blocked=false,slow=1,constrain=p=>p,shots=[],walls=[],optics=[],attacker,frontGuard=false,bounds=null,moveSpeed=STEP_DISTANCE/STEP_DURATION}){
+  const controller={
+    reset(x=0){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;velocity=0;velocity2d=[0,0];targetPoint=null;region=null;mode='circling';target=direction*ENEMY_MOVEMENT_LIMIT;dashCooldown=dashing=dashUses=0;},
+    walk(dt,{position,heavy=false,blocked=false,slow=1,constrain=p=>p,shots=[],walls=[],optics=[],attacker,frontGuard=false,bounds=null,moveSpeed=STEP_DISTANCE/STEP_DURATION}){
       velocity=0;velocity2d=[0,0];
       if(blocked){mode='idle';target=position[0];return position;}
       const cover=defensivePosition(position,walls,optics,attacker,bounds),danger=unblockableThreat(shots,position);
-      if(bounds)return freeMove(dt,{position,bounds,moveSpeed,heavy,slow,constrain,cover,danger,frontGuard});
+      if(bounds)return freeMove(dt,{position,bounds,moveSpeed:moveSpeed*ENEMY_MOVE_MULTIPLIER,heavy,slow,constrain,cover,danger,frontGuard});
       if(frontGuard&&!danger){mode='sheltering';target=position[0];return position;}
       if(cover&&!danger){
-        mode='sheltering';target=cover[0];const distance=Math.hypot(cover[0]-position[0],cover[2]-position[2]),step=Math.min(distance,dt*4*clamp(slow,0,1));
+        mode='sheltering';target=cover[0];const distance=Math.hypot(cover[0]-position[0],cover[2]-position[2]),step=Math.min(distance,dt*4*ENEMY_MOVE_MULTIPLIER*clamp(slow,0,1));
         const next=distance>.04?constrain([position[0]+(cover[0]-position[0])*step/distance,position[1],position[2]+(cover[2]-position[2])*step/distance]):position;
         velocity=dt>0?(next[0]-position[0])/dt:0;return next;
       }
       if(danger){
         mode='evading';const center=(danger.target||danger.p)[0],radius=(danger.blastRadius||danger.radius||3.5)+1;
         const left=center-radius,right=center+radius;target=left>=-ENEMY_MOVEMENT_LIMIT&&(right>ENEMY_MOVEMENT_LIMIT||Math.abs(position[0]-left)<Math.abs(position[0]-right))?left:clamp(right,-ENEMY_MOVEMENT_LIMIT,ENEMY_MOVEMENT_LIMIT);
-        const next=constrain([position[0]+clamp(target-position[0],-dt*5.8*slow,dt*5.8*slow),position[1],position[2]]);velocity=dt>0?(next[0]-position[0])/dt:0;return next;
+        const next=constrain([position[0]+clamp(target-position[0],-dt*5.8*ENEMY_MOVE_MULTIPLIER*slow,dt*5.8*ENEMY_MOVE_MULTIPLIER*slow),position[1],position[2]]);velocity=dt>0?(next[0]-position[0])/dt:0;return next;
       }
       mode='circling';
-      const speed=(STEP_DISTANCE/STEP_DURATION)*(heavy?.8:1)*clamp(slow,0,1);
+      const speed=(STEP_DISTANCE/STEP_DURATION)*ENEMY_MOVE_MULTIPLIER*(heavy?.8:1)*clamp(slow,0,1);
       let remaining=dt,x=clamp(position[0],-ENEMY_MOVEMENT_LIMIT,ENEMY_MOVEMENT_LIMIT);
       while(remaining>1e-8){
         if(directionTime<=1e-8){direction=choose();directionTime=ENEMY_DIRECTION_INTERVAL;}
@@ -102,6 +105,30 @@ export function createEnemyMovement(random=Math.random){
       target=direction*ENEMY_MOVEMENT_LIMIT;velocity=dt>0?(x-position[0])/dt:0;
       return [x,position[1],position[2]];
     },
-    state:()=>({mode,target,targetPoint:targetPoint&&[...targetPoint],velocity2d:[...velocity2d],direction,directionTime,velocity,dodges:0,reaction:0,cooldown:0,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION,dashBoost:{ready:0,cooldown:0,dashing:0,uses:0}})
+    state:()=>({mode,target,targetPoint:targetPoint&&[...targetPoint],velocity2d:[...velocity2d],direction,directionTime,velocity,dodges:dashUses,reaction:0,cooldown:dashCooldown,stepDistance:STEP_DISTANCE,stepDuration:STEP_DURATION,dashBoost:{ready:0,cooldown:dashCooldown,dashing,uses:dashUses}})
   };
+  return {reset:controller.reset,state:controller.state,update(dt,options){
+    const {position,blocked=false,dashBlocked=false,casting=false,slow=1,shots=[],bounds,frontGuard=false,constrain=p=>p}=options;
+    dt=Math.max(0,dt);dashCooldown=Math.max(0,dashCooldown-dt);
+    if(blocked||dashBlocked||slow<=0)dashing=0;
+    const threat=incomingThreat(shots,position),danger=unblockableThreat(shots,position);
+    if(!blocked&&!dashBlocked&&!casting&&slow>0&&dashCooldown<=1e-8&&(danger||threat)&&(!frontGuard||danger)){
+      let dx=direction,dz=0;
+      if(bounds){
+        if(danger){const center=danger.target||danger.p;dx=position[0]-center[0];dz=position[2]-center[2];}
+        else{dx=-threat.shot.v[2];dz=threat.shot.v[0];}
+        if(Math.hypot(dx,dz)<.001){dx=direction;dz=0;}
+      }
+      const length=Math.hypot(dx,dz)||1;dx/=length;dz/=length;
+      const limit=p=>[clamp(p[0],bounds?.minX??-ENEMY_MOVEMENT_LIMIT,bounds?.maxX??ENEMY_MOVEMENT_LIMIT),p[1],bounds?clamp(p[2],bounds.minZ,bounds.maxZ):position[2]];
+      const candidates=[1,-1].map(side=>{const goal=limit(constrain([position[0]+dx*DASH_DISTANCE*side,position[1],position[2]+dz*DASH_DISTANCE*side]));return {goal,d:Math.hypot(goal[0]-position[0],goal[2]-position[2])};}).sort((a,b)=>b.d-a.d);
+      if(candidates[0].d>.5){const {goal,d}=candidates[0];dashDirection=[(goal[0]-position[0])/d,0,(goal[2]-position[2])/d];dashing=DASH_DURATION;dashCooldown=ENEMY_DASH_COOLDOWN;dashUses++;}
+    }
+    if(dashing>0){
+      mode='dashing';const step=Math.min(dt,dashing),travel=DASH_DISTANCE/DASH_DURATION*step*clamp(slow,0,1);
+      const goal=constrain([clamp(position[0]+dashDirection[0]*travel,bounds?.minX??-ENEMY_MOVEMENT_LIMIT,bounds?.maxX??ENEMY_MOVEMENT_LIMIT),position[1],bounds?clamp(position[2]+dashDirection[2]*travel,bounds.minZ,bounds.maxZ):position[2]]);
+      dashing=Math.max(0,dashing-dt);velocity2d=dt>0?[(goal[0]-position[0])/dt,(goal[2]-position[2])/dt]:[0,0];velocity=velocity2d[0];return goal;
+    }
+    return controller.walk(dt,options);
+  }};
 }
