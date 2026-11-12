@@ -3,7 +3,7 @@ import {createOpeningCinematic} from './opening-cinematic.js';
 import {villageMapMarkup} from './village-map.js';
 import {createVillageMapControls} from './village-map-controls.js';
 import {inventoryItemDetails} from './inventory-details.js';
-import {guardianGuardIds,guardianOrdered,nextGuardianGuard,orderGuardianGuards,inCouncilCourtyard} from './village-confrontation.js';
+import {guardianGuardIds,guardianOrdered,nextGuardianGuard,orderGuardianGuards,guardianStoryPending,inCouncilCourtyard} from './village-confrontation.js';
 import {planVillageExits} from './village-exits.js';
 import {atlasMarkup} from './world-atlas.js';
 import {travelKind} from './village-travel.js';
@@ -199,7 +199,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(world.guard)world.guard.root.visible=q<2;
     const questEntry=world.interactives.find(i=>i.kind==='quest');if(questEntry)questEntry.label=QUESTS[v.id].enemy;
     const objective=campaignObjective(save,{localOnly:admin.active});$('campaignTitle').textContent=objective.title;$('campaignSummary').textContent=objective.title;$('campaignDescription').textContent=objective.description;
-    $('campaignChapter').textContent=({opening:'MỞ ĐẦU',water:'I', 'fire-lightning':'II',treaty:'III',envoy:'IV',dark:'V','dark-report':'VI',complete:'HOÀN THÀNH'})[campaignStage(save)];$('campaignTrack').textContent=objective.targetKind==='complete'?'Xem hành trình đã đi qua ↗':'Đánh dấu mục tiêu ↗';
+    $('campaignChapter').textContent=({opening:'MỞ ĐẦU',water:'I', 'fire-lightning':'II',treaty:'III',envoy:'IV',dark:'V','dark-report':'VI',complete:'HOÀN THÀNH'})[campaignStage(save)]+(objective.storyStep?' · '+objective.storyStep+'/'+objective.storyTotal:'');$('campaignTrack').textContent=objective.targetKind==='complete'?'Xem hành trình đã đi qua ↗':'Đánh dấu mục tiêu ↗';
     const roles={'spirit-ore':'KHAI THÁC','interior-enter':'CỬA VÀO','interior-exit':'LỐI RA',military:'KHU QUÂN SỰ',school:'TRƯỜNG HỌC',clinic:'TRẠM Y TẾ','arena-host':'VÕ ĐƯỜNG','village-event':'SỰ KIỆN CHÍNH',companion:'BẠN ĐỒNG HÀNH','story-witness':'NGƯỜI CẦN GIÚP','intro-guardian':'HỘ VỆ BỊ PHÁ HỎNG','village-guard':'CẢNH VỆ','sidequest-target':'VIỆC CƯ DÂN',roamer:'NINJA PHÁ HOẠI',home:'QUÊ NHÀ',shop:'THƯƠNG HỘI',dock:'BẾN THUYỀN',gate:'CỔNG LÀNG',save:'ĐIỂM HỒI SINH',quest:'NHIỆM VỤ',npc:'TRƯỞNG LÀNG',mentor:'CAO NHÂN · TRUYỀN THỤ',lore:'CƯ DÂN',healer:'Y SƯ',boss:'THỦ LĨNH KHU VỰC',landmark:'ĐỊA DANH',treaty:'HỘI NGHỊ BA LÀNG',envoy:'SỨ GIẢ HÒA BÌNH',traversal:'BẾN BÈ / ĐƯỜNG LEO','expedition-giver':'NHIỆM VỤ LEO NÚI','expedition-goal':'VẬT PHẨM NHIỆM VỤ'};
     $('worldLabels').innerHTML=world.interactives.filter(i=>!i.depleted&&i.id!=='fire-dan'&&(i.kind!=='quest'||q<2)&&(i.kind!=='boss'||admin.active||!save.bosses[v.id])).map(i=>`<button class="world-label ${i.kind}" data-world="${world.interactives.indexOf(i)}"><small>${i.guardRole==='guardian'?'HỘ VỆ LINH THÚ':roles[i.kind]||'KHÁM PHÁ'}</small><span>${i.kind==='dock'?'⚓':i.kind==='gate'?'↗':i.kind==='save'?'◇':i.kind==='quest'||i.kind==='boss'?'⚔':i.kind==='mentor'?'✧':i.kind==='landmark'?'⌖':i.kind==='clinic'?'+':'!'} ${esc(i.label)}</span></button>`).join('');
     const stats=combatStats(save.progression);$('journeyHeroLevel').textContent=`${Math.ceil(stats.maxHp*(save.healthFraction??1))} / ${stats.maxHp} máu · ${stats.maxChakra.toFixed(0)} mana`;
@@ -293,7 +293,8 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       const list=document.createElement('div');list.className='journal-zones';list.append(...buttons);taskGroups.push(group('quests-'+status,label,buttons.length,[list],status===1||status===2));
     }
     work.className='journal-quest-groups';work.replaceChildren(...taskGroups);
-    journal.replaceChildren(group('campaign','Tuyến truyện chính',chapter.title,[progress]),group('village-events','Chuyện của các làng',Object.keys(VILLAGE_EVENTS).filter(id=>villageEventComplete(save,id)).length+'/9',[...eventCards]),group('quests','Nhiệm vụ trong làng',tasks.length,[work],true),group('zones','Địa danh',r.zones.filter(discovered).length+'/'+r.zones.length+' đã khám phá',[zones]));
+    const villageChapters=group('village-events','Chuyện của các làng',Object.keys(VILLAGE_EVENTS).filter(id=>villageEventComplete(save,id)).length+'/9',eventCards);
+    journal.replaceChildren(group('campaign','Tuyến truyện chính',chapter.title,[progress,villageChapters],true),group('quests','Nhiệm vụ trong làng',tasks.length,[work],true),group('zones','Địa danh',r.zones.filter(discovered).length+'/'+r.zones.length+' đã khám phá',[zones]));
 
   }
   function sidequestById(id){for(const v of VILLAGES){const q=villageSidequests(v.id).find(q=>q.id===id);if(q)return q;}return null;}
@@ -495,7 +496,13 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(mentorReady(save,id)){dialog('NHIỆM VỤ LÀNG · TRỞ VỀ NHẬN THƯỞNG',n.name,`${m.lesson} Phần thưởng: ${name}. Nếu chưa đủ hệ cấp ${requiredLevel(m.spellId)}, hãy giữ sách và tiếp tục tu luyện.`,[['Nhận thưởng · '+name,()=>{if(save.lessons[id]){learn();return;}save.lessons[id]=1;persist();const cast=dialogueCast(dialogueItem,save,r,village(id));dialog('KỲ NGỘ · ĐÃ HOÀN THÀNH',n.name,m.lesson,[['Nhận thưởng · '+name,learn]],{script:cast?[{speaker:cast.hero,text:'Tôi đã vô tình hoàn thành việc này trên đường khám phá.'},{speaker:cast.npc,text:m.lesson}]:null});}]]);return;}
     const missing=targets.filter(z=>!discovered(z));dialog('KỲ NGỘ · TRÊN ĐƯỜNG HỌC ĐẠO',n.name,`${m.clue} Còn ${missing.map(z=>z.name).join(' và ')} cần tự mình khám phá. Không cần giao chiến để nhận lời chỉ giáo.`,[['Theo dấu · '+missing[0].name,()=>{closeDialog();moveToItem(world.interactives.find(i=>i.kind==='landmark'&&i.id===missing[0].id));}],['Tiếp tục hành trình',closeDialog,true]]);
   }
+  function guardianStoryDialog(){
+    if(admin.active||!guardianStoryPending(save))return false;
+    const e=currentVillageEvent(save);dialogueItem=null;
+    dialog('CÂU CHUYỆN CỦA '+village(save.village).name,e.title,'Trước khi đối mặt hộ vệ, hãy giúp những người đang gặp nạn và làm rõ chuyện xảy ra trong làng. '+e.body,[['Theo tuyến truyện chính ↗',()=>{closeDialog();followCampaign();}],['Tiếp tục khám phá',closeDialog,true]]);return true;
+  }
   function guardianGateDialog(){
+    if(guardianStoryDialog())return true;
     if(save.village==='nameless'||save.bosses[save.village]||guardianOrdered(save)||world.interior||!inCouncilCourtyard(world.civic,world.hero.root.position))return false;
     dialogueItem=null;
     const id=save.village,r=REGIONS[id];
@@ -504,6 +511,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     }]],{script:battleConversation({kind:'guardian-order',village:id,name:r.boss.guardian},save),requireComplete:true});return true;
   }
   function startGuardianGuard(immediate=false){
+    if(guardianStoryDialog())return true;
     const guardId=nextGuardianGuard(save);if(!guardId)return false;
     const ids=guardianGuardIds(save.village).filter(id=>!save.story.defeatedGuards.includes(id)),profile=encounterProfile(save,'guardian-guard',save.village);
     const squad=ids.map((id,i)=>({...profile,id,guardId:id,kind:'village-guard',village:save.village,name:id.endsWith('-1')?'Hộ vệ trái':'Hộ vệ phải',initialDelay:3+i*.6}));
@@ -511,7 +519,10 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   }
   function offerBattle(kind,details={}){if(phase==='boarding'||retreatLocked())return;if(!save.learnedSpells.length){toast('Hãy gặp mẹ và học một thuật từ trưởng làng trước.');return;}
     if(!admin.active&&(save.healthFraction??1)<=0){toast('Bạn cần tới trạm y tế để trị thương trước khi giao chiến.');return;}
-    const r=REGIONS[save.village],id=save.village;if(kind==='boss'){
+    const r=REGIONS[save.village],id=save.village;
+    const guardPost=kind==='village-guard'?world.interactives.find(i=>i.kind==='village-guard'&&i.id===details.guardId):null,guardRole=guardPost?.guardRole||details.guardRole;
+    if((kind==='boss'||kind==='village-guard'&&guardRole==='guardian')&&guardianStoryDialog())return;
+    if(kind==='boss'){
     if(!admin.active&&save.bosses[id])return;
     if(id!=='nameless'&&!admin.active){
       if(!guardianOrdered(save)){guardianGateDialog();return;}
@@ -519,7 +530,6 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       if(world.interior?.kind!=='council'){dialogueItem=null;dialog('PHÒNG HỌP CỦA LÀNG','Linh thú đã nhập vào trưởng làng','Hai hộ vệ đã thất bại. Linh thú đang chờ trong thân xác trưởng làng tại phòng họp.',[['Tới phòng họp',()=>{closeDialog();moveToItem(findJourneyItem('npc'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
       details.possessedChief=true;
     }
-    if(!admin.active&&!villageEventComplete(save,id)){const e=currentVillageEvent(save,id);dialog('CÂU CHUYỆN CỦA '+village(id).name,e.title,'Trước khi đối mặt hộ vệ, hãy giúp những người đang gặp nạn và làm rõ chuyện xảy ra trong làng. '+e.body,[['Theo dấu sự kiện',()=>{closeDialog();moveToItem(findJourneyItem('village-event'));}],['Tiếp tục khám phá',closeDialog,true]]);return;}
     if(!admin.active&&id==='dark'&&!canTravel(save,'dark').allowed){dialog('TRẬN CHIẾN CUỐI CHƯA MỞ',r.boss.name,canTravel(save,'dark').reason,[['Tiếp tục sứ mệnh hòa bình',()=>{closeDialog();followCampaign();}],['Trở lại sau',closeDialog,true]]);return;}
   }
     if(kind==='sidequest'){
@@ -527,7 +537,6 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       if(!q||q.type!=='combat'||save.story.sidequests[q.id]!==1||sidequestDone(save,q))return;
     }
     if(!admin.active&&kind==='intro-trio'&&save.story.stage!=='guardian')return;
-    const guardPost=kind==='village-guard'?world.interactives.find(i=>i.kind==='village-guard'&&i.id===details.guardId):null,guardRole=guardPost?.guardRole||details.guardRole;
     const profile=encounterProfile(save,guardRole==='guardian'?'guardian-guard':kind,details.element||id);
     encounter={kind,village:id,name:kind==='boss'?r.boss.name:kind==='intro-trio'?'Ba ninja đột kích':kind==='quest'?QUESTS[id].enemy:'Ninja phá hoại',...profile,...details,...(guardRole?{guardRole}:{}),...(kind==='boss'?{bossId:r.boss.id,guardianName:r.boss.guardian}:{}),...(kind==='intro-trio'?{...INTRO_SQUAD[0],village:id,name:'Ba ninja Hỏa · Thủy · Lôi',squad:INTRO_SQUAD.map(n=>({...n}))}:{})};
     // Authored event profiles may customize combat, but all enemies obey the same seal cadence.
@@ -616,7 +625,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(phase==='treatment'){treatmentRemaining=Math.max(0,treatmentRemaining-dt);world.update(dt,false,false,false);if(treatmentRemaining<=0){save.healthFraction=1;refillFlask(save);setPhase('explore');persist();refresh();toast('Đã trị thương và nạp đầy bình thuốc.');}return;}
     if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('journeyToast').hidden=true;}
     if(phase==='explore'){
-      if(!admin.active&&(save.healthFraction??1)>0&&!world.interior&&!world.riding&&!world.surface&&save.story.stage==='infiltrate'&&save.village!=='nameless'&&!save.bosses[save.village]&&inCouncilCourtyard(world.civic,world.hero.root.position)){if(!guardianOrdered(save)){guardianGateDialog();return;}if(nextGuardianGuard(save)){startGuardianGuard();return;}}
+      if(!admin.active&&(save.healthFraction??1)>0&&!guardianStoryPending(save)&&!world.interior&&!world.riding&&!world.surface&&save.story.stage==='infiltrate'&&save.village!=='nameless'&&!save.bosses[save.village]&&inCouncilCourtyard(world.civic,world.hero.root.position)){if(!guardianOrdered(save)){guardianGateDialog();return;}if(nextGuardianGuard(save)){startGuardianGuard();return;}}
       if(landmarkNotices.length){
         landmarkNoticeTimer-=dt;
         while(landmarkNotices.length&&landmarkNoticeTimer<=0){landmarkNotices.shift();landmarkNoticeTimer+=7;}

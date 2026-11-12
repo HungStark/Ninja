@@ -9,8 +9,11 @@ import {createAdventureScene} from '../src/adventure-scene.js';
 import {REGIONS} from '../src/adventure-world.js';
 import {MIN_QUEST_ITEM_SPACING} from '../src/quest-placement.js';
 import {battleConversation} from '../src/battle-conversation.js';
+import {VILLAGE_EVENTS} from '../src/village-events.js';
 
 const save=newJourney('Người giữ lời');save.village='fire';save.story.stage='infiltrate';
+assert.equal(orderGuardianGuards(save),false);assert.equal(confrontationObjective(save,'fire').targetKind,'village-event');
+save.story.villageEvents.fire=VILLAGE_EVENTS.fire.stages.length;
 assert.equal(guardianOrdered(save),false);assert.ok(orderGuardianGuards(save));assert.equal(orderGuardianGuards(save),false);
 assert.equal(nextGuardianGuard(save),'fire-guardian-sentry-1');
 resolveBattle(save,{kind:'village-guard',village:'fire',element:'fire',guardId:nextGuardianGuard(save)},true);
@@ -57,6 +60,7 @@ for(const id of Object.keys(REGIONS)){
     for(const gate of world.gates){const length=Math.hypot(gate.x,gate.z);assert.equal(inCouncilCourtyard(world.civic,{x:gate.x*(1-6/length),z:gate.z*(1-6/length)}),false,id+' village arrival stays outside council courtyard');}
     const guards=world.guardsState().filter(g=>g.guardRole==='guardian'),center=world.civic.guardian;
     assert.equal(guards.length,2);assert.ok(guards.every(g=>Math.hypot(g.x-center.x,g.z-center.z)<18),id+' guards directly ahead');
+    state.story.villageEvents[id]=VILLAGE_EVENTS[id].stages.length;
     orderGuardianGuards(state);world.load(id,state);assert.equal(world.boss,null,id+' guardian has entered the chief');
   }
 }

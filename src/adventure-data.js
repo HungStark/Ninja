@@ -100,8 +100,8 @@ export function campaignObjective(save,{localOnly=false}={}) {
     return {title:'Đã hoàn thành nhiệm vụ tại '+village(id).name,description:'Bạn có thể tiếp tục khám phá hoặc dịch chuyển tới làng khác để thử tuyến nhiệm vụ tại đó.',targetVillage:id,targetKind:'complete'};
   }
   const opening=openingObjective(save);if(opening)return opening;
-  if(save.village!=='nameless'&&!save.bosses[save.village]&&(!guardianOrdered(save)||nextGuardianGuard(save)))return confrontationObjective(save,save.village);
   const local=villageEventObjective(save);if(local&&(FIRST_VILLAGES.includes(save.village)||save.village==='dark'||treatyDelivered(save,save.village)||save.bosses[save.village]))return local;
+  if(save.village!=='nameless'&&!save.bosses[save.village]&&(FIRST_VILLAGES.includes(save.village)||save.village==='dark'||treatyDelivered(save,save.village))&&(!guardianOrdered(save)||nextGuardianGuard(save)))return confrontationObjective(save,save.village);
   const stage=campaignStage(save);
   if(stage==='water'||stage==='fire-lightning'){
     const id=FIRST_VILLAGES.includes(save.village)&&!save.story.peaceSeals.includes(save.village)?save.village:FIRST_VILLAGES.find(id=>!save.story.peaceSeals.includes(id));return villageObjective(id);

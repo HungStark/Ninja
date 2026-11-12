@@ -6,12 +6,17 @@ import {createAdventureScene} from '../src/adventure-scene.js';
 import {createVillageStoryActors} from '../src/village-story-actors.js';
 import {planExpedition} from '../src/adventure-biomes.js';
 import {createAdminSession} from '../src/adventure-access.js';
+import {guardianStoryPending,orderGuardianGuards,confrontationObjective} from '../src/village-confrontation.js';
 const baseline=newJourney();baseline.story.stage='infiltrate';baseline.village='fire';baseline.bosses.fire=true;const snapshot=structuredClone(baseline),session=createAdminSession(),draft=session.enter(baseline);draft.story.questItems.push('fire:lotus-medicine');let event;while(event=currentVillageEvent(draft))assert.ok(advanceVillageEvent(draft,'fire',event.step,{victory:!!event.battle}).ok);assert.equal(draft.story.companion.recruited,true);assert.deepEqual(baseline,snapshot);assert.deepEqual(session.leave(),snapshot,'admin recruitment never leaks into normal progress');const legacy=readJourney({getItem:()=>JSON.stringify(snapshot)});assert.equal(legacy.bosses.fire,true);assert.equal(campaignObjective(legacy).targetKind,'village-event','old cleared Fire saves can still rescue Hạ Ly');
 globalThis.innerWidth=915;globalThis.innerHeight=412;
 const world=createAdventureScene();
 for(const [id,chapter] of Object.entries(VILLAGE_EVENTS)){
   const save=newJourney();save.story.stage='infiltrate';save.village=id;save.position=[0,7];if(id==='fire')save.story.questItems.push('fire:lotus-medicine');save.campaign={treatySigned:true,deliveries:['earth','wind','light','ice','wood']};world.load(id,save);
   for(let step=0;step<chapter.stages.length;step++){
+    const objective=campaignObjective(save);assert.equal(objective.storyStep,step+1);assert.equal(objective.storyTotal,chapter.stages.length);
+    assert.ok(guardianStoryPending(save));assert.equal(orderGuardianGuards(save),false);assert.equal(confrontationObjective(save,id).targetId,objective.targetId);
+    const oldSave=structuredClone(save);oldSave.story.guardianOrders=[id];oldSave.story.defeatedGuards=[id+'-guardian-sentry-1'];
+    const restored=readJourney({getItem:()=>JSON.stringify(oldSave)});assert.equal(campaignObjective(restored).targetId,objective.targetId,'old guard progress cannot skip the village chapter');assert.deepEqual(restored.story.defeatedGuards,oldSave.story.defeatedGuards);
     const e=currentVillageEvent(save);assert.equal(e.step,step);assert.equal(campaignObjective(save).targetKind,'village-event');const target=world.interactives.find(i=>i.kind==='village-event');assert.ok(target,id+' has a visible story target');assert.ok(!world.blocked(target.x,target.z),id+' target is physically free');
     assert.ok(planExpedition([0,7],[target.x,target.z],{id,routes:world.routes,walk:(a,b,key)=>findPath(a,b,world.navigationBlocked(key))}),id+' story stage '+step+' reachable from village arrival');
     const position=world.hero.root.position.toArray();if(e.choices){const before=JSON.stringify(save);assert.equal(advanceVillageEvent(save,id,step,{choiceIndex:1}).ok,false);assert.equal(JSON.stringify(save),before,'wrong answer keeps progress and resources');}
@@ -19,6 +24,7 @@ for(const [id,chapter] of Object.entries(VILLAGE_EVENTS)){
     else assert.equal(advanceVillageEvent(save,id,step).ok,true);
     world.syncVillageEvents(save);assert.deepEqual(world.hero.root.position.toArray(),position,'story refresh never moves the player');
   }
+  assert.equal(guardianStoryPending(save),false);assert.equal(confrontationObjective(save,id).targetKind,'boss');assert.ok(orderGuardianGuards(save));assert.equal(confrontationObjective(save,id).targetKind,'village-guard');
   assert.equal(villageEventComplete(save,id),true);assert.equal(save.gold,45);assert.equal(save.xp,40);assert.equal(advanceVillageEvent(save,id,chapter.stages.length-1).ok,false);const read=readJourney({getItem:()=>JSON.stringify(save)});assert.deepEqual(read.story,save.story);assert.equal(read.story.companion.recruited,id==='fire');assert.equal(world.interactives.some(i=>i.kind==='village-event'),false);
 }
 const save=newJourney();save.story.villageEvents.fire=4;save.story.companion.recruited=true;const scene=new T.Scene(),hero={root:new T.Group()},entries=[],actors=createVillageStoryActors({scene,hero,blocked:()=>false,floor:()=>0});actors.sync(save,'nameless',entries);assert.equal(actors.state().female,true);assert.equal(entries.filter(i=>i.kind==='companion').length,1);

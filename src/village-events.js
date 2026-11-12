@@ -68,7 +68,7 @@ export const VILLAGE_EVENTS={
 export function villageEventStep(save,id){return Math.max(0,Math.min(VILLAGE_EVENTS[id]?.stages.length||0,save.story?.villageEvents?.[id]||0));}
 export function villageEventComplete(save,id){return !VILLAGE_EVENTS[id]||villageEventStep(save,id)>=VILLAGE_EVENTS[id].stages.length;}
 export function currentVillageEvent(save,id=save.village){const chapter=VILLAGE_EVENTS[id],step=villageEventStep(save,id);return chapter&&step<chapter.stages.length?{...chapter.stages[step],step,village:id,chapter:chapter.title,speaker:chapter.stages[step].speaker||chapter.speaker}:null;}
-export function villageEventObjective(save,id=save.village){const e=currentVillageEvent(save,id);return e?{title:e.title,description:e.body,targetVillage:id,targetKind:'village-event',targetId:`story-${id}-${e.step}`} : null;}
+export function villageEventObjective(save,id=save.village){const e=currentVillageEvent(save,id);return e?{title:e.title,description:e.body,targetVillage:id,targetKind:'village-event',targetId:`story-${id}-${e.step}`,storyStep:e.step+1,storyTotal:VILLAGE_EVENTS[id].stages.length} : null;}
 export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=false}={}){
   const e=currentVillageEvent(save,id);if(!e||save.village!==id||e.step!==expectedStep)return {ok:false,reason:'stage'};
   if(id==='fire'&&[2,3].includes(e.step)&&!save.story.questItems?.includes('fire:lotus-medicine'))return {ok:false,reason:'medicine',message:'Hãy mang Hồng Liên trên đỉnh Vách Tro Hồng về cho Y nữ Đan điều chế thuốc cứu Hạ Ly.'};
