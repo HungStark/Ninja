@@ -1,3 +1,4 @@
+import {setupCheckpointSettings} from './checkpoint-settings.js';
 import {storyBossProfile} from './island-occupation.js';
 import {createCampaignAlly} from './campaign-ally.js';
 import {companionPresent} from './campaign-plot.js';
@@ -727,6 +728,7 @@ async function main() {
     cameraImpacts.reset();
     setWorldFov(baseFov);
     if(adventure?.inBattle&&!tournamentBattle()){adventure.recordHealth(player.hp,player.maxHp);campaignAlly.record();adventure.recordCompanionHealth(campaignAlly.state().hp);}
+    adventure?.recordBattleOutcome(victory);
     gameAudio.result(victory);
     won = true; dashBoost.cancelDash();dashAura.clear();enemyDashAura.clear();moveTargetX = camera.p[0]; moveDirection = 0; enemyPose = -1; releaseAimLock();
     salvos.length = 0;
@@ -1768,6 +1770,7 @@ async function main() {
   if (testMode) window.__AN_HOA__.advance = seconds => { for (let t = 0; t < seconds; t += 1 / 60) tick(Math.min(1 / 60, seconds - t)); render(); };
   setupAudioSettings(gameAudio,{onOpen:()=>{const running=started&&!paused&&!won&&!adventure.activeView;if(running)pause();return running;},onClose:wasRunning=>{if(wasRunning)resume();}});
   if(testMode){window.__AN_HOA__.audio=gameAudio;window.__AN_HOA__.guardianArt=index=>guardianPhases.trigger(index,playerPos(),enemyPos(),enemy);}
+  setupCheckpointSettings({info:()=>adventure.checkpointInfo(),restore:()=>adventure.restoreLastCheckpoint(),onOpen:()=>{const running=started&&!paused&&!won&&!adventure.activeView;if(running)pause();return running;},onClose:wasRunning=>{if(wasRunning)resume();}});
   setupLanguageSelector();setupScrollOpening();
   if(!await adventure.world.charactersReady())throw Object.assign(new Error('Character model loading failed'),{code:'CHARACTER_LOAD'});
   renderLoadout(); renderGuide(); updateUI(); $('loading').classList.add('hidden'); document.body.dataset.ready = 'true'; tick(.016); render(); if (!testMode) requestAnimationFrame(frame);

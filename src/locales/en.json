@@ -2885,5 +2885,17 @@
   "Đối thủ đã áp sát · Phải hoàn tất giao chiến": "The enemy has closed in · You must finish the battle",
   "Hai người giữ ngục đã thất bại, nhưng các ngươi chưa thoát khỏi mạng lưới của ta.": "The two prison captors failed, but you have not escaped my network.",
   "Kẻ đang đặt phong ấn": "Suspicious Seal Planter",
-  "Giết hắn! Không được để lộ đường dây của chúng ta.": "Kill him! Our network must not be exposed."
+  "Giết hắn! Không được để lộ đường dây của chúng ta.": "Kill him! Our network must not be exposed.",
+  "CÀI ĐẶT TRÒ CHƠI": "GAME SETTINGS",
+  "Lưu và chơi lại": "Save and Replay",
+  "Tự lưu mỗi 10 giây khi di chuyển và sau các thay đổi quan trọng. Tiếp tục hành trình sẽ dùng bản tự lưu.": "The game autosaves every 10 seconds while moving and after important changes. Continue Journey resumes the autosave.",
+  "Trở về điểm lưu sẽ khôi phục máu, Hạ Ly, đồ đạc và nhiệm vụ tại lần lưu ở ấn. Tiến trình sau lần lưu đó sẽ bị bỏ, kể cả kết thúc đã đạt.": "Returning to a save point restores health, Ha Ly, inventory and quests from your last shrine save. Later progress, including any ending, will be discarded.",
+  "Trở về điểm lưu gần nhất": "Return to Last Shrine Save",
+  "Chưa có bản lưu tại ấn. Hãy tới một ấn hồi sinh và nhấn E để lưu.": "No shrine save yet. Visit a save shrine and press E to save.",
+  "Cài đặt trò chơi": "Game Settings",
+  "Đã lưu toàn bộ tiến trình tại ấn": "Full journey saved at the shrine",
+  "Đang khôi phục bản lưu tại ấn…": "Restoring shrine save…",
+  "Đã trở về trạng thái lưu tại ấn": "Shrine save restored",
+  "Lưu tiến trình ·": "Save journey ·",
+  "Ấn hồi sinh ·": "Save Shrine ·"
 }

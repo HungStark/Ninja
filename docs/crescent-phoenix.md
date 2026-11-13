@@ -1,5 +1,7 @@
 # Nội gián Trăng Khuyết và Phước Lành Phượng Hoàng
 
+Cập nhật cơ chế lưu: [checkpoint-revision.md](checkpoint-revision.md) thay đổi quy tắc thua trận. Hy sinh vẫn không thể chữa tại trạm y tế, nhưng khôi phục một bản tại ấn trước khi hy sinh sẽ đưa Hạ Ly trở lại. Tự lưu vẫn giữ trạng thái hiện tại; bản tại ấn là mốc riêng để chơi lại.
+
 Luồng ninja phá hoại ném pháo đã được gỡ khỏi trò chơi. Các nhân vật ngẫu nhiên mới xuất hiện gần địa danh, mang bộ chỉ số và chiêu của cảnh vệ thường cùng hệ địa phương, kể cả tùy chỉnh trong bộ cân bằng đối thủ. Có ba hành vi: đi khảo sát, đặt phong ấn khả nghi, hoặc ngụy trang phục kích để giết người chơi và bắt Hạ Ly. Phát hiện hoặc bị áp sát sẽ buộc giao chiến. Kinh nghiệm tính theo hệ đối thủ và có thể nhận từ những lần xuất hiện mới.
 
 Phong và Thổ giảm số cảnh vệ ẩn thân gốc từ 8 xuống 3 (một phần được bố trí làm lính gác cổng như trước); cho phép tối đa 4 nội gián cùng lúc, các làng khác tối đa 2. Các nhân vật khảo sát đi theo đường tránh vật cản. Phục kích phát hiện trong 10 m, truy đuổi 8 m/s; nhân vật khả nghi phản kháng khi tiếp cận trong 4,5 m. Nhân vật xa người chơi tự rời đi sau 90 giây. Không tạo pháo, vụ nổ hoặc nguồn sáng nhấp nháy.

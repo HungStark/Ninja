@@ -5,6 +5,7 @@ export const FIRE_PRISON_SITE={x:-12,z:20};
 export const FIRE_MOTHER_SITE={x:2.4,z:17};
 export const FIRE_MEDICINE_SITE={x:0,z:25};
 export function setVillagePads(id,plots){pads.set(id,plots);}
+export function addVillagePads(id,plots){pads.set(id,[...(pads.get(id)||[]),...plots]);}
 export function levelVillageTerrain(id,x,z,original){
   let weight=0,total=0,blend=0;
   for(const p of pads.get(id)||[]){

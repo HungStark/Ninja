@@ -1,5 +1,6 @@
 import {PLOT,WAR_VILLAGES,ALLIANCE_VILLAGES,PLOT_ORDER,plotVillageComplete,nextPlotVillage,canProgressPlot,invasionAvailable} from './campaign-plot.js';
 import {companionUnconscious} from './companion-health.js';
+import {restoreCheckpoint,readCheckpoint} from './checkpoint-state.js';
 import {isEarthDepartureTrial,earthDepartureTrialPending,EARTH_DEPARTURE_TRIAL} from './earth-departure-trial.js';
 import {storeTreaty} from './peace-treaties.js';
 import {confrontationObjective,guardianOrdered,nextGuardianGuard} from './village-confrontation.js';
@@ -97,7 +98,7 @@ export const SAVE_KEY = 'anhoa-adventure-v1';
 export function newJourney(name='Lữ Khách',coat='#211e25',hair='#161821') {
   return {version:1,worldRevision:3,healthFraction:1,flask:newFlask(),mines:{},interior:null,surface:null,elevation:null,expeditions:{},arena:newTournament(),equipment:{...newEquipment(),ammo:{iron:0,steel:0,tempered:0,chakra:0}},hero:{look:'crimson-wanderer-v2',name:name.trim().slice(0,24)||'Lữ Khách',coat,hair},village:'nameless',position:[...HOME.spawn],checkpoint:'nameless',visited:['nameless'],activated:['nameless'],quests:{},discoveries:[],lessons:{},mentors:{},bosses:{},learnedSpells:[],progression:{...newProgression(),xp:{}},story:newStory(),campaign:{treatySigned:false,deliveries:[]},gold:0,xp:0,wins:0};
 }
-export function readJourney(storage) {
+export function readJourney(storage,{includeCheckpoint=true}={}) {
   try {
     const s=JSON.parse(storage.getItem(SAVE_KEY));
     if(s?.version!==1||!village(s.village)||!village(s.checkpoint)||typeof s.hero?.name!=='string')return null;
@@ -152,6 +153,8 @@ export function readJourney(storage) {
       for(const q of villageSidequests(v.id,true))if(s.story?.sidequests?.[q.id]===3&&q.rewardScroll)addBooks(clean,[q.rewardScroll]);
     }
     for(const key of ['gold','xp','wins'])clean[key]=Number.isSafeInteger(s[key])&&s[key]>=0?s[key]:0;
+    if(includeCheckpoint){const point=readCheckpoint(s.checkpointSave,snapshot=>readJourney({getItem:()=>JSON.stringify(snapshot)},{includeCheckpoint:false}));if(point)clean.checkpointSave=point;}
+    if(s.pendingCheckpointRestore===true&&clean.checkpointSave)restoreCheckpoint(clean);
     return clean;
   }catch{return null;}
 }
@@ -214,7 +217,7 @@ export function resolveBattle(save,encounter,victory) {
     }
   }
   else if(victory){save.gold+=encounter.kind==='quest'?60:20;save.xp+=encounter.kind==='quest'?90:35;save.wins++;for(const reward of combatExperienceRewards(encounter,encounter.kind==='quest'?65:45))gainExperience(save.progression,reward.element,reward.xp);if(encounter.kind==='quest'&&(save.quests[encounter.village]||0)<2){if(!save.quests[encounter.village]){save.story.earlyVillageQuests??=[];save.story.earlyVillageQuests.push(encounter.village);}save.quests[encounter.village]=2;}}
-  else{save.interior=null;save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
+  else if(!restoreCheckpoint(save)){save.interior=null;save.village=save.checkpoint;save.surface=null;save.elevation=null;save.position=save.village==='nameless'&&save.story?.stage==='mother'?[...HOME.spawn]:[0,7];}
   return save;
 }
 

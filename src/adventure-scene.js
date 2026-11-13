@@ -1,3 +1,4 @@
+import {planSavePoints} from './save-points.js';
 import {islandOccupied,islandCenterLocked,beastCaptured,beastRescued,legionGuard,crescentEmblem,buildOccupationBanners} from './island-occupation.js';
 import {waterChannelPaths,waterFootprintDry,nearestDryWaterPoint} from './water-network.js';
 import {planWaterFerries} from './water-crossings.js';
@@ -248,7 +249,7 @@ export function createAdventureScene(){
   }
   const treatment=createTreatmentEffect(hero.root);
   function syncSidequests(save){if(room)return;
-    if(!questPositions.size)questPositions=placeQuestTargets(villageSidequests(current),{limit:metrics().limit,heightAt:(x,z)=>physics.floorAt(x,z,heightAt(x,z)+.5),valid:(x,z,y)=>!blocked(x,z)&&!physics.overlaps(x,z,y,2.9,.6,true)&&!citizens.some(c=>Math.hypot(c.root.position.x-x,c.root.position.z-z)<2.1)&&!interactives.some(i=>['village-guard','quest','boss','save','interior-enter'].includes(i.kind)&&Math.hypot(i.x-x,i.z-z)<5),relocate:current==='water'?(entry,valid)=>waterFootprintDry(entry.x,entry.z,{w:1.5,d:1.5,padding:1})?null:nearestDryWaterPoint(entry.x,entry.z,{w:1.5,d:1.5,padding:1,valid}):null});
+    if(!questPositions.size)questPositions=placeQuestTargets(villageSidequests(current),{limit:metrics().limit,heightAt:(x,z)=>physics.floorAt(x,z,heightAt(x,z)+.5),valid:(x,z,y)=>!interactives.some(i=>i.kind==='save'&&Math.hypot(i.x-x,i.z-z)<5)&&!blocked(x,z)&&!physics.overlaps(x,z,y,2.9,.6,true)&&!citizens.some(c=>Math.hypot(c.root.position.x-x,c.root.position.z-z)<2.1)&&!interactives.some(i=>['village-guard','quest','boss','save','interior-enter'].includes(i.kind)&&Math.hypot(i.x-x,i.z-z)<5),relocate:current==='water'?(entry,valid)=>waterFootprintDry(entry.x,entry.z,{w:1.5,d:1.5,padding:1})?null:nearestDryWaterPoint(entry.x,entry.z,{w:1.5,d:1.5,padding:1,valid}):null});
     const active=new Map(villageSidequests(current).filter(q=>sidequestTargetVisible(save,q)).map(q=>[q.id,q]));
     if(current==='fire'&&(save.expeditions.fire||0)<2&&!save.story.questItems?.includes('fire:hong-lien'))active.set('fire:hong-lien',{id:'fire:hong-lien',kind:'expedition-goal',type:'retrieve',targetModel:'lotus',x:88,z:-96,y:36,targetName:'Hái Hồng Liên trên đỉnh núi'});
     for(let i=interactives.length-1;i>=0;i--){const entry=interactives[i];if(!['sidequest-target','expedition-goal'].includes(entry.kind)||active.has(entry.id))continue;
@@ -289,7 +290,7 @@ export function createAdventureScene(){
     if(id!=='nameless'){civicPlan=planVillageCivic(id);shopPlot=civicPlan.shop;Object.assign(region.boss,civicPlan.guardian);routes=traversalDefinitions(id);}
     gates=planVillageExits(v,village);
     harborPlans=gates.filter(g=>g.kind==='dock').map(g=>planHarbor(g,metrics().limit,terrainHeight(id,g.x,g.z)));
-    const quest=QUESTS[id];interactives.push(...gates,{kind:'save',x:0,z:5,label:'Ấn hồi sinh'},...(id==='nameless'?[{kind:'npc',x:-4,z:5,label:'Trưởng làng'}]:[]),{kind:'quest',x:quest.x??8,z:quest.z??-9.5,label:quest.enemy});
+    const quest=QUESTS[id];interactives.push(...gates,...planSavePoints(id).map(p=>({...p})),...(id==='nameless'?[{kind:'npc',x:-4,z:5,label:'Trưởng làng'}]:[]),{kind:'quest',x:quest.x??8,z:quest.z??-9.5,label:quest.enemy});
     for(const zone of region.zones.filter(z=>z.platform!=='earth-cave'))interactives.push({kind:'landmark',id:zone.id,x:zone.x,z:zone.z,platform:zone.platform,label:zone.name});
     for(const person of region.npcs.filter(p=>p.platform!=='earth-cave'))interactives.push({kind:person.kind,id:person.id,x:person.x,z:person.z,label:person.name,...(person.platform?{platform:person.platform}:{}),...(person.elevation!==undefined?{y:person.elevation}:{})});
     if(id!=='nameless'&&!guardianOrdered(save,id)&&!save.bosses?.[id]&&!beastCaptured(save,id))interactives.push({kind:'boss',id:region.boss.id,x:region.boss.x,z:region.boss.z,label:id==='earth'?'Sơn Quy · Thử thách trước biển':region.boss.name});
@@ -321,8 +322,8 @@ export function createAdventureScene(){
     addVegetation(v,rand);
     // River scenery has its own seed so changes to ground cover cannot move it.
     addGroundDetails(seeded(VILLAGES.indexOf(v)*2371+1049));addBackdrop(v,rand);
-    const shrine=group(0,3),stone=M('#89958a');for(let k=0;k<3;k++)cyl(shrine,stone,0,.15+k*.18,0,1.4-k*.3,.2,8);cyl(shrine,M('#475c5f'),0,1,0,.38,1.1);box(shrine,M('#c1c8ae'),0,1.7,0,1,.24,1);const seal=mesh(new T.OctahedronGeometry(.42),M('#96e6cc',.85),shrine,0,2.35,0);animated.push({kind:'float',mesh:seal,base:2.35});
-    const halo=mesh(new T.RingGeometry(1.7,1.78,48),M('#a7ead6',.6),shrine,0,.08,0);halo.rotation.x=-Math.PI/2;
+    for(const point of interactives.filter(i=>i.kind==='save')){const shrine=group(point.x,point.z-2);shrine.name='checkpoint-shrine-'+point.id;const stone=M('#89958a');for(let k=0;k<3;k++)cyl(shrine,stone,0,.15+k*.18,0,1.4-k*.3,.2,8);cyl(shrine,M('#475c5f'),0,1,0,.38,1.1);box(shrine,M('#c1c8ae'),0,1.7,0,1,.24,1);const seal=mesh(new T.OctahedronGeometry(.42),M('#96e6cc',.85),shrine,0,2.35,0);animated.push({kind:'float',mesh:seal,base:2.35});
+    const halo=mesh(new T.RingGeometry(1.7,1.78,48),M('#a7ead6',.6),shrine,0,.08,0);halo.rotation.x=-Math.PI/2;}
     if(id==='nameless'){npc=createVillager(villagerAppearance(id,{kind:'chief'}));npc.root.position.set(-4,heightAt(-4,4),4);npc.root.rotation.y=.4;land.add(npc.root);citizens.push(npc);}
     for(const entry of interactives.filter(i=>i.kind==='clinic')){const nurse=createVillager({...villagerAppearance(id,{id:entry.id,kind:'healer'}),female:true});nurse.root.name='nurse-'+entry.id;nurse.root.position.set(entry.x,entry.y,entry.z);nurse.root.rotation.y=civicPlan?.clinics.find(p=>p.id===entry.id)?.yaw||0;land.add(nurse.root);citizens.push(nurse);}
     region.npcs.filter(p=>p.platform!=='earth-cave').forEach((source,index)=>{const person=source;const char=createVillager(villagerAppearance(id,person,index));char.root.position.set(person.x,person.platform?platformFor(person.platform)?.toY??heightAt(person.x,person.z):person.elevation??heightAt(person.x,person.z),person.z);char.root.rotation.y=person.yaw??Math.atan2(-person.x,-person.z);land.add(char.root);citizens.push(char);if(person.activity)residents.push({person,char});if(person.kind==='mentor'){const rune=mesh(new T.TorusGeometry(.8,.04,4,24),M(v.color,.7),char.root,0,3.5,0);rune.rotation.x=Math.PI/2;animated.push({kind:'halo',mesh:rune});}});
