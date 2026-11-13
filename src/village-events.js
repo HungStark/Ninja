@@ -7,6 +7,7 @@ import {FIRE_PRISON_SITE,FIRE_MOTHER_SITE} from './village-zoning.js';
 import {botHealth} from './enemy-balance.js';
 import {readCompanionHealth} from './companion-health.js';
 import {WOOD_SACRED_TREE} from './sacred-tree.js';
+import {endingEvent} from './phoenix-blessing.js';
 
 export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
 export const HA_LY_MOTHER={id:'fire-ha-ly-mother',name:'Bà Hồng',role:'Mẹ nuôi của Hạ Ly',kind:'healer',female:true,age:'elder',hair:'#bdb5a2',hairStyle:'bun',coat:'#7c594d',accent:'#b79e75',height:2.7,width:.94,shawl:true};
@@ -15,7 +16,7 @@ export const VILLAGE_EVENTS=PLOT.villages;
 
 export function villageEventStep(save,id){return Math.max(0,Math.min(VILLAGE_EVENTS[id]?.stages.length||0,save.story?.villageEvents?.[id]||0));}
 export function villageEventComplete(save,id){return !VILLAGE_EVENTS[id]||villageEventStep(save,id)>=VILLAGE_EVENTS[id].stages.length;}
-export function currentVillageEvent(save,id=save.village){const chapter=id==='nameless'&&!invasionAvailable(save)&&!save.story?.plotPreview?null:VILLAGE_EVENTS[id],step=villageEventStep(save,id);return chapter&&step<chapter.stages.length?{...chapter.stages[step],step,village:id,chapter:chapter.title,speaker:chapter.stages[step].speaker||chapter.speaker}:null;}
+export function currentVillageEvent(save,id=save.village){const chapter=id==='nameless'&&!invasionAvailable(save)&&!save.story?.plotPreview?null:VILLAGE_EVENTS[id],step=villageEventStep(save,id),event=endingEvent(save,chapter?.stages[step]);return event?{...event,step,village:id,chapter:chapter.title,speaker:event.speaker||chapter.speaker}:null;}
 export function villageEventObjective(save,id=save.village){const e=currentVillageEvent(save,id);if(id==='wood'&&e?.requiresTournament&&!(save.arena?.completedRuns>0))return {title:'Tham gia giải đấu tại trường học',description:'Hạ Ly đang tìm phương pháp chữa cây. Gặp trọng tài ở trường học để đăng ký và thi đấu tới khi vô địch hoặc bị loại, rồi gặp lại cô trong nhà trên cây.',targetVillage:id,targetKind:'arena-host',targetId:'wood-arena-host',storyStep:e.step+1,storyTotal:VILLAGE_EVENTS[id].stages.length};return e?{title:e.title,description:e.body,targetVillage:id,targetKind:'village-event',targetId:`story-${id}-${e.step}`,interior:e.interior,storyStep:e.step+1,storyTotal:VILLAGE_EVENTS[id].stages.length} : null;}
 export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=false}={}){
   const e=currentVillageEvent(save,id);if(!e||!canProgressPlot(save,id,{battleResult:victory&&!!e.battle})||save.village!==id||e.step!==expectedStep)return {ok:false,reason:'stage'};
@@ -31,6 +32,8 @@ export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=
   if(e.reconcile)save.story.companion={...save.story.companion,recruited:true,phase:'with-party'};
   if(e.sealTrace){save.story.sealTraces??=[];const trace=id+':'+e.step;if(!save.story.sealTraces.includes(trace))save.story.sealTraces.push(trace);}
   const completed=villageEventComplete(save,id);
+  if(id==='dark'&&e.step===5)save.story.phoenixRevealed=true;
+  if(id==='nameless'&&completed)save.story.ending=save.story.companion?.sacrificed?'bad':'true';
   if(completed){save.gold+=45;save.xp+=40;gainExperience(save.progression,regionElement(id),40);}
   return {ok:true,completed,recruited:!!e.recruit,separated:!!e.separate,reconciled:!!e.reconcile};
 }
@@ -60,7 +63,7 @@ export function villageEventEncounter(id,step=1,save){
   }
   const profile=(name,element,hp)=>({name,element,village:element,hp:botHealth(hp),spellIds:[...GUARD_ARSENALS[element]],damageMultiplier:.55,restTime:3.8,weaponInterval:4,initialDelay:2});
   let squad;
-  if(event.battle==='fire-jail')squad=[profile('Hắc Y · Cai ngục giữ chìa khóa','fire',100),profile('Hắc Y · Cai ngục chặn đường lui','lightning',95)];
+  if(event.battle==='fire-jail')squad=[profile('Nội gián Trăng Khuyết · Giữ chìa khóa','fire',100),profile('Nội gián Trăng Khuyết · Chặn đường lui','lightning',95)];
   else if(event.battle==='fire-general')squad=[profile(event.enemy,'fire',180),profile('Cận vệ quân lệnh giả','fire',110)];
   else if(event.battle==='water-base')squad=[profile('Lính canh thiết bị chakra','water',140),profile('Kẻ vận hành tinh thể ma lực','lightning',120)];
   else if(event.battle==='earth-base')squad=[profile('Đội trưởng khai thác','earth',180),profile('Kẻ vận chuyển ma thạch','dark',130)];

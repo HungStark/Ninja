@@ -37,8 +37,8 @@ for(const id of Object.keys(REGIONS))for(const q of villageSidequests(id)){
 
 globalThis.innerWidth=1200;globalThis.innerHeight=800;const world=createAdventureScene();
 for(const id of Object.keys(REGIONS)){
- const s=newJourney();s.village=id;s.position=[0,7];world.load(id,s);const guards=world.guardsState();assert.equal(guards.length,id==='nameless'?0:12);
- for(const g of guards){const standing=['guardian','gate','jailer'].includes(g.guardRole);assert.equal(g.phase,standing?'guarding':'hidden');assert.equal(g.ninjaVisible,standing);assert.equal(g.disguiseVisible,!standing);assert.equal(g.revealed,standing);assert.equal(g.alertRadius,10);if(!standing)assert.ok(world.solids.some(s=>s.name==='guard-disguise'&&s.x===g.x&&s.z===g.z));}
- if(guards.length)assert.deepEqual(new Set(guards.filter(g=>g.guardRole==='hidden').map(g=>g.disguise)),new Set(['stump','bush','rock']));
+ const s=newJourney();s.village=id;s.position=[0,7];world.load(id,s);const guards=world.guardsState();assert.equal(guards.length,id==='nameless'?1:['wind','earth'].includes(id)?6:id==='fire'?12:11);
+ for(const g of guards){const standing=!!g.occupation||['guardian','gate','jailer'].includes(g.guardRole);assert.equal(g.phase,standing?'guarding':'hidden');assert.equal(g.ninjaVisible,standing);assert.equal(g.disguiseVisible,!standing);assert.equal(g.revealed,standing);assert.equal(g.alertRadius,10);if(!standing)assert.ok(world.solids.some(s=>s.name==='guard-disguise'&&s.x===g.x&&s.z===g.z));}
+ if(!['nameless','wind','earth','light','dark'].includes(id))assert.deepEqual(new Set(guards.filter(g=>g.guardRole==='hidden').map(g=>g.disguise)),new Set(['stump','bush','rock']));
 }
 console.log('PASS: all three solid disguises, 10m detection, white smoke before human reveal, collider removal, obstacle-aware 8m/s pursuit, contact and peace-seal retreat policy; per-opponent/squad XP; Nameless gold-only quests and regional skill books; hidden guards in all nine villages.');

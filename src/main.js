@@ -170,6 +170,7 @@ async function main() {
     $('enemyElement').textContent=(phase===2?boss.guardianName||boss.name:boss.name)+' · PHASE '+phase+'/'+boss.phases+' · '+(phase===2?'HỘ VỆ THỨC TỈNH':phase===3?'NHÂN THÚ HỢP NHẤT':'DẠNG NGƯỜI');
   }
   function checkGuardianDefeat(){
+    reviveByPhoenix();
     if(!activeBoss()||enemy.hp>0||!guardianPhases.beginTransition(enemy,opponent.group.position.toArray()))return false;
     shots.length=salvos.length=0;heldStepSources.clear();dashBoost.cancelDash();moveTargetX=camera.p[0];moveDirection=0;aiSpell=null;aiRules.clear();enemyPose=-1;stopSpellVoice();clearDragonView();clearMeteorView();clearWindView();clearEarthView();clearWaveView();
     // The new phase starts with a clean arena; player HP, mana, seals and cooldowns survive.
@@ -707,6 +708,11 @@ async function main() {
     if (count >= 12) effects.explosion(pos, count > 20 ? 1.8 : .8, color);
     for (let i = 0; i < count; i++) particle(pos, [range(-speed, speed), range(.2, speed * 1.2), range(-speed, speed)], range(.025, .1), range(.4, .95), color);
   }
+  function reviveByPhoenix(){
+    if(player.hp>0||!adventure?.inBattle||won||!adventure.sacrificeCompanion())return false;
+    player.hp=player.maxHp*.5;player.controlTime=0;player.invulnerableTime=3;player.burns=[];player.poisons=[];
+    campaignAlly.sacrifice();allyHud.hidden=true;announce('Hạ Ly đã đổi mạng để hồi sinh bạn · Tiếp tục chiến đấu');messageTime=6;return true;
+  }
   function finish(victory) {
     hands.clearEffects();
     if (won) return;
@@ -1202,6 +1208,7 @@ async function main() {
       if(!won)darkDomain.updateClones(dt,animationTime,damageActors(),
         (clone,pos,attack)=>impact({...attack,v:vnorm(vsub(pos,clone.p))},pos),shadowCrushImpact,snowBlocks,shot=>crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot)),shot=>lightArts.redirect(shot,windActors(),walls)||windArts.redirect(shot,windActors()));
       if(checkGuardianDefeat()){updateUI();return;}
+      reviveByPhoenix();
       if(adventure?.inBattle&&!won&&(player.hp<=0||allEnemiesDefeated())){finish(player.hp>0);return;}
       messageTime -= dt;
       if (messageTime <= 0) { $('message').textContent = androidInterface()?'Ghim và tấn công để ngắm đối thủ · Tấn công để đánh theo tâm':rules.ready() ? overheadPractice()?'SPACE thi triển · di chuột để ngắm':'SPACE thi triển · chuột trái/phải để né' : 'SPACE ném phi tiêu · kết ấn theo quyển trục'; $('message').style.color = '#c7c5b6'; }

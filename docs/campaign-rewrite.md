@@ -1,4 +1,6 @@
-# Cốt truyện chính — bản 3
+# Cốt truyện chính — bản 4
+
+Bản cập nhật nội gián, cai ngục, hồi ức mở đầu không lời thoại và hai kết thúc Hạ Ly được mô tả trong [crescent-phoenix.md](crescent-phoenix.md). Phần này thay thế cách gọi boss cuối tại Ám là Kẻ Mở Cổng: đối thủ hiện tại là thủ lĩnh Trăng Khuyết, đang tìm cách hồi sinh Kẻ Mở Cổng thật sự.
 
 Truyện được chuyển từ thu thập chín ấn hòa bình sang hành trình trùng sinh, điều tra tổ chức trăng khuyết và học cách tin tưởng đồng đội. Dữ liệu lời thoại, lựa chọn và nhiệm vụ nằm trong `src/locales/campaign.vi.json`; bản tiếng Anh ở `campaign.en.json`. Luật mở chương và liên minh nằm trong `src/campaign-plot.js`.
 

@@ -4,7 +4,7 @@ import {ninjaProfile} from './ninja.js';
 import {village} from './adventure-data.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {isEarthDepartureTrial,EARTH_DEPARTURE_TRIAL} from './earth-departure-trial.js';
-import {PLOT} from './campaign-plot.js';
+import {PLOT,companionPresent} from './campaign-plot.js';
 
 // Combat setup stays in the encounter. The conversation only contains what
 // these characters would actually say to one another in the world.
@@ -14,7 +14,10 @@ export function battleConversation(encounter,save){
   const hero=heroSpeaker(save),lines=[],say=(speaker,text)=>lines.push({speaker,text});
   const opponent=(entry=encounter,index=0)=>{const look=encounterAppearance({...encounter,...entry});return {id:'challenge-'+look.id+'-'+index,name:entry.name||encounter.name,role:village(look.village||look.id).name,appearance:look.kind==='creature'?look:ninjaProfile(look)};};
   const enemy=encounter.kind==='boss'?{id:'chief-'+encounter.village,name:encounter.name,role:village(encounter.village).name,appearance:villagerAppearance(encounter.village,{kind:'chief'})}:opponent();
-  if(encounter.occupation){say(enemy,'Lãnh địa này thuộc binh đoàn Trăng Khuyết. Bắt lấy chúng!');say(hero,'Ta sẽ giải thoát những người các ngươi đang giam giữ.');}
+  if(encounter.kind==='infiltrator'){say(enemy,encounter.infiltrationMode==='ambush'?companionPresent(save)?'Giết hắn, bắt sống cô gái! Đó là mệnh lệnh của thủ lĩnh.':'Giết hắn! Không được để lộ đường dây của chúng ta.':'Ngươi đã nhìn thấy quá nhiều. Không thể để ngươi rời khỏi đây!');say(hero,'Huy hiệu Trăng Khuyết... Các ngươi đang điều tra điều gì trong làng?');}
+  else if(encounter.militaryIntrusion){say(enemy,'Ta đã cảnh cáo. Ngươi vẫn cố xâm nhập khu quân sự — chuẩn bị chịu bắt!');say(hero,'Vậy ta sẽ tự mở đường.');}
+  else if(encounter.storyBattle==='fire-jail'){return campaignLines(PLOT.villages.fire.stages[1].script,save,'fire');}
+  else if(encounter.occupation){say(enemy,'Lãnh địa này thuộc binh đoàn Trăng Khuyết. Bắt lấy chúng!');say(hero,'Ta sẽ giải thoát những người các ngươi đang giam giữ.');}
   else if(encounter.kind==='guardian-order'){
     const beast=opponent({kind:'boss',guardianForm:'beast'});
     say(beast,'Trưởng làng đã nhận lời thách đấu. Hai hộ vệ sẽ cùng kiểm tra bản lĩnh của ngươi trước khi ngươi bước vào phòng họp.');
@@ -49,7 +52,7 @@ export function battleConversation(encounter,save){
   }else if(encounter.kind==='village-event'){
     const scripts={
       'water-base':[['hero','Thả những ninja đang bị rút chakra ra! Ta sẽ phá thiết bị này.'],['guide','Nguồn năng lượng phải tiếp tục chạy. Không ai được bước tới tinh thể!']],
-      'fire-general':[['haly','Quân lệnh giả và mật mã đều dẫn tới ngươi. Lần này, ngươi sẽ không thể bịt miệng nhân chứng.'],['guide','Ta đã giam được ngươi một lần. Đừng tưởng kẻ ngoài làng này sẽ cứu được ngươi mãi.'],['haly','Ta tự đến để bắt ngươi chịu trách nhiệm.']],
+      'fire-general':[['haly','Quân lệnh giả và mật mã đều dẫn tới ngươi. Lần này, ngươi sẽ không thể bịt miệng nhân chứng.'],['commander','Hai người giữ ngục đã thất bại, nhưng các ngươi chưa thoát khỏi mạng lưới của ta.'],['haly','Ta tự đến để bắt ngươi chịu trách nhiệm.']],
       'wind-courier':[['haly','Những bức thư đã bị thay nội dung. Ngươi đang làm các làng tin rằng hòa ước đã bị phá vỡ.'],['guide','Tin tức thuộc về kẻ kiểm soát được đường đi của nó.'],['hero','Chúng ta sẽ mang sự thật trở lại.']],
       'wind-eagle':[['haly','Phong ấn đang khống chế Phong Ưng. Đừng làm nó bị thương quá nặng!'],['hero','Mảnh lõi đã tìm ra điểm bất thường. Ta sẽ phá ấn để giải thoát nó.']],
       'earth-base':[['haly','Khoáng thạch này hấp thụ cả chakra lẫn ma lực. Các ngươi định chế tạo thứ vũ khí gì?'],['guide','Những chuyến hàng đã rời đi. Các ngươi đến quá muộn!'],['hero','Nhưng chúng ta vẫn có thể cứu những người bị giữ ở đây.']],

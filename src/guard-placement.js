@@ -9,6 +9,7 @@ export function placeVillageGuards(definitions,{limit,boss,valid,heightAt,campus
   const placed=[],positions=new Map();
   const order=[...definitions].sort((a,b)=>(b.guardRole==='guardian')-(a.guardRole==='guardian'));
   for(const entry of order){
+    if(entry.guardRole==='jailer'){const y=heightAt(entry.x,entry.z);positions.set(entry.id,{x:entry.x,z:entry.z,y});placed.push({x:entry.x,z:entry.z});continue;}
     const standing=entry.guardRole==='guardian';
     const accepts=(x,z)=>{
       if(Math.abs(x)>limit-3||Math.abs(z)>limit-3)return false;

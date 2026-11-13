@@ -7,6 +7,7 @@ import {toon} from './materials.js';
 
 export function encounterAppearance(encounter){
   if(!encounter)return {kind:'duel',id:'duel',village:'nameless',coat:'#33495f',hair:'#182b3d'};
+  if(encounter.kind==='infiltrator')return {kind:'ninja',id:'crescent-infiltrator',village:encounter.element,coat:'#39233f',hair:'#211d29',name:encounter.name};
   if(encounter.storyBoss)encounter={...encounter,kind:'boss',village:encounter.guardianVillage};
   if(encounter.occupation)return {kind:'ninja',id:'crescent-'+encounter.village,village:'dark',coat:'#31233f',hair:'#211d29',name:encounter.name};
   const id=(encounter.kind==='random'||encounter.kind==='village-event')&&encounter.element?encounter.element:encounter.village,v=village(id);

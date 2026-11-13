@@ -58,7 +58,7 @@ export function buildInterior(c,room){
     solid(box(root,trim,7.5,1.5,-14, .18,3,7),'chief-private-screen');box(root,accent,7.6,1.7,-14,.07,2.3,6.2);
     for(const side of [-1,1]){box(root,trim,side*15.55,4,-2,.1,4,6);box(root,M('#c9d8d0',.15),side*15.45,4,-2,.08,3.6,5.6);}
     const light=new T.PointLight('#ffdfab',8,35,1.5);light.position.set(0,7,0);root.add(light);cyl(root,warm,0,8,0,.65,.45,8);
-    if(room.village!=='wood'&&!islandOccupied(c.save||{},room.village))fixtures.push({kind:'npc',id:room.village+'-chief',x:0,z:-12,y:0,label:'Trưởng làng'});
+    if(room.village!=='wood'&&!islandOccupied(c.save||{},room.village)&&!(room.village==='dark'&&c.save?.story?.villageEvents?.dark===8))fixtures.push({kind:'npc',id:room.village+'-chief',x:0,z:-12,y:0,label:'Trưởng làng'});
   }else if(wood){
     for(let z=b.minZ+1;z<b.maxZ;z+=1.25)box(root,M(Math.round(z)%2?'#a28c67':'#917852'),0,.006,z,b.x*2-.4,.012,.035);
     for(const side of [-1,1])for(const z of [-24,-12,0,12,24])solid(box(root,trim,side*23,5.6,z,.75,11.2,.75),'arena-timber-column');

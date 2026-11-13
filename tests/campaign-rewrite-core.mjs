@@ -9,7 +9,7 @@ import {requiresGuardBattle} from '../src/combat-experience.js';
 import {encounterAppearance} from '../src/encounter-appearance.js';
 import {registerTournament,pendingTournamentMatch,resolveTournamentMatch} from '../src/wood-tournament.js';
 const load=s=>readJourney({getItem:()=>JSON.stringify(s)});let save=newJourney();
-assert.equal(PLOT.chapters.length,5);assert.ok(PLOT.opening.some(([,t])=>t.includes('hàng vạn')));assert.ok(!JSON.stringify(PLOT.villages.dark).includes('từng giết cô'));assert.ok(PLOT.villages.dark.stages.some(s=>s.battle==='crescent-gatekeeper'));
+assert.equal(PLOT.chapters.length,5);assert.ok(PLOT.opening.slice(0,-1).every(([,t])=>!t));assert.ok(!JSON.stringify(PLOT.villages.dark).includes('từng giết cô'));assert.ok(PLOT.villages.dark.stages.some(s=>s.battle==='crescent-gatekeeper'));
 assert.equal(canTravel(save,'water').allowed,false);promiseMother(save);chooseStarter(save,'fire-volley');resolveBattle(save,{kind:'intro-trio',village:'nameless'},true);assert.ok(save.story.sealCore);assert.ok(save.story.questItems.includes('nameless:seal-core'));reportGuardian(save);assert.equal(canTravel(save,'water').allowed,true);assert.equal(canTravel(save,'fire').allowed,false);
 const battles=[];let stepCount=0;
 for(const id of PLOT_ORDER){

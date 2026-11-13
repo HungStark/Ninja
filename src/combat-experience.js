@@ -13,4 +13,4 @@ export function combatExperienceRewards(encounter,amount){
   for(const opponent of opponents){const element=combatExperienceElement(opponent);if(element)totals.set(element,(totals.get(element)||0)+amount/opponents.length);}
   return [...totals].map(([element,xp])=>({element,xp}));
 }
-export function requiresGuardBattle(save,encounter){return encounter?.kind==='village-guard'&&plotHostile(save,encounter.village);}
+export function requiresGuardBattle(save,encounter){return !!(encounter?.kind==='infiltrator'||encounter?.militaryIntrusion||encounter?.fireCaptors||encounter?.kind==='village-guard'&&plotHostile(save,encounter.village));}

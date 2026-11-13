@@ -9,6 +9,7 @@ import {VILLAGE_EVENTS} from './village-events.js';
 import {PLOT_VERSION,WAR_VILLAGES,ALLIANCE_VILLAGES,plotEventComplete} from './campaign-plot.js';
 import {readCompanionHealth,companionUnconscious} from './companion-health.js';
 import {legionGuardId} from './island-occupation.js';
+import {companionSacrificed} from './phoenix-blessing.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
@@ -46,7 +47,11 @@ export function readStory(raw,save){
   // Previously turned-in flowers already produced medicine; keep that progress.
   if((s.villageEvents.fire||0)<4&&save.expeditions?.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.questItems.push('fire:lotus-medicine');
   if(s.villageEvents.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.villageEvents.fire=2;
-  if(raw.plotVersion===2){
+  if(raw.plotVersion===3){
+    // Keep the liberated island's earlier battles; replay the revised final leader and endings.
+    if((s.villageEvents.dark||0)>6)s.villageEvents.dark=6;
+    delete s.villageEvents.nameless;
+  }else if(raw.plotVersion===2){
     s.villageEvents.ice=Math.min(4,s.villageEvents.ice||0);
     for(const id of ['light','dark','nameless'])delete s.villageEvents[id];
   }else if(raw.plotVersion!==PLOT_VERSION){
@@ -58,11 +63,13 @@ export function readStory(raw,save){
   if(raw.plotVersion!==PLOT_VERSION)s.defeatedGuards=s.defeatedGuards.filter(id=>!id.startsWith('light-')&&!id.startsWith('dark-')&&!id.startsWith('crescent-'));
   s.sealCore=raw.sealCore===true||s.guardianRestored;
   if(s.sealCore&&!s.questItems.includes('nameless:seal-core'))s.questItems.push('nameless:seal-core');
-  s.homecomingDone=[2,PLOT_VERSION].includes(raw.plotVersion)&&raw.homecomingDone===true&&save.campaign?.treatySigned===true;
+  s.homecomingDone=[2,3,PLOT_VERSION].includes(raw.plotVersion)&&raw.homecomingDone===true&&save.campaign?.treatySigned===true;
   s.sealTraces=[...new Set((Array.isArray(raw.sealTraces)?raw.sealTraces:[]).filter(key=>{if(typeof key!=='string')return false;const [id,step]=key.split(':');return VILLAGE_EVENTS[id]?.stages[Number(step)]?.sealTrace&&Number(step)<(s.villageEvents[id]||0);}))];
-  s.alliances=[2,PLOT_VERSION].includes(raw.plotVersion)?[...new Set((Array.isArray(raw.alliances)?raw.alliances:[]).filter(id=>ALLIANCE_VILLAGES.includes(id)&&plotEventComplete({story:s},id)))]:[];
+  s.alliances=[2,3,PLOT_VERSION].includes(raw.plotVersion)?[...new Set((Array.isArray(raw.alliances)?raw.alliances:[]).filter(id=>ALLIANCE_VILLAGES.includes(id)&&plotEventComplete({story:s},id)))]:[];
   s.companion.recruited=(s.villageEvents.fire||0)>=4;
-  s.companion.phase=s.villageEvents.wood===2?'separated':'with-party';Object.assign(s.companion,readCompanionHealth(raw.companion,save.visited));return s;
+  s.companion.phase=s.villageEvents.wood===2?'separated':'with-party';Object.assign(s.companion,readCompanionHealth(raw.companion,save.visited));if(companionSacrificed({story:s}))s.companion.phase='sacrificed';
+  s.ending=s.companion.sacrificed?'bad':raw.ending==='true'?'true':null;s.phoenixRevealed=raw.phoenixRevealed===true||(s.villageEvents.dark||0)>=6;
+  s.jailerWarnings=Object.fromEntries(Object.entries(raw.jailerWarnings||{}).filter(([id,n])=>REGIONS[id]&&[1,2].includes(n)));return s;
 }
 export function promiseMother(save){if(save.story.stage!=='mother')return false;save.story.stage='chief';return true;}
 export function chooseStarter(save,id){
@@ -96,15 +103,15 @@ export function openingObjective(save){
   }[s.stage],targetVillage:'nameless'};
 }
 export function villageGuards(id){
-  if(!REGIONS[id]||id==='nameless')return [];
+  if(!REGIONS[id])return [];
   const r=REGIONS[id],zones=r.zones.filter(z=>!z.platform&&z.id!=='summit-lotus'),limit=regionMetrics(id).limit,guards=[];
-  for(let i=0;i<HIDDEN_GUARD_COUNT;i++){
+  for(let i=0;i<(id==='nameless'?0:['wind','earth'].includes(id)?3:HIDDEN_GUARD_COUNT);i++){
     const zone=zones[i%zones.length],a=i*2.4+id.length,radius=6+Math.floor(i/zones.length)*17;
     guards.push({id:id+'-sentry-'+(i+1),village:id,element:id,name:'Cảnh vệ ẩn thân '+(i+1),x:Math.max(-limit+8,Math.min(limit-8,zone.x+Math.sin(a)*radius)),z:Math.max(-limit+8,Math.min(limit-8,zone.z+Math.cos(a)*radius)),guardRole:'hidden',disguise:['stump','bush','rock'][i%3],kind:'village-guard',label:'Cảnh vệ ẩn thân · '+(i+1)});
   }
   const length=Math.hypot(r.boss.x,r.boss.z)||1,fx=-r.boss.x/length,fz=-r.boss.z/length;
-  for(let i=0;i<GUARDIAN_GUARD_COUNT;i++){const side=i?-1:1;guards.push({id:id+'-guardian-sentry-'+(i+1),village:id,element:id,name:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ'),x:r.boss.x+fx*10+fz*side*9,z:r.boss.z+fz*10-fx*side*9,guardRole:'guardian',disguise:null,kind:'village-guard',label:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ')});}
-  for(let i=0;i<2;i++)guards.push({id:id+'-jailer-'+(i+1),village:id,element:id,name:'Cảnh ngục',kind:'village-guard',guardRole:'jailer',disguise:null,x:0,z:0,label:'Cảnh ngục · '+(i+1)});
+  if(id!=='nameless')for(let i=0;i<GUARDIAN_GUARD_COUNT;i++){const side=i?-1:1;guards.push({id:id+'-guardian-sentry-'+(i+1),village:id,element:id,name:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ'),x:r.boss.x+fx*10+fz*side*9,z:r.boss.z+fz*10-fx*side*9,guardRole:'guardian',disguise:null,kind:'village-guard',label:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ')});}
+  for(let i=0;i<(id==='fire'?2:1);i++)guards.push({id:id+'-jailer-'+(i+1),village:id,element:id==='nameless'?'wind':id,name:id==='fire'?'Nội gián Trăng Khuyết':'Cai ngục',kind:'village-guard',guardRole:'jailer',disguise:null,x:0,z:0,label:id==='fire'?'Kẻ bắt giữ Hạ Ly':'Cai ngục'});
   return guards;
 }
 const taskByActivity={

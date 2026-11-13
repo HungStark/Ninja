@@ -117,13 +117,16 @@ export function planVillageCivic(id){
   layouts.set(id,layout);return layout;
 }
 
-let namelessClinics=null;
+let namelessClinics=null,namelessMilitaryPlan=null;
 export function planNamelessClinics(){
   if(namelessClinics)return namelessClinics;
-  namelessClinics=[[-30,6],[12,22]].map(([x,z],index)=>{const w=7,d=6.5,base=Math.max(...[-1,1].flatMap(a=>[-1,1].map(b=>terrainHeight('nameless',x+a*w/2,z+b*d/2))))+.08;return {kind:'clinic',id:'nameless-clinic-'+index,x,z,w,d,yaw:0,floors:1,reserveW:w,reserveD:d,base,healer:{x,z:z+d/2+1.5,y:base}};});
-  setVillagePads('nameless',namelessClinics);return namelessClinics;
+  namelessClinics=[[-30,6]].map(([x,z],index)=>{const w=7,d=6.5,base=Math.max(...[-1,1].flatMap(a=>[-1,1].map(b=>terrainHeight('nameless',x+a*w/2,z+b*d/2))))+.08;return {kind:'clinic',id:'nameless-clinic-'+index,x,z,w,d,yaw:0,floors:1,reserveW:w,reserveD:d,base,healer:{x,z:z+d/2+1.5,y:base}};});
+  setVillagePads('nameless',[...namelessClinics,{...namelessMilitary(),reserveW:20,reserveD:20}]);return namelessClinics;
 }
 export function buildSmallClinics(c,clinics){for(const clinic of clinics)building(c,clinic,'clinic');return clinics.map(clinic=>({kind:'clinic',id:clinic.id,...clinic.healer,label:'Y Tá'}));}
+
+export function namelessMilitary(){if(namelessMilitaryPlan)return namelessMilitaryPlan;const x=44,z=44,base=Math.max(...[-1,1].flatMap(a=>[-1,1].map(b=>terrainHeight('nameless',x+a*10,z+b*10))));return namelessMilitaryPlan={x,z,w:20,d:20,yaw:0,base,gate:{x,z:z+11,y:base},insideGate:{x,z:z+7,y:base},prison:{x:x+4,z:z-3,y:base}};}
+export function buildNamelessMilitary(c){const p=namelessMilitary(),root=c.group(p.x,p.z);root.position.y=p.base;root.name='nameless-military';root.userData.noCollision=true;for(const side of [-1,1]){c.solidMesh(c.box(root,c.surfaces.wood,side*10,2.2,0,.5,4.4,20),{name:'military-wall',stepable:false});c.solidMesh(c.box(root,c.surfaces.wood,side*6.5,2.2,10,7,4.4,.5),{name:'military-wall',stepable:false});}c.solidMesh(c.box(root,c.surfaces.wood,0,2.2,-10,20,4.4,.5),{name:'military-wall',stepable:false});c.box(root,c.surfaces.wood,0,4.8,10,7,.6,.7);createFirePrison(c.land,p.prison,false,c.physics.addBox,'nameless-prison');return {kind:'military',id:'nameless-military',...p.gate,label:'Khu quân sự · Nhà lao'};}
 
 export function civicReserved(layout,x,z,pad=0){return !!layout?.plots.some(p=>Math.abs(x-p.x)<(p.reserveW||p.w)/2+pad&&Math.abs(z-p.z)<(p.reserveD||p.d)/2+pad);}
 

@@ -8,6 +8,7 @@ import {ninjaProfile} from './ninja.js';
 import {encounterAppearance} from './encounter-appearance.js';
 import {questForNPC} from './journey-story.js';
 import {PLOT} from './campaign-plot.js';
+import {companionSacrificed} from './phoenix-blessing.js';
 export const speakerPortrait=portraitMarkup;
 
 export function heroSpeaker(save){return {name:save.hero.name,role:'Người giữ ấn',coat:save.hero.coat,hair:save.hero.hair,armor:armorById(save.equipment?.armor),equipment:equipmentState(save),id:'hero'};}
@@ -18,15 +19,17 @@ export function campaignLines(script,save,id=save.village){
   const chiefs=region=>person('chief-'+region,leaderNames[region]||'Trưởng làng',region,'chief');
   const speakers={hero,chief:chiefs(id),haly:{...HA_LY,appearance:ninjaProfile(HA_LY)},mother:person('mother','Mẹ','nameless','mourner',{female:true,age:'elder'}),
     commander:{id:'crescent-commander',name:currentVillageEvent(save,id)?.enemy||'Phó đoàn Trăng Khuyết',role:'Binh đoàn Trăng Khuyết',appearance:ninjaProfile({village:currentVillageEvent(save,id)?.guardianVillage||id,coat:'#39233f'})},
+    captor:{id:'crescent-captor',name:'Nội gián Trăng Khuyết',role:'Binh đoàn Trăng Khuyết',appearance:ninjaProfile({village:'fire',coat:'#39233f'})},
     traitor:{id:'crescent-traitor',name:currentVillageEvent(save,id)?.enemy||'Kẻ phản bội Làng Băng',role:'Binh đoàn Trăng Khuyết',appearance:ninjaProfile({village:currentVillageEvent(save,id)?.guardianVillage||'ice',coat:'#39233f'})},
     beast:{id:'nameless-beast',name:'Vô Danh Thú',role:'Linh thú giữ phong ấn',appearance:{kind:'creature',id:'nameless'}},
     guide:person('guide-'+id,PLOT.villages[id]?.speaker||'Người làm chứng'),mage:person('mage','Thiếu nữ bên kia cánh cổng','ice','healer',{female:true}),
-    narrator:{...hero,id:'plot-memory',name:'Ký ức của người trở về',role:'Một kiếp sống khác'},
+    narrator:{...hero,id:'plot-narrator',name:'Người dẫn chuyện',role:'Câu chuyện'},
+    memory:{...hero,id:'plot-inner-memory',role:'Độc thoại nội tâm'},
     unknown:{id:'plot-unknown',name:'Kẻ bí ẩn',role:'Ký ức kiếp trước',appearance:ninjaProfile({village:'dark',coat:'#28212f'})},
-    gatekeeper:{id:'plot-gatekeeper',name:'Kẻ Mở Cổng',role:'Thế lực xâm lược',appearance:ninjaProfile({village:'dark',coat:'#38213f'})},
+    gatekeeper:{id:'plot-gatekeeper',name:'Thủ lĩnh Trăng Khuyết',role:'Binh đoàn Trăng Khuyết',appearance:ninjaProfile({village:'dark',coat:'#38213f'})},
     illusion:{id:'plot-illusion',name:'Ảo ảnh trong gương',role:'Ký ức bị phơi bày',appearance:ninjaProfile({village:'dark'})},
     water:chiefs('water'),fire:chiefs('fire'),lightning:chiefs('lightning')};
-  return (script||[]).map(([key,text])=>({speaker:speakers[key]||speakers.guide,text}));
+  return (script||[]).filter(([key])=>key!=='haly'||!companionSacrificed(save)).map(([key,text])=>({speaker:speakers[key]||speakers.guide,text}));
 }
 
 export function dialogueCast(item,save,region,biome){
