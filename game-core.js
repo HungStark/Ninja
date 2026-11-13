@@ -31,7 +31,7 @@
   // Keep the saved fire IDs while replacing their formulas and behavior.
   const fireSpells = [
     { id: 'fire-volley', name: 'Hỏa Vũ Liên Châu', kind: 'attack', style: 'volley', rank: 'B', sequence:[...'qw'],cooldown:4, cost:20, damage:6, baseDamage:6, size: .075, count: 3, speed: flightSpeeds.quick, holdTime: .5, salvoInterval: .1, subtitle: 'Ba hỏa cầu nhỏ xếp ngang • mỗi viên 6 sát thương gốc • giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây' },
-    { id: 'fire-lance', name: 'Hỏa Long Cuồng Vũ', kind: 'attack', style: 'dragon', rank: 'S', sequence:[...'qwfar'],cooldown:20, cost: 56, damage: 104, size: .72, count: 1, speed: flightSpeeds.heavy, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
+    { id: 'fire-lance', name: 'Hỏa Long Cuồng Vũ', kind: 'attack', style: 'dragon', rank: 'S', sequence:[...'qwfar'],cooldown:20, cost: 56, damage: 104, size: 1.44, count: 1, speed: flightSpeeds.heavy, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
     { id: 'fire-meteor', name: 'Thiên Hỏa Vẫn Tinh', kind: 'attack', style: 'meteor', rank: 'SS', sequence:[...'qwrera'],cooldown:35, cost: 82, damage: 150, size: 1.5, count: 1, speed: flightSpeeds.heavy, blastRadius: 5.5, subtitle: 'Thiên thạch từ trời • nổ lan bán kính 5,5 m' },
     { id: 'fire-barrier', name: 'Liệt Diễm Bùng Phát', kind: 'defense', style: 'ignite', rank: 'C', sequence:[...'qwz'],cooldown:8, cost: 26, damage: 0, count: 0, requiresBurn:true, subtitle: 'Tiêu thụ 1–5 tầng bỏng • bốc cháy gây 10 / 20 / 30 / 45 / 60 sát thương' },
     { id: 'fire-reflect', name: 'Hỏa Bích Thiên Thành', kind: 'defense', style: 'firewall', rank: 'A', sequence:[...'qwc'],cooldown:13, cost:28, damage: 0, shield: 120, duration:9, count: 0, wallWidth: 7, wallHeight: 4.2, subtitle: 'Tường lửa phía trước • chặn đạn, tồn tại 9 giây' }
@@ -48,7 +48,7 @@
   // Keep saved lightning IDs while giving each art its own behavior.
   const lightningSpells = [
     { id: 'lightning-lance', name: 'Lôi Đình Nhất Kích', kind: 'attack', style: 'lance', rank: 'B', sequence:[...'er'],cooldown:4, cost:20, damage:22, baseDamage:22, size: .3, count: 1, speed: 38, subtitle: 'Thương sét dài • mũi nhọn và đuôi điện' },
-    { id: 'lightning-volley', name: 'Lôi Điểu Phá Thiên', kind: 'attack', style: 'bird', rank: 'S', sequence:[...'erxqx'],cooldown:20, cost: 56, damage: 102, size: .9, count: 1, speed: 27, subtitle: 'Chim hiện ra từ cầu sét rồi lao tới • góc nhìn trên cao' },
+    { id: 'lightning-volley', name: 'Lôi Điểu Phá Thiên', kind: 'attack', style: 'bird', rank: 'S', sequence:[...'erxqx'],cooldown:20, cost: 56, damage: 102, size: 1.8, count: 1, speed: 27, subtitle: 'Chim hiện ra từ cầu sét rồi lao tới • góc nhìn trên cao' },
     { id: 'lightning-thunder', name: 'Thiên Lôi Giáng Thế', kind: 'attack', style: 'thunder', rank: 'SS', sequence:[...'erfzvq'],cooldown:35, cost: 82, damage: 150, size: 1, count: 1, speed: 0, blastRadius: 4.5, chargeTime: .98, subtitle: 'Ngước nhìn mây chớp điện • trả góc nhìn rồi sét đánh xuống' },
     { id: 'lightning-barrier', name: 'Lôi Mạch Tê Liệt', kind: 'defense', style: 'discharge', rank: 'C', sequence:[...'era'],cooldown:10, cost: 26, damage: 0, count: 0, requiresStatic:true, subtitle: 'Tiêu thụ 1–3 điểm tĩnh điện • choáng 0,5 / 1 / 2 giây, sau đó từ tính hút chiêu Lôi 3 / 5 / 7 giây' },
     { id: 'lightning-reflect', name: 'Lôi Đình Kết Giới', kind: 'defense', style: 'stormfield', rank: 'A', sequence:[...'erqw'],cooldown:8, cost: 36, damage: 0, shield: 0, duration: 5, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .05, subtitle: 'Vùng điện rộng 5 giây • đạn đối phương còn 5% tốc độ trong vùng' }
@@ -71,7 +71,7 @@
   const lightSpells = [
     {id:'light-orb',name:'Cực Quang Xuyên Kích',kind:'attack',style:'lightray',rank:'D',sequence:[...'sd'],cooldown:4,cost:16,damage:26,count:1,chargeTime:.08,range:55,subtitle:'Tia laser thẳng trắng–vàng · 26 sát thương; qua cầu thủy tinh thành 7 sắc và 45,5 sát thương'},
     {id:'light-barrier',name:'Huyễn Quang Tinh Cầu',kind:'defense',style:'lightsphere',rank:'S',sequence:[...'sdex'],cooldown:12,cost:32,damage:0,count:0,duration:8,amplification:1.75,subtitle:'Cầu trong suốt ngay trước mặt, tồn tại 8 giây · laser xuyên qua thành tia 7 sắc cầu vồng, tăng 75% sát thương'},
-    {id:'light-lance',name:'Kính Giới Phản Quang',kind:'attack',style:'lightdome',rank:'S',sequence:[...'sdzwcw'],cooldown:30,cost:54,damage:20,count:0,duration:10,domeRadius:6.2,domeBuildTime:1.2,subtitle:'Gương rơi ghép vòm trong 1,2 giây · được đi ra khỏi vòm · khóa G khi chưa thoát hẳn · tốc độ còn 50%, chạm vòm còn 25% · tồn tại 10 giây · mỗi laser nảy gây 20 sát thương/giây, tia 7 sắc giữ nguyên màu và gây 35 · nhiều laser cộng dồn'},
+    {id:'light-lance',name:'Kính Giới Phản Quang',kind:'attack',style:'lightdome',rank:'S',sequence:[...'sdzwcw'],cooldown:30,cost:54,damage:20,count:0,duration:10,domeRadius:6.2,domeBuildTime:1.2,subtitle:'Gương rơi ghép vòm trong 1,2 giây · được đi ra khỏi vòm · khóa G khi chưa thoát hẳn · tốc độ còn 25% trong và ở mép vòm, chạm mép lần đầu choáng 1 giây · tồn tại 10 giây · mỗi laser nảy gây 20 sát thương/giây, tia 7 sắc giữ nguyên màu và gây 35 · nhiều laser cộng dồn'},
     {id:'light-reflect',name:'Thiên Kính Phản Quang',kind:'defense',style:'lightmirror',rank:'A',sequence:[...'sda'],cooldown:8,cost:22,damage:0,count:0,shield:120,duration:2.5,subtitle:'Gương trước mặt tồn tại 2,5 giây · 120 độ bền · phản các đòn tấn công bay tới từ phía trước, kể cả laser'},
     {id:'light-volley',name:'Thiên Giai Thánh Phạt',kind:'attack',style:'jacob',rank:'SS',sequence:[...'sdzfzx'],cooldown:35,cost:82,damage:150,count:1,size:1,chargeTime:1.25,blastRadius:3.5,speed:0,subtitle:'Ngước nhìn trời rồi lia xuống theo cột sáng trắng–vàng giáng xuống · 150 sát thương trong bán kính 3,5 m'}
   ].map(s=>({...s,element:'light',glyph:'光',color:'#fff2bd',heal:0,shield:s.shield||0}));
@@ -114,77 +114,82 @@
   // Edited by the local balance table. Kept inside the core for offline builds.
   const spellBalanceOverrides=/* spell-balance:start */{
   "dark-lance": {
-    "cooldown": 4,
-    "cost": 25
+    "cooldown": 5,
+    "cost": 23
   },
   "dark-orb": {
     "cooldown": 3,
-    "upgradeDamage": 15,
-    "damage": 10,
+    "upgradeDamage": 14,
+    "damage": 9,
     "cost": 20
   },
   "dark-volley": {
-    "cost": 55,
+    "cost": 45,
     "duration": 1,
-    "damage": 100
+    "damage": 70
   },
   "fire-lance": {
-    "cost": 50,
-    "damage": 110
+    "cost": 45,
+    "damage": 80
   },
   "fire-meteor": {
-    "cost": 70
+    "cost": 60,
+    "damage": 120
   },
   "water-barrier": {
-    "damage": 8,
-    "cooldown": 4
+    "damage": 7,
+    "cooldown": 4,
+    "cost": 16
   },
   "water-lance": {
     "damage": 15,
-    "cost": 30
+    "cost": 23,
+    "controlDuration": 2
   },
   "water-tsunami": {
-    "damage": 100,
-    "cost": 70
+    "cost": 60,
+    "damage": 75
   },
   "water-volley": {
-    "cost": 55,
+    "cost": 45,
     "cooldown": 21,
-    "damage": 100
+    "damage": 80,
+    "controlDuration": 0.5
   },
   "fire-volley": {
-    "damage": 7
+    "damage": 8,
+    "cost": 15
   },
   "dark-reflect": {
-    "cost": 30
+    "cost": 22
   },
   "water-reflect": {
-    "shield": 100,
-    "cost": 25
+    "cost": 20,
+    "shield": 70
   },
   "fire-reflect": {
-    "shield": 100,
+    "shield": 70,
     "duration": 8,
-    "cost": 25,
+    "cost": 20,
     "cooldown": 12
   },
   "fire-barrier": {
-    "cost": 25,
+    "cost": 20,
     "ignitionDamages": [
-      9,
-      18,
-      27,
-      40,
-      50
+      7,
+      14,
+      21,
+      32,
+      40
     ]
   },
   "lightning-reflect": {
     "cooldown": 12,
     "duration": 6,
-    "cost": 27
+    "cost": 20
   },
   "lightning-barrier": {
-    "cost": 25,
+    "cost": 22,
     "stunDurations": [
       1,
       2,
@@ -197,58 +202,60 @@
     ]
   },
   "lightning-lance": {
-    "damage": 24
+    "damage": 24,
+    "cost": 15
   },
   "lightning-volley": {
-    "damage": 110,
-    "cost": 50
+    "damage": 80,
+    "cost": 45
   },
   "lightning-thunder": {
-    "cost": 70
+    "cost": 60,
+    "damage": 120
   },
   "wind-orb": {
-    "damage": 27,
-    "cost": 20
+    "cost": 15
   },
   "wind-volley": {
-    "cost": 45,
-    "damage": 75,
+    "cost": 30,
+    "damage": 60,
     "cooldown": 15
   },
   "wind-lance": {
-    "cost": 25,
-    "cooldown": 14,
-    "damage": 75
+    "cost": 35,
+    "cooldown": 15,
+    "damage": 60
   },
   "wind-barrier": {
     "cooldown": 12,
     "duration": 8,
-    "shield": 100,
-    "cost": 25
+    "shield": 70,
+    "cost": 20
   },
   "wind-reflect": {
-    "duration": 6,
-    "cost": 60
+    "duration": 7,
+    "cost": 55
   },
   "wood-orb": {
     "cooldown": 5,
-    "cost": 20,
+    "cost": 18,
     "damage": 18
   },
   "wood-volley": {
-    "cost": 65,
-    "damage": 65
+    "damage": 45,
+    "cooldown": 22
   },
   "wood-lance": {
-    "cost": 30
+    "cost": 25
   },
   "wood-barrier": {
     "cooldown": 12,
-    "cost": 25,
-    "shield": 50
+    "shield": 40,
+    "cost": 20
   },
   "ice-lance": {
-    "cost": 25
+    "cost": 23,
+    "controlDuration": 2
   },
   "ice-reflect": {
     "cooldown": 1
@@ -259,63 +266,65 @@
   "ice-volley": {
     "cooldown": 12,
     "duration": 6,
-    "cost": 30
+    "cost": 25
   },
   "ice-barrier": {
-    "cost": 45,
+    "cost": 40,
     "duration": 6
   },
   "light-reflect": {
     "duration": 3,
     "cooldown": 10,
-    "cost": 25,
-    "shield": 110
+    "shield": 80,
+    "cost": 20
   },
   "light-orb": {
-    "cost": 20,
-    "damage": 25
+    "damage": 25,
+    "cost": 15
   },
   "light-barrier": {
-    "duration": 9,
-    "cost": 30,
+    "cost": 20,
     "amplification": 1.6
   },
   "light-lance": {
-    "cost": 70,
+    "cost": 50,
     "cooldown": 35
   },
   "light-volley": {
-    "cost": 70
+    "cost": 60,
+    "damage": 120
   },
   "earth-orb": {
-    "cost": 20,
-    "damage": 25
+    "cost": 15,
+    "damage": 24
   },
   "earth-lance": {
     "cooldown": 20,
     "cost": 25,
-    "damage": 65
+    "damage": 36
   },
   "earth-reflect": {
-    "cost": 75,
+    "cost": 60,
     "cooldown": 35,
-    "fallDamage": 70
+    "fallDamage": 45,
+    "captureDamage": 45,
+    "holdTime": 2
   },
   "earth-volley": {
-    "cost": 50,
+    "cost": 45,
     "cooldown": 20,
-    "damage": 24
+    "damage": 18
   },
   "earth-barrier": {
-    "shield": 110,
-    "cost": 25,
-    "duration": 9,
+    "shield": 80,
+    "cost": 21,
+    "duration": 8,
     "cooldown": 13
   },
   "ice-orb": {
-    "cost": 60,
+    "cost": 55,
     "cooldown": 20,
-    "damage": 200
+    "damage": 150
   }
 }/* spell-balance:end */;
   for(const spell of spells){
@@ -408,17 +417,17 @@
     }
   }
   class Fighter {
-    constructor(maxHp = 300) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
-    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime||0,this.woodControlTime||0,this.lightningControlTime,this.boatControlTime);}
+    constructor(maxHp = 300) { this.maxHp = maxHp; this.hp = maxHp; this.shield = 0; this.shieldTime = 0; this.reflect = 0; this.waterControlTime = 0; this.darkControlTime=0; this.windControlTime=0; this.earthControlTime=0;this.iceControlTime=0;this.woodControlTime=0;this.lightControlTime=0; this.invulnerableTime=0; this.color = '#ffffff'; this.defenseElement = ''; this.burns=[];this.staticCharges=[];this.lightningControlTime=0;this.boatControlTime=0;this.magneticTime=0;this.magneticDelay=0;this.ignitionTime=0;this.ignitionLevel=0; }
+    get controlTime(){return Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime||0,this.woodControlTime||0,this.lightningControlTime,this.boatControlTime,this.lightControlTime||0);}
     set controlTime(value){this.waterControlTime=value;}
     get staticStacks(){return this.staticCharges.length;}
-    get controlSource(){if(this.snowBuried)return 'Tuyết táng';if(this.lightningControlTime>0&&this.lightningControlTime>=this.controlTime)return 'Lôi Mạch Tê Liệt';if(this.boatControlTime>0&&this.boatControlTime>=this.controlTime)return 'Thiên Chu Trấn Hải';if(this.woodControlTime>0&&this.woodControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime))return 'Vạn Đằng Phược Ấn';return this.iceControlTime>0&&this.iceControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime)?'Hàn Băng Phong Tỏa':this.earthControlTime>0&&this.earthControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime)?'Địa Bộc Thiên Tinh':this.windControlTime>0&&this.windControlTime>=Math.max(this.waterControlTime,this.darkControlTime)?'Cuồng Phong Toàn Vũ':this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'U Ảnh Huyễn Tượng':'Huyền Thủy Lao Lung';}
+    get controlSource(){if(this.snowBuried)return 'Tuyết táng';if(this.lightControlTime>0&&this.lightControlTime>=this.controlTime)return 'Kính Giới Phản Quang';if(this.lightningControlTime>0&&this.lightningControlTime>=this.controlTime)return 'Lôi Mạch Tê Liệt';if(this.boatControlTime>0&&this.boatControlTime>=this.controlTime)return 'Thiên Chu Trấn Hải';if(this.woodControlTime>0&&this.woodControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime,this.iceControlTime))return 'Vạn Đằng Phược Ấn';return this.iceControlTime>0&&this.iceControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime,this.earthControlTime)?'Hàn Băng Phong Tỏa':this.earthControlTime>0&&this.earthControlTime>=Math.max(this.waterControlTime,this.darkControlTime,this.windControlTime)?'Địa Bộc Thiên Tinh':this.windControlTime>0&&this.windControlTime>=Math.max(this.waterControlTime,this.darkControlTime)?'Cuồng Phong Toàn Vũ':this.darkControlTime>0&&this.darkControlTime>=this.waterControlTime?'U Ảnh Huyễn Tượng':'Huyền Thủy Lao Lung';}
     get magneticActive(){return this.magneticTime>1e-7&&this.magneticDelay<=1e-7;}
     tick(dt) {
       this.burns=this.burns.map(t=>t-dt).filter(t=>t>1e-7);
       this.staticCharges=this.staticCharges.map(t=>t-dt).filter(t=>t>1e-7);
       const magneticDt=Math.max(0,dt-this.magneticDelay);this.magneticDelay=Math.max(0,this.magneticDelay-dt);this.magneticTime=Math.max(0,this.magneticTime-magneticDt);
-      for(const key of ['lightningControlTime','boatControlTime','ignitionTime','woodControlTime','iceControlTime','waterControlTime','darkControlTime','windControlTime','earthControlTime','invulnerableTime','shieldTime']){this[key]=Math.max(0,(this[key]||0)-dt);if(this[key]<1e-7)this[key]=0;}
+      for(const key of ['lightControlTime','lightningControlTime','boatControlTime','ignitionTime','woodControlTime','iceControlTime','waterControlTime','darkControlTime','windControlTime','earthControlTime','invulnerableTime','shieldTime']){this[key]=Math.max(0,(this[key]||0)-dt);if(this[key]<1e-7)this[key]=0;}
       if(!this.ignitionTime)this.ignitionLevel=0;
       if (!this.shieldTime) { this.shield = 0; this.reflect = 0; }
     }

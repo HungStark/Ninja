@@ -27,7 +27,9 @@ import {createVillageGrass} from './adventure-grass.js';
 import {createCharacterPhysics} from './adventure-physics.js';
 import {registerSceneryColliders,colliderFromGeometry} from './adventure-colliders.js';
 import {createVillageSurfaces} from './adventure-materials.js';
-import {planNamelessClinics,buildSmallClinics,namelessMilitary,buildNamelessMilitary,planVillageCivic,civicReserved,buildVillageCivic,buildGateWatch} from './village-civic.js';
+import {planNamelessClinics,buildSmallClinics,namelessMilitary,buildNamelessMilitary,planVillageCivic,civicPoint,civicReserved,buildVillageCivic,buildGateWatch} from './village-civic.js';
+import {buildTournamentNoticeboard} from './tournament-board.js';
+import {TOURNAMENT_VILLAGES} from './wood-tournament.js';
 import {HOUSE_WIDTH_SCALE} from './adventure-building-scale.js';
 import {encounterAppearance} from './encounter-appearance.js';
 import {planVillageShop,buildVillageShop} from './village-shop.js';
@@ -309,7 +311,7 @@ export function createAdventureScene(){
     const setpieceSpot=zone=>{const a=Math.atan2(zone.x,zone.z);let best,score=-Infinity;for(const side of [-1,1])for(const distance of civicPlan?[14,20,30,40]:[14,20]){const p={x:zone.x+Math.cos(a)*distance*side,z:zone.z-Math.sin(a)*distance*side};const clearance=Math.min(Math.hypot(p.x-shopPlot.x,p.z-shopPlot.z)-15,...(civicPlan?.plots||[]).map(b=>Math.hypot(Math.max(0,Math.abs(p.x-b.x)-(b.reserveW||b.w)/2),Math.max(0,Math.abs(p.z-b.z)-(b.reserveD||b.d)/2))-12),...corridors.map(t=>segmentDistance(p.x,p.z,t)),metrics().limit-5-Math.abs(p.x),metrics().limit-5-Math.abs(p.z));if(clearance>score){score=clearance;best=p;}}if(id==='water'){const dry=nearestDryWaterPoint(best.x,best.z,{w:25,d:23,padding:1.5,valid:(x,z)=>!civicReserved(civicPlan,x,z,13)&&!bridges.some(b=>Math.hypot(b.x-x,b.z-z)<b.half+10)&&Math.hypot(x-zone.x,z-zone.z)>10});if(!dry)throw Error('No dry landmark: '+zone.id);best=dry;}return best;};
     const c={id,v,save,land,physics,obstacles,group,box,cyl,mesh,M,obstacle,clearCorridor,animated,setpieceSpot,heightAt,solidMesh,solidGeometry,surfaces,mainRoads:corridors.filter(t=>!t.platform),setSacredTree:tree=>{sacredTree=tree;},reserveLane:p=>settlementPaths.push(p),reserveYard:p=>settlementYards.push(p)};
     const store=buildVillageShop(c,shopPlot);const merchant=createVillager(villagerAppearance(id,{kind:'envoy',id:'shopkeeper'}));merchant.root.position.set(store.merchant.x,store.merchant.y,store.merchant.z);land.add(merchant.root);citizens.push(merchant);
-    if(civicPlan){interactives.push(...buildVillageCivic(c,civicPlan));buildGateWatch(c,gates.filter(g=>g.kind==='gate'));}else interactives.push(...buildSmallClinics(c,clinicPlans),buildNamelessMilitary(c));
+    if(civicPlan){interactives.push(...buildVillageCivic(c,civicPlan));buildGateWatch(c,gates.filter(g=>g.kind==='gate'));if(id==='wood')buildOutdoorTournament(c,save);}else interactives.push(...buildSmallClinics(c,clinicPlans),buildNamelessMilitary(c));
     if(islandOccupied(save,id)&&civicPlan)buildOccupationBanners(c,gates,civicPlan);interactives.push(...buildBiome(c,routes));
     for(const i of interactives)if(i.platform){i.y=platformFor(i.platform)?.toY;if(i.kind==='landmark'&&i.platform!=='earth-cave')i.z+=3;}else if(id==='fire'&&i.id==='summit-lotus')i.y=36;
     region.zones.filter(z=>z.platform!=='earth-cave').forEach((zone,index)=>{if(!zone.platform&&!['red-cliff','summit-lotus'].includes(zone.id))buildDistrict(c,zone,(zone.civicOriginalIndex??index)%4);const g=group(zone.x,zone.z);if(id==='fire'&&zone.id==='red-cliff')g.userData.noCollision=true;if(zone.platform)g.position.y=platformFor(zone.platform).toY;if(id==='fire'&&zone.id==='summit-lotus')g.position.y=36;if(id==='nameless'){g.name='cracked-landmark-marker';for(let k=0;k<7;k++){const a=k*2.4,r=1+k%3*.5,x=Math.sin(a)*r,z=Math.cos(a)*r,paver=mesh(new T.DodecahedronGeometry(.48,0),M('#8c8268'),g,x,heightAt(zone.x+x,zone.z+z)-g.position.y+.025,z);paver.scale.set(1,.12,.7);paver.rotation.y=a;}}else for(let k=0;k<2;k++)cyl(g,M(v.path),0,.015+k*.035,0,3.5-k*.35,.035,32);const mark=mesh(new T.OctahedronGeometry(.28),M(v.color,.65),g,0,2.8,0);animated.push({kind:'float',mesh:mark,base:2.8});});
@@ -427,6 +429,16 @@ export function createAdventureScene(){
     if(guard)guard.root.visible=(save.quests[id]||0)<2;
     syncSidequests(save);syncMines(save);storyActors.sync(save,id,interactives,room?.id||null);syncJailers(save);sacredTree?.sync(save);tournamentBoard?.sync(save);
     focusSun();contacts.update([hero,...citizens,...party.map(p=>p.char),...storyActors.actors()],contactFloor);return true;
+  }
+  function buildOutdoorTournament(c,save){
+    const school=civicPlan.campuses.school,y=school.base+.1,root=new T.Group();root.name='school-outdoor-tournament';root.position.set(school.x,y,school.z);root.rotation.y=school.yaw;land.add(root);
+    const host=createVillager(villagerAppearance('wood',{id:'arena-referee',kind:'envoy'}));host.root.name='arena-referee';root.add(host.root);citizens.push(host);
+    for(const [i,id] of TOURNAMENT_VILLAGES.entries()){
+      const char=createNinja({id:'arena-contestant-'+id,village:id,kind:'ninja',coat:village(id).color});char.root.name='arena-contestant-'+id;
+      char.root.position.set(i%2?10:-10,0,2+Math.floor(i/2)*4);char.root.rotation.y=i%2?-Math.PI/2:Math.PI/2;root.add(char.root);citizens.push(char);
+    }
+    tournamentBoard=buildTournamentNoticeboard(c,root,[6,0,-6]);tournamentBoard.sync(save);
+    for(const [kind,id,x,z,label] of [['arena-host','wood-arena-host',0,1.8,'Trọng tài · Đăng ký giải đấu'],['tournament-board','school-tournament-board',6,-4,'Bảng cặp đấu và kết quả']])interactives.push({kind,id,...civicPoint(school,x,z),y,label});
   }
   function loadRoom(save){
     gates=[];terrain=null;dressingCount=0;ambient.intensity=room.ambient;ambient.color.set('#dedac5');ambient.groundColor.set('#514b41');sun.intensity=.6;fill.intensity=.5;scene.background=new T.Color(room.sky);scene.fog=new T.Fog(room.sky,35,95);orbitYaw=0;orbitPitch=.12;

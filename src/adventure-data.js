@@ -1,3 +1,4 @@
+import {planVillageCivic,civicPoint} from './village-civic.js';
 import {PLOT,WAR_VILLAGES,ALLIANCE_VILLAGES,PLOT_ORDER,plotVillageComplete,nextPlotVillage,canProgressPlot,invasionAvailable} from './campaign-plot.js';
 import {companionUnconscious} from './companion-health.js';
 import {restoreCheckpoint,readCheckpoint} from './checkpoint-state.js';
@@ -115,6 +116,7 @@ export function readJourney(storage,{includeCheckpoint=true}={}) {
     clean.arena=readTournament(s.arena);
     clean.surface=(s.village==='wind'&&['sky-west','sky-east','sky-north'].includes(s.surface)||s.village==='earth'&&s.surface==='earth-cave'||s.village==='wood'&&s.surface==='heart-tree')?s.surface:null;
     clean.interior=readInterior(s.interior,s.village);
+    if(s.village==='wood'&&s.interior?.id==='wood-tournament'){const school=planVillageCivic('wood').campuses.school,p=civicPoint(school,0,14);clean.interior=null;clean.position=[p.x,p.z];clean.surface=null;clean.elevation=school.base+.1;}
     if(clean.interior){clean.surface=null;clean.elevation=0;}
     else if(s.village==='earth'&&s.surface==='earth-cave'){
       clean.interior={id:'earth-cave',returnPosition:[...INTERIORS['earth-cave'].exterior],returnSurface:null,returnElevation:null};clean.surface=null;clean.elevation=0;

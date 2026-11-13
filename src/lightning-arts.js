@@ -166,7 +166,7 @@ export class LightningArts {
       if(s.style==='bird')g.lookAt(g.position.clone().add(direction));
       else g.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),direction);
       if(s.style==='bird') {
-        const forming=s.phase==='forming',emerge=forming?clamp((s.age-.3)/.65):1;
+        const forming=s.phase==='forming',emerge=forming?clamp(s.age/s.formation):1;
         const smooth=emerge*emerge*(3-2*emerge),bird=g.userData.bird,orb=g.userData.orb;
         bird.visible=emerge>0;bird.scale.setScalar(Math.max(.001,smooth));bird.position.z=(1-smooth)*-.6;
         bird.userData.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*(.4+Math.sin(s.age*10)*.25));

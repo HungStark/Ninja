@@ -592,7 +592,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(!encounter.storyBoss&&kind!=='infiltrator')for(const key of ['baseSealDelay','sealSpeedMultiplier','sealDelay'])encounter[key]=profile[key];
     if(encounter.squad)encounter.squad=encounter.squad.map(n=>({...n,...enemySealTiming(profile.rank,'random')}));
     if(kind==='arena'){
-      const match=pendingTournamentMatch(save.arena);if(world.interior?.id!=='wood-tournament'||!match||details.tournamentRun!==save.arena.run||details.tournamentMatch!==match.id){encounter=null;return;}
+      const match=pendingTournamentMatch(save.arena);if(save.village!=='wood'||world.interior||!match||details.tournamentRun!==save.arena.run||details.tournamentMatch!==match.id){encounter=null;return;}
       encounter.tournamentStats={...combatStats(save.progression),elementBonuses:{...equipmentState(save).armguard.bonuses}};encounter.baseSealDelay=encounter.sealDelay=.9;encounter.sealSpeedMultiplier=1;encounter.tournamentRound=match.round;encounter.rewardAlreadyClaimed=save.arena.rewardClaimed;
     }
     if(kind==='village-event'&&!encounter.storyBoss){const scale=1+Math.max(0,(encounter.rank||1)-1)*.08;encounter.hp=Math.round(encounter.hp/BOT_HEALTH_SCALE*scale)*BOT_HEALTH_SCALE;encounter.damageMultiplier*=scale;if(encounter.squad)encounter.squad=encounter.squad.map(n=>({...n,hp:Math.round(n.hp/BOT_HEALTH_SCALE*scale)*BOT_HEALTH_SCALE,damageMultiplier:n.damageMultiplier*scale}));}

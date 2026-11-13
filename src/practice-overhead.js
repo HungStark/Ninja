@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {MOVEMENT_SPEED_MULTIPLIER} from './game-pace.js';
+import {createSpellAimGuide} from './spell-aim-vfx.js';
 
 // The rails in scene.js enclose x = ±16, z = -26..12. Leave room for the body.
 export const PRACTICE_ARENA={minX:-16,maxX:16,minZ:-26,maxZ:12};
@@ -19,11 +20,7 @@ export function clampPracticeActorPoint(p,owner='player',clearance=.65,from){con
 export function stepPracticePoint(from,to,distance,clearance=.65){const goal=clampPracticeActorPoint(to,'player',clearance,from),dx=goal[0]-from[0],dz=goal[2]-from[2],length=Math.hypot(dx,dz),t=length>0?Math.min(1,distance/length):0;return clampPracticeActorPoint([from[0]+dx*t,from[1],from[2]+dz*t],'player',clearance,from);}
 
 export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
-  const root=new T.Group();scene.add(root);root.visible=false;
-  const material=new T.MeshBasicMaterial({color:'#71e6e7',transparent:true,opacity:.7,depthWrite:false,side:T.DoubleSide});
-  const strip=new T.Mesh(new T.PlaneGeometry(1,1),material);strip.rotation.x=-Math.PI/2;root.add(strip);
-  const ring=new T.Mesh(new T.RingGeometry(.94,1,80),material);ring.rotation.x=-Math.PI/2;root.add(ring);
-  const arrow=new T.Mesh(new T.ConeGeometry(.35,.9,3),material);arrow.rotation.x=-Math.PI/2;root.add(arrow);
+  const guide=createSpellAimGuide(scene),root=guide.root;root.visible=false;
   const destination=new T.Mesh(new T.RingGeometry(.32,.43,32),new T.MeshBasicMaterial({color:'#a6f4b9',transparent:true,opacity:.9,depthWrite:false,side:T.DoubleSide}));destination.rotation.x=-Math.PI/2;scene.add(destination);destination.visible=false;
   const playerMarker=new T.Mesh(new T.RingGeometry(.7,.79,48),new T.MeshBasicMaterial({color:'#a6f4b9',transparent:true,opacity:.9,depthWrite:false,side:T.DoubleSide}));playerMarker.rotation.x=-Math.PI/2;scene.add(playerMarker);playerMarker.visible=false;
   playerMarker.scale.setScalar(actorScale);
@@ -59,13 +56,7 @@ export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
       const fixed=spell.style==='lightmirror'?2.4:spell.style==='icewall'?3.2:wall?3:spell.style==='stormfield'?4:spell.style==='lightsphere'?3:null;
       const center=self?[...position]:fixed!==null?[position[0]+direction[0]*fixed,0,position[2]+direction[2]*fixed]:area?[...target]:[position[0]+direction[0]*31,0,position[2]+direction[2]*31];
       const radius=spell.style==='lightsphere'?.8:spell.blastRadius||spell.domeRadius||spell.fieldRadius||spell.radius||spell.domainRadius||2.2;
-      strip.visible=!self&&!area;ring.visible=self||area;arrow.visible=!self&&!area&&!wall;
-      material.color.set(available?'#71e6e7':'#db846e');
-      const end=center,dist=Math.hypot(end[0]-position[0],end[2]-position[2]);
-      strip.position.set(wall?center[0]:(position[0]+end[0])/2,.16+heightAt(position[0],position[2]),wall?center[2]:(position[2]+end[2])/2);
-      strip.rotation.z=Math.atan2(-direction[0],-direction[2]);strip.scale.set(wall?(spell.wallWidth||spell.width||4):Math.max(.22,spell.waveWidth||((spell.size||.25)*2)),wall?.18:Math.max(.1,dist),1);
-      ring.position.set(center[0],.17+heightAt(center[0],center[2]),center[2]);ring.scale.setScalar(radius);
-      arrow.position.set(end[0],.23+heightAt(end[0],end[2]),end[2]);arrow.rotation.z=Math.atan2(-direction[0],-direction[2]);
+      guide.update({kind:self||area?'area':wall?'wall':'direction',position,center,direction,width:wall?(spell.wallWidth||spell.width||4):Math.max(.22,spell.waveWidth||((spell.size||.25)*2)),radius,heightAt,available});
       preview={spellId:spell.id,kind:self?'self':wall?'wall':area?'area':'direction',available,origin:[...position],target:center,direction,radius};
     },
     state:()=>({actorScale,cursor:[...cursor],moveTarget:moveTarget&&[...moveTarget],preview,visible:root.visible,fencesVisible:fence.visible,dividers:[...PRACTICE_DIVIDERS],bounds:{player:practiceMovementBounds('player',.65*actorScale),enemy:practiceMovementBounds('enemy',.65*actorScale)}})

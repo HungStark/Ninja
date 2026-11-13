@@ -11,14 +11,14 @@ export function createTournamentBoardUI(){
   const popup=document.createElement('dialog');popup.id='tournamentBoard';popup.className='tournament-popup';popup.innerHTML='<header><h2>Bảng giải đấu Trường học Làng Mộc</h2><button type="button" class="journey-secondary" aria-label="Đóng bảng giải đấu">Đóng</button></header><div class="tournament-board-body"></div>';document.body.append(popup);popup.querySelector('button').onclick=()=>popup.close();popup.addEventListener('click',e=>{if(e.target===popup)popup.close();});
   return {open(save){popup.querySelector('.tournament-board-body').innerHTML=tournamentBoardContent(save);if(!popup.open)popup.showModal();},get isOpen(){return popup.open;},close:()=>popup.close()};
 }
-export function buildTournamentNoticeboard(c,parent){
-  const group=new T.Group();group.name='school-tournament-noticeboard';group.userData.dynamic=true;group.position.set(9,0,16);parent.add(group);
+export function buildTournamentNoticeboard(c,parent,position=[9,0,16]){
+  const group=new T.Group();group.name='school-tournament-noticeboard';group.userData.dynamic=true;group.position.fromArray(position);parent.add(group);
   for(const side of [-1,1])c.box(group,c.M('#665035'),side*4,2.8,0,.22,5.6,.3);
   c.box(group,c.M('#665035'),0,5.7,0,8.5,.3,.4);c.box(group,c.M('#665035'),0,1.25,0,8.5,.3,.4);
   const material=new T.MeshBasicMaterial({color:'#e2d4ab'}),board=new T.Mesh(new T.PlaneGeometry(7.8,4.1),material);board.position.set(0,3.45,.18);group.add(board);
   let canvas,ctx,texture,key;
   if(typeof document!=='undefined'){canvas=document.createElement('canvas');canvas.width=1024;canvas.height=540;ctx=canvas.getContext('2d');if(ctx){texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;material.color.set('#ffffff');material.map=texture;}}
   return {sync(save){const next=JSON.stringify(save.arena);if(!ctx||next===key)return;key=next;ctx.fillStyle='#18322d';ctx.fillRect(0,0,1024,540);ctx.fillStyle='#efce88';ctx.font='bold 30px sans-serif';ctx.fillText('GIẢI ĐẤU · TRƯỜNG HỌC LÀNG MỘC',25,45);ctx.font='19px sans-serif';ctx.fillText('Nhấn vào bảng để xem cặp đấu và kết quả',25,80);
-    for(let round=0;round<5;round++){const x=20+round*201;ctx.fillStyle='#efce88';ctx.font='bold 16px sans-serif';ctx.fillText(TOURNAMENT_ROUNDS[round],x,125,190);save.arena.matches.filter(m=>m.round===round).forEach((m,i)=>{const y=153+i*83;ctx.fillStyle='#29483e';ctx.fillRect(x,y,190,73);ctx.font='16px sans-serif';for(const [j,id]of [m.a,m.b].entries()){ctx.fillStyle=m.winner===id?'#a4e6ac':'#e6dec8';ctx.fillText((m.winner===id?'✓ ':'')+tournamentName(id,save),x+8,y+25+j*25,175);}});}texture.needsUpdate=true;
+    for(let round=0;round<5;round++){const x=20+round*201;ctx.fillStyle='#efce88';ctx.font='bold 16px sans-serif';ctx.fillText(TOURNAMENT_ROUNDS[round],x,125,190);save.arena.matches.filter(m=>m.round===round).forEach((m,i)=>{const y=153+i*83;ctx.fillStyle='#29483e';ctx.fillRect(x,y,190,73);ctx.font='16px sans-serif';for(const [j,id]of [m.a,m.b].entries()){ctx.fillStyle=m.winner===id?'#a4e6ac':'#e6dec8';ctx.fillText((m.winner===id?'✓ ':'')+tournamentName(id,save),x+8,y+25+j*25,175);}});}texture.needsUpdate=true;let scene=group;while(scene.parent)scene=scene.parent;scene.userData.tournamentRevision=(scene.userData.tournamentRevision||0)+1;
   }};
 }

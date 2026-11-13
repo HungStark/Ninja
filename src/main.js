@@ -141,7 +141,7 @@ async function main() {
   const heldStepDirection=()=>[...heldStepSources.values()].at(-1)||0;
   const sidestepDistance = STEP_DISTANCE, sidestepDuration = STEP_DURATION;
   const sidestepSpeed = sidestepDistance / sidestepDuration;
-  const dragonFormation = .5, dragonUncoil = .32;
+  const dragonFormation = .1, dragonUncoil = .1;
   let dragonView = null;
   const meteorSkyTime = 1.3, meteorReturnTime = .4;
   const meteorZoomInTime = .24, meteorZoomAmount = 14;
@@ -305,7 +305,7 @@ async function main() {
     const activationStats={waterbubbles:'4 bong bóng · nổ lần lượt mỗi 0,25 giây · 7,5 sát thương gốc/quả · nhận hệ số tăng sát thương · hồi '+spell.cooldown+' giây',ignite:'Bỏng 1–5 tầng → 10 / 20 / 30 / 45 / 60 sát thương',discharge:'Tĩnh điện 1–3 → choáng 0,5 / 1 / 2s → từ tính 3 / 5 / 7s'};
     if (!preparation) return carriedSpellMarkup(spell,i,selected);
     const taken = equipped.includes(spell.id), kind = activationStats[spell.style] ? (spell.style==='waterbubbles'?'BẪY':'KÍCH HOẠT') : spell.oncePerMatch?'KHỞI TẠO':spell.kind === 'attack' ? 'CÔNG' : 'THỦ';
-    const stats = iceSpellStats(spell) || spell.balanceSummary || activationStats[spell.style] || (spell.oncePerMatch?'Không gây sát thương · 1 lần mỗi trận':spell.element==='wood'?({flowerpoison:'Khói tím 6 giây · vùng 2–5 m · 5–15 sát thương/giây trong vùng',vinebind:'18–54 sát thương · trói 2–6 giây',bamboostab:'Lá tre bay tới điểm ngắm · 1–3 đợt, tổng 75–225 sát thương',walnutwall:'Quả rơi và hóa lớn · chắn phía trước, 8–10 giây'})[spell.style]:spell.style==='snowball'?'Tiêu hao 35 tuyết · bám theo mục tiêu được chọn · bị tường cản · vỡ khi chạm':spell.style==='icewall'?'Tường băng trồi lên · 120 độ bền · 8 giây':spell.style==='icefog'?'Ẩn người thật · sương thấp phủ nửa sân · ảo ảnh lệch vị trí':spell.style==='icebind'?'Bắn ngay · đóng băng 3 giây':spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 26 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 20 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'130 độ bền · tường cong 10 giây · chặn đường',earthgravity:'60 khi giam + 75 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 26 / 45,5 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'Vòm 10 giây · khóa G · tốc độ 50%, chạm vòm 25% · laser cộng dồn',lightmirror:'2,5 giây · 120 độ bền · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 150 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · voi nhấn chìm và mở khóa lặn' : spell.style==='shadowclone'?'Tối đa 4 bóng · mỗi lần nâng tối đa 2 chó thành bò':spell.style==='shadowcommand'?'Chó 20 / bò 30 sát thương · bám theo mục tiêu được chọn · bị tường cản':spell.style==='shadowbind'?'90 sát thương · trong lãnh địa nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · '+spell.duration+' giây · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : ''));
+    const stats = iceSpellStats(spell) || spell.balanceSummary || activationStats[spell.style] || (spell.oncePerMatch?'Không gây sát thương · 1 lần mỗi trận':spell.element==='wood'?({flowerpoison:'Khói tím 6 giây · vùng 2–5 m · 5–15 sát thương/giây trong vùng',vinebind:'18–54 sát thương · trói 2–6 giây',bamboostab:'Lá tre bay tới điểm ngắm · 1–3 đợt, tổng 75–225 sát thương',walnutwall:'Quả rơi và hóa lớn · chắn phía trước, 8–10 giây'})[spell.style]:spell.style==='snowball'?'Tiêu hao 35 tuyết · bám theo mục tiêu được chọn · bị tường cản · vỡ khi chạm':spell.style==='icewall'?'Tường băng trồi lên · 120 độ bền · 8 giây':spell.style==='icefog'?'Ẩn người thật · sương thấp phủ nửa sân · ảo ảnh lệch vị trí':spell.style==='icebind'?'Bắn ngay · đóng băng 3 giây':spell.element==='earth'?({earthspikes:'Chạy ngầm · bật gai khi tới địch · 26 sát thương',earthcraterspikes:'50 sát thương · chông trong hố Địa Bộc Thiên Tinh',earthquake:'5 × 20 sát thương · địa hình gồ ghề thêm 5 giây',earthwall:'130 độ bền · tường cong 10 giây · chặn đường',earthgravity:'60 khi giam + 75 khi rơi · giam 3 giây · hố 1,5 giây sau cú rơi'})[spell.style]:spell.element==='light'?({lightray:'Laser thẳng · 26 / 45,5 sát thương',lightsphere:'8 giây · laser thành 7 sắc · +75% sát thương',lightdome:'Vòm 10 giây · khóa G · tốc độ còn 25%, chạm mép lần đầu choáng 1 giây · laser cộng dồn',lightmirror:'2,5 giây · 120 độ bền · gương phản đòn phía trước',jacob:'Cột sáng từ trời · 150 sát thương · bán kính 3,5 m'})[spell.style]:spell.style==='aircombo'?'70 sát thương tổng · nối thêm 2 giây':spell.style==='tornado'?'70 sát thương · hất tung 2 giây':spell.style==='windspirit'?'Tinh linh 5 giây · phản chiêu từ phía trước':spell.style==='domain' ? 'Lãnh địa 30 giây · voi nhấn chìm và mở khóa lặn' : spell.style==='shadowclone'?'Tối đa 4 bóng · mỗi lần nâng tối đa 2 chó thành bò':spell.style==='shadowcommand'?'Chó 20 / bò 30 sát thương · bám theo mục tiêu được chọn · bị tường cản':spell.style==='shadowbind'?'90 sát thương · trong lãnh địa nhấn chìm 2 giây':spell.style==='shadowdive'?'Lặn 3 giây · nhìn qua bóng đen mờ, vẫn thi triển':spell.kind === 'attack' ? spell.damage + (spell.count > 1 ? ' × ' + spell.count : '') + ' sát thương' : ['firewall', 'waterwall','windwall'].includes(spell.style) ? spell.shield + ' độ bền · '+spell.duration+' giây · chặn đạn' : spell.shield + ' khiên' + (spell.heal ? ' · hồi ' + spell.heal + ' máu' : ''));
     return '<button class="spell ' + (preparation ? taken ? 'equipped' : '' : i === selected ? 'selected' : '') + '" style="--element:' + spell.color + '" data-' + (preparation ? 'equip="' + spell.id : 'spell="' + i) + '"' + (preparation ? ' aria-pressed="' + taken + '"' : '') + '><span class="spell-icon">' + spellImage(spell) + '</span><div><div class="spell-title">' + spell.name + '<small>' + kind + ' · ' + spell.cost + ' MANA · HỒI CHIÊU ' + spell.cooldown + 's' + (spell.snowCost ? ' · ' + spell.snowCost + ' TUYẾT' : '') + '</small></div><p>' + spell.subtitle + (preparation ? '<br>' + stats : '') + '</p><div class="spell-sequence">' + spell.sequence.map(k => '<kbd data-seq="' + k + '">' + k.toUpperCase() + '</kbd>').join('') + '</div></div>' + (preparation ? '<span class="equip-mark">' + (taken ? '✓' : '+') + '</span>' : '') + '</button>';
   }
   function renderLoadout() {
@@ -473,7 +473,7 @@ async function main() {
     spell=natureArts.empower(owner,spell);if(owner==='player')playerAvatar.cast(spell);
     if(owner==='player'&&spell.kind==='attack'&&guardianPhases.breakPrison((spell.damage||15)*damageMultiplierFor(battlePlayerStats,spell.element)))return true;
     if(spell.style==='waterbubbles'){
-      waterBubbles.cast(owner,spell,owner==='player'&&mobileTactical()?(mobileManualAim?practiceAimPoint():mobileEnemy().pos):owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:natureArts.perceivedPosition(owner,windActors()));
+      waterBubbles.cast(owner,spell,owner==='player'&&mobileTactical()?(mobileManualAim?practiceAimPoint():mobileEnemy().pos):owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:owner!=='player'?playerPos():natureArts.perceivedPosition(owner,windActors()));
       if(owner==='player')announce('Thủy Bộc Phá Không · 4 bong bóng nổ lần lượt ở giây 0,25; 0,5; 0,75; 1.');
       return true;
     }
@@ -491,12 +491,12 @@ async function main() {
       return true;
     }
     if(['wood','ice'].includes(spell.element)){
-      const art=natureArts.cast(owner,spell,pos,dir,windActors(),walls,shots,['bamboostab','icebind'].includes(spell.style)?volleyTarget(owner,pos,dir):undefined,spell.style==='snowball'?(owner==='player'?aimedEnemy()?.id:'player'):undefined);
+      const art=natureArts.cast(owner,spell,pos,dir,windActors(),walls,shots,['bamboostab','icebind'].includes(spell.style)?owner!=='player'&&spell.style==='bamboostab'?playerPos():volleyTarget(owner,pos,dir):undefined,spell.style==='snowball'?(owner==='player'?aimedEnemy()?.id:'player'):undefined);
       if(art!==null)return art;
     }
     if(owner==='player')clearEarthView();
     if(spell.element==='earth'){
-      const art=earthArts.cast(owner,spell,pos,dir,windActors(),walls,owner==='player'&&overheadPractice()?practiceOverhead.point():undefined);if(!art)return false;
+      const art=earthArts.cast(owner,spell,pos,dir,windActors(),walls,owner!=='player'?playerPos():overheadPractice()?practiceOverhead.point():undefined);if(!art)return false;
       if(owner==='player'){
         clearWindView();clearDragonView();clearMeteorView();clearWaveView();cameraImpacts.trigger('defense',.6);
         if(spell.style==='earthgravity')beginEarthView(art);
@@ -505,7 +505,7 @@ async function main() {
     }
     if(spell.element==='light'&&spell.style!=='jacob'){
       if(owner==='player'){clearWindView();clearDragonView();clearMeteorView();clearWaveView();cameraImpacts.reset();}
-      if(['lightsphere','lightdome','lightmirror'].includes(spell.style))lightArts.place(owner,spell,pos,dir,windActors(),owner==='player'&&overheadPractice()?practiceOverhead.point():undefined);
+      if(['lightsphere','lightdome','lightmirror'].includes(spell.style))lightArts.place(owner,spell,pos,dir,windActors(),owner!=='player'?playerPos():overheadPractice()?practiceOverhead.point():undefined);
       else{
         const origin=vadd(vadd(pos,vmul(dir,.6)),vmul(vnorm([-dir[2],0,dir[0]]),.24));origin[1]-=.16;
         lightArts.fire(owner,spell,origin,vnorm(vsub(volleyTarget(owner,pos,dir),origin)));
@@ -521,7 +521,7 @@ async function main() {
       // The falling elephant applies its hit inside DarkDomain, outside impact().
       if(spell.style==='shadowbind')spell={...spell,damage:spell.damage*(owner==='player'?damageMultiplierFor(battlePlayerStats,spell.element)*(activeBoss()?guardianPhases.damageMultiplier():1):baseEnemyDamageMultiplier())};
       const victim=spell.style==='shadowcommand'?(owner==='player'?aimedEnemy():{id:'player',owner:'player',pos:playerPos(),fighter:player}):{owner:owner==='player'?'enemy':'player',pos:owner==='player'?enemyPos():camera.p,fighter:owner==='player'?enemy:player};
-      const result=darkDomain.cast(spell,owner,pos,dir,owner==='player'&&overheadPractice()&&spell.style==='shadowbind'?practiceAimPoint():volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
+      const result=darkDomain.cast(spell,owner,pos,dir,owner!=='player'&&spell.style==='shadowbind'?playerPos():owner==='player'&&overheadPractice()&&spell.style==='shadowbind'?practiceAimPoint():volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
       if(result&&spell.style==='shadowdive'&&owner==='player'){
         if(!usesWindCamera())clearWindView();
         clearDragonView();clearMeteorView();clearWaveView();setWorldFov(baseFov);cameraImpacts.reset();
@@ -541,7 +541,7 @@ async function main() {
       if (owner === 'player') cameraImpacts.trigger('defense');
       if(spell.style==='stormfield') {
         for(let i=fields.length-1;i>=0;i--)if(fields[i].owner===owner)fields.splice(i,1);
-        const normal=vnorm([dir[0],0,dir[2]]),p=vadd(pos,vmul(normal,4));p[1]=.08;
+        const normal=vnorm([dir[0],0,dir[2]]),p=owner!=='player'?playerPos():vadd(pos,vmul(normal,4));p[1]=.08;
         fields.push({owner,p,radius:spell.fieldRadius,height:spell.fieldHeight,slowFactor:spell.slowFactor,life:spell.duration,age:0});
         return;
       }
@@ -577,7 +577,7 @@ async function main() {
       return;
     }
     if(['thunder','jacob'].includes(spell.style)) {
-      const target=owner==='player'&&overheadPractice()?practiceOverhead.point():spell.style==='jacob'?volleyTarget(owner,pos,dir):meteorTarget(pos,dir);target[1]=.08;
+      const target=owner!=='player'?playerPos():overheadPractice()?practiceOverhead.point():spell.style==='jacob'?volleyTarget(owner,pos,dir):meteorTarget(pos,dir);target[1]=.08;
       const cloudPoint=[target[0],44,target[2]],returnTime=spell.style==='jacob'?.55:meteorReturnTime;
       const strikeTime=spell.style==='jacob'?spell.chargeTime:spell.chargeTime+returnTime+.12;
       const impactTime=spell.style==='jacob'?strikeTime+returnTime:strikeTime;
@@ -588,7 +588,7 @@ async function main() {
       shots.push(shot);if(owner==='player')beginMeteorView(shot);tone(65,.45,'sawtooth',.05);return;
     }
     if (spell.style === 'meteor') {
-      const target = owner==='player'&&overheadPractice()?practiceOverhead.point():meteorTarget(pos, dir), skyStart = [target[0] + 38, 65, target[2] + 7];
+      const target = owner!=='player'?playerPos():overheadPractice()?practiceOverhead.point():meteorTarget(pos, dir), skyStart = [target[0] + 38, 65, target[2] + 7];
       const totalTime = vlen(vsub(target, skyStart)) / spell.speed;
       const velocity = vmul(vsub(target, skyStart), 1 / totalTime);
       const cloudParamTime = (65 - 42) / -velocity[1];
@@ -1316,7 +1316,7 @@ async function main() {
     hands.lightFinger.visible=started&&!won&&!paused&&rules.ready()?.style==='lightray';
     const readyLightStyle=running?rules.ready()?.style:null;
     if(readyLightStyle==='lightray'&&lightArts.optics.some(o=>o.owner==='player'&&o.kind==='dome'&&!o.rays.length))$('message').textContent='Bắn laser vào mái vòm để tia nảy và gây sát thương mỗi giây';
-    const opticalHint={lightsphere:'SPACE tạo cầu thủy tinh trước mặt · 8 giây · laser xuyên qua thành 7 sắc',lightdome:'SPACE gọi gương rơi ghép vòm · đủ đi ra tự do · khóa G · tốc độ 50%, chạm vòm 25% · 10 giây',lightmirror:'SPACE tạo gương trước mặt · phản đòn phía trước trong 2,5 giây'}[readyLightStyle];
+    const opticalHint={lightsphere:'SPACE tạo cầu thủy tinh trước mặt · 8 giây · laser xuyên qua thành 7 sắc',lightdome:'SPACE gọi gương rơi ghép vòm · đủ đi ra tự do · khóa G · tốc độ còn 25%, chạm mép lần đầu choáng 1 giây · 10 giây',lightmirror:'SPACE tạo gương trước mặt · phản đòn phía trước trong 2,5 giây'}[readyLightStyle];
     if(opticalHint)$('message').textContent=opticalHint;
   }
   function syncCombatView(){
@@ -1328,7 +1328,7 @@ async function main() {
   let dialogueFrameKey=null;
   function render() {
     touchControls?.update();
-    if(adventure?.activeView){const key=adventure.phase==='dialog'?[adventure.village,canvas.width,canvas.height].join(':'):null;if(key&&key===dialogueFrameKey)return;dialogueFrameKey=key;enemyNameplates.update(camera3d,[],false);renderer.info.reset();renderer.clear();renderer.render(adventure.world.scene,adventure.world.camera);return;}dialogueFrameKey=null;
+    if(adventure?.activeView){const key=adventure.phase==='dialog'?[adventure.village,canvas.width,canvas.height,adventure.world.scene.userData.tournamentRevision||0].join(':'):null;if(key&&key===dialogueFrameKey)return;dialogueFrameKey=key;enemyNameplates.update(camera3d,[],false);renderer.info.reset();renderer.clear();renderer.render(adventure.world.scene,adventure.world.camera);return;}dialogueFrameKey=null;
     squad.syncVisibility();opponent.group.visible=(enemy.hp>0||guardianPhases.transitioning)&&!natureArts.hidden('enemy')&&!guardianPhases.hidden();if(natureArts.hidden('player'))playerAvatar.group.visible=false;
     if(['wood','ice'].includes(enemy.defenseElement))opponent.shield.visible=false;
     earthArts.visuals(animationTime,reducedMotion);
@@ -1635,7 +1635,7 @@ async function main() {
     const cooldownOverrides=introductoryCooldowns(adventure?.state().save.learnedSpells,!!adventure?.encounter);
     rules = new GameRules(loadout,{maxChakra:battlePlayerStats.maxChakra,chakraRegen:battlePlayerStats.chakraRegen,cooldownOverrides}); player = new Fighter(battlePlayerStats.maxHp); enemy = new Fighter(adventure?.encounter?.hp||practiceEncounter?.hp||PRACTICE_BOT_HP);player.resistances={...(battlePlayerStats.resistances||{})};playerAvatar.setEquipment(adventure?.encounter?adventure.equipment:null);hands.setArmguard(adventure?.encounter?adventure.equipment.armguard:null);bossEnraged=false;aiWeaponTimer=4;
     if(adventure?.encounter){player.hp=adventure.healthFraction*player.maxHp;adventure.beginCombat();player.autoRestore=false;enemy.autoRestore=false;}
-    darkDomain.reset();world.setArena(adventure?.inBattle&&adventure.encounter.kind==='arena',{overhead:overheadPractice()});
+    darkDomain.reset();world.setArena(false,{overhead:overheadPractice()});
     cameraImpacts.reset(); cameraReaction = cameraImpacts.sample(); setWorldFov(baseFov);
     const el = adventure?.inBattle?elements.find(e=>e.id===adventure.encounter.element):elements[(round - 1) % elements.length], support = elements[(round + 1) % elements.length];
     aiRules = new GameRules(['wood','ice'].includes(el.id)?spells.filter(s=>s.element===el.id).map(s=>s.id):el.id==='earth'?['earth-orb','earth-lance','earth-volley','earth-barrier','earth-reflect']:el.id==='dark'?['dark-domain','dark-orb','dark-lance','dark-volley','dark-reflect']:el.id==='light'?['light-orb','light-barrier','light-reflect','light-lance','light-volley']:el.id==='wind'?['wind-orb','wind-lance','wind-volley','wind-barrier','wind-reflect']:[el.id+(el.id==='fire'?'-volley':el.id==='water'?'-tsunami':'-thunder'),el.id+'-lance',el.id+(el.id==='fire'?'-meteor':'-volley'),['fire','water','lightning'].includes(el.id)?el.id+'-barrier':support.id==='dark'?'dark-reflect':support.id+'-barrier',support.id+'-reflect'].filter((id,i,list)=>list.indexOf(id)===i));

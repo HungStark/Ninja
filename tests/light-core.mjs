@@ -52,7 +52,7 @@ for(const powers of [[1,1],[1.75,1.75],[1.75,1]]){
   arts.visuals(2,[],actors);if(powers.some(p=>p>1))assert.ok(arts.colors.every(material=>stacked.root.userData.lines.some(m=>m.visible&&m.material===material)),'Render all seven colors while bouncing');
   advance(stacked.life+.01);const hp=actors[1].fighter.hp;assert.equal(arts.optics.length,0);advance(1);close(actors[1].fighter.hp,hp,'All stacked laser damage stops with the dome');
 }
-setup();const escape=place('light-lance');fire();const origin=[...actors[1].pos];close(arts.slowAt('enemy',origin),.5);assert.equal(arts.blocksDash('enemy',origin),true);close(arts.slowAt('player',origin),1);
+setup();const escape=place('light-lance');fire();const origin=[...actors[1].pos];close(arts.slowAt('enemy',origin),.25);assert.equal(arts.blocksDash('enemy',origin),true);close(arts.slowAt('player',origin),1);
 for(const sign of [-1,1]){const beyond=arts.constrainMovement('enemy',origin,[sign*20,1.72,-15]);close(beyond[0],sign*20,'The dome allows escape');}
 actors[1].pos=[escape.radius,1.72,-15];close(arts.slowAt('enemy',actors[1].pos),.25);advance(1);close(actors[1].fighter.hp,980,'A body touching the dome still takes damage');
 actors[1].pos=[escape.radius+.3,1.72,-15];assert.equal(arts.blocksDash('enemy',actors[1].pos),true);advance(1);close(actors[1].fighter.hp,960,'Partially outside still takes damage');
