@@ -1,0 +1,195 @@
+[
+  {
+    "id": "nameless",
+    "bpm": 78,
+    "seconds": 49.23074829931973,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "koto",
+      "shakuhachi",
+      "strings"
+    ],
+    "notes": 100,
+    "rms": 0.1200000013037602,
+    "peak": 0.4628656804561615,
+    "loopBoundaryDelta": 0.03616052865982056,
+    "bytes": 4342196
+  },
+  {
+    "id": "water",
+    "bpm": 82,
+    "seconds": 46.829251700680274,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "harp",
+      "koto",
+      "shakuhachi",
+      "strings",
+      "waterbell"
+    ],
+    "notes": 236,
+    "rms": 0.11999999629418161,
+    "peak": 0.5087288022041321,
+    "loopBoundaryDelta": 0.012230676598846912,
+    "bytes": 4130384
+  },
+  {
+    "id": "fire",
+    "bpm": 102,
+    "seconds": 37.647074829931974,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "cello",
+      "flute",
+      "shamisen",
+      "taiko"
+    ],
+    "notes": 152,
+    "rms": 0.1200000035531097,
+    "peak": 0.41122880578041077,
+    "loopBoundaryDelta": 0.0016784854233264923,
+    "bytes": 3320516
+  },
+  {
+    "id": "lightning",
+    "bpm": 112,
+    "seconds": 34.285714285714285,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "cello",
+      "flute",
+      "pulse",
+      "shamisen",
+      "taiko"
+    ],
+    "notes": 314,
+    "rms": 0.11999999859205343,
+    "peak": 0.4626682698726654,
+    "loopBoundaryDelta": 0.004277557134628296,
+    "bytes": 3024044
+  },
+  {
+    "id": "wind",
+    "bpm": 92,
+    "seconds": 41.73913832199546,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "chime",
+      "flute",
+      "harp",
+      "strings"
+    ],
+    "notes": 238,
+    "rms": 0.1200000059402424,
+    "peak": 0.46816396713256836,
+    "loopBoundaryDelta": 0.017136389389634132,
+    "bytes": 3681436
+  },
+  {
+    "id": "earth",
+    "bpm": 76,
+    "seconds": 50.52630385487528,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "cello",
+      "shakuhachi",
+      "shamisen",
+      "taiko"
+    ],
+    "notes": 88,
+    "rms": 0.11999999780911291,
+    "peak": 0.4444205164909363,
+    "loopBoundaryDelta": 0.0010275989770889282,
+    "bytes": 4456464
+  },
+  {
+    "id": "wood",
+    "bpm": 86,
+    "seconds": 44.651156462585035,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "flute",
+      "harp",
+      "kalimba",
+      "koto",
+      "strings"
+    ],
+    "notes": 178,
+    "rms": 0.11999999732989163,
+    "peak": 0.43766236305236816,
+    "loopBoundaryDelta": 0.014684751629829407,
+    "bytes": 3938276
+  },
+  {
+    "id": "ice",
+    "bpm": 66,
+    "seconds": 58.18181405895692,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "crystal",
+      "piano",
+      "shakuhachi",
+      "violin"
+    ],
+    "notes": 84,
+    "rms": 0.12000000264284535,
+    "peak": 0.6152541041374207,
+    "loopBoundaryDelta": 0.042145103216171265,
+    "bytes": 5131680
+  },
+  {
+    "id": "light",
+    "bpm": 82,
+    "seconds": 46.829251700680274,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "harp",
+      "koto",
+      "shakuhachi",
+      "strings",
+      "templebell"
+    ],
+    "notes": 164,
+    "rms": 0.12000000327173395,
+    "peak": 0.4226315915584564,
+    "loopBoundaryDelta": 0.005107223987579346,
+    "bytes": 4130384
+  },
+  {
+    "id": "dark",
+    "bpm": 72,
+    "seconds": 53.333333333333336,
+    "bars": 16,
+    "sampleRate": 22050,
+    "channels": 2,
+    "instruments": [
+      "cello",
+      "shakuhachi",
+      "shamisen",
+      "templebell"
+    ],
+    "notes": 55,
+    "rms": 0.12000000317625613,
+    "peak": 0.46906495094299316,
+    "loopBoundaryDelta": 0.0015615401789546013,
+    "bytes": 4704044
+  }
+]

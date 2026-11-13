@@ -12,6 +12,7 @@ await fs.cp(path.join(root,'assets','portraits'),path.join(out,'assets','portrai
 await fs.mkdir(path.join(out,'assets','ui'),{recursive:true});
 await fs.copyFile(path.join(root,'assets','ui','attack-button.png'),path.join(out,'assets','ui','attack-button.png'));
 await fs.cp(path.join(root,'assets','ui','spells'),path.join(out,'assets','ui','spells'),{recursive:true});
+await fs.cp(path.join(root,'assets','music'),path.join(out,'assets','music'),{recursive:true,filter:source=>!path.extname(source)||source.endsWith('.wav')});
 for(const language of ['vi','en']){
  const name=language==='en'?'index.en.html':'index.html';
  let html=await fs.readFile(path.join(root,name),'utf8');
