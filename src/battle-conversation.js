@@ -4,7 +4,28 @@ import {ninjaProfile} from './ninja.js';
 import {village} from './adventure-data.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {isEarthDepartureTrial,EARTH_DEPARTURE_TRIAL} from './earth-departure-trial.js';
-import {PLOT,companionPresent} from './campaign-plot.js';
+import {PLOT,WAR_VILLAGES,companionPresent} from './campaign-plot.js';
+
+const hostileGuardianOrders={
+  water:[
+    ['beast','Ngươi đã cứu người của Làng Thủy, ta có ghi nhận. Nhưng đừng tưởng như vậy là có quyền ép Hải Châu rút quân.'],
+    ['hero','Quân Thủy còn đóng ở Vô Danh, ta sẽ không quay về. Những người dân ở đó không đáng phải chịu cuộc chiến này.'],
+    ['beast','Ta không để ngươi tiến vào uy hiếp trưởng làng. Tả vệ, hữu vệ! Tước vũ khí và khống chế hắn!'],
+    ['hero','Ta không muốn làm hại người của làng này. Nhưng nếu các ngươi ngăn đường, ta sẽ chiến đấu.']
+  ],
+  fire:[
+    ['beast','Hạ Ly đã bị tước bỏ thân phận ninja Hỏa. Ngươi vẫn cùng cô ta chống lại quyết định của Xích Nham sao?'],
+    ['hero','Cô ấy đã vạch trần nội gián và cứu những người bị bỏ mặc. Ta sẽ không để cô ấy chịu tội vì điều đó.'],
+    ['beast','Quân lệnh của Hỏa Ảnh không phải điều để kẻ ngoài làng xét lại. Tả vệ, hữu vệ! Bắt giữ chúng, không cho tiến vào phòng họp!'],
+    ['hero','Vậy ta sẽ tự mở đường. Xích Nham phải trả lời về việc rút quân khỏi Vô Danh.']
+  ],
+  lightning:[
+    ['beast','Đánh bại hai trưởng làng chưa khiến ngươi có quyền quyết định đường đi của quân Lôi.'],
+    ['hero','Ta đến để ngăn Chấn Thiên chiếm đóng Vô Danh. Không làng nào có quyền áp đặt số phận lên những người khác.'],
+    ['beast','Vậy ngươi đã chọn chống lại Lôi Ảnh. Tả vệ, hữu vệ! Khóa đường lui, bắt giữ kẻ này!'],
+    ['hero','Nếu muốn ngăn ta, các ngươi phải tự bước tới. Ta sẽ không bỏ mặc quê nhà.']
+  ]
+};
 
 // Combat setup stays in the encounter. The conversation only contains what
 // these characters would actually say to one another in the world.
@@ -20,6 +41,10 @@ export function battleConversation(encounter,save){
   else if(encounter.occupation){say(enemy,'Lãnh địa này thuộc binh đoàn Trăng Khuyết. Bắt lấy chúng!');say(hero,'Ta sẽ giải thoát những người các ngươi đang giam giữ.');}
   else if(encounter.kind==='guardian-order'){
     const beast=opponent({kind:'boss',guardianForm:'beast'});
+    if(hostileGuardianOrders[encounter.village]){
+      for(const [speaker,text] of hostileGuardianOrders[encounter.village])say(speaker==='beast'?beast:hero,text);
+      return lines;
+    }
     say(beast,'Trưởng làng đã nhận lời thách đấu. Hai hộ vệ sẽ cùng kiểm tra bản lĩnh của ngươi trước khi ngươi bước vào phòng họp.');
     say(hero,'Ta đã mang chứng cứ và cứu những người gặp nạn. Giờ ta sẽ giữ lời hứa với Làng Vô Danh.');
     say(beast,'Tả vệ, hữu vệ, cùng tiến lên. Đây là cuộc so tài; dừng tay khi đối phương nhận thua.');
@@ -44,6 +69,9 @@ export function battleConversation(encounter,save){
     say(hero,'Tôi không muốn thêm ai bị thương. Nhưng nếu phải vượt qua ông để bảo vệ họ, tôi sẽ không lùi bước.');
     say(enemy,'Vậy hãy chứng minh quyết tâm ấy. Nếu sợ hãi, chịu thua và quay về ngay lúc này!');
     say(hero,'Tôi đã hứa sẽ mang hòa bình trở lại. Tôi nhất định không bỏ cuộc.');
+  }else if(encounter.kind==='village-guard'&&encounter.guardianChain&&WAR_VILLAGES.includes(encounter.village)){
+    say(opponent(encounter.squad?.[0]||encounter),'Tôi tới đây');
+    say(hero,'Tới đi');
   }else if(encounter.kind==='village-guard'){
     say(enemy,encounter.guardRole==='guardian'?'Đứng lại! Phía sau ta là nơi hộ vệ trấn giữ. Ngươi không được bước tiếp.':'Dừng lại! Kẻ từ làng khác không được tự tiện đi qua đây.');
     say(hero,'Tôi đến để tìm một con đường hòa bình. Tôi không muốn giao chiến với các anh.');

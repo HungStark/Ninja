@@ -539,17 +539,17 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(save.village==='nameless'||save.bosses[save.village]||guardianOrdered(save)||world.interior||!inCouncilCourtyard(world.civic,world.hero.root.position))return false;
     dialogueItem=null;
     const id=save.village,r=REGIONS[id];
-    dialog('LINH THÚ CHẶN CỔNG',r.boss.guardian,'',[['Đối đầu hai hộ vệ',()=>{
-      orderGuardianGuards(save);persist();refreshStory({rebuildWorld:true});startGuardianGuard();
+    dialog('LINH THÚ CHẶN CỔNG',r.boss.guardian,'',[['Ứng chiến',()=>{
+      orderGuardianGuards(save);world.syncVillageEvents(save);refresh();persist();startGuardianGuard();
     }]],{script:battleConversation({kind:'guardian-order',village:id,name:r.boss.guardian},save),requireComplete:true});return true;
   }
-  function startGuardianGuard(immediate=false){
+  function startGuardianGuard(){
     if(!admin.active&&!WAR_VILLAGES.includes(save.village)){guideMainPlot();return true;}
     if(guardianStoryDialog())return true;
     const guardId=nextGuardianGuard(save);if(!guardId)return false;
     const ids=guardianGuardIds(save.village).filter(id=>!save.story.defeatedGuards.includes(id)),profile=encounterProfile(save,'guardian-guard',save.village);
     const squad=ids.map((id,i)=>({...profile,id,guardId:id,kind:'village-guard',village:save.village,name:id.endsWith('-1')?'Hộ vệ trái':'Hộ vệ phải',initialDelay:3+i*.6}));
-    offerBattle('village-guard',{guardId,guardIds:ids,guardRole:'guardian',name:'Hai hộ vệ linh thú',squad,guardianChain:true,immediate});return true;
+    offerBattle('village-guard',{guardId,guardIds:ids,guardRole:'guardian',name:'Hai hộ vệ linh thú',squad,guardianChain:true});return true;
   }
   function jailerDialog(item){
     if(save.village==='fire'){
@@ -576,7 +576,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(id!=='nameless'&&!admin.active&&!departureTrial){
       if(!guardianOrdered(save)){guardianGateDialog();return;}
       if(nextGuardianGuard(save)){startGuardianGuard();return;}
-      if(world.interior?.kind!=='council'){dialogueItem=null;dialog('PHÒNG HỌP CỦA LÀNG','Cuộc thách đấu của trưởng làng','Hai hộ vệ đã công nhận bản lĩnh của bạn. Trưởng làng đang chờ trong phòng họp.',[['Tới phòng họp',()=>{closeDialog();moveToItem(findJourneyItem('npc'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
+      if(world.interior?.kind!=='council'){dialogueItem=null;dialog('PHÒNG HỌP CỦA LÀNG','Buộc trưởng làng rút quân','Hai hộ vệ đã bị đánh bại. Lối vào phòng họp đã mở. Tiến tới gặp trưởng làng để buộc quân của làng rút khỏi Vô Danh.',[['Tới phòng họp',()=>{closeDialog();moveToItem(findJourneyItem('npc'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
     }
 
   }
@@ -612,8 +612,8 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       dialogueItem=null;dialog(EARTH_DEPARTURE_TRIAL.title,victory?'Sẵn sàng ra khơi':'Hãy chuẩn bị rồi thử lại','',victory?[['Nhận bản thiết kế và tới bến thuyền',()=>{acceptAlliance(save,'earth');refreshStory();followCampaign();}],['Ở lại chuẩn bị',closeDialog,true]]:[['Thử lại',()=>offerBattle('boss')],['Chuẩn bị thêm',closeDialog,true]],{script:campaignLines(victory?EARTH_DEPARTURE_TRIAL.victory:EARTH_DEPARTURE_TRIAL.defeat,save,'earth'),requireComplete:true});return;
     }
     if(victory&&battle.kind==='village-guard'&&battle.guardianChain){
-      if(nextGuardianGuard(save)){startGuardianGuard(true);return;}
-      dialogueItem=null;dialog('HAI HỘ VỆ ĐÃ THẤT BẠI','Tới phòng họp','Hai hộ vệ công nhận bản lĩnh của bạn. Trưởng làng đang chờ cuộc thách đấu trong phòng họp.',[['Đi tới phòng họp',()=>{closeDialog();moveToItem(findJourneyItem('npc'));}],['Chuẩn bị thêm',closeDialog,true]]);return;
+      if(nextGuardianGuard(save)){startGuardianGuard();return;}
+      dialogueItem=null;dialog('HAI HỘ VỆ ĐÃ THẤT BẠI','Tới phòng họp','Hai hộ vệ đã bị đánh bại. Lối vào phòng họp đã mở. Tiến tới gặp trưởng làng để buộc quân của làng rút khỏi Vô Danh.',[['Đi tới phòng họp',()=>{closeDialog();moveToItem(findJourneyItem('npc'));}],['Chuẩn bị thêm',closeDialog,true]]);return;
     }
     if(victory&&battle.kind==='village-event'){const event=currentVillageEvent(save);dialogueItem=null;dialog(PLOT.villages[battle.village].title,event?.title||'Đã vượt qua cuộc tập kích',event?.body||'Mang kết quả điều tra tới trưởng làng.',[['Theo dấu câu chuyện',()=>{closeDialog();followCampaign();}],['Chuẩn bị thêm',closeDialog,true]]);return;}
     if(victory&&battle.kind==='intro-trio'){dialogueItem=null;dialog(PLOT.chapters[0],'Mảnh lõi của Vô Danh Thú','',[['Nhận mảnh lõi và trở về báo cáo',()=>{closeDialog();followCampaign();}]],{script:campaignLines(PLOT.guardianSaved,save,'nameless'),requireComplete:true});return;}

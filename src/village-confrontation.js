@@ -18,7 +18,7 @@ export function confrontationObjective(save,id){
   if(!WAR_VILLAGES.includes(id)||save.bosses[id])return null;
   if(guardianStoryPending(save,id))return villageEventObjective(save,id);
   const guard=nextGuardianGuard(save,id);
-  if(!guardianOrdered(save,id))return {title:'Cuộc thách đấu của trưởng làng',description:'Mang chứng cứ tới sân phòng họp, vượt qua hai hộ vệ rồi đối đầu trưởng làng để yêu cầu rút quân.',targetVillage:id,targetKind:'boss'};
+  if(!guardianOrdered(save,id))return {title:'Buộc trưởng làng rút quân',description:'Vượt qua vòng vây của hai hộ vệ, tiến vào phòng họp và buộc trưởng làng rút quân khỏi Vô Danh.',targetVillage:id,targetKind:'boss'};
   if(guard)return {title:'Đối đầu hai hộ vệ',description:'Hai hộ vệ cùng được lệnh bắt bạn. Đánh bại cả hai trong một trận để tới phòng họp.',targetVillage:id,targetKind:'village-guard',targetId:guard};
-  return {title:'Đối đầu trưởng làng',description:'Hai hộ vệ đã công nhận bản lĩnh của bạn. Vào phòng họp để bắt đầu cuộc thách đấu.',targetVillage:id,targetKind:'npc'};
+  return {title:'Đối đầu trưởng làng',description:'Hai hộ vệ đã bị đánh bại. Vào phòng họp đối đầu trưởng làng và buộc quân của làng rút khỏi Vô Danh.',targetVillage:id,targetKind:'npc'};
 }
