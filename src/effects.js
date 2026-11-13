@@ -10,6 +10,7 @@ export class FireEffects {
   constructor(scene) {
     this.scene = scene;
     this.time = 0;
+    this.quality = 1;
     this.smoke = [];
     this.rings = [];
     this.objects = [];
@@ -67,9 +68,15 @@ export class FireEffects {
     this.objects.push(g);
     return g;
   }
+  setQuality(quality) {
+    this.quality=quality;
+    const limit=quality===2?48:180;
+    if(this.smoke.length>limit)this.smoke.splice(0,this.smoke.length-limit);
+  }
   explosion(pos, amount = 1, color = '#ffcb72') {
     const large = amount > 2, scale = large ? Math.sqrt(amount) : 1;
-    for (let i = 0; i < Math.min(large ? 36 : 12, amount * 7); i++) this.smoke.push({ p: new T.Vector3(...pos), v: new T.Vector3((Math.random() - 0.5) * 1.8 * scale, (Math.random() * 0.9 + 0.4) * scale, (Math.random() - 0.5) * 1.8 * scale), age: 0, life: 1.8 + Math.random() * .6 + (large ? amount * .1 : 0), size: (.18 + Math.random() * .12) * scale });
+    const count=Math.ceil(Math.min(large ? 36 : 12, amount * 7)*(this.quality===2?1/3:1));
+    for (let i = 0; i < count; i++) this.smoke.push({ p: new T.Vector3(...pos), v: new T.Vector3((Math.random() - 0.5) * 1.8 * scale, (Math.random() * 0.9 + 0.4) * scale, (Math.random() - 0.5) * 1.8 * scale), age: 0, life: 1.8 + Math.random() * .6 + (large ? amount * .1 : 0), size: (.18 + Math.random() * .12) * scale });
     const ring = new T.Mesh(new T.TorusGeometry(1, 0.018, 5, 64), new T.MeshBasicMaterial({ color: new T.Color(color).multiplyScalar(1.6), transparent: true, opacity: 0.7, blending: T.AdditiveBlending, depthWrite: false }));
     ring.position.fromArray(pos);
     ring.scale.setScalar(0.25);
@@ -77,6 +84,7 @@ export class FireEffects {
     this.rings.push({ mesh: ring, age: 0 });
   }
   update(dt, time, shots, particles, camera, quality, walls = [], fighters = [], fields = [], reducedMotion = false, overhead = false) {
+    this.setQuality(quality);
     this.time = time;
     this.fireMaterial.uniforms.uTime.value = time;
     while (this.objects.length < shots.length) this.makeShot();
@@ -98,11 +106,11 @@ export class FireEffects {
     }
     for (let i = 0; i < this.lights.length; i++) {
       const shot = shots[i], l = this.lights[i];
-      l.intensity = !shot || ['tsunami','thunder','shuriken'].includes(shot.style) ? 0 : shot.style==='icebind'?(shot.phase==='blooming'?.18:.5):shot.style === 'boat' ? 5 : (['lightning','dark','wind'].includes(shot.element)?2.5:18) * shot.size;
+      l.intensity = quality===2 || !shot || ['tsunami','thunder','shuriken'].includes(shot.style) ? 0 : shot.style==='icebind'?(shot.phase==='blooming'?.18:.5):shot.style === 'boat' ? 5 : (['lightning','dark','wind'].includes(shot.element)?2.5:18) * shot.size;
       if (shot) l.position.fromArray(shot.p);
       if (shot) l.color.set(shot.color || '#ff844b');
     }
-    const geo = this.sparks.geometry, n = Math.min(particles.length, this.sparkCapacity);
+    const geo = this.sparks.geometry, n = Math.min(particles.length, quality===2?180:this.sparkCapacity);
     geo.setDrawRange(0, n);
     for (let i = 0; i < n; i++) {
       const p = particles[i];
@@ -119,7 +127,8 @@ export class FireEffects {
       p.v.multiplyScalar(Math.exp(-dt * 0.8));
       if (p.age > p.life) this.smoke.splice(i, 1);
     }
-    if (this.smoke.length > 180) this.smoke.splice(0, this.smoke.length - 180);
+    const smokeLimit=quality===2?48:180;
+    if (this.smoke.length > smokeLimit) this.smoke.splice(0, this.smoke.length - smokeLimit);
     const sg = this.smokePoints.geometry;
     sg.setDrawRange(0, this.smoke.length);
     for (let i = 0; i < this.smoke.length; i++) {

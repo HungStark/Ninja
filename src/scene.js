@@ -1,9 +1,8 @@
 import * as T from "three";
 import {buildInterior,INTERIORS} from "./adventure-interiors.js";
-import { toon, canvasTexture, windyDepth, glowTexture, windTime, withWind } from "./materials.js";
+import { toon, canvasTexture, glowTexture, windTime } from "./materials.js";
 import { inkMaterial, addInkOutline } from './ink-outline.js';
 import { createTerrainGrid, TerrainSurface } from './terrain-surface.js';
-import { createGrassGeometry } from './grass.js';
 import {inArenaChannel,carveArenaChannel,createArenaChannel} from './arena-channel.js';
 let seed = 1681;
 const rand = () => {
@@ -139,23 +138,7 @@ export function createWorld() {
     }
   });
   mats.wood.map = barkTex;
-  const grassGeo = createGrassGeometry('#527c57','#9daf7b');
-  // Stable matte color: spell lights and toon lighting bands must not flash across thin blades.
-  const grassMat = withWind(new T.MeshBasicMaterial({vertexColors:true,side:T.DoubleSide}));
-  const grass = new T.InstancedMesh(grassGeo, grassMat, 1700), dummy = new T.Object3D();
-  for (let i = 0; i < grass.count; i++) {
-    let x, z;
-    do { x = range(-22, 22); z = range(-40, 15); } while (inArenaChannel(x,z,.7));
-    dummy.position.set(x, .015, z);
-    dummy.rotation.y = rand() * Math.PI * 2;
-    dummy.scale.setScalar(range(.6, 1.4));
-    dummy.updateMatrix();
-    grass.setMatrixAt(i, dummy.matrix);
-  }
-  grass.castShadow = grass.receiveShadow = false;
-  grass.customDepthMaterial = windyDepth();
-  grass.frustumCulled = false;
-  scene.add(grass);
+  // Combat ground cover is omitted; summoned Wood plants remain spell objects.
   const opponentSpawn = new T.Vector3(0, 0, -24);
   const plantReferenceHeight = 7.88; // Preserve the established size of summoned Wood plants.
   for (const side of [-1, 1]) {
@@ -183,7 +166,7 @@ export function createWorld() {
   });
   for(const subject of subjects)outlines.push(addInkOutline(subject,subject.material.userData.wind?leafInk:ink));
   const setInkViewport=(width,height)=>[ink,leafInk].forEach(m=>m.uniforms.viewport.value.set(width,height));
-  const terrain=new TerrainSurface(terrainMeshes,[grass],terrainProps);
+  const terrain=new TerrainSurface(terrainMeshes,[],terrainProps);
   const outdoor=[...environment],defaultFog=scene.fog,defaultBackground=scene.background;let arena=null,arenaActive=false;
   function setArena(active,{overhead=false}={}){
     if(active&&!arena){const materials=new Map(),M=(color,glow=0)=>{const key=color+glow;if(!materials.has(key))materials.set(key,new T.MeshStandardMaterial({color,roughness:.9,emissive:color,emissiveIntensity:glow*.25}));return materials.get(key);},roomMesh=(g,m,p,x=0,y=0,z=0)=>{const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;p.add(o);return o;};
@@ -193,5 +176,5 @@ export function createWorld() {
     if(arena){arena.visible=!!active;arena.traverse(o=>{if(['interior-ceiling','arena-ceiling-beam','arena-ceiling-lamp'].includes(o.name))o.visible=!overhead;});}
     scene.fog=active?new T.Fog('#26322d',35,95):defaultFog;scene.background=active?new T.Color('#26322d'):defaultBackground;
   }
-  return {get arenaActive(){return arenaActive;},setArena,setCombatBrightness, scene, sky, sun, fill, grass, opponentSpawn, plantReferenceHeight, update, environment, outlines, setInkViewport, terrain };
+  return {get arenaActive(){return arenaActive;},setArena,setCombatBrightness, scene, sky, sun, fill, opponentSpawn, plantReferenceHeight, update, environment, outlines, setInkViewport, terrain };
 }

@@ -43,13 +43,13 @@ const clamp=v=>Math.max(0,Math.min(1,Number(v)||0)),frequency=midi=>440*2**((mid
 export function createGameAudio({storage,contextFactory,android=!!(globalThis.AnHoaSpeech||globalThis.document?.documentElement?.dataset.android==='true')}={}){
   const platformDefaults=android?{...defaults,music:.75,voice:.9}:defaults,musicBoost=android?2:1;
   let settings={...platformDefaults};try{const raw=JSON.parse((storage||globalThis.localStorage)?.getItem(AUDIO_STORAGE_KEY)||'null');if(raw){for(const key of ['music','effects','voice'])if(Number.isFinite(raw[key]))settings[key]=clamp(raw[key]);for(const key of ['muted','readDialogue'])if(typeof raw[key]==='boolean')settings[key]=raw[key];if(['male','female'].includes(raw.heroVoice))settings.heroVoice=raw.heroVoice;}}catch{}
-  let ctx=null,master,music,effects,effectMixer,effectOutput,voice,analyser,noiseBuffer,timer=null,theme='nameless',mode='home',musicBus=null,step=0,nextNote=0,dialogue=null,utterance=null,hidden=false,settingsOpen=false,destroyed=false;
+  let ctx=null,master,music,effects,effectMixer,effectOutput,voice,analyser,noiseBuffer,timer=null,theme='nameless',mode='home',musicBus=null,step=0,nextNote=0,dialogue=null,utterance=null,hidden=false,settingsOpen=false,destroyed=false,musicSuppressed=false;
   const active=new Set(),lastEffects=new Map(),listeners=new Set(),stats={notes:0,seals:0,casts:0,impacts:0,dialogueLines:0,syllables:0,shuriken:0,dashes:0,cues:{}};
   const soundBuffers=new Map(),loudnessProfiles=new Map(),proceduralReady=new Map(),spellTextures=new Map(),fallingMeteors=new Map(),attachedSounds=new Map(),domeSounds=new Map(),recordingsReady=new Map();let soundEpoch=0,previewSound=null,previewSerial=0;
   const soundscape=createSpellSoundscape({cue:(type,level)=>api.cue(type,level),textures:setSpellTextures,attached:setAttachedSounds,repeating:setDomeSounds});
   const notify=()=>listeners.forEach(fn=>fn({...settings}));
   const ramp=(param,value,duration=.15)=>{if(!ctx||!param)return;param.cancelScheduledValues(ctx.currentTime);param.setTargetAtTime(value,ctx.currentTime,duration/3);};
-  const apply=()=>{if(!ctx)return;const volume=settings.muted||hidden?0:.72;ramp(master.gain,volume);ramp(effectOutput.gain,volume);ramp(music.gain,settings.music*musicBoost*(dialogue?.24:settingsOpen||mode==='pause'?.42:mode==='dialog'?.55:1));ramp(effectMixer.volume.gain,settings.effects);ramp(voice.gain,settings.voice);};
+  const apply=()=>{if(!ctx)return;const volume=settings.muted||hidden?0:.72;ramp(master.gain,volume);ramp(effectOutput.gain,volume);ramp(music.gain,musicSuppressed?0:settings.music*musicBoost*(dialogue?.24:settingsOpen||mode==='pause'?.42:mode==='dialog'?.55:1));ramp(effectMixer.volume.gain,settings.effects);ramp(voice.gain,settings.voice);};
   function release(node,nodes){active.delete(node);for(const n of nodes)try{n.disconnect();}catch{}}
   function note(bus,hz,time,duration,volume,wave='sine',endHz=hz,attack=.012){
     if(!ctx||active.size>=(bus===effects?80:64)||!Number.isFinite(hz)||hz<=0||duration<=0)return;
@@ -145,14 +145,15 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
   }
   function schedule(){
     if(!ctx||ctx.state!=='running'||settings.muted||hidden||destroyed)return;
-    if(settings.music>0){
-      const song=VILLAGE_MUSIC[theme],combat=mode==='combat'||mode==='duel',beat=60/(song.bpm*(combat?1.16:1)),dt=beat/2;
+    // Stop creating music nodes in battle as well as fading out the music bus.
+    if(settings.music>0&&!musicSuppressed){
+      const song=VILLAGE_MUSIC[theme],beat=60/song.bpm,dt=beat/2;
       if(nextNote<ctx.currentTime-.2)nextNote=ctx.currentTime+.025;
       while(nextNote<ctx.currentTime+.3){
         const bar=Math.floor(step/8),index=step%16,degree=song.motif[index],chord=song.chords[Math.floor(bar/2)%4];
         if(degree!==null){const octave=theme==='earth'||theme==='dark'?12:0,midi=song.root+song.scale[degree%song.scale.length]+octave+(Math.floor(step/64)%2&&index>7?12:0);note(musicBus,frequency(midi),nextNote,dt*(theme==='ice'?2.3:1.7),.085,song.wave);if(['water','light','ice'].includes(theme))note(musicBus,frequency(midi+12),nextNote+.018,dt*2,.022);stats.notes++;}
         if(step%8===0){for(const interval of [0,song.minor?3:4,7])note(musicBus,frequency(song.root+chord+interval-12),nextNote,beat*3.7,.024,'sine',frequency(song.root+chord+interval-12),.3);note(musicBus,frequency(song.root+chord-24),nextNote,beat*1.7,.09,'sine');}
-        const drum=song.drums*(combat?1.35:1);if(step%4===0)note(musicBus,100,nextNote,.16,.06*drum,'sine',42);if(step%4===2)noise(musicBus,nextNote,.065,.035*drum,2400,'highpass');
+        const drum=song.drums;if(step%4===0)note(musicBus,100,nextNote,.16,.06*drum,'sine',42);if(step%4===2)noise(musicBus,nextNote,.065,.035*drum,2400,'highpass');
         nextNote+=dt;step=(step+1)%128;
       }
     }
@@ -191,7 +192,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
     settings:()=>({...settings}),
     subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);},
     configure(change){if(['male','female'].includes(change.heroVoice)){settings.heroVoice=change.heroVoice;stopDialogue();}for(const key of ['music','effects','voice'])if(Number.isFinite(change[key]))settings[key]=clamp(change[key]);for(const key of ['muted','readDialogue'])if(typeof change[key]==='boolean')settings[key]=change[key];if(settings.muted||settings.voice===0||change.readDialogue===false)stopDialogue();apply();if(!settings.muted)unlock();try{(storage||globalThis.localStorage)?.setItem(AUDIO_STORAGE_KEY,JSON.stringify(settings));}catch{}notify();},
-    setScene(village,phase){const next=VILLAGE_MUSIC[village]?village:'nameless';if(theme===next&&mode===phase)return;const changed=theme!==next||(['combat','duel'].includes(mode)!==['combat','duel'].includes(phase));theme=next;mode=phase;if(changed)resetMusic();apply();},
+    setScene(village,phase,{combat=false}={}){const next=VILLAGE_MUSIC[village]?village:'nameless',suppressed=combat||['combat','duel'].includes(phase);if(theme===next&&mode===phase&&musicSuppressed===suppressed)return;const changed=theme!==next||musicSuppressed!==suppressed;theme=next;mode=phase;musicSuppressed=suppressed;if(changed)resetMusic();apply();},
     settingsOpen(open){settingsOpen=open;apply();},
     async previewEffect(type){
       stopEffectPreview();const serial=previewSerial;await prepareEffect(type);
@@ -254,7 +255,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
     openVoiceSettings:()=>speech.openSettings(),
     previewVoice(){stopDialogue();dialogue={remaining:0,fallbackRemaining:0,next:0,pitch:220};const ok=speak('Xin chào. Tôi sẽ cùng bạn mang hòa bình trở về các làng.',{id:'hero'},true);if(!ok)dialogue=null;apply();return ok;},
     visibility(value){hidden=value;stopDialogue();apply();if(ctx){if(value)ctx.suspend().catch(()=>{});else unlock();}},
-    state(){let rms=0;if(analyser){const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);rms=Math.sqrt(values.reduce((n,x)=>n+x*x,0)/values.length);}return {supported:!!(globalThis.AudioContext||globalThis.webkitAudioContext||contextFactory),context:ctx?.state||'locked',theme,track:VILLAGE_MUSIC[theme].name,mode,settings:{...settings},activeVoices:active.size,musicStep:step,hidden,rms,stats:{...stats},musicBoost,musicGain:music?.gain.value||0,speech:speech.status(),speaking:!!utterance,dialogue:!!dialogue};},
+    state(){let rms=0;if(analyser){const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);rms=Math.sqrt(values.reduce((n,x)=>n+x*x,0)/values.length);}return {supported:!!(globalThis.AudioContext||globalThis.webkitAudioContext||contextFactory),context:ctx?.state||'locked',theme,track:VILLAGE_MUSIC[theme].name,mode,settings:{...settings},activeVoices:active.size,musicStep:step,hidden,rms,stats:{...stats},musicBoost,musicGain:music?.gain.value||0,musicSuppressed,speech:speech.status(),speaking:!!utterance,dialogue:!!dialogue};},
     destroy(){destroyed=true;clearInterval(timer);stopDialogue();speech.destroy();for(const source of active)try{source.stop();}catch{}active.clear();ctx?.close().catch(()=>{});listeners.clear();}
   };return api;
 }

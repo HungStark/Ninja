@@ -12,6 +12,11 @@ const matrix=new T.Matrix4();shadows.mesh.getMatrixAt(0,matrix);assert.ok(Math.a
 assert.equal(shadows.mesh.geometry.getAttribute('contactStrength').getX(0),1);
 person.root.position.y=2;shadows.update([person],slope);assert.equal(shadows.mesh.geometry.getAttribute('contactStrength').getX(0),.5,'jump shadow fades with height');
 person.root.position.y=5;shadows.update([person],slope);assert.equal(shadows.mesh.count,0);assert.equal(shadows.mesh.material.depthWrite,false);
+person.root.position.y=.5;shadows.setRound(true);shadows.update([person],slope);shadows.mesh.getMatrixAt(0,matrix);
+const shadowScale=new T.Vector3(),shadowPosition=new T.Vector3(),shadowRotation=new T.Quaternion();matrix.decompose(shadowPosition,shadowRotation,shadowScale);
+assert.ok(Math.abs(shadowScale.x-shadowScale.z)<1e-6,'low-quality shadow is circular on its support plane');
+person.shadowScale=2;shadows.update([person],slope);shadows.mesh.getMatrixAt(0,matrix);matrix.decompose(shadowPosition,shadowRotation,shadowScale);assert.ok(Math.abs(shadowScale.x-3.3)<1e-5,'combat shadows follow actor size');
+shadows.setRound(false);shadows.update([person],slope);shadows.mesh.getMatrixAt(0,matrix);matrix.decompose(shadowPosition,shadowRotation,shadowScale);assert.ok(shadowScale.x>shadowScale.z,'regular contact shadow shape restores');
 for(const id of Object.keys(REGIONS)){
  const surfaces=createVillageSurfaces(id);assert.ok(surfaces);assert.ok(surfaces.ground.vertexColors);assert.notEqual(surfaces.wood.bumpMap,surfaces.wood.map);assert.notEqual(surfaces.wood.roughnessMap.colorSpace,T.SRGBColorSpace);
  assert.ok(surfaces.roof.metalness>(id==='lightning'?.5:-1));assert.notDeepEqual(surfaces.wood.roughnessMap.image.data,surfaces.stone.roughnessMap.image.data);
