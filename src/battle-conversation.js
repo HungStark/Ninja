@@ -4,15 +4,18 @@ import {ninjaProfile} from './ninja.js';
 import {village} from './adventure-data.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {isEarthDepartureTrial,EARTH_DEPARTURE_TRIAL} from './earth-departure-trial.js';
+import {PLOT} from './campaign-plot.js';
 
 // Combat setup stays in the encounter. The conversation only contains what
 // these characters would actually say to one another in the world.
 export function battleConversation(encounter,save){
   if(isEarthDepartureTrial(encounter))return campaignLines(EARTH_DEPARTURE_TRIAL.opening,save,'earth');
+  if(encounter.storyBoss)return campaignLines(PLOT.villages[encounter.village].stages[encounter.eventStep].script,save,encounter.village);
   const hero=heroSpeaker(save),lines=[],say=(speaker,text)=>lines.push({speaker,text});
   const opponent=(entry=encounter,index=0)=>{const look=encounterAppearance({...encounter,...entry});return {id:'challenge-'+look.id+'-'+index,name:entry.name||encounter.name,role:village(look.village||look.id).name,appearance:look.kind==='creature'?look:ninjaProfile(look)};};
   const enemy=encounter.kind==='boss'?{id:'chief-'+encounter.village,name:encounter.name,role:village(encounter.village).name,appearance:villagerAppearance(encounter.village,{kind:'chief'})}:opponent();
-  if(encounter.kind==='guardian-order'){
+  if(encounter.occupation){say(enemy,'Lãnh địa này thuộc binh đoàn Trăng Khuyết. Bắt lấy chúng!');say(hero,'Ta sẽ giải thoát những người các ngươi đang giam giữ.');}
+  else if(encounter.kind==='guardian-order'){
     const beast=opponent({kind:'boss',guardianForm:'beast'});
     say(beast,'Trưởng làng đã nhận lời thách đấu. Hai hộ vệ sẽ cùng kiểm tra bản lĩnh của ngươi trước khi ngươi bước vào phòng họp.');
     say(hero,'Ta đã mang chứng cứ và cứu những người gặp nạn. Giờ ta sẽ giữ lời hứa với Làng Vô Danh.');

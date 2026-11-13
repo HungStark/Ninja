@@ -4,6 +4,7 @@ import {REGIONS,regionMetrics,terrainHeight,riverAt,waterwayAt,waterDepthAt} fro
 import {buildHouse,buildGabledRoof} from './adventure-landmarks.js';
 import {setVillagePads,insidePlot,FIRE_PRISON_SITE,FIRE_MOTHER_SITE,FIRE_MEDICINE_SITE} from './village-zoning.js';
 import {createFirePrison} from './fire-prison.js';
+import {islandOccupied} from './island-occupation.js';
 
 export const HALL_STYLES={water:'stilt-council',fire:'basalt-forge',lightning:'storm-tower',earth:'sandstone-fort',wind:'wind-pavilion',light:'sun-colonnade',ice:'snow-lodge',wood:'living-timber',dark:'moon-pagoda'};
 const layouts=new Map();
@@ -183,10 +184,10 @@ export function buildVillageCivic(c,layout){
   const prison=c.group(military.prison.x,military.prison.z);prison.position.y=military.base;prison.name='military-prison';prison.userData={noCollision:true,kind:'prison',village:c.id};
   // Open entrance and roof expose the cell and captive to the exploration view.
   for(const side of [-1,1]){const wall=c.box(prison,c.surfaces.stone,side*7,2.8,0,.8,5.6,11);c.solidMesh(wall,{name:'prison-building-wall',stepable:false});}const back=c.box(prison,c.surfaces.stone,0,2.8,-5.5,14,5.6,.8);c.solidMesh(back,{name:'prison-building-wall',stepable:false});c.box(prison,c.surfaces.wood,0,5.7,5.5,14,.4,.7);for(const side of [-1,1])c.box(prison,c.surfaces.wood,side*6.7,2.8,5.5,.6,5.6,.6);
-  if(c.id!=='fire')createFirePrison(c.land,military.prison,false,c.physics.addBox,c.id+'-prison');
+  if(c.id!=='fire')createFirePrison(c.land,military.prison,['light','dark'].includes(c.id)&&!islandOccupied(c.save||{},c.id),c.physics.addBox,c.id+'-prison');
   for(const [index,p]of layout.houses.entries()){const house=buildHouse(c,p.x,p.z,4.4,4.2,index,p.yaw);house.userData.settlement=true;house.userData.district=layout.districts[0].id;c.obstacles.push({x:p.x,z:p.z,w:3.15,d:3.15});}
   const summary=new T.Group();summary.name='settlement-layout';summary.userData={village:c.id,houses:layout.houses.length,districts:layout.districts.map(d=>d.id),yards:0};c.land.add(summary);
-  return [{kind:'interior-enter',id:hallId(c.id),...layout.hall.entry,label:c.id==='wood'?'Nhà họp của làng':'Nhà họp · Trưởng làng'},{kind:'school',id:c.id+'-school',...layout.school.entry,label:'Trường học · Tu luyện'},...(c.id==='wood'?[{kind:'interior-enter',id:'wood-tournament',...civicPoint(school,0,14),label:'Giải đấu · Trường học Làng Mộc'}]:[]),...layout.clinics.map(clinic=>({kind:'clinic',id:clinic.id,...clinic.healer,label:'Y Tá'})),{kind:'military',id:c.id+'-military',...military.insideGate,label:'Khu quân sự · Trại lính và nhà lao'}].map(i=>({...i,y:c.physics.floorAt(i.x,i.z,c.heightAt(i.x,i.z)+1.3)}));
+  return [{kind:'interior-enter',id:hallId(c.id),...layout.hall.entry,label:islandOccupied(c.save||{},c.id)?'Sở chỉ huy Trăng Khuyết':c.id==='wood'?'Nhà họp của làng':'Nhà họp · Trưởng làng'},{kind:'school',id:c.id+'-school',...layout.school.entry,label:'Trường học · Tu luyện'},...(c.id==='wood'?[{kind:'interior-enter',id:'wood-tournament',...civicPoint(school,0,14),label:'Giải đấu · Trường học Làng Mộc'}]:[]),...layout.clinics.map(clinic=>({kind:'clinic',id:clinic.id,...clinic.healer,label:'Y Tá'})),{kind:'military',id:c.id+'-military',...military.insideGate,label:'Khu quân sự · Trại lính và nhà lao'}].map(i=>({...i,y:c.physics.floorAt(i.x,i.z,c.heightAt(i.x,i.z)+1.3)}));
 }
 
 export function buildGateWatch(c,gates){

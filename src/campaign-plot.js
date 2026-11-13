@@ -6,10 +6,11 @@ import {REGIONS} from './adventure-world.js';
 import {addBooks} from './progression.js';
 import {companionUnconscious} from './companion-health.js';
 import {earthDepartureTrialPending} from './earth-departure-trial.js';
+import {islandOccupied} from './island-occupation.js';
 
 const translate=(value,patch)=>Array.isArray(value)?value.map((v,i)=>Array.isArray(v)&&v.length===2&&typeof patch?.[i]==='string'?[v[0],patch[i]]:translate(v,patch?.[i])):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([k,v])=>[k,translate(v,patch?.[k])])):typeof value==='string'?(typeof patch==='string'?patch:english[value]||value):value;
 export const PLOT=gameLanguage()==='en'?translate(data,translation):data;
-export const PLOT_VERSION=2;
+export const PLOT_VERSION=3;
 export const WAR_VILLAGES=Object.freeze(['water','fire','lightning']);
 export const ALLIANCE_VILLAGES=Object.freeze(['wind','earth','wood','ice','light','dark']);
 export const PLOT_ORDER=Object.freeze([...WAR_VILLAGES,...ALLIANCE_VILLAGES]);
@@ -18,7 +19,7 @@ export const plotVillageComplete=(save,id)=>plotEventComplete(save,id)&&(WAR_VIL
 export const nextPlotVillage=save=>PLOT_ORDER.find(id=>!plotVillageComplete(save,id))||null;
 export const companionPresent=save=>!!save.story?.companion?.recruited&&save.story?.companion?.phase!=='separated';
 export const invasionAvailable=save=>!!save.story?.homecomingDone&&ALLIANCE_VILLAGES.every(id=>plotVillageComplete(save,id));
-export const plotHostile=(save,id=save.village)=>WAR_VILLAGES.includes(id)&&!save.story?.peaceSeals?.includes(id);
+export const plotHostile=(save,id=save.village)=>islandOccupied(save,id)||WAR_VILLAGES.includes(id)&&!save.story?.peaceSeals?.includes(id);
 export function canProgressPlot(save,id,{battleResult=false}={}){
   if(companionUnconscious(save)&&!battleResult)return false;
   if(save.story?.plotPreview)return true;

@@ -1,6 +1,8 @@
 import {PLOT,canProgressPlot,invasionAvailable} from './campaign-plot.js';
 import {REGIONS} from './adventure-world.js';
-import {gainExperience,regionElement,GUARD_ARSENALS} from './progression.js';
+import {gainExperience,regionElement,GUARD_ARSENALS,encounterProfile} from './progression.js';
+import {planVillageCivic} from './village-civic.js';
+import {configureOpponent} from './opponent-balance.js';
 import {FIRE_PRISON_SITE,FIRE_MOTHER_SITE} from './village-zoning.js';
 import {botHealth} from './enemy-balance.js';
 import {readCompanionHealth} from './companion-health.js';
@@ -33,6 +35,9 @@ export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=
   return {ok:true,completed,recruited:!!e.recruit,separated:!!e.separate,reconciled:!!e.reconcile};
 }
 export function eventSpot(id,event){
+  if(event.interior&&event.interior!=='wood-arena')return {x:0,z:-10};
+  if(event.spot==='prison'){const p=planVillageCivic(id).military.prison;return {x:p.x,z:p.z+8};}
+  if(event.spot==='coast')return {x:110,z:70};
   if(id==='wood'&&event.interior==='wood-arena')return {x:-2.8,z:-3.8};
   if(id==='wood')return {...WOOD_SACRED_TREE.eventSite};
   if(id==='nameless')return {x:REGIONS.nameless.boss.x+8,z:REGIONS.nameless.boss.z+7};
@@ -46,16 +51,24 @@ export function eventSpot(id,event){
   const distance=Math.max(6,Math.hypot(zone.x,zone.z)-Math.min(zone.radius*.7,9));const a=Math.atan2(zone.x,zone.z);
   return {x:Math.sin(a)*distance,z:Math.cos(a)*distance};
 }
-export function villageEventEncounter(id,step=1){
+export function villageEventEncounter(id,step=1,save){
   const event=VILLAGE_EVENTS[id]?.stages[step];if(!event?.battle)return null;
+  if(event.storyBoss){
+    const family=event.guardianVillage,context=save||{story:{villageOrder:[]},visited:[]};
+    const base=encounterProfile(context,'boss',family),boss=configureOpponent({...base,kind:'boss',village:family,name:event.enemy});
+    return {...boss,kind:'village-event',village:id,guardianVillage:family,storyBoss:true,eventStep:step,storyBattle:event.battle,guardianName:REGIONS[family].boss.guardian};
+  }
   const profile=(name,element,hp)=>({name,element,village:element,hp:botHealth(hp),spellIds:[...GUARD_ARSENALS[element]],damageMultiplier:.55,restTime:3.8,weaponInterval:4,initialDelay:2});
   let squad;
   if(event.battle==='fire-jail')squad=[profile('Hắc Y · Cai ngục giữ chìa khóa','fire',100),profile('Hắc Y · Cai ngục chặn đường lui','lightning',95)];
   else if(event.battle==='fire-general')squad=[profile(event.enemy,'fire',180),profile('Cận vệ quân lệnh giả','fire',110)];
   else if(event.battle==='water-base')squad=[profile('Lính canh thiết bị chakra','water',140),profile('Kẻ vận hành tinh thể ma lực','lightning',120)];
   else if(event.battle==='earth-base')squad=[profile('Đội trưởng khai thác','earth',180),profile('Kẻ vận chuyển ma thạch','dark',130)];
+  else if(event.battle==='ice-coast')squad=[profile('Đội bắt linh thú Trăng Khuyết','dark',180),profile('Thuật sư phong ấn ven biển','ice',160)];
+  else if(event.battle==='light-battalion')squad=[profile('Quân chiếm đóng Trăng Khuyết','light',220),profile('Cận vệ Trăng Khuyết','dark',200)];
+  else if(event.battle==='dark-battalion')squad=[profile('Tinh binh Trăng Khuyết','dark',260),profile('Tinh binh khóa phong ấn','light',240),profile('Tinh binh giữ nhà ngục','ice',220)];
   else if(event.battle==='wind-eagle')return {...profile(event.enemy,'wind',260),name:event.enemy,guardianForm:'beast',storyBeast:true,eventStep:step,storyBattle:event.battle};
-  else if(event.battle==='gatekeeper')squad=[{...profile(event.enemy,'dark',450),spellIds:['dark-orb','dark-lance','dark-domain','light-orb','fire-lance'],damageMultiplier:.85},profile('Đội tiên phong ngoại giới','light',200)];
+  else if(event.battle==='invasion-vanguard')squad=[{...profile('Chỉ huy tiên phong ngoại giới','dark',450),spellIds:['dark-orb','dark-lance','dark-domain','light-orb','fire-lance'],damageMultiplier:.85},profile('Đội tiên phong ngoại giới','light',200)];
   else squad=[profile(event.enemy,id,150)];
   return {...squad[0],village:id,name:event.enemy,...(squad.length>1?{squad}:{}),eventStep:step,storyBattle:event.battle,coalition:!!event.coalition};
 }

@@ -3,7 +3,7 @@ import {insidePlot} from './village-zoning.js';
 
 export const GUARD_ALERT_RADIUS=10,GUARD_RUN_SPEED=8;
 export function createGuardAmbush({entry,char,land,physics,heightAt,blocked,findPath,smoke}){
-  const standing=['guardian','gate','jailer'].includes(entry.guardRole),home={x:entry.x,y:entry.y,z:entry.z},disguise=new T.Group();disguise.name='guard-disguise-'+entry.disguise;disguise.position.set(home.x,home.y,home.z);land.add(disguise);entry.revealed=standing;char.root.visible=standing;disguise.visible=!standing;
+  const standing=entry.occupation||['guardian','gate','jailer'].includes(entry.guardRole),home={x:entry.x,y:entry.y,z:entry.z},disguise=new T.Group();disguise.name='guard-disguise-'+entry.disguise;disguise.position.set(home.x,home.y,home.z);land.add(disguise);entry.revealed=standing;char.root.visible=standing;disguise.visible=!standing;
   const mesh=(geometry,color,x,y,z)=>{const object=new T.Mesh(geometry,new T.MeshStandardMaterial({color,roughness:1,flatShading:true}));object.position.set(x,y,z);object.castShadow=true;object.receiveShadow=true;disguise.add(object);return object;};
   if(standing){/* Gate and guardian sentries stand openly at their posts. */}
   else if(entry.disguise==='stump'){

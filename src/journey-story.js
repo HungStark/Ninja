@@ -8,6 +8,7 @@ import {botHealth} from './enemy-balance.js';
 import {VILLAGE_EVENTS} from './village-events.js';
 import {PLOT_VERSION,WAR_VILLAGES,ALLIANCE_VILLAGES,plotEventComplete} from './campaign-plot.js';
 import {readCompanionHealth,companionUnconscious} from './companion-health.js';
+import {legionGuardId} from './island-occupation.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
@@ -29,7 +30,7 @@ export function readStory(raw,save){
   s.starter=STARTER_CHOICES.some(c=>c.id===raw.starter)?raw.starter:null;
   s.guardianRestored=raw.guardianRestored===true;
   s.peaceSeals=[...new Set(Array.isArray(raw.peaceSeals)?raw.peaceSeals.filter(id=>REGIONS[id]&&id!=='nameless'):[])];
-  const validGuards=new Set(Object.keys(REGIONS).flatMap(id=>villageGuards(id).map(g=>g.id)));
+  const validGuards=new Set(Object.keys(REGIONS).flatMap(id=>villageGuards(id).flatMap(g=>['light','dark'].includes(id)?[g.id,legionGuardId(g.id)]:[g.id])));
   s.defeatedGuards=[...new Set(Array.isArray(raw.defeatedGuards)?raw.defeatedGuards.filter(id=>validGuards.has(id)):[])];
   const validQuests=new Set(Object.keys(REGIONS).flatMap(id=>villageSidequests(id).map(q=>q.id)));
   for(const [id,status] of Object.entries(raw.sidequests||{}))if(validQuests.has(id)&&[1,2,3].includes(status))s.sidequests[id]=status;
@@ -45,19 +46,23 @@ export function readStory(raw,save){
   // Previously turned-in flowers already produced medicine; keep that progress.
   if((s.villageEvents.fire||0)<4&&save.expeditions?.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.questItems.push('fire:lotus-medicine');
   if(s.villageEvents.fire===3&&!s.questItems.includes('fire:lotus-medicine'))s.villageEvents.fire=2;
-  if(raw.plotVersion!==PLOT_VERSION){
+  if(raw.plotVersion===2){
+    s.villageEvents.ice=Math.min(4,s.villageEvents.ice||0);
+    for(const id of ['light','dark','nameless'])delete s.villageEvents[id];
+  }else if(raw.plotVersion!==PLOT_VERSION){
     // Keep earned gear, levels, chief victories and the original four rescue steps.
     // New investigations are played instead of treating old seal collection as the new ending.
     s.villageEvents.water=Math.min(4,s.villageEvents.water||0);s.villageEvents.fire=Math.min(4,s.villageEvents.fire||0);
     for(const id of ['lightning',...ALLIANCE_VILLAGES,'nameless'])delete s.villageEvents[id];
   }
+  if(raw.plotVersion!==PLOT_VERSION)s.defeatedGuards=s.defeatedGuards.filter(id=>!id.startsWith('light-')&&!id.startsWith('dark-')&&!id.startsWith('crescent-'));
   s.sealCore=raw.sealCore===true||s.guardianRestored;
   if(s.sealCore&&!s.questItems.includes('nameless:seal-core'))s.questItems.push('nameless:seal-core');
-  s.homecomingDone=raw.plotVersion===PLOT_VERSION&&raw.homecomingDone===true&&save.campaign?.treatySigned===true;
+  s.homecomingDone=[2,PLOT_VERSION].includes(raw.plotVersion)&&raw.homecomingDone===true&&save.campaign?.treatySigned===true;
   s.sealTraces=[...new Set((Array.isArray(raw.sealTraces)?raw.sealTraces:[]).filter(key=>{if(typeof key!=='string')return false;const [id,step]=key.split(':');return VILLAGE_EVENTS[id]?.stages[Number(step)]?.sealTrace&&Number(step)<(s.villageEvents[id]||0);}))];
-  s.alliances=raw.plotVersion===PLOT_VERSION?[...new Set((Array.isArray(raw.alliances)?raw.alliances:[]).filter(id=>ALLIANCE_VILLAGES.includes(id)&&plotEventComplete({story:s},id)))]:[];
+  s.alliances=[2,PLOT_VERSION].includes(raw.plotVersion)?[...new Set((Array.isArray(raw.alliances)?raw.alliances:[]).filter(id=>ALLIANCE_VILLAGES.includes(id)&&plotEventComplete({story:s},id)))]:[];
   s.companion.recruited=(s.villageEvents.fire||0)>=4;
-  s.companion.phase=s.villageEvents.wood===2||(s.villageEvents.light||0)>=4&&(s.villageEvents.dark||0)<3?'separated':'with-party';Object.assign(s.companion,readCompanionHealth(raw.companion,save.visited));return s;
+  s.companion.phase=s.villageEvents.wood===2?'separated':'with-party';Object.assign(s.companion,readCompanionHealth(raw.companion,save.visited));return s;
 }
 export function promiseMother(save){if(save.story.stage!=='mother')return false;save.story.stage='chief';return true;}
 export function chooseStarter(save,id){

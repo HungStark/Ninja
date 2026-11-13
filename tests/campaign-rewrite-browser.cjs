@@ -14,7 +14,7 @@
     const event=async()=>{await page.evaluate(()=>{const w=__storyWorld,i=w.interactives.find(i=>i.kind==='village-event');if(!i)throw Error('Missing event');w.hero.root.position.set(i.x,i.y??w.heightAt(i.x,i.z),i.z);__AN_HOA__.explore.interact('village-event');});await finish();};
     const action=()=>page.locator('#dialogActions button').first().click();
     await page.goto('http://127.0.0.1:4389/?test=1');
-    for(const key of ['water:5','wood:1','ice:2','light:3','dark:1','dark:2','nameless:1']){
+    for(const key of ['water:5','wood:1','ice:2','nameless:1']){
       await load(key);await event();assert.equal((await state()).phase,'dialog');
       if(key==='wood:1'||key==='ice:2'||key==='dark:1'){await page.locator('[data-event-choice="1"]').click();assert.equal((await state()).save.story.villageEvents[key.split(':')[0]],Number(key.split(':')[1]));await action();await finish();}
       if(key==='nameless:1'){const names=await page.evaluate(()=>{const a=[];__storyWorld.scene.traverse(o=>{if(o.name?.startsWith('coalition-'))a.push(o.name);});return a;});assert.equal(names.length,9);await page.screenshot({path:out+'/coalition-dialogue.png'});}

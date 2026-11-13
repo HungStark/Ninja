@@ -9,6 +9,9 @@ import {createFirePrison} from './fire-prison.js';
 import {createCompanionFollow,FOLLOW_GAP} from './companion-follow.js';
 import {carryingCompanion} from './companion-health.js';
 import {companionPresent} from './campaign-plot.js';
+import {islandOccupied,beastRescued,crescentEmblem} from './island-occupation.js';
+import {planVillageCivic} from './village-civic.js';
+import {buildGuardianBeast} from './guardian-beasts.js';
 
 export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>!blocked(p.x,p.z),addSolid,removeSolid=()=>{}}){
   const root=new T.Group();root.name='village-story-actors';scene.add(root);
@@ -38,6 +41,12 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
     reset(current===id&&!!follower&&companionPresent(save));current=id;list=interactives;for(let i=list.length-1;i>=0;i--)if(['village-event','story-witness','companion'].includes(list[i].kind))list.splice(i,1);
     const event=currentVillageEvent(save,id),roomId=typeof inInterior==='string'?inInterior:inInterior?save.interior?.id:null;
     activeEvent=event&&((event.interior||null)===(roomId||null))&&(!event.requiresTournament||save.arena?.completedRuns>0)?event:null;
+    if(!inInterior&&islandOccupied(save,id)){
+      const p=planVillageCivic(id).military.prison,y=floor(p.x,p.z);
+      const chief=createVillager(villagerAppearance(id,{kind:'chief'}));chief.root.name='imprisoned-chief-'+id;chief.root.position.set(p.x,y+.12,p.z-.4);root.add(chief.root);stationary.push(chief);
+      for(const [i,side]of [-1,1].entries()){const loyal=createNinja({village:id});loyal.root.name='imprisoned-loyal-guard-'+i;loyal.root.scale.setScalar(.8);loyal.root.position.set(p.x+side*1.3,y+.12,p.z+.65);loyal.setStoryPose?.('captive');root.add(loyal.root);stationary.push(loyal);}
+    }
+    if(!inInterior&&id==='dark'&&save.story?.alliances?.includes('light')){for(let i=0;i<3;i++){const guard=createNinja({village:'light'});guard.root.name='light-liberation-reinforcement-'+i;const p=safePoint({x:-4+i*3,z:13});guard.root.position.set(p.x,p.y,p.z);root.add(guard.root);stationary.push(guard);}}
     if(id==='wood'&&roomId==='wood-arena'&&villageEventStep(save,'wood')===2&&!companionPresent(save)){
       const actor=addActor(HA_LY.id,safePoint({x:-2.8,y:0,z:-3.8}));actor.root.name='ha-ly-waiting-treehouse';stationary.push(actor);
       list.push({kind:'story-witness',id:'ha-ly-treehouse',x:-2.8,z:-3.8,y:0,label:'Hạ Ly · Chờ gặp lại'});
@@ -52,10 +61,11 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
         if(step===0||step===2)list.push({kind:'story-witness',id:'ha-ly-wounded',x:p.x,z:p.z+3.25,y:p.y,label:'Hạ Ly · Nhà lao'});
       }
     }
-    if(activeEvent){const giver=id==='fire'&&activeEvent.style==='medicine'?list.find(i=>i.kind==='expedition-giver'):null,original=giver||eventSpot(id,activeEvent),dry=id==='water'&&!waterFootprintDry(original.x,original.z,{w:4,d:4,padding:.8})?nearestDryWaterPoint(original.x,original.z,{w:4,d:4,padding:.8,valid:(x,z)=>!blocked(x,z)}):null,p=safePoint(dry||original);const g=new T.Group();g.position.set(p.x,p.y,p.z);root.add(g);
-      if(id!=='fire'){if(id!=='wood'||activeEvent.style==='medicine'&&!roomId)props(g,activeEvent.style);if(!['medicine','letter','crate','rope'].includes(activeEvent.style)){const actor=createVillager(villagerAppearance(id,{id:'story-guide-'+id,kind:'lore'}));actor.root.position.set(1.8,0,0);g.add(actor.root);stationary.push(actor);}}
-      if(id==='dark'&&!companionPresent(save)&&save.story.companion.recruited){const actor=addActor(HA_LY.id,safePoint({x:p.x-2,z:p.z+1}));actor.root.name='ha-ly-investigating';stationary.push(actor);}
+    if(activeEvent){const giver=id==='fire'&&activeEvent.style==='medicine'?list.find(i=>i.kind==='expedition-giver'):null,coast=activeEvent.spot==='coast'&&list.find(i=>i.kind==='dock'&&i.id==='light'),coastPoint=coast&&{x:coast.x-Math.sin(Math.atan2(coast.x,coast.z))*10,z:coast.z-Math.cos(Math.atan2(coast.x,coast.z))*10},original=giver||coastPoint||eventSpot(id,activeEvent),dry=id==='water'&&!waterFootprintDry(original.x,original.z,{w:4,d:4,padding:.8})?nearestDryWaterPoint(original.x,original.z,{w:4,d:4,padding:.8,valid:(x,z)=>!blocked(x,z)}):null,p=safePoint(dry||original);const g=new T.Group();g.position.set(p.x,p.y,p.z);root.add(g);
+      if(activeEvent.storyBoss){const actor=createNinja({village:activeEvent.guardianVillage,coat:'#39233f'});actor.root.name='crescent-story-commander-'+activeEvent.guardianVillage;actor.root.position.set(1.5,0,0);crescentEmblem(actor.root);g.add(actor.root);stationary.push(actor);}
+      else if(id!=='fire'){if(id!=='wood'||activeEvent.style==='medicine'&&!roomId)props(g,activeEvent.style);if(!['medicine','letter','crate','rope'].includes(activeEvent.style)){const actor=createVillager(villagerAppearance(id,{id:'story-guide-'+id,kind:'lore'}));actor.root.position.set(1.8,0,0);g.add(actor.root);stationary.push(actor);}}
       if(activeEvent.rally){for(const [i,region]of ['water','fire','lightning','wind','earth','wood','ice','light','dark'].entries()){const angle=(i-4)*.23,pos=safePoint({x:p.x+Math.sin(angle)*9,z:p.z+6+Math.cos(angle)*4}),actor=createNinja({village:region});actor.root.name='coalition-'+region;actor.root.position.set(pos.x,pos.y,pos.z);root.add(actor.root);stationary.push(actor);}}
+      if(activeEvent.rally&&id==='nameless'){for(const [i,region]of ['wood','ice','light','dark'].entries())if(beastRescued(save,region)){const beast=buildGuardianBeast({id:region,M:color=>new T.MeshStandardMaterial({color,roughness:1,flatShading:true}),mesh:(geometry,material,parent,x=0,y=0,z=0)=>{const m=new T.Mesh(geometry,material);m.position.set(x,y,z);parent.add(m);return m;}});beast.name='rescued-allied-beast-'+region;beast.userData.noCollision=true;beast.position.set(p.x-13+i*9,floor(p.x-13+i*9,p.z+17),p.z+17);beast.scale.setScalar(.65);root.add(beast);}}
 
       const mark=mesh(g,new T.OctahedronGeometry(.18),'#f4d88d',[0,3.6,0]);mark.name='story-event-marker';
       list.push({kind:'village-event',id:`story-${id}-${activeEvent.step}`,eventVillage:id,step:activeEvent.step,x:p.x,z:p.z,y:p.y,label:activeEvent.title});

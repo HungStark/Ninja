@@ -139,7 +139,8 @@
     "test:companion-health": "node tests/companion-health-core.mjs && node tests/companion-collateral-core.mjs && node tools/build-android.mjs && node tests/companion-health-browser.cjs && node tests/companion-health-browser.cjs --mobile",
     "test:sacred-tree-ladder": "node tests/sacred-tree-ladder-core.mjs && node tools/build-android.mjs && node tests/sacred-tree-ladder-browser.cjs && node tests/sacred-tree-ladder-browser.cjs --mobile",
     "test:wood-tournament": "node tests/wood-tournament-core.mjs && node tests/snowball-piercing-core.mjs && node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tests/armor-designs.mjs && node tests/armguards-core.mjs && node tools/build-android.mjs && node tests/wood-tournament-browser.cjs && node tests/wood-tournament-browser.cjs --mobile",
-    "test:earth-departure-trial": "node tests/earth-departure-trial-core.mjs && node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tools/build-android.mjs && node tests/earth-departure-trial-browser.cjs && node tests/earth-departure-trial-browser.cjs --mobile"
+    "test:earth-departure-trial": "node tests/earth-departure-trial-core.mjs && node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tools/build-android.mjs && node tests/earth-departure-trial-browser.cjs && node tests/earth-departure-trial-browser.cjs --mobile",
+    "test:island-campaign": "node tests/island-campaign-core.mjs && node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tools/build-android.mjs && node tests/island-campaign-browser.cjs && node tests/island-campaign-browser.cjs --mobile && node tests/campaign-presentation-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

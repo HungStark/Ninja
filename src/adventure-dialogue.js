@@ -17,6 +17,8 @@ export function campaignLines(script,save,id=save.village){
   const person=(key,name,region=id,kind='lore',extra={})=>({id:'plot-'+key,name,role:region,appearance:villagerAppearance(region,{kind,...extra}),...extra});
   const chiefs=region=>person('chief-'+region,leaderNames[region]||'Trưởng làng',region,'chief');
   const speakers={hero,chief:chiefs(id),haly:{...HA_LY,appearance:ninjaProfile(HA_LY)},mother:person('mother','Mẹ','nameless','mourner',{female:true,age:'elder'}),
+    commander:{id:'crescent-commander',name:currentVillageEvent(save,id)?.enemy||'Phó đoàn Trăng Khuyết',role:'Binh đoàn Trăng Khuyết',appearance:ninjaProfile({village:currentVillageEvent(save,id)?.guardianVillage||id,coat:'#39233f'})},
+    traitor:{id:'crescent-traitor',name:currentVillageEvent(save,id)?.enemy||'Kẻ phản bội Làng Băng',role:'Binh đoàn Trăng Khuyết',appearance:ninjaProfile({village:currentVillageEvent(save,id)?.guardianVillage||'ice',coat:'#39233f'})},
     beast:{id:'nameless-beast',name:'Vô Danh Thú',role:'Linh thú giữ phong ấn',appearance:{kind:'creature',id:'nameless'}},
     guide:person('guide-'+id,PLOT.villages[id]?.speaker||'Người làm chứng'),mage:person('mage','Thiếu nữ bên kia cánh cổng','ice','healer',{female:true}),
     narrator:{...hero,id:'plot-memory',name:'Ký ức của người trở về',role:'Một kiếp sống khác'},

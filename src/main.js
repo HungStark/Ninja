@@ -1,3 +1,4 @@
+import {storyBossProfile} from './island-occupation.js';
 import {createCampaignAlly} from './campaign-ally.js';
 import {companionPresent} from './campaign-plot.js';
 import {setupLanguageSelector} from './language.js';
@@ -152,7 +153,7 @@ async function main() {
   let enemyPose = -1, enemyHit = 0, aiTimer = 2.2, aiSpell = null, aiStep = 0, aiCycle = 0, aiCasts = 0, aiCastAge = 99, battleTime = 0;
   try { const saved = JSON.parse(localStorage.getItem('anhoa-loadout-v3'));const replacements={'dark-barrier':'dark-orb','fire-orb':'fire-volley','water-orb':'water-lance','lightning-orb':'lightning-lance'};const migrated=Array.isArray(saved)?[...new Set(saved.map(id=>replacements[id]||id))]:saved;if (validateLoadout(migrated).ok) loadout = migrated; } catch {}
   duelLoadout=[...loadout];
-  const activeBoss=()=>adventure?.inBattle?(adventure.encounter?.kind==='boss'?adventure.encounter:null):practiceEncounter?.kind==='boss'?practiceEncounter:null;
+  const activeBoss=()=>adventure?.inBattle?(adventure.encounter?.kind==='boss'||adventure.encounter?.storyBoss?storyBossProfile(adventure.encounter):null):practiceEncounter?.kind==='boss'?practiceEncounter:null;
   const bossDamageMultiplier=()=>opponentDamageMultiplier(battleOpponent,activeBoss()?guardianPhases.state().phase:1);
   const baseEnemyDamageMultiplier=()=>opponentBaseDamageMultiplier(battleOpponent,activeBoss()?guardianPhases.state().phase:1);
   const tournamentBattle=()=>!!adventure?.encounter?.tournamentStats;
@@ -1617,7 +1618,7 @@ async function main() {
     if(adventure?.inBattle)aiRules=new GameRules(adventure.encounter.spellIds);
     if(practiceEncounter)aiRules=new GameRules(practiceEncounter.spellIds);
     if(tournamentBattle())adventure.encounter.tournamentStats.moveSpeed=PRACTICE_MOVE_SPEED;
-    battleOpponent=configureOpponent(adventure?.encounter||practiceEncounter||{kind:'practice-ninja',hp:enemy.maxHp,spellIds:[...aiRules.loadout],element:el.id,balancePractice:true});
+    battleOpponent=configureOpponent(adventure?.encounter?storyBossProfile(adventure.encounter):practiceEncounter||{kind:'practice-ninja',hp:enemy.maxHp,spellIds:[...aiRules.loadout],element:el.id,balancePractice:true});
     const firstPhase=activeBoss()?.beastOnly?2:1;
     aiRules=createOpponentRules(GameRules,battleOpponent,firstPhase);enemy.maxHp=battleOpponent.hp;enemy.hp=enemy.maxHp;
     $('enemyElement').textContent = el.glyph + ' ' + el.name + ' / ' + support.name; $('enemyAction').textContent = 'Đang quan sát…';
