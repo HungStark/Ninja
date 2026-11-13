@@ -298,14 +298,16 @@ body:not(.playing)>header,body:not(.playing)>#hud{visibility:hidden}
  :is(#startScreen,#practiceOpponentScreen) .loadout-slot.filled>b{width:36px;height:36px;flex-basis:36px}
 }
 @media(prefers-reduced-motion:reduce){#guide.guide,#guide .spell-details{transition:none}}
-/* Combat information follows each opponent, with a separate row for stack effects. */
+#checkpointSettings .audio-settings-heading h2{margin:0;font-family:"Segoe UI",Arial,sans-serif;font-size:clamp(14px,3.5vw,24px);font-weight:600;line-height:1.35;letter-spacing:0;white-space:nowrap}
+/* Keep the floating panel small enough to fit above opponents. */
 #enemyNameplates{position:fixed;inset:0;z-index:3;pointer-events:none}
 #enemyNameplates[hidden],#enemyNameplates [hidden]{display:none!important}
-#enemyNameplates .enemy-nameplate{position:absolute;left:50%;top:0;right:auto;bottom:auto;transform:translate(-50%,-100%);width:220px;max-width:calc(100vw - 24px);padding:9px 12px;text-align:center;visibility:visible;border:1px solid #b9cec64d;border-radius:5px;background:#142a32df;pointer-events:none}
-#enemyNameplates .enemy-heading{font-size:11px;line-height:1.35}
-#enemyNameplates .enemy-health-row{margin-top:6px;font-size:9px}
-#enemyNameplates .meter{height:5px;margin:6px 0}
-#enemyNameplates #enemyAction,#enemyNameplates .enemy-seals{min-height:22px;margin-top:5px;gap:3px;font-size:10px}
+#enemyNameplates .enemy-nameplate{position:absolute;left:50%;top:0;right:auto;bottom:auto;transform:translate(-50%,-100%);width:220px;max-width:calc(100vw - 24px);padding:6px 9px;text-align:center;visibility:visible;border:1px solid #b9cec64d;border-radius:5px;background:#142a32df;pointer-events:none}
+#enemyNameplates .enemy-heading,#enemyNameplates #enemyShield{display:none!important}
+#enemyNameplates .enemy-health-row{margin-top:0;font-size:9px}
+#enemyNameplates .meter{height:5px;margin:4px 0 0}
+#enemyNameplates #enemyAction,#enemyNameplates .enemy-seals{min-height:22px;margin-top:4px;gap:3px;font-size:10px}
+#enemyNameplates #enemyAction:not(:has(kbd)),#enemyNameplates .enemy-seals:empty{display:none}
 #enemyNameplates kbd{min-width:20px;height:22px;font-size:10px}
 #enemyNameplates #enemyShield{font-size:9px;line-height:1.35;min-height:0;margin-top:4px}
 #enemyNameplates .enemy-afflictions{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:5px;white-space:nowrap}

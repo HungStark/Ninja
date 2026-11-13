@@ -8,7 +8,7 @@ export const PRACTICE_BOUNDS={minX:-15.35,maxX:15.35,minZ:-25.35,maxZ:11.35};
 export const PRACTICE_MOVE_SPEED=2.5*MOVEMENT_SPEED_MULTIPLIER;
 export const PRACTICE_BOT_MOVE_SPEED=PRACTICE_MOVE_SPEED*.5;
 // A narrower lens and three-quarter angle give the tactical view a MOBA feel.
-const CAMERA_PITCH=Math.PI/4,CAMERA_YAW=Math.PI/12,CAMERA_FOV=40;
+const CAMERA_HEIGHT=39,CAMERA_PITCH=Math.PI/4,CAMERA_YAW=Math.PI/12,CAMERA_FOV=40;
 const AUTOMATIC_SPELL_STYLES=new Set(['woodseed','ignite','discharge','aircombo','earthcraterspikes','waterbubbles','shadowclone','shadowcommand','domain','shadowdive','flowerpoison','vinebind','snowstorm','snowball','blizzard','icefog']);
 export function practiceSpellNeedsAim(spell){return !!spell&&!AUTOMATIC_SPELL_STYLES.has(spell.style);}
 export function clampPracticePoint(p){return [T.MathUtils.clamp(p[0],PRACTICE_BOUNDS.minX,PRACTICE_BOUNDS.maxX),p[1],T.MathUtils.clamp(p[2],PRACTICE_BOUNDS.minZ,PRACTICE_BOUNDS.maxZ)];}
@@ -31,8 +31,7 @@ export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
   environment?.push(fence);
   for(const z of [PRACTICE_ARENA.minZ,...PRACTICE_DIVIDERS,PRACTICE_ARENA.maxZ]){const row=new T.Group();row.name=PRACTICE_DIVIDERS.includes(z)?'practice-divider':'practice-end-fence';row.position.z=z;fence.add(row);for(const y of [.55,1.25]){const rail=new T.Mesh(new T.BoxGeometry(32,.12,.15),wood);rail.position.set(0,y,0);row.add(rail);}for(let x=-16;x<=16;x+=4){const post=new T.Mesh(new T.BoxGeometry(.25,1.7,.25),wood);post.position.set(x,.85,0);row.add(post);}}
   const ray=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,1,0),0),hit=new T.Vector3();
-  const focus=new T.Vector3(0,0,-7),back=new T.Vector3(Math.sin(CAMERA_YAW)*Math.cos(CAMERA_PITCH),Math.sin(CAMERA_PITCH),Math.cos(CAMERA_YAW)*Math.cos(CAMERA_PITCH));
-  const right=new T.Vector3(Math.cos(CAMERA_YAW),0,-Math.sin(CAMERA_YAW)),up=new T.Vector3().crossVectors(back,right),corner=new T.Vector3();
+  const focus=new T.Vector3(0,0,-4),back=new T.Vector3(Math.sin(CAMERA_YAW)*Math.cos(CAMERA_PITCH),Math.sin(CAMERA_PITCH),Math.cos(CAMERA_YAW)*Math.cos(CAMERA_PITCH));
   let cursor=[0,0,-8],pointer=null,moveTarget=null,preview=null;
   function projectPointer(camera,canvas){if(!pointer)return;const r=canvas.getBoundingClientRect();ray.setFromCamera(new T.Vector2((pointer[0]-r.left)/r.width*2-1,-(pointer[1]-r.top)/r.height*2+1),camera);if(ray.ray.intersectPlane(plane,hit))cursor=clampPracticePoint(hit.toArray());}
   return {
@@ -45,12 +44,7 @@ export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
     stop(){moveTarget=null;destination.visible=false;},
     reset(){moveTarget=null;pointer=null;cursor=[0,0,-8];preview=null;root.visible=destination.visible=playerMarker.visible=fence.visible=false;},
     camera(camera,canvas){
-      const halfFov=Math.tan(T.MathUtils.degToRad(CAMERA_FOV/2));let distance=30;
-      // Fit the arena and standing characters without changing the viewing angle.
-      for(const x of [PRACTICE_ARENA.minX,PRACTICE_ARENA.maxX])for(const z of [PRACTICE_ARENA.minZ,PRACTICE_ARENA.maxZ])for(const y of [0,6]){
-        corner.set(x,y,z).sub(focus);const depth=corner.dot(back);
-        distance=Math.max(distance,depth+Math.abs(corner.dot(right))/(halfFov*camera.aspect*.85),depth+Math.abs(corner.dot(up))/(halfFov*.82));
-      }
+      const distance=CAMERA_HEIGHT/Math.sin(CAMERA_PITCH);
       camera.fov=CAMERA_FOV;camera.position.copy(focus).addScaledVector(back,distance);camera.lookAt(focus);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);projectPointer(camera,canvas);
     },
     update({enabled,active,spell,available,position,target,heightAt,showFences=true}){

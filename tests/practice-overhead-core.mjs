@@ -20,10 +20,12 @@ for(const from of [[0,1.72,-24],[0,1.72,-7],[0,1.72,7]]){
   for(const to of [[0,0,-100],[0,0,100]]){const p=stepPracticePoint(from,to,100);assert.ok(p[2]>=b.minZ-1e-9&&p[2]<=b.maxZ+1e-9,'after skill displacement, walking cannot cross the next fence or snap back home');}
 }
 const scene=new T.Scene(),view=createPracticeOverhead(scene),camera=new T.PerspectiveCamera(68,1.5,.05,220),canvas={getBoundingClientRect:()=>({left:0,top:0,width:1440,height:960})};
-for(const aspect of [1,1.5,16/9,21/9]){
+for(const aspect of [9/16,1,1.5,16/9,21/9]){
   camera.aspect=aspect;view.camera(camera,canvas);const direction=camera.getWorldDirection(new T.Vector3());
   assert.ok(Math.abs(Math.asin(-direction.y)-Math.PI/4)<1e-6,'Tactical camera looks diagonally down at 45 degrees');assert.ok(Math.abs(direction.x)>.1,'Camera shows the side of characters');
-  for(const x of [-16,16])for(const z of [-26,12])for(const y of [0,6]){const p=new T.Vector3(x,y,z).project(camera);assert.ok(Math.abs(p.x)<=.85+1e-6&&Math.abs(p.y)<=.82+1e-6,'Arena and standing characters remain in frame across aspect ratios');}
+  assert.ok(Math.abs(camera.position.y-39)<1e-6,'Combat camera stays 39 metres above the arena across aspect ratios');assert.equal(camera.fov,40);
+  const focus=camera.position.clone().addScaledVector(direction,camera.position.y/-direction.y);assert.ok(Math.abs(focus.x)<1e-6&&Math.abs(focus.z+4)<1e-6,'Camera focus moves 3 metres toward the player from the original arena centre');
+  if(aspect>=1.5)for(const x of [-16,0,16]){const edge=new T.Vector3(x,0,PRACTICE_ARENA.maxZ).project(camera);assert.ok(Math.abs(edge.x)<1&&edge.y> -1,'Player-side fence remains inside the landscape frame');}
 }
 camera.aspect=1.5;
 view.camera(camera,canvas);const target=new T.Vector3(7,0,-9).project(camera);view.pointer((target.x+1)*720,(1-target.y)*480,camera,canvas);const cursor=view.point();assert.ok(Math.hypot(cursor[0]-7,cursor[2]+9)<1e-6);
