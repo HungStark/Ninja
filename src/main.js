@@ -245,7 +245,7 @@ async function main() {
   const waterBubbles = new WaterBubbles(scene);
   const earthArts = new EarthArts(scene);
   const lightArts = new LightArts(scene,intersectFireWall,(a,b)=>earthArts.intersectTerrain(a,b));
-  const natureArts=new NatureArts(scene,(x,z)=>earthArts.heightAt(x,z),{player:playerAvatar.group,enemy:opponent.group},intersectFireWall,world.plantReferenceHeight,{gardenBounds:owner=>overheadPractice()&&boundedCombat()?{own:practiceMovementBounds(owner,0),opponent:practiceMovementBounds(owner==='player'?'enemy':'player',0)}:null});
+  const natureArts=new NatureArts(scene,(x,z)=>earthArts.heightAt(x,z),{player:playerAvatar.group,enemy:opponent.group},intersectFireWall,world.plantReferenceHeight,{snowSurfaces:()=>world.environment,snowGrass:world.grass,gardenBounds:owner=>overheadPractice()&&boundedCombat()?{own:practiceMovementBounds(owner,0),opponent:practiceMovementBounds(owner==='player'?'enemy':'player',0)}:null});
   // The Wind Spirit's cinematic view is independent of the practice view choice.
   let windCameraEnabled=false,windView=null;
   let quality = 1;
@@ -1324,11 +1324,11 @@ async function main() {
   function render() {
     touchControls?.update();
     if(adventure?.activeView){const key=adventure.phase==='dialog'?[adventure.village,canvas.width,canvas.height].join(':'):null;if(key&&key===dialogueFrameKey)return;dialogueFrameKey=key;enemyNameplates.update(camera3d,[],false);renderer.info.reset();renderer.clear();renderer.render(adventure.world.scene,adventure.world.camera);return;}dialogueFrameKey=null;
-    natureArts.visuals(shots,windActors(),camera3d,quality,reducedMotion);
     squad.syncVisibility();opponent.group.visible=(enemy.hp>0||guardianPhases.transitioning)&&!natureArts.hidden('enemy')&&!guardianPhases.hidden();if(natureArts.hidden('player'))playerAvatar.group.visible=false;
     if(['wood','ice'].includes(enemy.defenseElement))opponent.shield.visible=false;
     earthArts.visuals(animationTime,reducedMotion);
     world.terrain.deform((x,z)=>earthArts.heightAt(x,z),earthArts.revision);
+    natureArts.visuals(shots,windActors(),camera3d,quality,reducedMotion);
     // Intro/loading ticks can return early. Set the combat camera before every
     // world render so the first exposed frame never uses the first-person view.
     syncCombatView();

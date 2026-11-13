@@ -5,6 +5,7 @@ import { clone as cloneActor } from 'three/addons/utils/SkeletonUtils.js';
 import { vfxToon } from './vfx-materials.js';
 import { WoodGarden } from './wood-garden.js';
 import { IceSupportVfx } from './ice-support-vfx.js';
+import { SnowfallVfx } from './snowfall-vfx.js';
 import {cancelSpellDamage,waveContactTime} from './spell-clashes.js';
 const clamp=v=>Math.max(0,Math.min(1,v)),add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),mul=(a,s)=>a.map(v=>v*s),length=v=>Math.hypot(...v),unit=v=>mul(v,1/(length(v)||1));
 const ease=x=>{x=clamp(x);return x*x*(3-2*x);};
@@ -19,12 +20,7 @@ export class NatureArts {
     this.geo={sphere:new T.IcosahedronGeometry(1,1),snow:new T.IcosahedronGeometry(1,2),cone:new T.ConeGeometry(1,1,6),box:new T.BoxGeometry(1,1,1),trunk:new T.CylinderGeometry(.65,1,1,9),leaf:new T.OctahedronGeometry(1)};
     this.bark=vfxToon('#765235');this.woodMat=vfxToon('#ae8252');this.leaf=vfxToon('#54944b');this.bright=vfxToon('#9ad36d');this.white=vfxToon('#edf7ff');this.blue=vfxToon('#aacfe7');
     this.ice=new T.MeshBasicMaterial({color:'#c0edff',transparent:true,opacity:.48,depthWrite:false});
-    this.environment=new T.Group();scene.add(this.environment);this.environment.visible=false;
-    const geometry=new T.PlaneGeometry(44,64,24,32);geometry.rotateX(-Math.PI/2);this.coverBase=geometry.attributes.position.array.slice();
-    this.cover=new T.Mesh(geometry,new T.MeshBasicMaterial({color:'#e9f5ff',transparent:true,opacity:0,depthWrite:false}));this.cover.position.z=-9;this.cover.receiveShadow=true;this.environment.add(this.cover);
-    const flakes=new T.BufferGeometry();flakes.setAttribute('position',new T.Float32BufferAttribute(new Float32Array(3600*3),3));
-    this.flakes=new T.Points(flakes,new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{opacity:{value:.7},sizeMultiplier:{value:4}},vertexShader:'uniform float sizeMultiplier;void main(){vec4 p=modelViewMatrix*vec4(position,1.);gl_PointSize=sizeMultiplier*clamp(42./max(1.,-p.z),1.5,7.);gl_Position=projectionMatrix*p;}',fragmentShader:'uniform float opacity;void main(){float a=1.-smoothstep(.12,.5,length(gl_PointCoord-.5));gl_FragColor=vec4(.93,.98,1.,a*opacity);}'}));this.flakes.frustumCulled=false;this.environment.add(this.flakes);
-    this.drifts=[];for(let i=0;i<28;i++){const p=[(hash(i+1)-.5)*28,0,-34+hash(i+45)*48],m=this.mesh(this.environment,'sphere',i%3?this.white:this.blue,p,[1,.1,1]);this.drifts.push({p,m});}
+    this.snowfall=new SnowfallVfx(scene,floor,options);this.environment=this.snowfall.root;this.cover=this.snowfall.cover;this.flakes=this.snowfall.flakes;this.drifts=this.snowfall.drifts;
     this.haze=new T.Mesh(new T.PlaneGeometry(1,1),new T.ShaderMaterial({transparent:true,depthTest:false,depthWrite:false,vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;void main(){float r=length(vUv-.5);gl_FragColor=vec4(.77,.89,.94,smoothstep(.16,.67,r)*.23);}'}));this.haze.visible=false;this.haze.renderOrder=30;scene.add(this.haze);
   }
   group(){const g=new T.Group();this.scene.add(g);return g;}
@@ -168,12 +164,8 @@ export class NatureArts {
   }
   visuals(shots,actors,camera,quality=1,reducedMotion=false){
     this.wood.visuals(actors,reducedMotion,camera,quality);
-    const snow=Math.max(0,...this.snow.map(s=>clamp(s.amount/s.spell.snowTime))),snowing=this.snow.length>0,boosted=this.blizzards.length>0;this.environment.visible=snowing;
-    if(snowing){this.cover.material.opacity=.12+.66*snow;const p=this.cover.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,this.floor(this.coverBase[i*3],this.coverBase[i*3+2]-9)+.15+snow*.12);p.needsUpdate=true;
-      const baseCount=Math.min(quality===2?700:1800,Math.floor(180+snow*1620)),count=Math.min(3600,baseCount*(boosted?2:1)),f=this.flakes.geometry.attributes.position;this.flakes.geometry.setDrawRange(0,count);
-      for(let i=0;i<count;i++){const wind=reducedMotion?this.snowWindTime*.25:this.snowWindTime,x=((hash(i+1)*38+wind)%38)-19+Math.sin(this.time*.4+i)*.5,y=((hash(i+1700)*24-this.snowfallTime*(1.1+hash(i+4)*1.6))%24+24)%24,z=-38+((hash(i+3800)*56+wind*.25)%56);f.setXYZ(i,x,y,z);}f.needsUpdate=true;
-      for(let i=0;i<this.drifts.length;i++){const d=this.drifts[i];d.m.visible=true;d.m.position.set(d.p[0],this.floor(d.p[0],d.p[2])+.05,d.p[2]);d.m.scale.set(1+hash(i)*1.4,.05+snow*.65,.7+hash(i+7)*1.2);}
-    }
+    const snow=Math.max(0,...this.snow.map(s=>clamp(s.amount/s.spell.snowTime))),snowing=this.snow.length>0,boosted=this.blizzards.length>0;
+    this.snowfall.update({snowing,amount:snow,time:this.time,fallTime:this.snowfallTime,boosted,quality,reducedMotion,camera});
     for(const f of this.fogs){const actor=actors.find(a=>a.owner===f.owner);if(actor)this.iceSupport.updateMist(f,actor,camera,this.time,reducedMotion,this.floor);}
     for(const e of this.iceWalls)this.iceSupport.updateWall(e,this.time,reducedMotion);
     this.haze.visible=false;
@@ -192,7 +184,7 @@ export class NatureArts {
     wood:this.wood.state(),trees:this.trees.map(t=>({owner:t.owner,age:t.age,growth:this.growth(t.owner),multiplier:this.multiplier(t.owner),position:[...t.p]})),
     snow:this.snow.map(s=>({owner:s.owner,age:s.age,amount:s.amount,remaining:Math.max(0,s.spell.snowTime-s.amount),ready:this.snowReady(s.owner),consumed:false,density:clamp(s.amount/s.spell.snowTime),rate:this.snowRate(s.owner)})),
     blizzards:this.blizzards.map(b=>({...b})),snowMovement:{player:this.slowAt('player'),enemy:this.slowAt('enemy')},
-    snowVisual:{flakes:this.environment.visible?this.flakes.geometry.drawRange.count:0,boosted:this.blizzards.length>0,fallSpeed:this.blizzards.length?1.8:1,wind:this.blizzards.length?1.1:0,groundOpacity:this.cover.material.opacity,drifts:this.drifts.filter(d=>d.m.visible).length},
+    snowVisual:{flakes:this.environment.visible?this.flakes.geometry.drawRange.count:0,boosted:this.blizzards.length>0,fallSpeed:this.blizzards.length?1.8:1,wind:this.blizzards.length?1.1:0,groundOpacity:this.cover.material.opacity,drifts:this.environment.visible?this.drifts.filter(d=>d.m.visible).length:0,...this.snowfall.state()},
     snowBursts:this.snowBursts.map(b=>({owner:b.owner,age:b.age,life:b.life,position:b.root.position.toArray(),fragments:b.fragments.length})),iceWalls:[],
     iceGather:[...this.shots].filter(([s])=>s.style==='icebind'&&s.phase==='blooming').map(([s,r])=>({owner:s.owner,progress:clamp(s.releaseAge/s.releaseAt),flakes:r.userData.bind.flakes.count,crystalScale:r.userData.bind.core.scale.x})),
     fogs:this.fogs.map(f=>({owner:f.owner,life:f.life,position:[...f.p],coverPosition:f.cover.position.toArray(),insideView:f.owner==='player',decoyVisible:f.decoy.visible,cloudCount:f.clouds.count,field:{...f.bounds,height:f.height}})),
@@ -205,5 +197,5 @@ export class NatureArts {
     for(const g of gardens)this.wood.gardens.splice(this.wood.gardens.indexOf(g),1);
     this.reset(walls);this.wood.gardens.push(...gardens);this.snow.push(...snow);this.blizzards.push(...blizzards);this.time=time;this.wood.serial=serial;this.snowfallTime=snowfallTime;this.snowWindTime=snowWindTime;
   }
-  reset(walls=[]){this.wood.reset(walls);for(const e of [...this.iceWalls])this.removeIceWall(e,walls);for(const list of [this.fogs,this.balls,this.bindings]){for(const e of list){this.iceSupport.dispose(e.root);e.gather?.removeFromParent();e.material?.dispose();if(e.fighter){e.fighter.iceControlTime=0;e.fighter.snowBuried=false;}}list.length=0;}for(const map of [this.shots,this.shields]){for(const root of map.values())this.iceSupport.dispose(root);map.clear();}for(const b of this.snowBursts){b.root.removeFromParent();b.material.dispose();}this.snowBursts=[];this.blizzards=[];this.snow=[];this.time=0;this.snowfallTime=0;this.snowWindTime=0;this.environment.visible=this.haze.visible=false;if(this.avatars.enemy)this.avatars.enemy.visible=true;}
+  reset(walls=[]){this.wood.reset(walls);for(const e of [...this.iceWalls])this.removeIceWall(e,walls);for(const list of [this.fogs,this.balls,this.bindings]){for(const e of list){this.iceSupport.dispose(e.root);e.gather?.removeFromParent();e.material?.dispose();if(e.fighter){e.fighter.iceControlTime=0;e.fighter.snowBuried=false;}}list.length=0;}for(const map of [this.shots,this.shields]){for(const root of map.values())this.iceSupport.dispose(root);map.clear();}for(const b of this.snowBursts){b.root.removeFromParent();b.material.dispose();}this.snowBursts=[];this.blizzards=[];this.snow=[];this.time=0;this.snowfallTime=0;this.snowWindTime=0;this.snowfall.reset();this.environment.visible=this.haze.visible=false;if(this.avatars.enemy)this.avatars.enemy.visible=true;}
 }

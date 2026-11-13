@@ -42,7 +42,7 @@ export function createArenaChannel(scene){
   // Same lit, translucent teal and surface response as Làng Thủy's river/canal
   // in adventure-scene.js and adventure-biomes.js, with small moving normals.
   const normalMap=riverNormals(),material=new T.MeshStandardMaterial({color:'#5f9eaf',metalness:.22,roughness:.22,transparent:true,opacity:.87,normalMap,normalScale:new T.Vector2(.22,.18)});
-  const water=new T.Mesh(geometry,material);water.name='arena-channel-water';water.receiveShadow=true;water.castShadow=false;root.add(water);
+  const water=new T.Mesh(geometry,material);water.name='arena-channel-water';water.userData.snowSurface='water';water.receiveShadow=true;water.castShadow=false;root.add(water);
   const bankMaterial=new T.MeshStandardMaterial({vertexColors:true,roughness:1,flatShading:true});
   for(const side of [0,1]){
     const p=[],colors=[],ix=[],palette=['#76745c','#56685b','#425b56'];

@@ -30,6 +30,7 @@ export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
   const fence=new T.Group(),wood=new T.MeshStandardMaterial({color:'#85664b',roughness:.9});scene.add(fence);fence.visible=false;
   environment?.push(fence);
   for(const z of [PRACTICE_ARENA.minZ,...PRACTICE_DIVIDERS,PRACTICE_ARENA.maxZ]){const row=new T.Group();row.name=PRACTICE_DIVIDERS.includes(z)?'practice-divider':'practice-end-fence';row.position.z=z;fence.add(row);for(const y of [.55,1.25]){const rail=new T.Mesh(new T.BoxGeometry(32,.12,.15),wood);rail.position.set(0,y,0);row.add(rail);}for(let x=-16;x<=16;x+=4){const post=new T.Mesh(new T.BoxGeometry(.25,1.7,.25),wood);post.position.set(x,.85,0);row.add(post);}}
+  fence.traverse(o=>{if(o.isMesh)o.userData.snowSurface='fence';});
   const ray=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,1,0),0),hit=new T.Vector3();
   const focus=new T.Vector3(0,0,-4),back=new T.Vector3(Math.sin(CAMERA_YAW)*Math.cos(CAMERA_PITCH),Math.sin(CAMERA_PITCH),Math.cos(CAMERA_YAW)*Math.cos(CAMERA_PITCH));
   let cursor=[0,0,-8],pointer=null,moveTarget=null,preview=null;

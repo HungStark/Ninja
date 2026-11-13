@@ -96,6 +96,7 @@ export function createWorld() {
   mats.ground.map = groundTex;
   const groundGeo = carveArenaChannel(createTerrainGrid());
   const ground = mesh(groundGeo, mats.ground, [0, 0, -20]);
+  ground.userData.snowSurface='ground';ground.userData.snowBasePositions=groundGeo.attributes.position.array.slice();
   terrainMeshes.push(ground);
   ground.castShadow = false;
   const channel=createArenaChannel(scene);
@@ -108,7 +109,7 @@ export function createWorld() {
     geometry.computeVertexNormals();
     const r = mesh(geometry, toon(color, { flatShading: true }), p, s);
     r.rotation.set(range(-0.2, 0.2), rand() * 6, range(-0.12, 0.12));
-    if(Math.abs(p[0])<27&&p[1]<1&&p[2]>-48)terrainProps.push(r);
+    if(Math.abs(p[0])<27&&p[1]<1&&p[2]>-48){terrainProps.push(r);r.userData.snowSurface='rock';}
     return r;
   }
   for (let i = 0; i < 48; i++) {
@@ -159,10 +160,10 @@ export function createWorld() {
   const plantReferenceHeight = 7.88; // Preserve the established size of summoned Wood plants.
   for (const side of [-1, 1]) {
     for (let i = 0; i < 10; i++) {
-      mesh("box", mats.wood, [side * 16, 0.85, -25 + i * 4], [0.25, 1.7, 0.25]);
-      mesh("sphere", mats.gold, [side * 16, 1.75, -25 + i * 4], [0.15, 0.15, 0.15]);
+      mesh("box", mats.wood, [side * 16, 0.85, -25 + i * 4], [0.25, 1.7, 0.25]).userData.snowSurface='fence';
+      mesh("sphere", mats.gold, [side * 16, 1.75, -25 + i * 4], [0.15, 0.15, 0.15]).userData.snowSurface='fence';
     }
-    for (const y of [0.55, 1.25]) mesh("box", mats.wood, [side * 16, y, -7], [0.15, 0.12, 38]);
+    for (const y of [0.55, 1.25]) mesh("box", mats.wood, [side * 16, y, -7], [0.15, 0.12, 38]).userData.snowSurface='fence';
   }
   function update(time, dt) {
     windTime.value = time;
