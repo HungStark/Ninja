@@ -5,6 +5,7 @@ import { clone as cloneActor } from 'three/addons/utils/SkeletonUtils.js';
 import { vfxToon } from './vfx-materials.js';
 import { WoodGarden } from './wood-garden.js';
 import { IceSupportVfx } from './ice-support-vfx.js';
+import {cancelSpellDamage,waveContactTime} from './spell-clashes.js';
 const clamp=v=>Math.max(0,Math.min(1,v)),add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),mul=(a,s)=>a.map(v=>v*s),length=v=>Math.hypot(...v),unit=v=>mul(v,1/(length(v)||1));
 const ease=x=>{x=clamp(x);return x*x*(3-2*x);};
 const hash=i=>{const v=Math.sin(i*127.1+311.7)*43758.5453;return v-Math.floor(v);};
@@ -74,12 +75,21 @@ export class NatureArts {
       // Gather loose clumps nearby; the ground cover, drifts and falling flakes remain.
       for(let i=0;i<60;i++){const a=i*2.399,r=2+hash(i+70)*6,origin=[p[0]+Math.cos(a)*r,0,p[2]+Math.sin(a)*r];origin[1]=this.floor(origin[0],origin[2])+.1;const m=this.mesh(gather,'snow',i%4?this.white:this.blue,origin,[.12,.12,.12]);chunks.push({m,origin,delay:hash(i+260)*.3});}
       spin.scale.setScalar(.04);
-      this.balls.push({owner,spell,damage:spell.damage,targetId:target.id??target.owner,root,spin,material,p,axis,gather,chunks,gatherTime:1,phase:'gathering',age:0,travel:0,range:spell.range??64});return true;
+      this.balls.push({owner,element:'ice',style:'snowball',spell,damage:spell.damage,targetId:target.id??target.owner,root,spin,material,p,axis,gather,chunks,gatherTime:1,phase:'gathering',age:0,travel:0,range:spell.range??64});return true;
     }
     return null;
   }
-  intercept(shot){
+  intercept(shot,damageScale=()=>1){
     const start=shot.old||shot.p,end=shot.p;if(!start||!end)return false;
+    if(shot.style==='tsunami'){
+      if(shot.phase!=='flying'||shot.life<=0||shot.consumedByDefense)return false;
+      const contacts=this.balls.filter(b=>b.owner!==shot.owner&&b.phase==='rolling').map(ball=>({ball,time:waveContactTime(shot,start,end,ball.p,ball.p,ball.spell.radius)})).filter(c=>c.time!==null).sort((a,b)=>a.time-b.time);
+      for(const {ball,time} of contacts){
+        const result=cancelSpellDamage(shot,ball,damageScale);if(result.bDestroyed)this.shatter(ball);
+        if(result.aDestroyed){shot.p=start.map((v,i)=>v+(end[i]-v)*time);shot.life=0;shot.consumedByDefense=true;return true;}
+      }
+      return false;
+    }
     const delta=sub(end,start),a=delta.reduce((n,v)=>n+v*v,0);let first=null;
     for(const b of this.balls){
       if(b.owner===shot.owner||b.phase!=='rolling')continue;
@@ -96,6 +106,7 @@ export class NatureArts {
   removeIceWall(effect,walls){const i=walls.indexOf(effect.wall);if(i>=0)walls.splice(i,1);this.iceSupport.dispose(effect.root);this.iceWalls.splice(this.iceWalls.indexOf(effect),1);}
   removeBall(ball){ball.root.removeFromParent();ball.gather.removeFromParent();ball.material.dispose();this.balls.splice(this.balls.indexOf(ball),1);}
   shatter(ball){
+    if(!this.balls.includes(ball))return;
     const root=this.group(),material=this.white.clone();root.position.fromArray(ball.p);material.transparent=true;
     const chunks=new T.InstancedMesh(this.geo.snow,material,48);chunks.instanceMatrix.setUsage(T.DynamicDrawUsage);chunks.frustumCulled=false;root.add(chunks);
     const fragments=Array.from({length:48},(_,i)=>{const a=i*2.399,y=hash(i+98)*2-1,r=Math.sqrt(1-y*y),axis=[Math.cos(a)*r,y,Math.sin(a)*r];return {origin:mul(axis,ball.spell.radius*.6),v:add(mul(axis,3+hash(i+43)*5),[0,2,0]),scale:.15+hash(i+52)*.5};});
@@ -121,7 +132,7 @@ export class NatureArts {
         b.phase='rolling';b.gather.removeFromParent();motionDt=Math.max(0,b.age-b.gatherTime);
       }
       const heading=unit([target.pos[0]-b.p[0],0,target.pos[2]-b.p[2]]);if(length(heading)>.5)b.axis=heading;
-      const before=[...b.p],step=Math.min(b.spell.speed*motionDt,b.range-b.travel,Math.hypot(target.pos[0]-b.p[0],target.pos[2]-b.p[2]));b.travel+=step;b.p[0]+=b.axis[0]*step;b.p[2]+=b.axis[2]*step;b.p[1]=this.floor(b.p[0],b.p[2])+b.spell.radius;b.spin.rotation.x+=b.axis[2]*step/b.spell.radius;b.spin.rotation.z-=b.axis[0]*step/b.spell.radius;
+      const before=[...b.p],step=Math.min(b.spell.speed*motionDt,b.range-b.travel,Math.hypot(target.pos[0]-b.p[0],target.pos[2]-b.p[2]));b.old=before;b.travel+=step;b.p[0]+=b.axis[0]*step;b.p[2]+=b.axis[2]*step;b.p[1]=this.floor(b.p[0],b.p[2])+b.spell.radius;b.spin.rotation.x+=b.axis[2]*step/b.spell.radius;b.spin.rotation.z-=b.axis[0]*step/b.spell.radius;
       const delta=sub(b.p,before),length2=delta.reduce((n,v)=>n+v*v,0);let first=null;
       for(const victim of actors){
         if(victim.owner===b.owner||victim.fighter.hp<=0)continue;
@@ -134,6 +145,8 @@ export class NatureArts {
       b.damage=attack.damage;
       if(blocked){this.shatter(b);continue;}
       sweep?.(attack);
+      b.damage=attack.damage;
+      if(b.damage<=1e-7){b.p=[...attack.p];this.shatter(b);continue;}
       if(!attack.unstoppable&&intercept?.(attack)){b.p=[...attack.p];this.shatter(b);continue;}
       if(first){
         const {victim,t}=first;b.p=add(before,mul(delta,t));

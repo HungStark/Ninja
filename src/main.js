@@ -44,6 +44,7 @@ import { crossWalls } from './combat.js';
 import { sweepTsunami } from './tsunami.js';
 import {isEarthDepartureTrial} from './earth-departure-trial.js';
 import {sweepSnowball} from './snowball-sweep.js';
+import {resolveWaveClashes} from './spell-clashes.js';
 import { WaterBubbles } from './water-bubbles.js';
 import { createAdventure } from './adventure.js';
 import { physicalKey, textInputTarget } from './game-input.js';
@@ -904,7 +905,8 @@ async function main() {
     if(shot.style!=='shuriken'){if(wall.element==='earth')earthArts.burst(point,1);else if(wall.element==='wind')windArts.cut(point);else if(!['water','ice'].includes(wall.element))effects.arts.blast(point,'orb');}
     if(wall.owner==='player'){announce(result.broken?'Lớp chắn đã vỡ!'+(result.remaining>0?' Đòn đánh còn '+Math.round(result.remaining*10)/10+' sát thương.':''):'Lớp chắn đã chặn đòn!');cameraImpacts.trigger('block',.8);}
   }
-  function snowBlocks(shot){return natureArts.intercept(shot);}
+  function clashDamageScale(shot){return shot.owner==='player'?damageMultiplierFor(battlePlayerStats,shot.element):(shot.damageScale??baseEnemyDamageMultiplier());}
+  function snowBlocks(shot){return natureArts.intercept(shot,clashDamageScale);}
   function guardianObjectBlocks(shot){return overheadPractice()&&activeBoss()&&guardianPhases.intercept(shot,damageMultiplierFor(battlePlayerStats,shot.element));}
   function updateShots(dt) {
     aimMagneticShots(shots,windActors().filter(a=>a.id!=='primary'||guardianPhases.lockable()));
@@ -922,13 +924,14 @@ async function main() {
       }else if(reflectWind(shot)){commitMotion(shot,step,dt,start,velocity);reflectedByGuard.add(shot);}
       else shot.p=start;
     }
+    resolveWaveClashes(shots,wave=>vadd(wave.p,vmul(wave.v,travelStep(wave,dt))),clashDamageScale);
     const swept = new Set();
     for (const wave of shots.filter(s => s.style === 'tsunami' && s.phase === 'flying'&&!s.consumedByDefense&&!reflectedByGuard.has(s))) {
       if (swept.has(wave)) continue;
       const end = vadd(wave.p, vmul(wave.v, travelStep(wave,dt)));
       sweepTsunami(wave,wave.p,end,{actors:windActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,intersectsWave});
       for (const other of shots) {
-        if (other === wave || other.consumedByDefense || swept.has(other)) continue;
+        if (other === wave || other.style==='tsunami' || other.consumedByDefense || swept.has(other)) continue;
         const otherEnd = ['forming', 'staged', 'emerging', 'gathering','blooming'].includes(other.phase) ? other.p : vadd(other.p, vmul(other.v, travelStep(other,dt)));
         if (intersectsWave(other.p, otherEnd, wave.p, end, wave.normal, wave.width, wave.height, other.size, wave.depth)) {
           swept.add(other); wave.carried.push({ color: other.color, style: other.style, owner: other.owner, element: other.element });
@@ -1166,7 +1169,7 @@ async function main() {
       windArts.advance(dt,damageActors(),impact);
       earthArts.advance(dt,damageActors(),walls,impact,setEarthActorPosition,earthEvent,undefined,snowBlocks);
       const wasSnowReady=natureArts.snowReady('player');
-      natureArts.advance(dt,damageActors(),(owner,p)=>{if(owner==='player'){if(overheadPractice()){practiceOverhead.stop();dashBoost.cancelDash();}camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact,wallImpact,guardianObjectBlocks,attack=>sweepSnowball(attack,{actors:damageActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,shots}));
+      natureArts.advance(dt,damageActors(),(owner,p)=>{if(owner==='player'){if(overheadPractice()){practiceOverhead.stop();dashBoost.cancelDash();}camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact,wallImpact,guardianObjectBlocks,attack=>sweepSnowball(attack,{actors:damageActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,shots,damageScale:clashDamageScale}));
       if(!wasSnowReady&&natureArts.snowReady('player'))announce('Đã tích đủ 35 tuyết · Z X rồi SPACE để dùng Tuyết táng!');
 
       if(overheadPractice()){
@@ -1334,7 +1337,7 @@ async function main() {
     damageFeedback.render([{id:'ha-ly',root:campaignAlly.root},{id:'player',root:playerAvatar.group},{id:'primary',root:opponent.group},...squad.actors().map(a=>({id:a.id,root:squad.root(a.id)}))],overheadPractice()&&started);
     guardianNightVeil.hidden=!(overheadPractice()&&started&&!won&&activeBoss()&&guardianPhases.obscures(playerPos()));if(!guardianNightVeil.hidden){const p=new T.Vector3(...playerPos()).project(camera3d);guardianNightVeil.style.setProperty('--guardian-vision-x',((p.x+1)*50)+'%');guardianNightVeil.style.setProperty('--guardian-vision-y',((1-p.y)*50)+'%');}
     renderer.info.reset(); renderer.clear(); composer.render();
-    enemyNameplates.update(camera3d,[{id:'primary',position:opponent.group.position.toArray(),height:(opponent.group.userData.height||3)*characterScale(),visible:opponent.group.visible,fighter:enemy},...squad.state().map(s=>({...s,position:[s.position[0],s.position[1]-1.72,s.position[2]],fighter:squad.fighter(s.id),sequence:s.sealTrace,cast:s.traceCast}))],started&&!won,{compact:mobileTactical(),selectedId:mobileTargetId,onSelect:id=>{if(!paused){mobileTargetId=id;mobileAim(null);updateUI();}}});
+    enemyNameplates.update(camera3d,[{id:'primary',position:opponent.group.position.toArray(),height:(opponent.group.userData.height||3)*characterScale(),visible:opponent.group.visible,fighter:enemy},...squad.state().map(s=>({...s,position:[s.position[0],s.position[1]-1.72,s.position[2]],fighter:squad.fighter(s.id),sequence:s.sealTrace,cast:s.traceCast}))],started&&!won,{player:{position:playerAvatar.group.position.toArray(),height:(playerAvatar.group.userData.height||3)*characterScale(),visible:playerAvatar.group.visible,fighter:player},compact:mobileTactical(),selectedId:mobileTargetId,onSelect:id=>{if(!paused){mobileTargetId=id;mobileAim(null);updateUI();}}});
     if (handsPass.enabled) {
       renderer.clearDepth();
       handCamera.layers.set(1);
