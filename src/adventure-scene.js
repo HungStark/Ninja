@@ -22,7 +22,7 @@ import {disposeSceneResources} from './scene-disposal.js';
 import {createStaticInstanceCuller} from './static-instance-culling.js';
 import {batchStaticScenery,splitTerrainForCulling} from './scenery-batches.js';
 import {buildHouse,buildDistrict,buildBoss} from './adventure-landmarks.js';
-import {village,VILLAGES,QUESTS,INTERACTION_RANGE,findPath} from './adventure-data.js';
+import {village,VILLAGES,INTERACTION_RANGE,findPath} from './adventure-data.js';
 import {REGIONS,regionMetrics,terrainHeight,riverAt,isDeepWater,waterwayAt,waterDepthAt} from './adventure-world.js';
 import {traversalDefinitions,buildBiome,createStorm,traversalComponent} from './adventure-biomes.js';
 import {addWarVegetation} from './adventure-ruins.js';
@@ -299,7 +299,7 @@ export function createAdventureScene(){
     if(id!=='nameless'){civicPlan=planVillageCivic(id);shopPlot=civicPlan.shop;Object.assign(region.boss,civicPlan.guardian);routes=traversalDefinitions(id);}
     gates=planVillageExits(v,village);
     harborPlans=gates.filter(g=>g.kind==='dock').map(g=>planHarbor(g,metrics().limit,terrainHeight(id,g.x,g.z)));
-    const quest=QUESTS[id];interactives.push(...gates,...planSavePoints(id).map(p=>({...p})),...(id==='nameless'?[{kind:'npc',x:-4,z:5,label:'Trưởng làng'}]:[]),{kind:'quest',x:quest.x??8,z:quest.z??-9.5,label:quest.enemy});
+    interactives.push(...gates,...planSavePoints(id).map(p=>({...p})),...(id==='nameless'?[{kind:'npc',x:-4,z:5,label:'Trưởng làng'}]:[]));
     for(const zone of region.zones.filter(z=>z.platform!=='earth-cave'))interactives.push({kind:'landmark',id:zone.id,x:zone.x,z:zone.z,platform:zone.platform,label:zone.name});
     for(const person of region.npcs.filter(p=>p.platform!=='earth-cave'))interactives.push({kind:person.kind,id:person.id,x:person.x,z:person.z,label:person.name,...(person.platform?{platform:person.platform}:{}),...(person.elevation!==undefined?{y:person.elevation}:{})});
     if(id!=='nameless'&&!guardianOrdered(save,id)&&!save.bosses?.[id]&&!beastCaptured(save,id))interactives.push({kind:'boss',id:region.boss.id,x:region.boss.x,z:region.boss.z,label:id==='earth'?'Sơn Quy · Thử thách trước biển':region.boss.name});
@@ -336,7 +336,7 @@ export function createAdventureScene(){
     if(id==='nameless'){npc=createVillager(villagerAppearance(id,{kind:'chief'}));npc.root.position.set(-4,heightAt(-4,4),4);npc.root.rotation.y=.4;land.add(npc.root);citizens.push(npc);}
     for(const entry of interactives.filter(i=>i.kind==='clinic')){const nurse=createVillager({...villagerAppearance(id,{id:entry.id,kind:'healer'}),female:true});nurse.root.name='nurse-'+entry.id;nurse.root.position.set(entry.x,entry.y,entry.z);nurse.root.rotation.y=civicPlan?.clinics.find(p=>p.id===entry.id)?.yaw||0;land.add(nurse.root);citizens.push(nurse);}
     region.npcs.filter(p=>p.platform!=='earth-cave').forEach((source,index)=>{const person=source;const char=createVillager(villagerAppearance(id,person,index));char.root.position.set(person.x,person.platform?platformFor(person.platform)?.toY??heightAt(person.x,person.z):person.elevation??heightAt(person.x,person.z),person.z);char.root.rotation.y=person.yaw??Math.atan2(-person.x,-person.z);land.add(char.root);citizens.push(char);if(person.activity)residents.push({person,char});if(person.kind==='mentor'){const rune=mesh(new T.TorusGeometry(.8,.04,4,24),M(v.color,.7),char.root,0,3.5,0);rune.rotation.x=Math.PI/2;animated.push({kind:'halo',mesh:rune});}});
-    const guardLook=encounterAppearance({kind:'quest',village:id});guard=createNinja(guardLook);guard.root.position.set(quest.x??8,heightAt(quest.x??8,quest.z??-11),quest.z??-11);guard.root.rotation.y=Math.PI;guard.root.visible=(save.quests[id]||0)<2;land.add(guard.root);citizens.push(guard);
+    guard=null;
     if(id==='nameless'||beastRescued(save,id)||!guardianOrdered(save,id)&&!save.bosses?.[id]&&!beastCaptured(save,id)){
       boss=buildBoss(c,region.boss);if(civicPlan){boss.root.rotation.y=civicPlan.hall.yaw;boss.root.userData.pacified=!!save.bosses?.[id];}
       if(id==='nameless'&&!save.story?.guardianRestored){boss.body.rotation.z=-.48;boss.body.position.y=-1.3;const motion=animated.find(a=>a.kind==='boss'&&a.mesh===boss.body);if(motion){motion.kind='broken-guardian';motion.base=-1.3;}boss.body.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.color?.multiplyScalar(.55);if(o.material.emissive)o.material.emissive.set('#000000');}});}
@@ -370,14 +370,6 @@ export function createAdventureScene(){
       if(char.workstation){land.attach(char.workstation);registerSceneryColliders(char.workstation,physics,{limit:metrics().limit});}
     }
     if(id==='fire'){const nurse=interactives.find(i=>i.id==='fire-dan'),giver=interactives.find(i=>i.kind==='expedition-giver');if(nurse&&giver)Object.assign(giver,{x:nurse.x,z:nurse.z,y:nurse.y});}
-    if(civicPlan){
-      const target=interactives.find(i=>i.kind==='quest');
-      if(target&&blocked(target.x,target.z)){
-        let point;for(const radius of [2,4,7,10,15,22,32]){for(let k=0;k<32;k++){const a=k*Math.PI/16,x=target.x+Math.sin(a)*radius,z=target.z+Math.cos(a)*radius;if(!civicReserved(civicPlan,x,z,3)&&!blocked(x,z)){point={x,z};break;}}if(point)break;}
-        if(!point)throw Error('No clear quest encounter: '+id);Object.assign(target,point);guard.root.position.set(point.x,heightAt(point.x,point.z),point.z);
-      }
-
-    }
     const guardPositions=placeVillageGuards(guardDefinitions,{limit:metrics().limit,boss:region.boss,campuses:civicPlan?Object.values(civicPlan.campuses):[],heightAt:(x,z)=>physics.floorAt(x,z,heightAt(x,z)+.5),valid:(x,z,y)=>!blocked(x,z)&&!physics.overlaps(x,z,y,2.9,.6,true)&&!citizens.some(c=>Math.hypot(c.root.position.x-x,c.root.position.z-z)<2.1)});
     for(const entry of interactives.filter(i=>i.kind==='village-guard')){
       Object.assign(entry,guardPositions.get(entry.id));
@@ -433,7 +425,6 @@ export function createAdventureScene(){
       followCamera(1,true,false);
     }
     hero.setEquipment(equipmentState(save));hero.cloth.color.set(save.hero.coat);hero.hair.color.set(save.hero.hair);
-    if(guard)guard.root.visible=(save.quests[id]||0)<2;
     syncSidequests(save);syncMines(save);storyActors.sync(save,id,interactives,room?.id||null);syncJailers(save);sacredTree?.sync(save);tournamentBoard?.sync(save);
     focusSun();contacts.update([hero,...citizens,...party.map(p=>p.char),...storyActors.actors()],contactFloor);return true;
   }

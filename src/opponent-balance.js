@@ -112,7 +112,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:random:fire": {
     "hp": 210,
-    "baseDamagePercent": 9,
+    "baseDamagePercent": 94,
     "spellIds": [
       "fire-volley",
       "fire-barrier",
@@ -683,6 +683,9 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "dark-volley",
       "dark-reflect"
     ]
+  },
+  "ninja:village-event:fire": {
+    "baseDamagePercent": 99
   }
 }/* opponent-balance:end */;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));

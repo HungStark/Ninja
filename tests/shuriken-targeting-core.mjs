@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {selectShurikenTarget,steerShuriken} from '../src/shuriken-targeting.js';
+const actor=(id,owner,pos,hp=100)=>({id,owner,pos,fighter:{hp}});
+const actors=[actor('primary','enemy',[0,1,-20]),actor('squad-1','enemy',[8,1,-20]),actor('player','player',[0,1,10])];
+assert.equal(selectShurikenTarget([0,1,10],[0,0,-1],[0,1,-20],actors).id,'primary');
+assert.equal(selectShurikenTarget([0,1,10],[0,0,-1],[8,0,-20],actors,{pointAim:true}).id,'squad-1');
+assert.equal(selectShurikenTarget([0,1,10],[0,0,-1],[0,0,-20],actors,{designatedId:'squad-1'}).id,'squad-1');
+assert.equal(selectShurikenTarget([0,1,10],[1,0,0],[30,1,10],actors),null);
+const shot={style:'shuriken',phase:'flying',owner:'player',homingOwner:'player',homingTargetId:'squad-1',p:[0,1,9],v:[0,0,-24],sourceId:'squad-1'};
+actors[1].pos=[15,2,-15];assert.ok(steerShuriken(shot,actors));assert.equal(shot.homingTargetId,'squad-1');assert.deepEqual(shot.target,actors[1].pos);assert.ok(shot.v[0]>0);assert.ok(Math.abs(Math.hypot(...shot.v)-24)<1e-9);
+actors[1].fighter.hp=0;const direction=[...shot.v];assert.equal(steerShuriken(shot,actors),false);assert.equal(shot.homingTargetId,null);assert.deepEqual(shot.v,direction);
+actors[1].fighter.hp=100;steerShuriken(shot,actors);assert.equal(shot.homingTargetId,null,'do not acquire a different enemy after losing the target');
+shot.owner='enemy';assert.ok(steerShuriken(shot,actors));assert.equal(shot.homingTargetId,'player');
+shot.owner='player';assert.ok(steerShuriken(shot,actors));assert.equal(shot.homingTargetId,'squad-1','return to the original squad thrower when reflected');
+assert.equal(steerShuriken({...shot,style:'volley'},actors),false);
+console.log('PASS: shuriken ray/cursor/mobile target selection, moving target pursuit, unchanged speed, lost lock, reflection and other projectiles.');
