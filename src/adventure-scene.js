@@ -17,7 +17,10 @@ import {createTransformationSmoke} from './transformation-smoke.js';
 import {HOME,INTRO_SQUAD,villageGuards,villageSidequests,sidequestTargetVisible} from './journey-story.js';
 import {createInfiltration} from './crescent-infiltration.js';
 import * as T from 'three';
-import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {createObstacleIndex} from './obstacle-index.js';
+import {disposeSceneResources} from './scene-disposal.js';
+import {createStaticInstanceCuller} from './static-instance-culling.js';
+import {batchStaticScenery,splitTerrainForCulling} from './scenery-batches.js';
 import {buildHouse,buildDistrict,buildBoss} from './adventure-landmarks.js';
 import {village,VILLAGES,QUESTS,INTERACTION_RANGE,findPath} from './adventure-data.js';
 import {REGIONS,regionMetrics,terrainHeight,riverAt,isDeepWater,waterwayAt,waterDepthAt} from './adventure-world.js';
@@ -51,6 +54,7 @@ const cyl=(p,m,x,y,z,r,h,n=8)=>mesh(new T.CylinderGeometry(r,r,h,n),m,p,x,y,z);
 function seeded(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
 
 export function createAdventureScene(){
+  const staticInstanceCullers=[];
   const scene=new T.Scene(),camera=new T.PerspectiveCamera(49,innerWidth/innerHeight,.1,340),land=new T.Group();scene.add(land);
   const ambient=new T.HemisphereLight('#dfe8f0','#51554b',1.35);scene.add(ambient);
   const sun=new T.DirectionalLight('#ffe5b9',3.1);sun.position.set(-35,65,28);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:180});sun.shadow.bias=-.0005;sun.shadow.normalBias=.03;scene.add(sun);
@@ -145,7 +149,7 @@ export function createAdventureScene(){
     const solid=physics.addBox({name,x:center.x,z:center.z,w:maxX-minX,d:maxZ-minZ,yaw,bottom,top,stepable});if(name.startsWith('hall-entry-step-'))hallSteps.push(solid);return solid;
   }
   function solidGeometry(object,{name='landscape-solid',flat=false}={}){object.updateWorldMatrix(true,false);const collider=colliderFromGeometry(object.geometry,object.matrixWorld,name);if(collider){if(flat){delete collider.topAt;delete collider.bottomAt;}object.userData.collider=true;return physics.addBox(collider);}}
-  function disposeObject(root,extraMaterials=[]){const geoms=new Set(),mats=new Set(extraMaterials);root.traverse(o=>{if(o.geometry)geoms.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);});for(const g of geoms)g.dispose();const textures=new Set();for(const m of mats){for(const key of ['map','bumpMap','roughnessMap'])if(m[key]&&!m[key].userData.sharedCharacterTexture)textures.add(m[key]);m.dispose();}for(const texture of textures)texture.dispose();}
+  function disposeObject(root,extraMaterials=[]){return disposeSceneResources(root,{materials:extraMaterials,textures:extraMaterials.map(m=>reliefMaps.get(m)).filter(Boolean)});}
   function disposeLand(){infiltration.clear();randomEnemy=null;infiltratorCaught=null;for(const h of harbors.values()){h.skipper.dispose();h.skipper.root.removeFromParent();}harbors.clear();harborPlans=[];for(const c of new Set([...citizens,...party.map(p=>p.char),...(randomEnemy?[randomEnemy]:[])])){c.dispose?.();c.root.removeFromParent();}oreNodes.clear();miningTime=0;pickaxe.visible=false;disposeObject(land,Object.values(surfaces||{}).flat().filter(m=>m?.isMaterial));land.clear();questActors.clear();physics.clear();obstacles.length=0;interactives.length=0;animated.length=0;citizens.length=0;party.length=0;residents.length=0;introFighters.length=0;skirmishTime=0;bridges=[];routes=[];ride=null;surface=null;materials.clear();randomEnemy=null;boss=null;foliage=null;groundCover=null;}
   function segmentDistance(x,z,target){const dot=Math.max(0,Math.min(1,(x*target.x+z*target.z)/(target.x*target.x+target.z*target.z||1)));return Math.hypot(x-target.x*dot,z-target.z*dot);}
   const laneDistance=(x,z,p)=>{const dx=p.b[0]-p.a[0],dz=p.b[1]-p.a[1],t=Math.max(0,Math.min(1,((x-p.a[0])*dx+(z-p.a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-p.a[0]-dx*t,z-p.a[1]-dz*t);};
@@ -154,7 +158,8 @@ export function createAdventureScene(){
   const clearCorridor=(x,z,padding=0)=>harborClear(x,z,padding)||current==='water'&&routes.some(r=>[r.from,r.to].some(p=>Math.hypot(p[0]-x,p[1]-z)<padding+3))||civicReserved(civicPlan,x,z,padding)||shopPlot&&Math.abs(x-shopPlot.x)<8+padding&&Math.abs(z-shopPlot.z-2)<10+padding||settlementYards.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+padding)||settlementPaths.some(p=>laneDistance(x,z,p)<p.width/2+padding)||Math.hypot(x,z)<9+padding||corridors.some(t=>segmentDistance(x,z,t)<2.25+padding)||interactives.some(t=>Math.hypot(x-t.x,z-t.z)<3.2+padding);
   function obstacle(x,z,w,d){const halfW=w/2+.7,halfD=d/2+.7;if(clearCorridor(x,z,Math.hypot(halfW,halfD)))return false;obstacles.push({x,z,w:halfW,d:halfD});return true;}
   function boundaryBlocked(x,z){if(room)return Math.abs(x)>room.bounds.x-.55||z<room.bounds.minZ+.55||z>room.bounds.maxZ-.55;return harborWaterBlocked(x,z)||Math.abs(x)>metrics().limit-1||Math.abs(z)>metrics().limit-1||(current==='earth'&&Math.abs(x)<4.5&&z<-13.2&&z>-23);}
-  function baseBlocked(x,z){return boundaryBlocked(x,z)||(current==='water'&&isDeepWater(x,z)&&!waterDeckAt(x,z))||obstacles.some(o=>Math.abs(x-o.x)<o.w&&Math.abs(z-o.z)<o.d);}
+  let obstacleIndex=null;
+  function baseBlocked(x,z){return boundaryBlocked(x,z)||(current==='water'&&isDeepWater(x,z)&&!waterDeckAt(x,z))||(obstacleIndex?obstacleIndex.query(x,z):obstacles).some(o=>Math.abs(x-o.x)<o.w&&Math.abs(z-o.z)<o.d);}
   function blocked(x,z){return baseBlocked(x,z)||physics.overlaps(x,z,standingHeightAt(x,z),2.85,.36,true,.19);}
   function planBridge(target,width){
     if(current==='water')return;
@@ -185,7 +190,7 @@ export function createAdventureScene(){
     for(let k=0;k<p.count;k++){const x=p.getX(k),z=p.getZ(k),h=groundHeight(x,z),river=riverAt(current,z),bank=Math.abs(x-river.x)-river.width,slope=Math.hypot(groundHeight(x+.5,z)-groundHeight(x-.5,z),groundHeight(x,z+.5)-groundHeight(x,z-.5)),variation=(Math.sin(x*.17)*Math.cos(z*.13)+Math.sin(x*.39+z*.25)*.3+1.3)/2.6,c=base.clone().lerp(shade,variation*.28).lerp(warm,Math.max(0,1-Math.abs(bank-1.5)/4)*.48).lerp(stone,Math.min(.6,Math.max(0,slope-.3)*.65));if(current==='nameless'){c.lerp(warm,Math.max(0,Math.sin(x*.26+z*.17)*Math.cos(z*.23))*.45);const scar=Math.min(...scars.map(([sx,sz])=>Math.hypot(x-sx,z-sz)));c.lerp(new T.Color('#4d4b3d'),Math.max(0,1-scar/5)*.7);}p.setY(k,h);colors.push(c.r,c.g,c.b);}
     if(current==='earth'){const indices=[];for(let k=0;k<geo.index.count;k+=3){const a=geo.index.getX(k),b=geo.index.getX(k+1),c=geo.index.getX(k+2),x=(p.getX(a)+p.getX(b)+p.getX(c))/3,z=(p.getZ(a)+p.getZ(b)+p.getZ(c))/3;if(!(Math.abs(x)<4.5&&z<-13&&z>-23))indices.push(a,b,c);}geo.setIndex(indices);}
     geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));geo.computeVertexNormals();if(surfaces){const uv=geo.attributes.uv;for(let k=0;k<p.count;k++)uv.setXY(k,p.getX(k)/5,p.getZ(k)/5);uv.needsUpdate=true;}
-    terrain=mesh(geo,surfaces?.ground||new T.MeshStandardMaterial({vertexColors:true,roughness:1}),land);terrain.name='village-terrain';terrain.castShadow=false;
+    terrain=mesh(geo,surfaces?.ground||new T.MeshStandardMaterial({vertexColors:true,roughness:1}),land);terrain.name='village-terrain';terrain.castShadow=false;terrain.userData.cellCount=splitTerrainForCulling(terrain);
   }
   function addVegetation(v,rand){
     if(current==='nameless'){addWarVegetation({group,box,mesh,M,heightAt,clearCorridor,obstacles,obstacle,reserved:reservedLandscape,inRiver:(x,z,pad)=>Math.abs(x-riverAt(current,z).x)<riverAt(current,z).width+pad},rand);return;}
@@ -234,12 +239,12 @@ export function createAdventureScene(){
         gravel.setMatrixAt(pebbles++,dummy.matrix);
       }
     }
-    gravel.count=pebbles;boulders.count=stones;reeds.count=stems;gravel.name='river-gravel';boulders.name='landscape-boulders';reeds.name='river-reeds';for(const object of [gravel,boulders,reeds]){object.castShadow=object!==gravel;object.receiveShadow=true;land.add(object);}
+    gravel.count=pebbles;boulders.count=stones;reeds.count=stems;gravel.name='river-gravel';boulders.name='landscape-boulders';reeds.name='river-reeds';for(const object of [gravel,boulders,reeds]){object.castShadow=object!==gravel;object.receiveShadow=true;land.add(object);}staticInstanceCullers.push(createStaticInstanceCuller(gravel));
   }
   function batchScenery(){
-    const moving=new Set([...routes.flatMap(r=>[r.boat,...(r.idleBoats||[])]).filter(Boolean),...animated.map(a=>a.mesh),...citizens.flatMap(c=>[c.root,c.workstation]).filter(Boolean),...party.map(p=>p.char.root),...[...questActors.values()].map(a=>a.root),...roadGuards.map(g=>g.disguise)]),batches=new Map();land.updateMatrixWorld(true);
-    land.traverse(o=>{if(!o.isMesh||!o.visible||o.isInstancedMesh||o===terrain||Array.isArray(o.material))return;for(let p=o;p&&p!==land;p=p.parent)if(moving.has(p)||p.userData.dynamic)return;if(!o.geometry.attributes.uv)return;const key=o.material.uuid;if(!batches.has(key))batches.set(key,{material:o.material,objects:[]});batches.get(key).objects.push(o);});
-    for(const {material,objects} of batches.values()){if(objects.length<2)continue;const geos=objects.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrixWorld);return g;});const geo=mergeGeometries(geos,false);for(const g of geos)g.dispose();if(!geo)continue;for(const o of objects){o.parent.remove(o);o.geometry.dispose();}const combined=new T.Mesh(geo,material);combined.castShadow=true;combined.receiveShadow=true;land.add(combined);}
+    obstacleIndex=createObstacleIndex(obstacles);obstacleIndex.rebuild();
+    const moving=new Set([...routes.flatMap(r=>[r.boat,...(r.idleBoats||[])]).filter(Boolean),...animated.map(a=>a.mesh),...citizens.flatMap(c=>[c.root,c.workstation]).filter(Boolean),...party.map(p=>p.char.root),...[...questActors.values()].map(a=>a.root),...roadGuards.map(g=>g.disguise)]);
+    batchStaticScenery(land,{moving,terrain});
   }
   function addSidequestActor(entry){
     const chosen=questPositions.get(entry.id);
@@ -279,6 +284,8 @@ export function createAdventureScene(){
     return result;
   }
   function load(id,save,{preserveHero=false}={}){
+    staticInstanceCullers.length=0;
+    obstacleIndex=null;
     boarding=null;questPositions=new Map();hallSteps.length=0;treatment.clear();clinicPlans=id==='nameless'?planNamelessClinics():planVillageCivic(id).clinics;
     loadedKey=null;
     const standing=preserveHero?{position:hero.root.position.clone(),surface,physics:physics.state(),yaw:hero.root.rotation.y}:null;
@@ -492,7 +499,7 @@ export function createAdventureScene(){
     for(const a of animated){if(a.kind==='float'){a.mesh.rotation.y=time*.55;a.mesh.position.y=a.base+Math.sin(time*1.6)*.2;}if(a.kind==='balloon'){a.mesh.position.y=a.base+Math.sin(time*1.3+a.base)*.25;a.mesh.rotation.z=Math.sin(time*.7)*.035;}if(a.kind==='windmill')a.mesh.rotation.z=time*.45;if(a.kind==='halo')a.mesh.rotation.y+=dt*.24;if(a.kind==='boss'){a.mesh.position.y=a.base+Math.sin(time*1.1)*.18;a.mesh.rotation.y=Math.sin(time*.35)*.08;}if(a.kind==='pulse')a.mesh.scale.setScalar(1+Math.sin(time*2)*.08);if(a.kind==='flag')a.mesh.rotation.y=Math.sin(time*2.4)*.15;if(a.kind==='ripple')a.mesh.material.opacity=.76+Math.sin(time)*.04;}
     for(const h of harbors.values()){h.skipper.update(time,false,null,dt);h.sail.rotation.y=Math.sin(time*1.6)*.025;}
     focusSun();contacts.update([hero,...citizens,...party.map(p=>p.char),...storyActors.actors(),...infiltration.characters()],contactFloor);
-    followCamera(dt,false,menu);groundCover?.update(camera,visualQuality,time);destination.rotation.z=time;
+    followCamera(dt,false,menu);groundCover?.update(camera,visualQuality,time);for(const culler of staticInstanceCullers)culler.update(camera);destination.rotation.z=time;
     const target=hero.root.position.clone().add(new T.Vector3(0,2,0));
     if(foliage){const sight=new T.Line3(camera.position,target),nearest=new T.Vector3(),hiddenMatrix=new T.Matrix4().makeScale(0,0,0);let changed=false;foliage.items.forEach((item,index)=>{sight.closestPointToPoint(item.center,true,nearest);const hidden=nearest.distanceTo(item.center)<item.radius+1;if(hidden!==item.hidden){foliage.mesh.setMatrixAt(index,hidden?hiddenMatrix:item.matrix);item.hidden=hidden;changed=true;}});if(changed)foliage.mesh.instanceMatrix.needsUpdate=true;}
   }

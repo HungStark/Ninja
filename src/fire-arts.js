@@ -1,6 +1,7 @@
 import * as T from 'three';
 import { vfxToon } from './vfx-materials.js';
 import { canvasTexture } from './materials.js';
+import {OpaqueInstanceBatch} from './opaque-instance-batch.js';
 
 const forward = new T.Vector3(0, 0, -1);
 const up = new T.Vector3(0, 1, 0);
@@ -18,6 +19,11 @@ export class FireArts {
     this.scene = scene; this.glow = glow;
     this.shots = new Map(); this.walls = new Map(); this.shields = new Map(); this.bursts = [];
     this.ribbonGeometries = new Map();
+    this.orbPool=[];this.orbAllocations=0;this.orbReuses=0;
+    this.liveShots=new Set();this.liveWalls=new Set();this.direction=new T.Vector3();
+    this.coilPointScratch=new T.Vector3();this.flightPointScratch=new T.Vector3();
+    this.coilRotationScratch=new T.Quaternion();this.flightRotationScratch=new T.Quaternion();this.identityRotation=new T.Quaternion();
+    this.coilMatrix=new T.Matrix4();this.coilBasisX=new T.Vector3(0,0,1);this.coilBasisY=new T.Vector3();this.coilBasisZ=new T.Vector3();
     this.sphere = new T.SphereGeometry(1, 16, 12);
     this.rock = new T.IcosahedronGeometry(1, 1);
     this.cone = new T.ConeGeometry(1, 1, 8, 3);
@@ -33,7 +39,11 @@ export class FireArts {
       uniforms: { uTime: { value: 0 } },
       vertexShader: `varying vec3 vLocal; varying vec3 vNormal; uniform float uTime;
         void main(){vLocal=position;vNormal=normal;vec3 p=position+normal*sin(position.y*9.+position.z*8.-uTime*12.)*.045;
-        gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+        vec4 transformed=vec4(p,1.);
+        #ifdef USE_INSTANCING
+          transformed=instanceMatrix*transformed;
+        #endif
+        gl_Position=projectionMatrix*modelViewMatrix*transformed;}`,
       fragmentShader: `varying vec3 vLocal; varying vec3 vNormal; uniform float uTime;
     void main(){
       vec3 n=normalize(vNormal);
@@ -48,6 +58,7 @@ export class FireArts {
       #include <colorspace_fragment>
     }`
     });
+    this.orbBatch=new OpaqueInstanceBatch(scene,this.sphere,this.fire);
     this.flame = new T.ShaderMaterial({
       transparent: true, blending: T.NormalBlending, depthWrite: false, side: T.DoubleSide,
       uniforms: { uTime: { value: 0 } },
@@ -146,8 +157,12 @@ export class FireArts {
     return part(parent, geometry, material);
   }
   orb(salvo = false) {
+    const index=this.orbPool.findIndex(group=>group.userData.salvo===salvo);
+    if(index!==-1){const group=this.orbPool.splice(index,1)[0];group.position.set(0,0,0);group.quaternion.identity();group.scale.setScalar(1);group.visible=true;group.userData.orbCore.visible=true;group.userData.ribbons.visible=true;group.userData.ribbons.rotation.z=0;for(const child of group.children)if(child.geometry===this.cone)child.visible=true;this.orbReuses++;return group;}
+    this.orbAllocations++;
     const g = new T.Group();
-    part(g, this.sphere, this.fire);
+    g.userData.fireOrb=true;g.userData.salvo=salvo;
+    g.userData.orbCore=part(g, this.sphere, this.fire);
     part(g, this.sphere, this.red, [0, 0, 0], [1.2, 1.2, 1.2]);
     const ribbons = new T.Group(); g.add(ribbons); g.userData.ribbons = ribbons;
     for (let j = 0; j < 3; j++) this.ribbon(ribbons, 1.4, salvo ? 5 : 4, 1.05, j * Math.PI * 2 / 3, j === 0 ? this.hot : this.gold);
@@ -218,24 +233,24 @@ export class FireArts {
     const radius = 2.35, angle = .7 + Math.sin(Math.min(shot.age, shot.formation) * 2) * .08;
     const coilPoint = fraction => {
       const a = angle + fraction * Math.PI * 1.87;
-      return new T.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, fraction * .15);
+      return this.coilPointScratch.set(Math.cos(a) * radius, Math.sin(a) * radius, fraction * .15);
     };
     const coilRotation = fraction => {
       const a = angle + fraction * Math.PI * 1.87;
-      return new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(
-        new T.Vector3(0, 0, 1), new T.Vector3(Math.cos(a), Math.sin(a), 0), new T.Vector3(-Math.sin(a), Math.cos(a), 0)));
+      return this.coilRotationScratch.setFromRotationMatrix(this.coilMatrix.makeBasis(
+        this.coilBasisX,this.coilBasisY.set(Math.cos(a),Math.sin(a),0),this.coilBasisZ.set(-Math.sin(a),Math.cos(a),0)));
     };
     g.position.y += .55 * (1 - release);
     const head = g.userData.head;
     head.position.copy(coilPoint(0)).multiplyScalar(1 - release);
-    head.quaternion.copy(coilRotation(.16)).slerp(new T.Quaternion(), release);
+    head.quaternion.copy(coilRotation(.16)).slerp(this.identityRotation, release);
     head.scale.setScalar(forming ? .45 + .55 * Math.min(1, shot.age / .18) : 1);
     g.userData.segments.forEach((segment, j, segments) => {
       const fraction = (j + 1) / segments.length;
       const z = .65 + j * .43, wave = Math.sin(j * .4 - time * 8);
-      const flight = new T.Vector3(wave * Math.min(.9, j * .09), Math.cos(j * .35 - time * 6) * j * .015, z);
+      const flight = this.flightPointScratch.set(wave * Math.min(.9, j * .09), Math.cos(j * .35 - time * 6) * j * .015, z);
       segment.position.copy(coilPoint(fraction)).lerp(flight, release);
-      const flightRotation = new T.Quaternion().setFromAxisAngle(up, Math.cos(j * .4 - time * 8) * .15);
+      const flightRotation = this.flightRotationScratch.setFromAxisAngle(up, Math.cos(j * .4 - time * 8) * .15);
       segment.quaternion.copy(coilRotation(fraction)).slerp(flightRotation, release);
       segment.visible = !forming || fraction <= grow;
       segment.scale.setScalar(forming ? Math.min(1, Math.max(.05, (grow - fraction) * 12)) : 1);
@@ -295,7 +310,7 @@ export class FireArts {
     for (const { mesh, center, a, origin, scale } of cloud.puffs) {
       mesh.visible = (!center || age < .32) && (quality !== 2 || center || Math.round(a / 2.399) % 2 === 0);
       const push = age * (center ? 8 : 3.2);
-      mesh.position.copy(origin).add(new T.Vector3(Math.cos(a) * push, age * .8, Math.sin(a) * push));
+      mesh.position.copy(origin);mesh.position.x+=Math.cos(a)*push;mesh.position.y+=age*.8;mesh.position.z+=Math.sin(a)*push;
       mesh.scale.copy(scale).multiplyScalar(center ? Math.max(.001, 1 - age / .32) : 1 + age * .12);
     }
   }
@@ -423,7 +438,7 @@ export class FireArts {
     });
     b.streaks.forEach(({ mesh, v, length }, j) => {
       mesh.position.copy(v).multiplyScalar(age); mesh.position.y += .3 - 7 * age * age;
-      mesh.quaternion.setFromUnitVectors(up, new T.Vector3(v.x, v.y - 14 * age, v.z).normalize());
+      mesh.quaternion.setFromUnitVectors(up, this.direction.set(v.x, v.y - 14 * age, v.z).normalize());
       mesh.scale.y = length * Math.max(.05, 1 - age / .9);
       mesh.visible = age < .85 && (quality !== 2 || j % 2 === 0);
     });
@@ -438,7 +453,7 @@ export class FireArts {
     // Shared primitives/ribbons stay cached; projectile-owned geometry and sprites are released.
     const shared = new Set([this.sphere, this.rock, this.cone, this.box, this.ring, this.sigilGeometry,...this.ribbonGeometries.values()]);
     g.traverse(o => {
-      if (o.geometry && !shared.has(o.geometry)) o.geometry.dispose();
+      if (o.geometry && !o.isSprite && !shared.has(o.geometry)) o.geometry.dispose();
       if (o.isSprite) o.material.dispose();
     });
   }
@@ -446,14 +461,21 @@ export class FireArts {
     this.disposeGroup(b.g);
     for (const material of b.materials || [b.gold, b.red]) material.dispose();
   }
+  releaseShotGroup(group){
+    if(group.userData.fireOrb&&this.orbPool.length<32){group.removeFromParent();this.orbPool.push(group);}
+    else this.disposeGroup(group);
+  }
+  performanceState(){return {pooledOrbs:this.orbPool.length,orbAllocations:this.orbAllocations,orbReuses:this.orbReuses,ribbonGeometries:this.ribbonGeometries.size,batch:this.orbBatch.state()};}
   update(dt, time, shots, walls, fighters, quality) {
     for (const m of [this.fire, this.flame, this.wallMaterial, this.shieldMaterial]) m.uniforms.uTime.value = time;
-    const live = new Set(shots.filter(s => s.element === 'fire'));
+    const live=this.liveShots;live.clear();for(const shot of shots)if(shot.element==='fire')live.add(shot);
     for (const [shot, art] of this.shots) if (!live.has(shot)) {
-      this.disposeGroup(art.g); if (art.marker) this.disposeGroup(art.marker);
+      this.releaseShotGroup(art.g); if (art.marker) this.disposeGroup(art.marker);
       if (art.cloud) { this.disposeGroup(art.cloud.g); art.cloud.material.dispose(); }
       this.shots.delete(shot);
     }
+    let orbCount=0;for(const shot of live)if(shot.style!=='dragon'&&shot.style!=='meteor')orbCount++;
+    this.orbBatch.begin(orbCount);let orbIndex=0;
     for (const shot of live) {
       let art = this.shots.get(shot);
       if (!art) {
@@ -464,7 +486,7 @@ export class FireArts {
       const g = art.g;
       g.position.fromArray(shot.p); g.scale.setScalar(shot.size);
       if (shot.style === 'meteor' && shot.phase === 'sky') g.scale.multiplyScalar(1 + .35 * Math.max(0, 1 - shot.preludeAge / shot.skyTime));
-      g.quaternion.setFromUnitVectors(forward, new T.Vector3(...shot.v).normalize());
+      g.quaternion.setFromUnitVectors(forward, this.direction.fromArray(shot.v).normalize());
       if (shot.phase === 'staged') {
         g.quaternion.identity();
         g.userData.ribbons.visible = false;
@@ -475,6 +497,7 @@ export class FireArts {
         for (const child of g.children) if (child.geometry === this.cone) child.visible = true;
       }
       if (g.userData.ribbons) g.userData.ribbons.rotation.z = time * (shot.style === 'meteor' ? 2 : 5);
+      if(g.userData.fireOrb){g.updateMatrix();this.orbBatch.set(orbIndex++,g.matrix);g.userData.orbCore.visible=false;}
       if (g.userData.segments) {
         this.updateDragon(g, shot, time, quality);
       }
@@ -484,7 +507,8 @@ export class FireArts {
       }
       if (art.cloud) this.updateMeteorCloud(art.cloud, shot, quality);
     }
-    const liveWalls = new Set(walls.filter(w => w.element === 'fire' && w.life > 0 && w.hp > 0));
+    this.orbBatch.finish();
+    const liveWalls=this.liveWalls;liveWalls.clear();for(const wall of walls)if(wall.element==='fire'&&wall.life>0&&wall.hp>0)liveWalls.add(wall);
     for (const [wall, g] of this.walls) if (!liveWalls.has(wall)) { this.disposeGroup(g); this.walls.delete(wall); }
     for (const wall of liveWalls) {
       if (!this.walls.has(wall)) this.walls.set(wall, this.wall(wall));
@@ -529,12 +553,13 @@ export class FireArts {
   }
   reset() {
     for (const art of this.shots.values()) {
-      this.disposeGroup(art.g); if (art.marker) this.disposeGroup(art.marker);
+      this.releaseShotGroup(art.g); if (art.marker) this.disposeGroup(art.marker);
       if (art.cloud) { this.disposeGroup(art.cloud.g); art.cloud.material.dispose(); }
     }
     for (const g of this.walls.values()) this.disposeGroup(g);
     for (const g of this.shields.values()) this.disposeGroup(g);
     for (const b of this.bursts) this.disposeBurst(b);
     this.shots.clear(); this.walls.clear(); this.shields.clear(); this.bursts.length = 0;
+    this.orbBatch.dispose();this.liveShots.clear();this.liveWalls.clear();
   }
 }

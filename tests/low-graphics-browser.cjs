@@ -40,7 +40,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
    reports.push({mobile,balanced,low:low.graphics,regular:regular.graphics,largeViewport:s.graphics});
    const {newJourney}=await import('../src/adventure-data.js'),save=newJourney();save.story.stage='infiltrate';save.story.guardianRestored=true;
    await page.addInitScript(save=>localStorage.setItem('anhoa-adventure-v1',JSON.stringify(save)),save);
-   await page.goto(`http://127.0.0.1:${server.address().port}/index.html?test=1&adventure=1`);await page.waitForFunction(()=>document.body.dataset.ready==='true',null,{timeout:90000});await page.locator('#continueJourney').click();await advance(.1);
+   await page.goto(`http://127.0.0.1:${server.address().port}/index.html?test=1&adventure=1`);await page.waitForFunction(()=>document.body.dataset.ready==='true',null,{timeout:90000});await page.locator('#continueJourney').click();await page.waitForFunction(()=>!__AN_HOA__.adventure().loading);await advance(.1);
    const village=await page.evaluate(()=>__AN_HOA__.adventure());assert.equal(village.phase,'explore');assert.equal(village.presentation.quality,mobile?2:1);assert.equal((await state()).graphics.renderPath,'direct');
    await page.screenshot({path:`${out}/${mobile?'mobile':'desktop'}-exploration-low.png`});
    await quality('Cao');assert.equal((await page.evaluate(()=>__AN_HOA__.adventure())).presentation.quality,0);await quality('Thấp');assert.equal((await page.evaluate(()=>__AN_HOA__.adventure())).presentation.quality,2);

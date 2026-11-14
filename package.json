@@ -62,6 +62,7 @@
     "test:hero-reference": "node tests/hero-reference-core.mjs && node tools/build.mjs && node tools/preview-hero-reference.cjs after && node tests/character-loading-browser.cjs && node tests/hero-equipment-motion-browser.cjs",
     "assets:portraits": "node tools/build-portraits.mjs",
     "test:character-performance": "node tests/character-budget-core.mjs && node tests/model-portraits-core.mjs && node tools/build.mjs && node tests/model-portraits-browser.cjs && node tests/character-performance-browser.cjs after",
+    "test:performance-five": "node tests/performance-five-core.mjs && node tools/build-android.mjs && node tests/performance-five-browser.cjs && node tests/low-graphics-browser.cjs",
     "test:ha-ly": "node tests/village-events-core.mjs && node tools/build.mjs && node tests/ha-ly-rescue-browser.cjs && node tests/village-events-browser.cjs",
     "test:village-ninjas": "node tools/build.mjs && node tests/village-ninja-browser.cjs --game",
     "test:sprint-pose": "node tools/build-android.mjs && node tests/sprint-pose.cjs",
