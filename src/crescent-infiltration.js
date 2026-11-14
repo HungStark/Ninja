@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {createNinja} from './ninja.js';
-import {crescentEmblem} from './island-occupation.js';
+import {encounterAppearance} from './encounter-appearance.js';
 import {encounterProfile} from './progression.js';
 import {configureOpponent} from './opponent-balance.js';
 
@@ -13,7 +13,7 @@ export function createInfiltration({land,interactives,blocked,floor,findPath,her
   const agents=new Map();let serial=0;
   function remove(id){const a=agents.get(id);if(!a)return;a.char.dispose();a.char.root.removeFromParent();for(const root of [a.cover,a.prop]){root?.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});root?.removeFromParent();}const i=interactives.indexOf(a.entry);if(i>=0)interactives.splice(i,1);agents.delete(id);}
   function spawn(x,z,element,mode='survey'){
-    const char=createNinja({village:element,coat:'#39233f'});crescentEmblem(char.root);char.root.name='crescent-infiltrator';char.root.position.set(x,floor(x,z),z);land.add(char.root);
+    const char=createNinja(encounterAppearance({kind:'infiltrator',element}));char.root.name='crescent-infiltrator';char.root.position.set(x,floor(x,z),z);land.add(char.root);
     const entry={kind:'roamer',id:'crescent-infiltrator-'+(++serial),element,mode,x,y:char.root.position.y,z,label:mode==='ambush'?'Sát thủ Trăng Khuyết':mode==='tamper'?'Kẻ đang đặt phong ấn':'Kẻ đang khảo sát địa hình',revealed:mode!=='ambush'};
     let cover=null;if(mode==='ambush'){cover=new T.Mesh(new T.DodecahedronGeometry(.7),new T.MeshStandardMaterial({color:'#6c7262',roughness:1}));cover.position.set(x,entry.y+.5,z);land.add(cover);char.root.visible=false;}
     let prop=null;if(mode==='tamper'){prop=new T.Group();prop.name='crescent-suspicious-seal';prop.position.set(x,entry.y,z+1);const paper=new T.Mesh(new T.BoxGeometry(.7,.03,.8),new T.MeshStandardMaterial({color:'#c8bda3',roughness:1}));paper.position.y=.05;prop.add(paper);const ring=new T.Mesh(new T.TorusGeometry(.23,.025,5,16),new T.MeshStandardMaterial({color:'#4f284e',roughness:1}));ring.rotation.x=-Math.PI/2;ring.position.y=.08;prop.add(ring);land.add(prop);}

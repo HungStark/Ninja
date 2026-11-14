@@ -1,6 +1,6 @@
 export const HERO_PORTRAIT_COAT='#211e25';
 export const HERO_PORTRAIT_HAIR='#161821';
-export const ninjaPortraitKey=profile=>'ninja-model/'+profile.village+'/'+profile.id;
+export const ninjaPortraitKey=profile=>'ninja-model/'+profile.village+'/'+profile.id+(profile.faction==='crescent'?'/crescent':'');
 export function portraitKey(speaker){
   if(speaker.portraitId)return speaker.portraitId;
   if(speaker.id==='hero')return 'hero/'+(speaker.equipment?.armor?.id||speaker.armor?.id||'traveler');

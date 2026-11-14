@@ -9,7 +9,15 @@ export const legionGuardId=id=>'crescent-'+id;
 export function legionGuard(entry,id){return {...entry,id:legionGuardId(entry.id),occupation:true,elite:id==='dark',disguise:null,element:entry.guardRole==='guardian'?id:'dark',name:id==='dark'?'Tinh binh Trăng Khuyết':'Binh đoàn Trăng Khuyết',label:id==='dark'?'Tinh binh Trăng Khuyết':'Binh đoàn Trăng Khuyết'};}
 export const storyBossProfile=encounter=>encounter?.storyBoss?{...encounter,kind:'boss',village:encounter.guardianVillage}:encounter;
 export function crescentEmblem(root){
-  const material=new T.MeshStandardMaterial({color:'#d7c390',roughness:.75}),crescent=new T.Mesh(new T.TorusGeometry(.17,.04,5,16,Math.PI*1.5),material);crescent.name='crescent-legion-emblem';crescent.position.set(0,1.9,.39);crescent.rotation.z=.8;root.add(crescent);root.userData.faction='crescent';return crescent;
+  root.userData.faction='crescent';
+  // Loaded ninja uniforms already have animated chest/back patches.
+  if(root.userData.ninja?.faction==='crescent')return root;
+  const existing=root.getObjectByName('crescent-legion-emblem');if(existing)return existing;
+  const shape=new T.Shape();shape.absarc(0,0,.25,Math.PI/3,Math.PI*5/3,false);shape.quadraticCurveTo(-.15,0,.125,Math.sqrt(3)*.125);shape.closePath();
+  const emblem=new T.Group();emblem.name='crescent-legion-emblem';root.add(emblem);
+  const geometry=new T.ShapeGeometry(shape,24),material=new T.MeshStandardMaterial({color:'#ded9ed',roughness:.85,side:T.DoubleSide});
+  for(const back of [false,true]){const patch=new T.Mesh(geometry,material);patch.position.set(0,1.86,back?-.33:.39);patch.scale.setScalar(back?1.25:1);emblem.add(patch);}
+  return emblem;
 }
 export function buildOccupationBanners(c,gates,layout){
   const sites=[...gates.map(g=>({x:g.x,z:g.z})),layout.hall.entry,layout.military.insideGate];

@@ -17,6 +17,8 @@ export function portraitPresets(){
     add('ninja/'+village,{kind:'ninja',profile:ninjaProfile({id:'village-guard-'+village,village,kind:'ninja'}),pose:'standing'});
     add('guardian/'+village,{kind:'guardian',village});
     const looks=[{village},...['random','quest','sidequest','village-guard','guardian-guard','arena','intro-trio','boss','infiltrator'].map(kind=>encounterAppearance({kind,village,element:village})),encounterAppearance({kind:'village-guard',village,occupation:true})];
+    looks.push(encounterAppearance({kind:'boss',village,guardianVillage:village,storyBoss:true}));
+    for(const kind of ['intro-trio','village-event'])looks.push(encounterAppearance({kind,village,element:village,faction:'crescent'}));
     for(const look of looks){const profile=ninjaProfile(look);add(ninjaPortraitKey(profile),{kind:'ninja',profile,pose:'standing'});}
     for(const person of [...region.npcs,...['chief','envoy','leader','lore','healer'].map(kind=>({kind})),{id:'shopkeeper',kind:'envoy'},{id:'story-guide-'+village,kind:'lore'}]){const profile=villagerAppearance(village,person);add('npc/'+village+'/'+profile.id,{kind:'villager',profile,pose:'standing'});}
   }

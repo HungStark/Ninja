@@ -267,15 +267,15 @@ export function createAdventureScene(){
   let boarding=null;
   function beginBoarding(dock){
     const harbor=harbors.get(dock.id);if(boarding||ride||!harbor)return false;
-    boarding=createHarborPassage(harbor,hero.root);followCamera(1,true);return true;
+    boarding=createHarborPassage(harbor,hero.root,{passengers:storyActors.harborPassengers()});followCamera(1,true);return true;
   }
   function beginHarborArrival(from){
     const harbor=harbors.get(from);if(!harbor||boarding)return false;
-    boarding=createHarborPassage(harbor,hero.root,{incoming:true});followCamera(1,true);return true;
+    boarding=createHarborPassage(harbor,hero.root,{incoming:true,passengers:storyActors.harborPassengers()});followCamera(1,true);return true;
   }
   function advanceBoarding(dt){
     if(!boarding)return null;const result=boarding.advance(dt);
-    if(result.complete&&result.incoming){const shore=boarding.shore;hero.root.position.copy(shore);boarding=null;physics.reset(shore.y);previousHeroPosition.copy(shore);followCamera(1,true);}
+    if(result.complete&&result.incoming){const shore=boarding.shore;hero.root.position.copy(shore);boarding=null;storyActors.finishHarbor();physics.reset(shore.y);previousHeroPosition.copy(shore);followCamera(1,true);}
     return result;
   }
   function load(id,save,{preserveHero=false}={}){
@@ -486,7 +486,7 @@ export function createAdventureScene(){
     if(ride?.rock){if(['hang','mantle'].includes(ride.mode))hero.climbPose(time);else if(ride.mode==='jump')hero.airPose(1-ride.jumpTime*2);}
     else if(ride&&['ladder','climb'].includes(ride.route.kind)&&!hero.root.userData.carryingCompanion&&(!ride.route.automatic||ride.mode==='climbing'))hero.climbPose(time);else if(!physics.state().grounded)hero.airPose(physics.state().verticalSpeed);
     if(miningTime>0){miningTime=Math.max(0,miningTime-(paused?0:dt));hero.arms[1].pivot.rotation.x=-1.2-Math.sin((.4-miningTime)/.4*Math.PI)*1.2;pickaxe.visible=miningTime>0;}
-    storyActors.update(dt,time,paused,!!ride||!!boarding,characterBudget,{airborne,verticalSpeed:physics.state().verticalSpeed,sprinting:sprinting&&!ride&&physics.state().grounded,surface,airHeight:airborne?Math.max(0,hero.root.position.y-physics.floorAt(hero.root.position.x,hero.root.position.z,hero.root.position.y+.03)):0});
+    storyActors.update(dt,time,paused,!!ride||!!boarding,characterBudget,{harbor:boarding?.state(),airborne,verticalSpeed:physics.state().verticalSpeed,sprinting:sprinting&&!ride&&physics.state().grounded,surface,airHeight:airborne?Math.max(0,hero.root.position.y-physics.floorAt(hero.root.position.x,hero.root.position.z,hero.root.position.y+.03)):0});
     storm.update(dt,!room&&current==='lightning'&&!menu,hero.root.position);
     for(const {char,offset} of party){const target=new T.Vector3(hero.root.position.x+offset[0],0,hero.root.position.z+offset[1]),p=char.root.position,walking=Math.hypot(p.x-target.x,p.z-target.z)>.2;p.x+=(target.x-p.x)*(1-Math.exp(-dt*3));p.z+=(target.z-p.z)*(1-Math.exp(-dt*3));p.y=heightAt(p.x,p.z);if(walking)char.root.rotation.y=Math.atan2(target.x-p.x,target.z-p.z);char.update(time,walking,null,dt);}
     for(const a of animated){if(a.kind==='float'){a.mesh.rotation.y=time*.55;a.mesh.position.y=a.base+Math.sin(time*1.6)*.2;}if(a.kind==='balloon'){a.mesh.position.y=a.base+Math.sin(time*1.3+a.base)*.25;a.mesh.rotation.z=Math.sin(time*.7)*.035;}if(a.kind==='windmill')a.mesh.rotation.z=time*.45;if(a.kind==='halo')a.mesh.rotation.y+=dt*.24;if(a.kind==='boss'){a.mesh.position.y=a.base+Math.sin(time*1.1)*.18;a.mesh.rotation.y=Math.sin(time*.35)*.08;}if(a.kind==='pulse')a.mesh.scale.setScalar(1+Math.sin(time*2)*.08);if(a.kind==='flag')a.mesh.rotation.y=Math.sin(time*2.4)*.15;if(a.kind==='ripple')a.mesh.material.opacity=.76+Math.sin(time)*.04;}

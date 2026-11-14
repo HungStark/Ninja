@@ -57,15 +57,16 @@ export function buildVillageHarbor({id,land,box,cyl,mesh,M,solidMesh},dock,h){
   const harbor={...h,root,boat,skipper,water,wake,sail,dock};
   harbor.point=(side,along,y=h.deckY)=>new T.Vector3(h.x+h.dz*side+h.dx*along,y,h.z-h.dx*side+h.dz*along);
   harbor.place=(distance,incoming=false,bob=0)=>{boat.position.set(0,h.deckY+bob,distance);boat.rotation.y=incoming?Math.PI:0;boat.rotation.z=bob*.15;boat.updateWorldMatrix(true,true);};
-  harbor.passenger=()=>boat.localToWorld(new T.Vector3(.9,.055,-.9));
+  harbor.passenger=(slot=0)=>boat.localToWorld(new T.Vector3(slot?-1.05:.9,.055,-.9));
   harbor.place(h.moored);dock.board=harbor.passenger().toArray();dock.seaEdge=harbor.point(0,h.edge).toArray();dock.waterY=h.waterY;
   return harbor;
 }
 
 // Consume leftover time across stages; the destination scene never starts before departure completes.
-export function createHarborPassage(harbor,hero,{incoming=false}={}){
+export function createHarborPassage(harbor,hero,{incoming=false,passengers=[]}={}){
   const stages=incoming?['inbound','disembark']:['boarding','outbound'];let index=0,elapsed=0,age=0,complete=false;
   const shore=harbor.point(0,0),start=hero.position.clone();harbor.place(incoming?harbor.edge:harbor.moored,incoming);harbor.wake.visible=incoming;
+  const companions=passengers.map(root=>({root,start:root.getWorldPosition(new T.Vector3())}));
   const setHero=(p,yaw)=>{hero.position.copy(p);hero.rotation.y=yaw;};
   const pose=()=>{
     const stage=stages[index],t=Math.min(1,elapsed/HARBOR_TIMING[stage]),ease=t*t*(3-2*t),bob=Math.sin(age*2.5)*.045;
@@ -74,11 +75,16 @@ export function createHarborPassage(harbor,hero,{incoming=false}={}){
     if(stage==='boarding'){const p=start.clone().lerp(harbor.passenger(),ease);p.y+=Math.sin(t*Math.PI)*.45;setHero(p,harbor.yaw);}
     else if(stage==='disembark'){const p=harbor.passenger().lerp(shore,ease);p.y+=Math.sin(t*Math.PI)*.35;setHero(p,harbor.yaw+Math.PI);}
     else setHero(harbor.passenger(),harbor.yaw+(incoming?Math.PI:0));
+    for(const [i,companion] of companions.entries()){
+      const seat=harbor.passenger(i+1),landing=harbor.point(-1.1-i*.7,0),p=stage==='boarding'?companion.start.clone().lerp(seat,ease):stage==='disembark'?seat.lerp(landing,ease):seat;
+      if(stage==='boarding'||stage==='disembark')p.y+=Math.sin(t*Math.PI)*(stage==='boarding'?.45:.35);
+      companion.root.position.copy(companion.root.parent?companion.root.parent.worldToLocal(p):p);companion.root.rotation.y=hero.rotation.y;
+    }
   };
   pose();
   return {harbor,incoming,shore,advance(dt){
     if(complete)return this.state();age+=Math.max(0,dt);let remaining=Math.max(0,dt);
     while(remaining>0&&!complete){const step=Math.min(remaining,HARBOR_TIMING[stages[index]]-elapsed);elapsed+=step;remaining-=step;pose();if(elapsed>=HARBOR_TIMING[stages[index]]-1e-8){if(index===stages.length-1){complete=true;harbor.wake.visible=false;}else {index++;elapsed=0;pose();}}}
     return this.state();
-  },state(){return {id:harbor.id,stage:stages[index],progress:Math.min(1,elapsed/HARBOR_TIMING[stages[index]]),incoming,complete,walking:stages[index]==='boarding'||stages[index]==='disembark',boat:harbor.boat.getWorldPosition(new T.Vector3()).toArray(),passenger:hero.position.toArray(),skipper:harbor.skipper.root.getWorldPosition(new T.Vector3()).toArray()};}};
+  },state(){return {id:harbor.id,stage:stages[index],progress:Math.min(1,elapsed/HARBOR_TIMING[stages[index]]),incoming,complete,walking:stages[index]==='boarding'||stages[index]==='disembark',boat:harbor.boat.getWorldPosition(new T.Vector3()).toArray(),passenger:hero.position.toArray(),companions:companions.map(c=>c.root.getWorldPosition(new T.Vector3()).toArray()),skipper:harbor.skipper.root.getWorldPosition(new T.Vector3()).toArray()};}};
 }

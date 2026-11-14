@@ -17,7 +17,7 @@ export async function createOpponent(scene,spawnPosition,playerModel=false){
   let ninja=null,creature=null,appearance=null,guardianAura=null,naturalCombat=false,attackAge=1,lastSealPose=-1;const naturalMotion=createHeroCombatMotion();
   function setAppearance(encounter=null){
     const next=encounterAppearance(encounter);
-    if(!appearance||next.id!==appearance.id||next.kind!==appearance.kind){
+    if(!appearance||next.id!==appearance.id||next.kind!==appearance.kind||next.faction!==appearance.faction){
       if(guardianAura){group.remove(guardianAura.root);guardianAura.dispose();guardianAura=null;}
       if(ninja){group.remove(ninja.root);ninja.dispose();ninja=null;}
       if(creature){group.remove(creature.root);creature.dispose();creature=null;}

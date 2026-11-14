@@ -73,6 +73,7 @@ export function villageEventEncounter(id,step=1,save){
   else if(event.battle==='wind-eagle')return {...profile(event.enemy,'wind',260),name:event.enemy,guardianForm:'beast',storyBeast:true,eventStep:step,storyBattle:event.battle};
   else if(event.battle==='invasion-vanguard')squad=[{...profile('Chỉ huy tiên phong ngoại giới','dark',450),spellIds:['dark-orb','dark-lance','dark-domain','light-orb','fire-lance'],damageMultiplier:.85},profile('Đội tiên phong ngoại giới','light',200)];
   else squad=[profile(event.enemy,id,150)];
+  if(['water-base','fire-jail','fire-general','earth-base','ice-coast','light-battalion','dark-battalion'].includes(event.battle))squad=squad.map(member=>({...member,faction:'crescent'}));
   return {...squad[0],village:id,name:event.enemy,...(squad.length>1?{squad}:{}),eventStep:step,storyBattle:event.battle,coalition:!!event.coalition};
 }
 

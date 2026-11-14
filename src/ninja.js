@@ -4,20 +4,21 @@ import {attachHaLy} from './ha-ly-model.js';
 import {createVillager} from './villager.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {attachVillageNinja} from './village-ninja-model.js';
-import {VILLAGE_NINJA_STYLES} from './village-ninja-style.js';
+import {VILLAGE_NINJA_STYLES,CRESCENT_NINJA_STYLE} from './village-ninja-style.js';
+import {crescentEmblem} from './island-occupation.js';
 
 export function ninjaProfile(look){
   const village=look.village||'nameless',seed=Array.from(look.id||'duel').reduce((s,c)=>(s*31+c.charCodeAt(0))>>>0,13),base=villagerAppearance(village,{kind:'ninja',id:look.id||'duel'});
-  const style=VILLAGE_NINJA_STYLES[village]||VILLAGE_NINJA_STYLES.nameless;
-  return {...base,id:look.id||'duel',job:'ninja',age:'adult',female:look.female===true,beard:null,hat:null,fur:false,shawl:false,skin:look.skin||style.skin,uniformColor:style.coat,accent:style.accent,
-    coat:look.coat||'#33495f',hair:look.hair||'#252833',hairStyle:look.hairStyle||(look.female?'ponytail':seed%3===0?'ponytail':'short'),
+  const faction=look.faction||(look.id?.startsWith('crescent-')?'crescent':undefined),villageStyle=VILLAGE_NINJA_STYLES[village]||VILLAGE_NINJA_STYLES.nameless,style=faction==='crescent'?{...villageStyle,...CRESCENT_NINJA_STYLE}:villageStyle;
+  return {...base,id:look.id||'duel',faction,job:'ninja',age:'adult',female:look.female===true,beard:null,hat:null,fur:false,shawl:false,skin:look.skin||style.skin,uniformColor:style.coat,accent:style.accent,
+    coat:faction==='crescent'?style.coat:look.coat||'#33495f',hair:look.hair||'#252833',hairStyle:look.hairStyle||(look.female?'ponytail':seed%3===0?'ponytail':'short'),
     height:look.female?2.9:2.96+(seed%4)*.065,width:look.female?.85:.94+(seed%3)*.06,hood:!look.female&&look.kind==='ninja'&&look.id.startsWith('random-')&&seed%3!==0,variant:seed%6};
 }
 
 // Browser characters start with control joints only, then attach the current rig.
 export function createNinja(look){
   const profile=ninjaProfile(look),base=createVillager(profile),{root,body,head}=base;
-  root.name='ninja-'+profile.id;root.userData.ninja={id:profile.id,village:profile.village,hood:profile.hood,variant:profile.variant,height:profile.height};
+  root.name='ninja-'+profile.id;root.userData.ninja={id:profile.id,village:profile.village,faction:profile.faction,hood:profile.hood,variant:profile.variant,height:profile.height};if(profile.faction)root.userData.faction=profile.faction;
   const avatar=profile.id==='ha-ly'?attachHaLy(root,profile,body):attachVillageNinja(root,profile,body);
   const procedural=root.userData.proceduralCharacter;
   const shoulderGuards=[],bracers=[],arms=base.arms.map((pivot,i)=>({side:i===0?-1:1,pivot})),legs=base.legs.map((pivot,i)=>({side:i===0?-1:1,pivot}));let scarf;
@@ -67,6 +68,7 @@ export function createNinja(look){
   }else{
     scarf=new T.Group();body.add(scarf);for(let i=0;i<2;i++){const shoulder=new T.Group(),bracer=new T.Group();arms[i].pivot.add(shoulder);base.forearms[i].add(bracer);shoulderGuards.push(shoulder);bracers.push(bracer);}
   }
+  if(procedural&&profile.faction==='crescent')crescentEmblem(body);
   let stride=0;
   function update(time,moving,velocity=null,dt=1/60,locomotion={}){
     base.update(time,false,null,dt);const yaw=root.rotation.y,vx=moving?(velocity?.x??Math.sin(yaw)*2):0,vz=moving?(velocity?.z??Math.cos(yaw)*2):0,speed=Math.hypot(vx,vz),weight=Math.min(1,speed/2),x=(Math.cos(yaw)*vx-Math.sin(yaw)*vz)/(speed||1),z=(Math.sin(yaw)*vx+Math.cos(yaw)*vz)/(speed||1);stride+=speed*dt*3.6;

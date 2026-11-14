@@ -14,6 +14,7 @@ export const VILLAGE_NINJA_STYLES=Object.freeze({
   dark:{coat:'#4e405f',accent:'#c1a0c6',skin:'#a88a79',hair:'#202332',hairStyle:'asymmetric',motif:'moon'}
 });
 const hairCache=new Map(),badgeCache=new Map();
+export const CRESCENT_NINJA_STYLE=Object.freeze({coat:'#292234',accent:'#ded9ed',motif:'crescent-legion'});
 
 function hairGeometry(style,headJoint){
   const key=style+':'+headJoint;if(hairCache.has(key))return hairCache.get(key);
@@ -53,6 +54,11 @@ function badge(style){
   c.fillStyle=new T.Color(style.coat).multiplyScalar(.42).getStyle();c.strokeStyle=style.accent;c.lineWidth=8;c.beginPath();c.arc(128,128,116,0,Math.PI*2);c.fill();c.stroke();c.lineWidth=13;c.lineCap=c.lineJoin='round';
   const path=points=>{c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();};
   switch(style.motif){
+    case 'crescent-legion':{
+      // A filled crescent stays legible on small mobile characters.
+      c.fillStyle=style.accent;c.beginPath();c.arc(124,128,86,0,Math.PI*2);c.fill();
+      c.fillStyle=new T.Color(style.coat).multiplyScalar(.42).getStyle();c.beginPath();c.arc(166,102,77,0,Math.PI*2);c.fill();break;
+    }
     case 'wave':for(const y of [85,128,171]){c.beginPath();c.moveTo(55,y);c.bezierCurveTo(90,y-35,105,y+35,138,y);c.bezierCurveTo(165,y-30,180,y+25,202,y-7);c.stroke();}break;
     case 'flame':c.beginPath();c.moveTo(128,45);c.bezierCurveTo(160,95,194,111,180,162);c.bezierCurveTo(159,210,79,205,75,156);c.bezierCurveTo(71,126,107,99,102,83);c.lineTo(126,113);c.bezierCurveTo(146,90,118,69,128,45);c.stroke();break;
     case 'bolt':path([[149,45],[80,139],[128,139],[105,211],[182,111],[138,111],[149,45]]);break;
@@ -68,7 +74,7 @@ function badge(style){
 }
 
 export function applyVillageNinjaStyle(model,profile){
-  const style=VILLAGE_NINJA_STYLES[profile.village]||VILLAGE_NINJA_STYLES.nameless;
+  const base=VILLAGE_NINJA_STYLES[profile.village]||VILLAGE_NINJA_STYLES.nameless,style=profile.faction==='crescent'?{...base,...CRESCENT_NINJA_STYLE}:base;
   const materialCache=new Map(),motifIndex=Object.keys(VILLAGE_NINJA_STYLES).indexOf(profile.village);
   function surface(source){
     if(materialCache.has(source))return materialCache.get(source);
@@ -95,9 +101,9 @@ export function applyVillageNinjaStyle(model,profile){
           else if(villagePattern<7.5)repeat+=abs(vp.x)*35.;
           else if(villagePattern<8.5)repeat+=abs(vp.x)*16.;
           else repeat+=cos(vp.x*20.)*2.;
-          float motif=(1.-smoothstep(.12,.30,abs(sin(repeat))))*chest*.28;
+          float motif=(1.-smoothstep(.12,.30,abs(sin(repeat))))*chest*${profile.faction==='crescent'?'0.':'0.28'};
           diffuseColor.rgb=mix(diffuseColor.rgb,villageAccent,max(max(hem*.85,cuff*.75),motif));`);};
-        m.customProgramCacheKey=()=> 'village-ninja-uniform-v1';
+        m.customProgramCacheKey=()=> 'village-ninja-uniform-v2-'+(profile.faction||'village');
       }
     }else m=source.clone();
     m.name=source.name;materialCache.set(source,m);return m;
@@ -105,9 +111,17 @@ export function applyVillageNinjaStyle(model,profile){
   model.traverse(o=>{
     if(!o.isMesh)return;
     o.geometry=o.geometry.clone();o.castShadow=o.receiveShadow=true;
+    if(profile.faction==='crescent'&&o.name.startsWith('NinjaVillageBadge')){
+      const front=o.name.endsWith('Front'),positions=o.geometry.attributes.position;
+      for(let i=0;i<positions.count;i++){
+        positions.setX(i,front?(positions.getX(i)+.083)*2:positions.getX(i)*1.25);
+        positions.setY(i,(positions.getY(i)-(front?1.355:1.32))*(front?1.85:1.1)+1.335);
+      }
+      positions.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();o.userData.faction='crescent';
+    }
     const hair=(Array.isArray(o.material)?o.material:[o.material]).some(m=>m.name.toLowerCase().includes('hair'));
     if(hair){const headJoint=o.skeleton.bones.findIndex(b=>b.name==='J_Bip_C_Head');o.geometry.dispose();o.geometry=hairGeometry(style.hairStyle,headJoint).clone();o.name='NinjaHair-'+style.hairStyle;}
     o.material=Array.isArray(o.material)?o.material.map(surface):surface(o.material);
   });
-  model.userData.villageStyle={village:profile.village,coat:style.coat,accent:style.accent,skin:profile.skin,hair:style.hair,hairStyle:style.hairStyle,motif:style.motif};
+  model.userData.villageStyle={village:profile.village,faction:profile.faction,coat:style.coat,accent:style.accent,skin:profile.skin,hair:style.hair,hairStyle:style.hairStyle,motif:style.motif};
 }

@@ -11,7 +11,7 @@ const chiefNames={water:'Hải Châu',fire:'Xích Nham',lightning:'Chấn Thiên
 export function campaignChief(id){return {id:'chief-'+id,name:chiefNames[id]||'Trưởng làng',role:id,appearance:villagerAppearance(id,{kind:'chief'}),sceneCharacter:true};}
 const person=(id,name,village,kind='lore',appearance={})=>({id,name,role:village,sceneCharacter:true,appearance:villagerAppearance(village,{id,kind,appearance})});
 const ninja=(id,name,village,look={},extra={})=>{
-  const appearance=ninjaProfile({id,village,kind:'ninja',...look});
+  const appearance=ninjaProfile({id,village,kind:'ninja',...look,faction:extra.faction||look.faction});
   return {id,name,role:village,sceneCharacter:true,appearance,portraitId:'story/ninja/'+id+'/'+appearance.id+(extra.portraitPose==='wounded'?'/wounded':''),...extra};
 };
 export function campaignSpeakers(save,id=save.village){

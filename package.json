@@ -4,6 +4,7 @@
   "private": true,
   "description": "Third-person ninja exploration across ten villages, with hand-seal duels and checkpoint respawns",
   "scripts": {
+    "test:harbor-crescent": "node tests/harbor-companion-core.mjs && node tests/harbor-voyage-core.mjs && node tests/model-portraits-core.mjs && node tests/harbor-crescent-browser.cjs",
     "start": "node server.cjs",
     "balance": "node tools/balance-server.mjs",
     "test:balance-editor": "node tests/spell-balance-editor.mjs",
