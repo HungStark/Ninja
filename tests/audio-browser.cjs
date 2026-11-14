@@ -5,7 +5,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   // Serve the packaged assets: browsers block character-model fetches on file://.
   const root=path.resolve('android-apk/www'),server=http.createServer(async(req,res)=>{const file=path.resolve(root,'.'+new URL(req.url,'http://test').pathname);if(!file.startsWith(root+path.sep)){res.writeHead(404).end();return;}try{const data=await fs.readFile(file);res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.html')?'text/html':file.endsWith('.css')?'text/css':'application/octet-stream');res.end(data);}catch{res.writeHead(404).end();}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
-  const page=await browser.newPage({viewport:{width:915,height:412},hasTouch:true}),errors=[];page.on('pageerror',e=>errors.push(e.stack));
+  const page=await browser.newPage({viewport:{width:915,height:412},hasTouch:true}),errors=[];page.setDefaultTimeout(90000);page.setDefaultNavigationTimeout(90000);page.on('pageerror',e=>errors.push(e.stack));
   await page.addInitScript(()=>{window.musicLoops=[];const start=AudioBufferSourceNode.prototype.start;AudioBufferSourceNode.prototype.start=function(when=0,...rest){if(this.loop&&this.buffer?.duration>30){musicLoops.push(this);return start.call(this,when,this.buffer.duration-.2);}return start.call(this,when,...rest);};});
   const file=`http://127.0.0.1:${server.address().port}/index.html`,audio=()=>page.evaluate(()=>__AN_HOA__.audio.state()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t);
   let checkpoint='unlock on home screen';

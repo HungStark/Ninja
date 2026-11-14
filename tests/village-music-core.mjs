@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import {VILLAGE_MUSIC} from '../src/village-music.js';
-import {createVillageMusicPlayer} from '../src/village-music-player.js';
+import {createVillageMusicPlayer,createVillageMusicCache} from '../src/village-music-player.js';
 
 const ranges={nameless:[70,85],water:[75,90],fire:[95,110],lightning:[105,120],wind:[85,100],earth:[70,85],wood:[75,95],ice:[60,75],light:[75,90],dark:[65,80]};
 const manifest=JSON.parse(fs.readFileSync('assets/music/manifest.json','utf8')),hashes=new Set();
@@ -27,4 +27,14 @@ player.setTrack('fire');await settle();assert.equal(started.length,1);assert.equ
 player.setTrack('water');await settle();assert.equal(started.length,2);assert.equal(player.state().cached,2);assert.equal(player.voiceCount,1);
 player.setTrack('ice');await settle();requests.get(VILLAGE_MUSIC.ice.file)();await settle();assert.equal(player.state().cached,2,'decoded audio cache stays bounded');assert.equal(player.state().playing,true);
 player.destroy();assert.equal(player.state().playing,false);assert.equal(player.voiceCount,0);assert.equal(player.state().cached,0);
-console.log('PASS: ten distinct stereo loops, requested BPM ranges and instruments, no quiet-village drums, balanced unclipped audio, loop boundaries, late-load cancellation, looping sources, idempotent updates, bounded cache and cleanup.');
+let fetched=0,decoded=0;
+const prepared=createVillageMusicCache({fetcher:async()=>{fetched++;return {ok:true,arrayBuffer:async()=>new ArrayBuffer(8)};},decode:async()=>{decoded++;return {duration:42};}});
+await Promise.all([prepared.load(VILLAGE_MUSIC.fire.file),prepared.load(VILLAGE_MUSIC.fire.file)]);
+assert.equal(fetched,1);assert.equal(decoded,1,'loading screens share pending downloads and decoding');
+const before=started.length,reused=createVillageMusicPlayer({context,destination:{},trackCache:prepared});
+reused.setTrack('fire');await settle();assert.equal(started.length,before+1);assert.equal(fetched,1);assert.equal(decoded,1,'first playback reuses the decoded preload');
+reused.destroy();assert.equal(prepared.state().cached,1,'a player does not dispose a shared loading cache');prepared.destroy();
+let attempts=0;
+const retry=createVillageMusicCache({fetcher:async()=>({ok:++attempts>1,status:503,arrayBuffer:async()=>new ArrayBuffer(8)}),decode:async()=>({duration:40})});
+await assert.rejects(retry.load('retry.wav'),/503/);await retry.load('retry.wav');assert.equal(attempts,2,'failed downloads can retry');retry.destroy();
+console.log('PASS: ten loop assets, music preload/playback reuse, retry, late-load cancellation, idempotent updates, bounded cache and cleanup.');

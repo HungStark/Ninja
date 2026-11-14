@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {createAudioWarmup} from '../src/audio-warmup.js';
+const timers=new Map(),calls=[];let id=0,ready=false,release;
+const environment={setTimeout:fn=>{timers.set(++id,fn);return id;},clearTimeout:key=>timers.delete(key)};
+const queue=createAudioWarmup({environment,canRun:()=>ready,prepare:type=>{calls.push(type);return new Promise(resolve=>release=resolve);}});
+const runTimer=()=>{const [key,fn]=timers.entries().next().value;timers.delete(key);fn();};
+const settle=async()=>{for(let i=0;i<4;i++)await Promise.resolve();};
+queue.start(['seal','dragon','wind']);runTimer();assert.deepEqual(calls,[],'music readiness gates background preparation');
+ready=true;runTimer();assert.deepEqual(calls,['seal']);assert.equal(queue.state().active,'seal');assert.equal(timers.size,0,'only one effect can prepare at a time');
+queue.start(['seal','dragon','wind']);assert.equal(queue.state().queued,2,'repeated user gestures do not duplicate work');
+release();await settle();assert.equal(timers.size,1);queue.pause();assert.equal(timers.size,0,'mute/hidden cancels the next scheduled job');
+queue.start(['seal','dragon','wind']);runTimer();assert.deepEqual(calls,['seal','dragon']);
+queue.destroy();release();await settle();assert.equal(timers.size,0);assert.equal(queue.state().queued,0,'destroy cannot restart the remaining queue');
+queue.start(['new']);assert.equal(timers.size,0);
+
+let idleCallback,idleCancelled=false;
+const idleQueue=createAudioWarmup({prepare:async type=>calls.push(type),environment:{...environment,requestIdleCallback:fn=>{idleCallback=fn;return 99;},cancelIdleCallback:key=>{assert.equal(key,99);idleCancelled=true;}}});
+idleQueue.start(['idle']);runTimer();assert.equal(calls.includes('idle'),false,'work waits for the idle callback');
+idleQueue.pause();assert.equal(idleCancelled,true);await idleCallback();assert.equal(calls.includes('idle'),false,'a cancelled idle callback cannot run work');
+idleQueue.destroy();
+console.log('PASS: music-first gate, serial effect preparation, gesture deduplication, idle scheduling and pause/destroy cancellation.');

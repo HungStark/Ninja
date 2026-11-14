@@ -1,35 +1,32 @@
-# Smoothness priority
+# Performance with the original graphics
 
-The game starts on Low on desktop and Android. Medium and High remain available.
+The original presentation has been restored after feedback:
 
-- Low combat renders straight to the canvas, bypassing the HDR/composer/output
-  passes. Unused postprocessing buffers stay at 1×1, including after resizing or
-  returning from another quality setting. Default-framebuffer MSAA is disabled;
-  Medium/High retain their postprocessing MSAA.
-- 3D pixel ceilings are 1280×720 (Low), 1600×900 (Medium), and 1920×1080 (High).
-  Smaller viewports retain their existing pixel density. DOM text, menus and
-  touch targets retain their CSS resolution and dimensions.
-- Real frame intervals are sampled in 1.25-second windows during active play.
-  A mean above 22 ms reduces the rendering scale by 0.1, to a minimum of 0.6.
-  Five seconds of windows below 17.5 ms restores 0.05 at a time. Pauses, menus,
-  hidden tabs and stalls above 250 ms reset the sampling window. Tests using
-  deterministic simulation steps do not trigger automatic adaptation.
-- Practice fence posts/rails share one merged geometry per row. Divider
-  positions, movement boundaries and ordinary snow-receiving geometry remain.
-- Low fire projectiles retain the solid core, glow sprite and two flame tails,
-  omitting the outer shell and spiral ribbons. Switching quality restores the
-  existing detail. Projectile counts, flight, collisions and damage are unchanged.
-- Unchanged seal slots and cooldown text/attributes are no longer rewritten.
-  Input and aiming still update on their original cadence.
+- Desktop starts on Medium; Android retains its original Low default.
+- Antialiasing and the original composer/output pipeline are restored.
+- Pixel density follows the original quality presets (1.7/1.25/1 maximum DPR).
+  There is no automatic resolution reduction or additional 720p pixel cap.
+- Fire projectiles retain their original outer glow, spiral ribbons and tails
+  at every quality, following the original staged/flying visibility rules.
 
-Validation: `npm run test:low-graphics`, practice-overhead and snowfall core
-checks, and desktop/touch combat-scene regression tests.
+The optimizations that preserve the image remain:
 
-The existing eight-volley Low fixture measured 670→437 draw calls on desktop
-and 674→441 on mobile (about 35% fewer). These are deterministic test-scene draw
-counts from headless Edge/SwiftShader, not device FPS measurements. Reports and
-screenshots are in `test-results/low-graphics/`.
+- Practice fence posts/rails share one merged geometry per row. Dimensions,
+  materials, divider positions and snow-receiving surfaces are unchanged.
+- Unchanged seal slots and cooldown text/attributes are not rewritten.
+- Identically shaped fire ribbons share geometry across casts. Each projectile
+  retains its own transform and material. Despawning one does not dispose the
+  geometry used by another. The runtime uses a fixed set of ribbon shapes.
 
-The separate `practice-guardian-zones-browser.cjs` test currently fails its
-two-axis idle-patrol assertion. The same assertion also fails with the original
-`HEAD:game.js` bundle; this is a pre-existing failure, outside the renderer change.
+Run `npm run test:low-graphics` for rendering/defaults/quality restoration,
+exploration and spell compatibility, plus `node tests/fire-ribbon-cache-core.mjs`
+for shared-geometry lifetime checks.
+
+The earlier 35% draw-call improvement included reduced visual detail; it does
+not describe this restored version. Device FPS has not been measured.
+
+The restored eight-volley fixture retains 40 fewer draw calls than the original
+unoptimized geometry, with all authored effect layers present. A 915×412 canvas
+comparison against the original fire/fence code matched all pixels on Low;
+Medium differed at 4 of 376,980 pixels (maximum channel difference 14/255).
+Reports and comparison images are in `test-results/restored-graphics/`.

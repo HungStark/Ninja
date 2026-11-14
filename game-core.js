@@ -115,66 +115,65 @@
   const spellBalanceOverrides=/* spell-balance:start */{
   "dark-lance": {
     "cooldown": 5,
-    "cost": 23
+    "cost": 28
   },
   "dark-orb": {
     "cooldown": 3,
     "upgradeDamage": 14,
     "damage": 9,
-    "cost": 20
+    "cost": 25
   },
   "dark-volley": {
-    "cost": 45,
+    "cost": 52,
     "duration": 1,
     "damage": 70
   },
   "fire-lance": {
-    "cost": 45,
+    "cost": 50,
     "damage": 80
   },
   "fire-meteor": {
-    "cost": 60,
+    "cost": 65,
     "damage": 120
   },
   "water-barrier": {
     "damage": 7,
     "cooldown": 4,
-    "cost": 16
+    "cost": 21
   },
   "water-lance": {
     "damage": 15,
-    "cost": 23,
+    "cost": 25,
     "controlDuration": 2
   },
   "water-tsunami": {
-    "cost": 60,
+    "cost": 65,
     "damage": 75
   },
   "water-volley": {
-    "cost": 45,
+    "cost": 50,
     "cooldown": 21,
     "damage": 80,
     "controlDuration": 0.5
   },
   "fire-volley": {
-    "damage": 8,
-    "cost": 15
+    "damage": 8
   },
   "dark-reflect": {
-    "cost": 22
+    "cost": 26
   },
   "water-reflect": {
-    "cost": 20,
+    "cost": 25,
     "shield": 70
   },
   "fire-reflect": {
     "shield": 70,
     "duration": 8,
-    "cost": 20,
+    "cost": 25,
     "cooldown": 12
   },
   "fire-barrier": {
-    "cost": 20,
+    "cost": 25,
     "ignitionDamages": [
       7,
       14,
@@ -186,10 +185,9 @@
   "lightning-reflect": {
     "cooldown": 12,
     "duration": 6,
-    "cost": 20
+    "cost": 25
   },
   "lightning-barrier": {
-    "cost": 22,
     "stunDurations": [
       1,
       2,
@@ -199,30 +197,27 @@
       5,
       7,
       9
-    ]
+    ],
+    "cost": 25
   },
   "lightning-lance": {
-    "damage": 24,
-    "cost": 15
+    "damage": 24
   },
   "lightning-volley": {
     "damage": 80,
-    "cost": 45
+    "cost": 50
   },
   "lightning-thunder": {
-    "cost": 60,
+    "cost": 65,
     "damage": 120
   },
-  "wind-orb": {
-    "cost": 15
-  },
   "wind-volley": {
-    "cost": 30,
+    "cost": 35,
     "damage": 60,
     "cooldown": 15
   },
   "wind-lance": {
-    "cost": 35,
+    "cost": 40,
     "cooldown": 15,
     "damage": 60
   },
@@ -230,20 +225,20 @@
     "cooldown": 12,
     "duration": 8,
     "shield": 70,
-    "cost": 20
+    "cost": 25
   },
   "wind-reflect": {
     "duration": 7,
-    "cost": 55
+    "cost": 60
   },
   "wood-orb": {
     "cooldown": 5,
-    "cost": 18,
     "damage": 18
   },
   "wood-volley": {
     "damage": 45,
-    "cooldown": 22
+    "cooldown": 22,
+    "cost": 55
   },
   "wood-lance": {
     "cost": 25
@@ -251,17 +246,18 @@
   "wood-barrier": {
     "cooldown": 12,
     "shield": 40,
-    "cost": 20
+    "cost": 25
   },
   "ice-lance": {
-    "cost": 23,
+    "cost": 25,
     "controlDuration": 2
   },
   "ice-reflect": {
     "cooldown": 1
   },
   "wood-reflect": {
-    "cooldown": 1
+    "cooldown": 1,
+    "cost": 55
   },
   "ice-volley": {
     "cooldown": 12,
@@ -269,62 +265,65 @@
     "cost": 25
   },
   "ice-barrier": {
-    "cost": 40,
+    "cost": 45,
     "duration": 6
   },
   "light-reflect": {
     "duration": 3,
     "cooldown": 10,
     "shield": 80,
-    "cost": 20
+    "cost": 25
   },
   "light-orb": {
     "damage": 25,
-    "cost": 15
+    "cost": 20
   },
   "light-barrier": {
-    "cost": 20,
+    "cost": 25,
     "amplification": 1.6
   },
   "light-lance": {
-    "cost": 50,
-    "cooldown": 35
+    "cooldown": 35,
+    "cost": 55
   },
   "light-volley": {
-    "cost": 60,
+    "cost": 65,
     "damage": 120
   },
   "earth-orb": {
-    "cost": 15,
-    "damage": 24
+    "damage": 24,
+    "cost": 20
   },
   "earth-lance": {
     "cooldown": 20,
-    "cost": 25,
+    "cost": 30,
     "damage": 36
   },
   "earth-reflect": {
-    "cost": 60,
+    "cost": 65,
     "cooldown": 35,
     "fallDamage": 45,
     "captureDamage": 45,
     "holdTime": 2
   },
   "earth-volley": {
-    "cost": 45,
+    "cost": 50,
     "cooldown": 20,
     "damage": 18
   },
   "earth-barrier": {
     "shield": 80,
-    "cost": 21,
+    "cost": 26,
     "duration": 8,
     "cooldown": 13
   },
   "ice-orb": {
-    "cost": 55,
+    "cost": 56,
     "cooldown": 20,
     "damage": 150
+  },
+  "wind-orb": {
+    "cost": 20
   }
 }/* spell-balance:end */;
   for(const spell of spells){

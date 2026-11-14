@@ -152,7 +152,8 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     try{
       await paintLoading();
       const result=await task();
-      if(!await world.charactersReady())throw new Error('Character model loading failed');
+      const [charactersReady]=await Promise.all([world.charactersReady(),gameAudio.preloadMusic(save.village)]);
+      if(!charactersReady)throw new Error('Character model loading failed');
       // Render the destination behind the overlay, including its first GPU upload.
       await paintLoading();
       const remaining=180-(performance.now()-started);if(remaining>0)await new Promise(resolve=>setTimeout(resolve,remaining));

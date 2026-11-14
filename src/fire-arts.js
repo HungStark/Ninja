@@ -17,6 +17,7 @@ export class FireArts {
   constructor(scene, glow) {
     this.scene = scene; this.glow = glow;
     this.shots = new Map(); this.walls = new Map(); this.shields = new Map(); this.bursts = [];
+    this.ribbonGeometries = new Map();
     this.sphere = new T.SphereGeometry(1, 16, 12);
     this.rock = new T.IcosahedronGeometry(1, 1);
     this.cone = new T.ConeGeometry(1, 1, 8, 3);
@@ -130,16 +131,24 @@ export class FireArts {
     const sprite = new T.Sprite(material); sprite.scale.setScalar(size); parent.add(sprite); return sprite;
   }
   ribbon(parent, turns, length, radius, phase = 0, material = this.gold) {
-    const points = Array.from({ length: 40 }, (_, i) => {
-      const t = i / 39, a = t * turns * Math.PI * 2 + phase, r = radius * (1 - t * .75);
-      return new T.Vector3(Math.cos(a) * r, Math.sin(a) * r, t * length);
-    });
-    return part(parent, new T.TubeGeometry(new T.CatmullRomCurve3(points), 40, .025, 4, false), material);
+    // Spell ribbons have a fixed set of shapes. Share their geometry across casts
+    // instead of rebuilding and uploading identical tubes for every projectile.
+    const key=[turns,length,radius,phase].join(':');
+    let geometry=this.ribbonGeometries.get(key);
+    if(!geometry){
+      const points = Array.from({ length: 40 }, (_, i) => {
+        const t = i / 39, a = t * turns * Math.PI * 2 + phase, r = radius * (1 - t * .75);
+        return new T.Vector3(Math.cos(a) * r, Math.sin(a) * r, t * length);
+      });
+      geometry=new T.TubeGeometry(new T.CatmullRomCurve3(points), 40, .025, 4, false);
+      this.ribbonGeometries.set(key,geometry);
+    }
+    return part(parent, geometry, material);
   }
   orb(salvo = false) {
     const g = new T.Group();
     part(g, this.sphere, this.fire);
-    g.userData.orbShell=part(g, this.sphere, this.red, [0, 0, 0], [1.2, 1.2, 1.2]);
+    part(g, this.sphere, this.red, [0, 0, 0], [1.2, 1.2, 1.2]);
     const ribbons = new T.Group(); g.add(ribbons); g.userData.ribbons = ribbons;
     for (let j = 0; j < 3; j++) this.ribbon(ribbons, 1.4, salvo ? 5 : 4, 1.05, j * Math.PI * 2 / 3, j === 0 ? this.hot : this.gold);
     for (let j = 0; j < 5; j++) {
@@ -426,8 +435,8 @@ export class FireArts {
   }
   disposeGroup(g) {
     this.scene.remove(g);
-    // Shared materials and primitives remain cached; custom ribbons and sprites are owned by each group.
-    const shared = new Set([this.sphere, this.rock, this.cone, this.box, this.ring, this.sigilGeometry]);
+    // Shared primitives/ribbons stay cached; projectile-owned geometry and sprites are released.
+    const shared = new Set([this.sphere, this.rock, this.cone, this.box, this.ring, this.sigilGeometry,...this.ribbonGeometries.values()]);
     g.traverse(o => {
       if (o.geometry && !shared.has(o.geometry)) o.geometry.dispose();
       if (o.isSprite) o.material.dispose();
@@ -465,14 +474,7 @@ export class FireArts {
         if (g.userData.ribbons) g.userData.ribbons.visible = true;
         for (const child of g.children) if (child.geometry === this.cone) child.visible = true;
       }
-      if(g.userData.orbShell){
-        // Keep the projectile core and two flame tails; omit overlapping glow layers.
-        // Gameplay/projectile counts are independent of this visual detail budget.
-        g.userData.orbShell.visible=quality!==2;
-        g.userData.ribbons.visible=quality!==2&&shot.phase!=='staged';
-        let tail=0;for(const child of g.children)if(child.geometry===this.cone)child.visible=shot.phase!=='staged'&&(quality!==2||tail++<2);
-      }
-      if (g.userData.ribbons?.visible) g.userData.ribbons.rotation.z = time * (shot.style === 'meteor' ? 2 : 5);
+      if (g.userData.ribbons) g.userData.ribbons.rotation.z = time * (shot.style === 'meteor' ? 2 : 5);
       if (g.userData.segments) {
         this.updateDragon(g, shot, time, quality);
       }

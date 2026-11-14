@@ -1,5 +1,6 @@
 import {VILLAGE_MUSIC} from './village-music.js';
-import {createVillageMusicPlayer} from './village-music-player.js';
+import {createVillageMusicPlayer,createVillageMusicCache} from './village-music-player.js';
+import {createAudioWarmup} from './audio-warmup.js';
 import {gameLanguage} from './language.js';
 import {createSpeechOutput} from './speech-output.js';
 import {characterVoice,spellVoice} from './character-voice.js';
@@ -25,6 +26,7 @@ import {HOLY_STAIR_LASER_BASE64} from '../assets/audio/holy-stair-laser.js';
 import {HANDSIGN_BASE64} from '../assets/audio/handsign.js';
 const recordings={'hand-sign':HANDSIGN_BASE64,'dragon-roar':FIRE_DRAGON_ROAR_BASE64,'wind-howl':WIND_WHOOSH_BASE64,'wind-cut':WIND_WHOOSH_BASE64,'spirit-song':WIND_SPIRIT_CHANT_BASE64,'bird-cry':LIGHTNING_HAWK_CRY_BASE64,'thunder-strike':THUNDER_CLAP_BASE64,'shadow-dog':SHADOW_DOG_BARK_BASE64,'shadow-bull':SHADOW_BULL_MOO_BASE64,'shadow-elephant':SHADOW_ELEPHANT_TRUMPET_BASE64,'bamboo-swoosh':BAMBOO_FLIGHT_SWOOSH_BASE64,'snowstorm-wind':SNOWSTORM_WIND_BASE64,'earth-cinematic':EARTH_GRAVITY_CINEMATIC_BASE64,'earth-heavy-rock':EARTH_HEAVY_ROCK_BASE64,'rock-shift':EARTH_HEAVY_ROCK_BASE64,'stone-impact':EARTH_HEAVY_ROCK_BASE64,'light-laser':LIGHT_LASER_BASE64,'dome-laser':LIGHT_LASER_BASE64,'holy-stair-laser':HOLY_STAIR_LASER_BASE64};
 const recordingAliases={'wind-cut':'wind-howl','rock-shift':'earth-heavy-rock','stone-impact':'earth-heavy-rock','dome-laser':'light-laser'};
+const warmupTypes=['hand-sign','dragon-roar','wind-howl','spirit-song','bird-cry','thunder-strike','shadow-dog','shadow-bull','shadow-elephant','bamboo-swoosh','snowstorm-wind','earth-cinematic','earth-heavy-rock','light-laser','holy-stair-laser',...Object.keys(PROCEDURAL_CUE_DURATIONS)];
 // The user's recordings are embedded for offline playback.
 export const AUDIO_STORAGE_KEY='anhoa-audio-v1';
 export {VILLAGE_MUSIC} from './village-music.js';
@@ -36,11 +38,25 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
   let ctx=null,master,music,effects,effectMixer,effectOutput,voice,analyser,noiseBuffer,timer=null,theme='nameless',mode='home',musicPlayer=null,step=0,nextNote=0,dialogue=null,utterance=null,hidden=false,settingsOpen=false,destroyed=false,musicSuppressed=false;
   const active=new Set(),lastEffects=new Map(),listeners=new Set(),stats={notes:0,seals:0,casts:0,impacts:0,dialogueLines:0,syllables:0,shuriken:0,dashes:0,cues:{}};
   const soundBuffers=new Map(),loudnessProfiles=new Map(),proceduralReady=new Map(),spellTextures=new Map(),fallingMeteors=new Map(),attachedSounds=new Map(),domeSounds=new Map(),recordingsReady=new Map();let soundEpoch=0,previewSound=null,previewSerial=0;
+  let musicDecoder=null;
+  const musicCache=createVillageMusicCache({decode:bytes=>{
+    if(ctx)return ctx.decodeAudioData(bytes);
+    const Offline=globalThis.OfflineAudioContext||globalThis.webkitOfflineAudioContext;
+    if(!musicDecoder)musicDecoder=new Offline(2,1,22050);
+    return musicDecoder.decodeAudioData(bytes);
+  }});
+  const warmup=createAudioWarmup({prepare:prepareEffect,canRun:()=>{
+    if(!ctx||ctx.state!=='running'||destroyed||hidden||settings.muted||settings.effects<=0)return false;
+    const playback=musicPlayer?.state();
+    // Give the first music source a full second before background effect work.
+    return settings.music<=0||musicSuppressed||!!playback?.error||!!(playback?.playing&&playback.position>=1);
+  }});
   const soundscape=createSpellSoundscape({cue:(type,level)=>api.cue(type,level),textures:setSpellTextures,attached:setAttachedSounds,repeating:setDomeSounds});
   const notify=()=>listeners.forEach(fn=>fn({...settings}));
   const ramp=(param,value,duration=.15)=>{if(!ctx||!param)return;param.cancelScheduledValues(ctx.currentTime);param.setTargetAtTime(value,ctx.currentTime,duration/3);};
   const apply=()=>{
     if(!ctx)return;
+    if(settings.muted||hidden||settings.effects<=0)warmup.pause();
     const volume=settings.muted||hidden?0:.72;ramp(master.gain,volume);ramp(effectOutput.gain,volume);
     if(musicSuppressed){
       // Reach exact silence before the short source fade stops processing audio.
@@ -163,9 +179,11 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
       music.connect(master);voice.connect(master);master.connect(limiter).connect(analyser);
       effectMixer=createEffectsMixer(ctx,effects,effectOutput);effectOutput.connect(analyser);analyser.connect(createPeakLimiter(ctx)).connect(ctx.destination);
       noiseBuffer=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);const samples=noiseBuffer.getChannelData(0);let seed=7919;for(let i=0;i<samples.length;i++){seed=(seed*16807)%2147483647;samples[i]=seed/1073741824-1;}
-      musicPlayer=createVillageMusicPlayer({context:ctx,destination:music,onChange:notify});resetMusic();apply();timer=setInterval(schedule,80);
+      musicPlayer=createVillageMusicPlayer({context:ctx,destination:music,onChange:notify,trackCache:musicCache});resetMusic();apply();timer=setInterval(schedule,80);
     }catch{ctx=null;return false;}}
-    try{if(ctx.state==='suspended')await ctx.resume();}catch{return false;}for(const type of ['hand-sign','dragon-roar','wind-howl','spirit-song','bird-cry','thunder-strike','shadow-dog','shadow-bull','shadow-elephant','bamboo-swoosh','snowstorm-wind','earth-cinematic','earth-heavy-rock','light-laser','holy-stair-laser',...Object.keys(PROCEDURAL_CUE_DURATIONS)])prepareEffect(type);schedule();return true;
+    try{if(ctx.state==='suspended')await ctx.resume();}catch{return false;}
+    if(!settings.muted&&settings.effects>0)warmup.start(warmupTypes);
+    schedule();return true;
   }
   function canEffect(key,interval=.045){if(!ctx||ctx.state!=='running'||settings.muted||hidden||settings.effects<=0)return false;const old=lastEffects.get(key)??-Infinity;if(ctx.currentTime-old<interval)return false;lastEffects.set(key,ctx.currentTime);return true;}
   const speech=createSpeechOutput({getOutput:()=>ctx?{context:ctx,destination:voice}:null,onEnd:()=>{utterance=null;dialogue=null;apply();},onError:()=>{utterance=null;if(dialogue){dialogue.remaining=dialogue.fallbackRemaining;dialogue.next=ctx?.currentTime||0;}apply();},onStatus:()=>notify()});
@@ -176,6 +194,11 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
     utterance={};const accepted=speech.speak(text,{...characterVoice(speaker,settings.heroVoice),volume:settings.voice,language:gameLanguage(),...options});if(!accepted)utterance=null;return accepted;
   }
   const api={
+    preloadMusic(id=theme){
+      if(destroyed||settings.muted||settings.music<=0)return Promise.resolve(false);
+      if(!ctx&&!(globalThis.OfflineAudioContext||globalThis.webkitOfflineAudioContext))return Promise.resolve(false);
+      return musicCache.load((VILLAGE_MUSIC[id]||VILLAGE_MUSIC.nameless).file).then(()=>true);
+    },
     unlock,
     get speaking(){return !!utterance;},
     get spellSounds(){const info=type=>{const buffer=soundBuffers.get(type);return buffer?{duration:buffer.duration,samples:buffer.length,channels:buffer.numberOfChannels}:null;};return {textures:[...spellTextures.keys()],attached:[...attachedSounds.values()].map(entry=>entry.type),cached:[...soundBuffers.keys()],loudness:{target:SPELL_LOUDNESS_TARGET,profiles:Object.fromEntries(loudnessProfiles),reduction:effectMixer?.reduction||0,processorReady:!!effectMixer?.processor,mixerError:effectMixer?.error||null},meteors:[...fallingMeteors.keys()].filter(s=>s.style==='meteor').length,boats:[...fallingMeteors.keys()].filter(s=>s.style==='boat').length,domes:domeSounds.size,dragonRecording:info('dragon-roar'),windRecording:info('wind-howl'),spiritRecording:info('spirit-song'),birdRecording:info('bird-cry'),thunderRecording:info('thunder-strike'),laserRecording:info('light-laser'),holyStairRecording:info('holy-stair-laser')};},
@@ -245,8 +268,8 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
     openVoiceSettings:()=>speech.openSettings(),
     previewVoice(){stopDialogue();dialogue={remaining:0,fallbackRemaining:0,next:0,pitch:220};const ok=speak('Xin chào. Tôi sẽ cùng bạn mang hòa bình trở về các làng.',{id:'hero'},true);if(!ok)dialogue=null;apply();return ok;},
     visibility(value){hidden=value;stopDialogue();apply();if(ctx){if(value)ctx.suspend().catch(()=>{});else unlock();}},
-    state(){let rms=0;if(analyser){const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);rms=Math.sqrt(values.reduce((n,x)=>n+x*x,0)/values.length);}return {supported:!!(globalThis.AudioContext||globalThis.webkitAudioContext||contextFactory),context:ctx?.state||'locked',theme,track:VILLAGE_MUSIC[theme].name,mode,settings:{...settings},activeVoices:active.size+(musicPlayer?.voiceCount||0),musicPlayback:musicPlayer?.state()||null,musicStep:step,hidden,rms,stats:{...stats},musicBoost,musicGain:music?.gain.value||0,musicSuppressed,speech:speech.status(),speaking:!!utterance,dialogue:!!dialogue};},
-    destroy(){destroyed=true;clearInterval(timer);musicPlayer?.destroy();stopDialogue();speech.destroy();for(const source of active)try{source.stop();}catch{}active.clear();ctx?.close().catch(()=>{});listeners.clear();}
+    state(){let rms=0;if(analyser){const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);rms=Math.sqrt(values.reduce((n,x)=>n+x*x,0)/values.length);}return {supported:!!(globalThis.AudioContext||globalThis.webkitAudioContext||contextFactory),context:ctx?.state||'locked',theme,track:VILLAGE_MUSIC[theme].name,mode,settings:{...settings},activeVoices:active.size+(musicPlayer?.voiceCount||0),musicPlayback:musicPlayer?.state()||null,musicPreload:musicCache.state(),effectWarmup:warmup.state(),musicStep:step,hidden,rms,stats:{...stats},musicBoost,musicGain:music?.gain.value||0,musicSuppressed,speech:speech.status(),speaking:!!utterance,dialogue:!!dialogue};},
+    destroy(){destroyed=true;warmup.destroy();musicCache.destroy();clearInterval(timer);musicPlayer?.destroy();stopDialogue();speech.destroy();for(const source of active)try{source.stop();}catch{}active.clear();ctx?.close().catch(()=>{});listeners.clear();}
   };return api;
 }
 export const gameAudio=createGameAudio();

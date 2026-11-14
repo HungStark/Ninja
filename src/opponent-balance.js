@@ -94,7 +94,9 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "spellIds": [
       "water-barrier",
       "water-reflect",
-      "water-lance"
+      "water-lance",
+      "water-tsunami",
+      "water-volley"
     ]
   },
   "guardian:water:1": {
@@ -152,7 +154,9 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "spellIds": [
       "fire-volley",
       "fire-barrier",
-      "fire-reflect"
+      "fire-reflect",
+      "fire-lance",
+      "fire-meteor"
     ]
   },
   "ninja:guardian-guard:fire": {
@@ -219,7 +223,9 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "spellIds": [
       "lightning-lance",
       "lightning-barrier",
-      "lightning-reflect"
+      "lightning-reflect",
+      "lightning-volley",
+      "lightning-thunder"
     ]
   },
   "ninja:random:lightning": {
@@ -255,7 +261,14 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:practice": {
     "hp": 300,
-    "sealDelay": 0.5
+    "sealDelay": 0.5,
+    "spellIds": [
+      "fire-volley",
+      "wind-volley",
+      "wind-lance",
+      "earth-reflect",
+      "earth-lance"
+    ]
   },
   "ninja:random:wind": {
     "baseDamagePercent": 102,
@@ -305,7 +318,9 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "spellIds": [
       "wind-orb",
       "wind-volley",
-      "wind-lance"
+      "wind-lance",
+      "wind-reflect",
+      "wind-barrier"
     ]
   },
   "guardian:wind:1": {
@@ -367,7 +382,9 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "spellIds": [
       "earth-orb",
       "earth-barrier",
-      "earth-volley"
+      "earth-volley",
+      "earth-lance",
+      "earth-reflect"
     ]
   },
   "guardian:earth:1": {
@@ -440,7 +457,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "wood-reflect",
       "wood-orb",
       "wood-lance",
-      "wood-barrier"
+      "wood-barrier",
+      "wood-volley"
     ]
   },
   "guardian:wood:2": {
@@ -505,7 +523,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "ice-reflect",
       "ice-lance",
       "ice-barrier",
-      "ice-orb"
+      "ice-orb",
+      "ice-volley"
     ]
   },
   "guardian:ice:1": {
@@ -583,7 +602,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "light-orb",
       "light-barrier",
       "light-reflect",
-      "light-lance"
+      "light-lance",
+      "light-volley"
     ]
   },
   "guardian:light:2": {
@@ -632,7 +652,14 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:arena:dark": {
     "hp": 420,
     "sealDelay": 0.5,
-    "baseDamagePercent": 120
+    "baseDamagePercent": 120,
+    "spellIds": [
+      "dark-orb",
+      "dark-lance",
+      "dark-domain",
+      "dark-reflect",
+      "dark-volley"
+    ]
   },
   "guardian:dark:3": {
     "mana": 160,
