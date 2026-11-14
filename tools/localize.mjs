@@ -21,4 +21,7 @@ export function localizeSource(source,filename,missing,catalog=english){
  for(const [start,end,value]of edits.sort((a,b)=>b[0]-a[0]))source=source.slice(0,start)+value+source.slice(end);
  return source;
 }
-export function englishPlugin(missing,catalog=english){return {name:'english-catalog',setup(build){build.onLoad({filter:/[/\\]src[/\\].*\.js$/},async args=>({contents:localizeSource(await fs.readFile(args.path,'utf8'),args.path,missing,catalog),loader:'js'}));}};}
+export function englishPlugin(missing,catalog=english){return {name:'english-catalog',setup(build){
+ build.onLoad({filter:/[/\\]src[/\\]guardian-arsenal\.json$/},async args=>{const data=JSON.parse(await fs.readFile(args.path,'utf8')),names=JSON.parse(await fs.readFile(new URL('../src/locales/guardian-arsenal.en.json',import.meta.url),'utf8'));for(const boss of Object.values(data)){boss.title=names[boss.title]||boss.title;boss.passive=names[boss.passive]||boss.passive;boss.counter=names[boss.counter]||boss.counter;for(const skill of boss.skills){skill.name=names[skill.name]||skill.name;delete skill.description;}}return {contents:JSON.stringify(data),loader:'json'};});
+ build.onLoad({filter:/[/\\]src[/\\].*\.js$/},async args=>({contents:localizeSource(await fs.readFile(args.path,'utf8'),args.path,missing,catalog),loader:'js'}));
+ }};}

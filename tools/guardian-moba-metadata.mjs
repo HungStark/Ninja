@@ -9,14 +9,14 @@ export const guardianMobaLabels={
 };
 export const guardianMobaNotes={
  'fox-pillars':'Một cột theo mục tiêu, các cột còn lại có ngẫu nhiên và chừa lối né. Số cột tăng theo đuôi thức tỉnh, tối đa số lượng đã chỉnh; vùng cháy còn 3 giây theo mặc định.',
- 'fox-homing':'Một cầu đuổi trong 3 giây, hai cầu dự đoán chuyển động; thêm đạn theo đuôi. Đi qua lửa thì tăng kích thước và bán kính nổ.',
+ 'fox-homing':'Một cầu đuổi trong thời gian đã chỉnh, các cầu khác dự đoán chuyển động; thêm đạn theo đuôi. Đi qua lửa thì tăng kích thước và bán kính nổ.',
  'fox-firestorm':'Đợt đầu phủ vị trí mọi mục tiêu trong tầm; các đợt sau tránh vùng đã cháy. Kết thúc quét quạt và kích nổ các vùng lửa còn tồn tại.',
  'dragon-pressure':'Cảnh báo vị trí dự đoán, sát thương tính mỗi giây và đẩy lùi. Qua vũng nước thì nở hình nón ở cuối tia.',
  'dragon-vortices':'Một xoáy theo người chơi và hai xoáy ngẫu nhiên. Kéo 2,5 giây, đứng tâm quá 1 giây bị hất. Hút vũng nước để tăng bán kính; dấu xoáy còn lại chờ sóng kích nổ.',
- 'dragon-tsunami':'Ba đợt, đợt cuối gồm hai sóng cắt nhau dùng chung vùng an toàn. Sóng đi qua xoáy sẽ kích nổ xoáy.',
+ 'dragon-tsunami':'Ba đợt kế tiếp có khe né thực rộng ít nhất 4,4 m và cảnh báo tối thiểu 0,9 giây. Hành lang đặt gần người chơi và dọn xoáy nguy hiểm; không tạo sóng cắt nhau. Sóng vẫn kích nổ xoáy bên ngoài hành lang.',
  'wolf-dashes':'Tối đa ba lần lao có cảnh báo; một lần theo mục tiêu, các lần còn lại đổi góc. Mỗi đường lao để lại điện trường.',
  'wolf-bolts':'Một tia nhắm mục tiêu và ba tia ngẫu nhiên; điện trường trúng sét mở rộng và phát nổ.',
- 'wolf-clones':'Ba phân thân có HP. Chạm mục tiêu thì nổ; còn sống sau 5 giây quay về, tạo đường nối gây sát thương và làm chậm.',
+ 'wolf-clones':'Ba phân thân có HP. Chạm mục tiêu thì nổ; còn sống tới mốc quay về sẽ tạo đường nối gây sát thương và làm chậm. Boss được nối chiêu sau khi gọi phân thân.',
  'eagle-blades':'Năm dao: hai hướng vào mục tiêu, ba góc ngẫu nhiên. Dao xuyên nhiều mục tiêu, qua luồng gió thì tăng tốc và tầm.',
  'eagle-tornadoes':'Ba lốc; một lốc bám mục tiêu, hai lốc đi đường cong. Lốc hút dao gió và phóng lại; tâm lốc gây hất tung.',
  'eagle-dive':'Không thể bị tấn công khi bay lên. Khóa điểm đáp sau cảnh báo 1,2 giây; tạo sáu luồng gió và hút các lốc còn sống về kích nổ.',

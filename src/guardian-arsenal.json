@@ -1,0 +1,625 @@
+{
+  "fire": {
+    "title": "Cửu Vĩ Phần Thiên",
+    "skills": [
+      {
+        "type": "fox-tail",
+        "name": "Xích Vĩ Trảm",
+        "description": "Dùng một đuôi quét ngang, sau đó đâm thẳng về phía mục tiêu. Nếu mục tiêu đứng gần, boss có thể nối tiếp bằng cú quật thứ ba.",
+        "role": "melee",
+        "unlock": 1
+      },
+      {
+        "type": "fox-step",
+        "name": "Hỏa Liên Bộ",
+        "description": "Boss lướt qua tối đa ba vị trí, để lại dấu chân lửa. Các dấu chân phát nổ khi boss kết thúc chuỗi di chuyển.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "fox-orbit",
+        "name": "Hồ Hỏa Phệ Tâm",
+        "description": "Triệu hồi những quả cầu lửa nhỏ bay quanh một người chơi. Chúng không phát nổ ngay mà lao vào mục tiêu khi người chơi sử dụng kỹ năng di chuyển.",
+        "role": "control",
+        "unlock": 1
+      },
+      {
+        "type": "fox-firewalls",
+        "name": "Cửu Vĩ Phong Tỏa",
+        "description": "Ba đuôi cắm xuống đất, tạo những bức tường lửa cong. Boss sử dụng chúng để chia cắt đội hình hoặc khóa đường rút lui.",
+        "role": "setup",
+        "unlock": 2
+      },
+      {
+        "type": "fox-doubles",
+        "name": "Hỏa Hồ Phân Thân",
+        "description": "Tạo hai hồ ly lửa. Một con tấn công trực diện, con còn lại tìm cách vòng ra phía sau. Khi bị tiêu diệt, chúng để lại một đám lửa nhỏ.",
+        "role": "setup",
+        "unlock": 2
+      },
+      {
+        "type": "fox-spiral",
+        "name": "Phần Thiên Hỏa Vũ",
+        "description": "Boss xoay người, phóng hàng chục tia lửa theo hình xoắn ốc. Các tia lửa có khoảng trống rõ ràng để người chơi len qua.",
+        "role": "ranged",
+        "unlock": 2
+      },
+      {
+        "type": "fox-absorb",
+        "name": "Xích Diệm Thôn Phệ",
+        "description": "Hút toàn bộ ngọn lửa đang tồn tại trên chiến trường về cơ thể. Số vùng lửa bị hút càng nhiều, đòn phun lửa tiếp theo càng mạnh.",
+        "role": "resource",
+        "unlock": 3
+      },
+      {
+        "type": "fox-tail-rage",
+        "name": "Hồ Vương Cuồng Nộ",
+        "description": "Boss dựng cả chín đuôi, liên tục quật xuống theo từng cặp. Các cặp đuôi đánh theo nhịp khác nhau, buộc người chơi vừa né vừa tìm góc phản công.",
+        "role": "finisher",
+        "unlock": 3
+      },
+      {
+        "type": "fox-suns",
+        "name": "Cửu Nhật Phần Thiên",
+        "description": "Chín đuôi hóa thành chín mặt trời nhỏ. Chúng lần lượt di chuyển và phát nổ theo những quỹ đạo khác nhau, sau đó boss hấp thụ những mặt trời còn lại để phóng một luồng hỏa diễm khổng lồ.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Cửu Vĩ Đồng Tâm",
+    "counter": "Phá nhóm đuôi đang gồng để ngắt tổ hợp; tránh dấu chân lửa và giữ lối thoát khỏi tường lửa."
+  },
+  "water": {
+    "title": "Hải Uyên Chân Long",
+    "skills": [
+      {
+        "type": "dragon-claws",
+        "name": "Long Trảo Phá Lãng",
+        "description": "Dùng móng vuốt tấn công hai lần, cú thứ ba tạo một sóng nước hình quạt.",
+        "role": "melee",
+        "unlock": 1
+      },
+      {
+        "type": "dragon-roaming-vortex",
+        "name": "Thủy Long Quyển",
+        "description": "Tạo một cột nước xoáy di chuyển trên bản đồ. Cột nước có thể hút các đạn kỹ năng thông thường vào trong, rồi bắn chúng ra khi tan biến.",
+        "role": "control",
+        "unlock": 1
+      },
+      {
+        "type": "dragon-wave",
+        "name": "Hải Triều Xung Kích",
+        "description": "Triệu hồi một con sóng lớn quét ngang đấu trường. Người chơi có thể né bằng cách đi vào các khoảng trống hoặc đứng sau vật cản.",
+        "role": "ranged",
+        "unlock": 1
+      },
+      {
+        "type": "dragon-tail",
+        "name": "Long Vĩ Đoạn Hải",
+        "description": "Boss xoay thân, dùng đuôi quét một vòng lớn. Sau cú quét, một vùng nước trũng xuất hiện trên mặt đất.",
+        "role": "melee",
+        "unlock": 2
+      },
+      {
+        "type": "dragon-prison",
+        "name": "Thủy Lao Giam Cầm",
+        "description": "Tạo bong bóng nước bao quanh một mục tiêu. Đồng đội có thể đánh vỡ bong bóng để giải cứu, hoặc mục tiêu tự phá bằng cách gây đủ sát thương.",
+        "role": "control",
+        "unlock": 2
+      },
+      {
+        "type": "dragon-submerge",
+        "name": "Hải Uyên Tiềm Long",
+        "description": "Boss lặn xuống nước, di chuyển dưới mặt đất rồi bất ngờ trồi lên. Hướng di chuyển được thể hiện qua sóng nước.",
+        "role": "pursuit",
+        "unlock": 2
+      },
+      {
+        "type": "dragon-absorb",
+        "name": "Vạn Thủy Quy Nguyên",
+        "description": "Boss hút nước từ các vùng trũng và xoáy nước về cơ thể, tăng áp suất. Sau đó phun ra một tia nước cực mạnh có khả năng xuyên qua nhiều mục tiêu.",
+        "role": "resource",
+        "unlock": 3
+      },
+      {
+        "type": "dragon-sky-ocean",
+        "name": "Hải Thiên Nghịch Chuyển",
+        "description": "Boss kéo nước lên trời, tạo một đại dương lơ lửng. Các dòng nước rơi xuống theo từng đợt, sau đó boss lao xuyên qua khối nước và kéo toàn bộ nó đổ xuống chiến trường.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Tam Thủy Cảnh",
+    "counter": "Phá Thủy Lao bằng đòn tấn công; tìm khe sóng xanh và đánh ngực khi boss tích áp suất."
+  },
+  "lightning": {
+    "title": "Lôi Đình Thiên Lang",
+    "skills": [
+      {
+        "type": "wolf-bite",
+        "name": "Lôi Nha",
+        "description": "Lao tới cắn mục tiêu, gây sát thương và đánh dấu Lôi Ấn.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "wolf-flash",
+        "name": "Thiểm Điện Bộ",
+        "description": "Dịch chuyển ngắn theo một đường sét, để lại dư ảnh.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "wolf-claws",
+        "name": "Lang Trảo Liên Hoàn",
+        "description": "Tung ba cú vuốt liên tiếp, cú cuối có thể thay đổi hướng.",
+        "role": "melee",
+        "unlock": 1
+      },
+      {
+        "type": "wolf-swap",
+        "name": "Lôi Ảnh Hoán Vị",
+        "description": "Hoán đổi vị trí với một dư ảnh đang tồn tại.",
+        "role": "pursuit",
+        "unlock": 2
+      },
+      {
+        "type": "wolf-plunge",
+        "name": "Thiên Lôi Trụy",
+        "description": "Nhảy lên rồi giáng xuống vị trí người chơi, tạo sóng điện lan ra xung quanh.",
+        "role": "finisher",
+        "unlock": 2
+      },
+      {
+        "type": "wolf-counter",
+        "name": "Lôi Nha Phản Kích",
+        "description": "Vào tư thế phòng thủ. Nếu bị tấn công trực diện, boss phản đòn; nếu bị đánh từ phía sau, tư thế bị phá.",
+        "role": "defense",
+        "unlock": 2
+      },
+      {
+        "type": "wolf-hunt",
+        "name": "Cuồng Lôi Truy Liệp",
+        "description": "Tăng tốc độ chạy, liên tục đổi mục tiêu giữa những người chơi có Lôi Ấn.",
+        "role": "pursuit",
+        "unlock": 3
+      },
+      {
+        "type": "wolf-net",
+        "name": "Lôi Võng",
+        "description": "Kết nối các dư ảnh bằng đường điện, tạo mạng lưới nguy hiểm.",
+        "role": "setup",
+        "unlock": 3
+      },
+      {
+        "type": "wolf-zigzag",
+        "name": "Thiên Lang Phá Quân",
+        "description": "Boss lao qua nhiều mục tiêu theo đường gấp khúc, mỗi lần trúng mục tiêu sẽ tạo một dư ảnh mới.",
+        "role": "finisher",
+        "unlock": 3
+      },
+      {
+        "type": "wolf-incarnate",
+        "name": "Lôi Thần Hàng Thế",
+        "description": "Boss biến thành tia sét khổng lồ, liên tục lao giữa các dư ảnh. Sau đó toàn bộ dư ảnh đồng loạt phóng điện vào trung tâm.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Lôi Tốc Liên Kích",
+    "counter": "Phá dư ảnh để cắt đường nối chiêu; đánh từ sau để phá tư thế phản kích."
+  },
+  "wind": {
+    "title": "Thiên Không Bá Chủ",
+    "skills": [
+      {
+        "type": "eagle-wing",
+        "name": "Phong Dực Trảm",
+        "description": "Dùng cánh chém ngang khi bay sát mặt đất, tạo lưỡi gió kéo dài theo đường bay.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "eagle-grab",
+        "name": "Thiên Ưng Trảo",
+        "description": "Lao xuống, dùng móng vuốt chộp mục tiêu. Nếu trúng, boss kéo mục tiêu đi một đoạn rồi thả xuống.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "eagle-fan",
+        "name": "Liệt Phong Vũ",
+        "description": "Bắn hàng loạt lông vũ theo hình quạt trong lúc bay.",
+        "role": "ranged",
+        "unlock": 1
+      },
+      {
+        "type": "eagle-turn",
+        "name": "Không Trung Đảo Bộ",
+        "description": "Boss đột ngột đổi hướng bay, tạo một luồng gió đẩy lùi người chơi gần đó.",
+        "role": "pursuit",
+        "unlock": 2
+      },
+      {
+        "type": "eagle-eye",
+        "name": "Phong Nhãn",
+        "description": "Tạo một lốc xoáy lớn với mắt bão an toàn ở trung tâm.",
+        "role": "control",
+        "unlock": 2
+      },
+      {
+        "type": "eagle-eight",
+        "name": "Cuồng Phong Liên Trảm",
+        "description": "Bay theo hình số tám, hai lần cắt ngang chiến trường bằng đôi cánh.",
+        "role": "finisher",
+        "unlock": 2
+      },
+      {
+        "type": "eagle-triple",
+        "name": "Thiên Không Liệp Sát",
+        "description": "Bay lên cao, khóa một mục tiêu, sau đó thực hiện ba cú bổ nhào với góc tiếp cận khác nhau.",
+        "role": "finisher",
+        "unlock": 3
+      },
+      {
+        "type": "eagle-tempest",
+        "name": "Bạo Phong Diệt Thế",
+        "description": "Boss tạo một siêu bão bao quanh đấu trường. Trong cơn bão, nó liên tục xuất hiện từ các hướng khác nhau, kết thúc bằng một cú bổ nhào tạo sóng xung kích khổng lồ.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Phong Thế",
+    "counter": "Đánh cánh khi bổ nhào để làm boss rơi; tâm Phong Nhãn là vùng an toàn."
+  },
+  "earth": {
+    "title": "Vạn Sơn Huyền Quy",
+    "skills": [
+      {
+        "type": "turtle-stomp",
+        "name": "Sơn Cước Trấn Địa",
+        "description": "Nhấc một chân lên rồi giậm xuống, tạo sóng địa chấn.",
+        "role": "melee",
+        "unlock": 1
+      },
+      {
+        "type": "turtle-headbutt",
+        "name": "Địa Nham Phá",
+        "description": "Dùng đầu húc về phía trước, khiến các cột đá mọc lên theo đường húc.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "turtle-spin",
+        "name": "Huyền Quy Toàn Chuyển",
+        "description": "Thu mình vào mai và xoay tròn, nghiền nát chướng ngại trên đường đi.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "turtle-rockfall",
+        "name": "Sơn Thạch Phi Vũ",
+        "description": "Rung mai, bắn những tảng đá lớn ra xung quanh.",
+        "role": "ranged",
+        "unlock": 2
+      },
+      {
+        "type": "turtle-fissure",
+        "name": "Địa Liệt Trùng Kích",
+        "description": "Dồn trọng lượng lên hai chân trước, tạo một đường nứt lớn chạy về phía mục tiêu.",
+        "role": "ranged",
+        "unlock": 2
+      },
+      {
+        "type": "turtle-fortify",
+        "name": "Sơn Mạch Hộ Thể",
+        "description": "Kéo đá từ mặt đất lên gia cố mai. Người chơi phải phá các khối đá đang hình thành để ngăn boss tăng phòng thủ.",
+        "role": "resource",
+        "unlock": 2
+      },
+      {
+        "type": "turtle-collapse",
+        "name": "Huyền Quy Phiên Sơn",
+        "description": "Boss nâng nửa thân lên rồi đổ sập xuống, tạo sóng chấn động lớn. Nếu một chân đã bị phá độ bền, boss có thể tự mất thăng bằng sau đòn này.",
+        "role": "finisher",
+        "unlock": 3
+      },
+      {
+        "type": "turtle-labyrinth",
+        "name": "Vạn Sơn Băng Diệt",
+        "description": "Boss kéo hàng loạt cột đá khổng lồ từ mặt đất, biến đấu trường thành một mê cung. Sau đó nó giậm mạnh, khiến các cột đá đổ theo những hướng được báo trước.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Sơn Thể",
+    "counter": "Đánh hai chân cùng phía để lật boss; đánh đầu để ngắt phun đá, tránh tập trung vào mai."
+  },
+  "light": {
+    "title": "Kim Sí Thần Vương",
+    "skills": [
+      {
+        "type": "gold-double",
+        "name": "Kim Dực Song Trảm",
+        "description": "Chém hai lần bằng cánh kim loại, đòn cuối tạo sóng kiếm.",
+        "role": "melee",
+        "unlock": 1
+      },
+      {
+        "type": "gold-fan",
+        "name": "Thiên Vũ Tán Xạ",
+        "description": "Phóng hàng chục lông vũ theo hình quạt.",
+        "role": "ranged",
+        "unlock": 1
+      },
+      {
+        "type": "gold-hunt",
+        "name": "Kim Vũ Truy Hồn",
+        "description": "Điều khiển một nhóm lông vũ truy đuổi mục tiêu trong thời gian ngắn.",
+        "role": "ranged",
+        "unlock": 1
+      },
+      {
+        "type": "gold-reflect",
+        "name": "Kim Cang Phản Chiếu",
+        "description": "Khép cánh tạo lá chắn, phản lại một phần đạn kỹ năng bay từ phía trước.",
+        "role": "defense",
+        "unlock": 2
+      },
+      {
+        "type": "gold-recall",
+        "name": "Vũ Kiếm Hồi Quy",
+        "description": "Hút toàn bộ lông vũ trở về cơ thể, gây sát thương cho những mục tiêu trên đường bay.",
+        "role": "resource",
+        "unlock": 2
+      },
+      {
+        "type": "gold-spin",
+        "name": "Kim Sí Toàn Phong",
+        "description": "Xoay người với đôi cánh mở rộng, tạo cơn lốc lưỡi kiếm kim loại.",
+        "role": "melee",
+        "unlock": 2
+      },
+      {
+        "type": "gold-array",
+        "name": "Thiên Kiếm Trận",
+        "description": "Sắp xếp lông vũ thành các hàng kiếm lơ lửng, sau đó lần lượt phóng chúng qua đấu trường.",
+        "role": "setup",
+        "unlock": 3
+      },
+      {
+        "type": "gold-pierce",
+        "name": "Kim Cang Phá Giáp",
+        "description": "Tập trung năng lượng vào mỏ, lao tới đâm một mục tiêu, gây sát thương lớn lên mục tiêu có nhiều giáp.",
+        "role": "pursuit",
+        "unlock": 3
+      },
+      {
+        "type": "gold-greatsword",
+        "name": "Vạn Kiếm Thiên Tru",
+        "description": "Tất cả lông vũ trên chiến trường bay lên, tạo thành một thanh đại kiếm. Boss điều khiển thanh kiếm chém ba lần, rồi phân rã nó thành hàng trăm lưỡi kiếm nhỏ bắn xuống.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Vạn Vũ Quy Tông",
+    "counter": "Quan sát lông cắm đất và đường hồi kiếm; đánh từ sau khi boss khép cánh phản đạn."
+  },
+  "dark": {
+    "title": "Vô Tướng Minh Lang",
+    "skills": [
+      {
+        "type": "shadow-bite",
+        "name": "Minh Nha",
+        "description": "Lao tới cắn mục tiêu và đặt dấu ấn bóng tối.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "shadow-step",
+        "name": "Ảnh Bộ",
+        "description": "Di chuyển nhanh vào một vùng bóng tối gần đó.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "shadow-illusions",
+        "name": "U Minh Phân Thân",
+        "description": "Tạo ba ảo ảnh, mỗi ảo ảnh thực hiện một hành vi khác nhau.",
+        "role": "setup",
+        "unlock": 1
+      },
+      {
+        "type": "shadow-claws",
+        "name": "Hồn Trảo",
+        "description": "Tung ba cú vuốt liên tiếp, cú cuối tạo vết rách bóng tối trên mặt đất.",
+        "role": "melee",
+        "unlock": 2
+      },
+      {
+        "type": "shadow-swap",
+        "name": "Minh Giới Hoán Vị",
+        "description": "Đổi vị trí với một ảo ảnh đang tồn tại.",
+        "role": "pursuit",
+        "unlock": 2
+      },
+      {
+        "type": "shadow-replay",
+        "name": "Ảnh Tích Hồi Sát",
+        "description": "Tái hiện các đòn tấn công đã thực hiện trong vài giây trước.",
+        "role": "setup",
+        "unlock": 2
+      },
+      {
+        "type": "shadow-stalk",
+        "name": "U Minh Liệp Sát",
+        "description": "Đánh dấu một người chơi rồi liên tục tìm cách tiếp cận từ phía sau.",
+        "role": "pursuit",
+        "unlock": 3
+      },
+      {
+        "type": "shadow-counter",
+        "name": "Vô Ảnh Phản Kích",
+        "description": "Khi bị tấn công trực diện trong tư thế phòng thủ, boss tan thành bóng đen rồi xuất hiện ở một vị trí khác để phản công.",
+        "role": "defense",
+        "unlock": 3
+      },
+      {
+        "type": "shadow-night",
+        "name": "Vĩnh Dạ Minh Giới",
+        "description": "Bao phủ chiến trường bằng bóng tối, triệu hồi nhiều ảo ảnh và liên tục thay đổi vị trí. Các ảo ảnh thực hiện những đòn tấn công giả, trong khi boss thật lựa chọn thời điểm tấn công.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Hư Thực",
+    "counter": "Mắt tím lóe báo đòn thật; phá ảo ảnh để giảm lựa chọn hoán vị của boss."
+  },
+  "wood": {
+    "title": "Vạn Sinh Thần Lộc",
+    "skills": [
+      {
+        "type": "stag-charge",
+        "name": "Linh Giác Xung Kích",
+        "description": "Húc về phía trước bằng cặp sừng phát sáng, để lại hạt giống trên đường đi.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "stag-chase-vines",
+        "name": "Mộc Đằng Truy Mệnh",
+        "description": "Triệu hồi dây leo bò theo mặt đất, truy đuổi mục tiêu.",
+        "role": "control",
+        "unlock": 1
+      },
+      {
+        "type": "stag-bloom",
+        "name": "Linh Hoa Khai Phóng",
+        "description": "Tạo nhiều bông hoa, sau một khoảng thời gian chúng nở và phát tán phấn hoa.",
+        "role": "setup",
+        "unlock": 1
+      },
+      {
+        "type": "stag-transfer",
+        "name": "Sinh Mệnh Chuyển Hóa",
+        "description": "Hút sinh lực từ cây để hồi máu hoặc truyền sinh lực vào cây để tăng tốc phát triển.",
+        "role": "resource",
+        "unlock": 2
+      },
+      {
+        "type": "stag-trunk",
+        "name": "Thiết Mộc Trấn Địa",
+        "description": "Triệu hồi thân cây khổng lồ từ mặt đất, gây hất tung và tạo vật cản.",
+        "role": "control",
+        "unlock": 2
+      },
+      {
+        "type": "stag-leaves",
+        "name": "Vạn Diệp Phi Đao",
+        "description": "Phóng lá cây sắc bén theo nhiều quỹ đạo.",
+        "role": "ranged",
+        "unlock": 2
+      },
+      {
+        "type": "stag-awaken",
+        "name": "Mộc Linh Thức Tỉnh",
+        "description": "Biến một cổ thụ thành sinh vật gỗ có thể di chuyển và tấn công.",
+        "role": "setup",
+        "unlock": 3
+      },
+      {
+        "type": "stag-sacrifice",
+        "name": "Sinh Tử Luân Hồi",
+        "description": "Hi sinh toàn bộ thực vật đang tồn tại, chuyển hóa chúng thành một đợt hồi máu và sát thương diện rộng.",
+        "role": "finisher",
+        "unlock": 3
+      },
+      {
+        "type": "stag-worldtree",
+        "name": "Thần Mộc Giáng Thế",
+        "description": "Triệu hồi một cây thần khổng lồ. Rễ cây lan khắp chiến trường, hoa nở và các sinh vật gỗ xuất hiện. Người chơi phải phá các rễ chính để ngăn cây thần hoàn thành quá trình sinh trưởng.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Sinh Mệnh Tuần Hoàn",
+    "counter": "Phá cây đang lớn và rễ chính của cây thần; cân nhắc xử lý thực vật trước khi đánh boss."
+  },
+  "ice": {
+    "title": "Hàn Thiên Bạch Hổ",
+    "skills": [
+      {
+        "type": "tiger-swipes",
+        "name": "Băng Trảo",
+        "description": "Tung hai cú vuốt tạo vệt băng hình cung.",
+        "role": "melee",
+        "unlock": 1
+      },
+      {
+        "type": "tiger-bite",
+        "name": "Hàn Nha",
+        "description": "Lao tới cắn mục tiêu, gây tích tụ Hàn Khí.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "tiger-pounce",
+        "name": "Bạch Hổ Phi Phác",
+        "description": "Nhảy tới mục tiêu, khi tiếp đất tạo một vùng băng.",
+        "role": "pursuit",
+        "unlock": 1
+      },
+      {
+        "type": "tiger-slide",
+        "name": "Băng Địa Trượt Sát",
+        "description": "Trượt cực nhanh trên mặt băng, dùng móng vuốt chém các mục tiêu trên đường đi.",
+        "role": "pursuit",
+        "unlock": 2
+      },
+      {
+        "type": "tiger-groundspikes",
+        "name": "Hàn Băng Địa Thứ",
+        "description": "Triệu hồi những mũi băng từ mặt đất, có thể tạo vật cản.",
+        "role": "control",
+        "unlock": 2
+      },
+      {
+        "type": "tiger-mirrors",
+        "name": "Băng Kính",
+        "description": "Tạo các tấm gương băng cho phép boss dịch chuyển giữa chúng.",
+        "role": "setup",
+        "unlock": 2
+      },
+      {
+        "type": "tiger-roar",
+        "name": "Hổ Khiếu Hàn Phong",
+        "description": "Gầm lên, tạo sóng băng đẩy lùi người chơi và làm chậm những mục tiêu có Hàn Khí.",
+        "role": "ranged",
+        "unlock": 3
+      },
+      {
+        "type": "tiger-shatter",
+        "name": "Băng Toái Liên Kích",
+        "description": "Phá vỡ các vùng băng gần đó, khiến mảnh băng bắn ra xung quanh.",
+        "role": "resource",
+        "unlock": 3
+      },
+      {
+        "type": "tiger-rampage",
+        "name": "Hàn Thiên Cuồng Sát",
+        "description": "Tăng tốc, liên tục lao và đổi hướng giữa những vùng băng, ưu tiên các mục tiêu đang bị làm chậm.",
+        "role": "finisher",
+        "unlock": 3
+      },
+      {
+        "type": "tiger-everwinter",
+        "name": "Vĩnh Đông Thiên Tai",
+        "description": "Toàn bộ đấu trường bắt đầu đóng băng. Boss tạo gương băng, liên tục xuất hiện từ các vị trí khác nhau, sau đó nhảy lên cao và giáng xuống, phá vỡ toàn bộ mặt băng thành một trận bão mảnh băng.",
+        "role": "ultimate",
+        "unlock": 3
+      }
+    ],
+    "passive": "Hàn Băng Liệp Địa",
+    "counter": "Phá băng và gương để hạn chế truy đuổi; rời các vùng băng đã báo vỡ."
+  }
+}

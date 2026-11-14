@@ -74,9 +74,9 @@ export async function createOpponent(scene,spawnPosition,playerModel=false){
     const start=new T.Vector3(...shot.old),delta=new T.Vector3(...shot.p).sub(start),length=delta.length();if(length<1e-9)return null;
     raycaster.set(start,delta.normalize());raycaster.near=0;raycaster.far=length+(shot.size||0);
     const hit=raycaster.intersectObject(creature.root,true)[0];
-    return hit?{point:hit.point.toArray(),part:hit.object.name,t:hit.distance/length}:null;
+    return hit?{point:hit.point.toArray(),part:hit.object.userData.guardianPart||hit.object.name,t:hit.distance/length}:null;
   }
-  return {group,rig,update,shield,aura,guardianContact,setNaturalCombat:value=>{naturalCombat=!!value;attackAge=1;lastSealPose=-1;naturalMotion.reset();ninja?.setCombatMode(!naturalCombat);},throwWeapon:()=>{attackAge=0;},setGuardianCombatState:s=>{creature?.setCombatState(s);guardianAura?.setCombatState(s);},get ninja(){return ninja;},guardianMouth:p=>(creature||guardianAura)?.mouthPosition(p).toArray(),setGuardianArtPose:p=>{creature?.setArtPose(p);guardianAura?.setArtPose(p);},get guardianAura(){return guardianAura?.root;},get legs(){return ninja?.legs||[];},setInkViewport:(w,h)=>{rig.setInkViewport(w,h);ninja?.setInkViewport(w,h);},setAppearance};
+  return {group,rig,update,shield,aura,guardianContact,setNaturalCombat:value=>{naturalCombat=!!value;attackAge=1;lastSealPose=-1;naturalMotion.reset();ninja?.setCombatMode(!naturalCombat);},throwWeapon:()=>{attackAge=0;},setGuardianCombatState:s=>{creature?.setCombatState(s);guardianAura?.setCombatState(s);},get guardianAnimation(){return creature?.animationState()||guardianAura?.animationState()||null;},get ninja(){return ninja;},guardianMouth:p=>(creature||guardianAura)?.mouthPosition(p).toArray(),setGuardianArtPose:p=>{creature?.setArtPose(p);guardianAura?.setArtPose(p);},get guardianAura(){return guardianAura?.root;},get legs(){return ninja?.legs||[];},setInkViewport:(w,h)=>{rig.setInkViewport(w,h);ninja?.setInkViewport(w,h);},setAppearance};
 }
 
 // The world avatar uses its own arms; the first-person hands stay detached.

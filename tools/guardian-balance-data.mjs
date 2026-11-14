@@ -1,3 +1,4 @@
+import {GUARDIAN_ARSENAL_STATS} from '../src/guardian-arsenal-data.js';
 import {guardianMobaLabels,guardianMobaNotes} from './guardian-moba-metadata.mjs';
 import vm from 'node:vm';
 import {GUARDIAN_BOSS_DESIGNS} from '../src/guardian-boss-designs.js';
@@ -6,7 +7,7 @@ import {revisionOf} from './spell-balance-data.mjs';
 
 const START='/* guardian-balance:start */',END='/* guardian-balance:end */';
 export function readGuardianBalance(source){
-  const context={};vm.runInNewContext(source.replace(/^export /gm,'')+'\nglobalThis.result={skills:GUARDIAN_SKILL_DEFAULTS,passives:GUARDIAN_PASSIVE_DEFAULTS,overrides:guardianBalanceOverrides};',context,{timeout:1000});
+  const context={GUARDIAN_ARSENAL_STATS};vm.runInNewContext(source.replace(/^import .*$/gm,'').replace(/^export /gm,'')+'\nglobalThis.result={skills:{...GUARDIAN_SKILL_DEFAULTS,...GUARDIAN_ARSENAL_STATS},passives:GUARDIAN_PASSIVE_DEFAULTS,overrides:guardianBalanceOverrides};',context,{timeout:1000});
   return JSON.parse(JSON.stringify(context.result));
 }
 const labels={
@@ -92,13 +93,14 @@ export function guardianBalanceDocument(source){
     if(column)columns[column].push(f);else extra.push(f);
    }
    rows.push({id:key,name,beast,element:id,elementName:beast,color:design.color,rank:kind==='passive'?'Nội tại':'Kỹ năng',kind,columns,extra,defaults,
-    note:notes[key]||'Nội tại và thông số di chuyển trong góc nhìn thứ ba.',description:kind==='passive'?design.counter:notes[key]});
+    note:design.skills.find(s=>s.type===key)?.description||notes[key]||'Nội tại và thông số di chuyển trong góc nhìn thứ ba.',description:kind==='passive'?design.counter:design.skills.find(s=>s.type===key)?.description||notes[key]});
   }
  }
  return {version:1,kind:'guardian-skills',revision:revisionOf(source),elements,overrides,rows};
 }
 function validateRelations(id,s){
  const require=(ok,message)=>{if(!ok)throw Error(id+': '+message);};
+ if(Object.hasOwn(GUARDIAN_ARSENAL_STATS,id))require(s.windup<s.duration,'thời gian thi triển phải đủ động tác chuẩn bị.');
  if(s.beamDuration!==undefined)require(s.windup+s.beamDuration<=s.duration+1e-8,'thời gian thi triển phải đủ chuẩn bị và phun tia.');
  if(['wolf-dashes','shadow-dashes'].includes(id))require(s.windup+(s.count-1)*s.interval+s.rushDuration<=s.duration+1e-8,'phải đủ thời gian cho tất cả lần lao.');
  if(id==='eagle-dive')require(s.windup+s.rushDuration<=s.duration,'phải đủ thời gian bay và đáp.');

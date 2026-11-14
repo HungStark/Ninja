@@ -18,6 +18,10 @@ export function clampPracticePoint(p){return [T.MathUtils.clamp(p[0],PRACTICE_BO
 // occupied when the movement starts, without snapping a skill back home.
 export function practiceMovementBounds(owner,clearance=.65,from){const edges=[PRACTICE_ARENA.minZ,...PRACTICE_DIVIDERS,PRACTICE_ARENA.maxZ],section=from?from[2]<PRACTICE_DIVIDERS[0]?0:from[2]<PRACTICE_DIVIDERS[1]?1:2:owner==='enemy'?0:2;return {minX:PRACTICE_ARENA.minX+clearance,maxX:PRACTICE_ARENA.maxX-clearance,minZ:edges[section]+clearance,maxZ:edges[section+1]-clearance};}
 export function clampPracticeActorPoint(p,owner='player',clearance=.65,from){const b=practiceMovementBounds(owner,clearance,from);return [T.MathUtils.clamp(p[0],b.minX,b.maxX),p[1],T.MathUtils.clamp(p[2],b.minZ,b.maxZ)];}
+export function clampGuardianMovement(from,to,mode='walk',clearance=3,dividers=true){
+ const outer=[T.MathUtils.clamp(to[0],PRACTICE_ARENA.minX+clearance,PRACTICE_ARENA.maxX-clearance),to[1],T.MathUtils.clamp(to[2],PRACTICE_ARENA.minZ+clearance,PRACTICE_ARENA.maxZ-clearance)];
+ return dividers&&mode!=='air'?clampPracticeActorPoint(outer,'enemy',clearance,mode==='walk'?from:outer):outer;
+}
 export function stepPracticePoint(from,to,distance,clearance=.65){const goal=clampPracticeActorPoint(to,'player',clearance,from),dx=goal[0]-from[0],dz=goal[2]-from[2],length=Math.hypot(dx,dz),t=length>0?Math.min(1,distance/length):0;return clampPracticeActorPoint([from[0]+dx*t,from[1],from[2]+dz*t],'player',clearance,from);}
 
 export function createPracticeOverhead(scene,{actorScale=1,environment}={}){

@@ -33,10 +33,11 @@ export function updateGuardianSkill(a,c,dt){
    const destinations=i===0?c.aimTargets.filter(t=>c.distance(t.pos,c.body)<45).map(t=>t.pos):points(a,c,Math.min(5,3+c.tails),0,'fire');
    for(const p of destinations)warn(a,c,p,'flame',{},e=>c.zone('fire',e.p,e.r,a.zoneLife,{dps:a.zoneDps,applyStacks:true,src}));
   });
-  at('finale',a.duration-.45,()=>{c.cone(c.body,direction(c,c.body,target.pos),a.fanRadius,Math.PI*1.3,a.fanDamage,{},src);for(const fire of [...c.all('fire')]){c.area(fire.p,fire.r,a.damage,{},src);c.destroy(fire);}});break;
+  at('final-warning',a.duration-1.25,()=>{a.finalFrom=[...c.body];a.finalDirection=direction(c,c.body,target.pos);const theta=Math.atan2(a.finalDirection[0],a.finalDirection[2]);for(const offset of [-Math.PI*.45,0,Math.PI*.45])c.telegraphLine(a.finalFrom,c.add(a.finalFrom,[Math.sin(theta+offset)*a.fanRadius,0,Math.cos(theta+offset)*a.fanRadius]),.12,.8,'#ffb25b');});
+  at('finale',a.duration-.45,()=>{c.cone(a.finalFrom||c.body,a.finalDirection||direction(c,c.body,target.pos),a.fanRadius,Math.PI*.9,a.fanDamage,{},src);for(const fire of [...c.all('fire')]){c.area(fire.p,fire.r,a.damage,{},src);c.destroy(fire);}});break;
  case 'dragon-pressure':
   at('warning',0,()=>{a.end=c.predict(target,.7);a.beamFrom=[...origin];a.dir=direction(c,origin,a.end);a.end=c.add(origin,c.mul(a.dir,Math.min(a.range,c.distance(origin,a.end)+4)));a.visuals.push(c.telegraphLine(origin,a.end,a.radius*.25,a.windup));});
-  at('beam',a.windup,()=>a.visuals.push(c.telegraphLine(origin,a.end,a.radius*2,a.beamDuration,c.designColor)));
+  at('beam',a.windup,()=>a.visuals.push(c.beam(origin,a.end,a.radius,a.beamDuration)));
   if(a.age>=a.windup&&a.age<a.windup+a.beamDuration){
    a.tick=(a.tick||0)+dt;if(a.tick>=a.tickInterval){const elapsed=a.tick;a.tick=0;const wide=c.all('puddle').some(p=>c.along(p.p,origin,a.end)<p.r);
     for(const t of c.targets){const delta=c.flat(c.sub(t.pos,a.end)),inCone=wide&&c.length(delta)<a.endRadius&&dot(c.unit(delta),a.dir)>Math.cos(a.coneAngle);
@@ -51,19 +52,11 @@ export function updateGuardianSkill(a,c,dt){
    for(let i=0;i<4;i++){const m=c.circle([0,i*.16,0],a.radius*(1-i*.2),'#60bce3',false,e.root);m.position.y=i*.16;}
   },'pillar',0,src);});break;
  case 'dragon-tsunami':
-  for(let i=0;i<a.count;i++)at(i,a.windup+i*a.interval,()=>{
-   const b=c.bounds(),center=[(b.minX+b.maxX)/2,0,(b.minZ+b.maxZ)/2],extent=Math.hypot(b.maxX-b.minX,b.maxZ-b.minZ)*.6;
-   let theta=i===0?c.angle(c.body,target.pos):c.random()*Math.PI*2;
-   const safe=c.randomPoint({reserve:false}),directions=i===a.count-1?[theta-.65,theta+.65]:[theta];
-   for(const turn of directions){const d=[Math.sin(turn),0,Math.cos(turn)],p=c.sub(center,c.mul(d,extent)),side=[d[2],0,-d[0]],gap=i===a.count-1?dot(c.sub(safe,p),side):(c.random()<.5?-1:1)*4;
-    c.telegraphLine(c.add(p,c.mul(side,gap)),c.add(c.add(p,c.mul(side,gap)),c.mul(d,extent*2)),a.gapWidth,.85,'#8ce3ae');
-    c.wave(p,d,{damage:a.damage,speed:a.speed,life:a.life+extent/a.speed,width:a.waveWidth,r:a.radius,gap:a.gapWidth,gapOffset:gap,src});
-   }
-  });break;
+  for(let i=0;i<a.count;i++)at(i,a.windup+i*a.interval,()=>c.prepareWave(a,target,i));break;
  case 'wolf-dashes':
   at('plans',0,()=>{a.plans=Array.from({length:a.count},(_,i)=>{const t=c.aimTargets[i%c.aimTargets.length];return i===0?[...t.pos]:c.fit(c.add(t.pos,[(c.random()-.5)*8,0,(c.random()-.5)*6]));});});
   for(let i=0;i<a.count;i++){
-   const destination=a.plans[i];
+   const current=c.aimTargets[i%c.aimTargets.length],side=i===1?(i%2?-1:1)*1.5:0,destination=c.fit(c.add(c.predict(current,.28),[side,0,0]));
    const d=c.dash(a,i,destination,a.windup+i*a.interval,a.rushDuration,a.radius,a.damage);
    if(d?.done&&!d.trail){d.trail=true;c.trail('electric',d.from,d.to,a.trailWidth,a.zoneLife,{dps:a.zoneDps,src});}
   }break;
@@ -101,10 +94,11 @@ export function updateGuardianSkill(a,c,dt){
   if(a.ramDone)break;
   {
    const old=[...c.body],next=c.add(old,c.mul(a.dir,a.speed*dt)),b=c.bounds(),rock=c.all('rock').find(r=>c.along(r.p,old,next)<r.r+a.radius),wall=c.wallContact(old,next,a.radius),boundary=next[0]<b.minX+a.radius||next[0]>b.maxX-a.radius||next[2]<b.minZ+a.radius||next[2]>b.maxZ-a.radius;
-   c.setBody(c.fit(next,a.radius));c.pose.roll=(a.age-a.windup)*9;
+   const grounded=c.fitBody(c.fit(next,a.radius),'walk'),fence=c.distance(grounded,next)>.01;
+   c.setBody(grounded,'walk');c.pose.roll=(a.age-a.windup)*9;
    for(const t of c.targets)if(!a.hit.has(t.id)&&c.along(t.pos,old,c.body)<a.radius+.4){a.hit.add(t.id);c.emit(a.damage,t,{},src);}
-   if((rock||wall||boundary)&&(a.bouncedAt||0)+.15<a.age){
-    a.bouncedAt=a.age;a.bounceCount++;a.hit.clear();let n=rock?direction(c,rock.p,old):wall?.normal||[next[0]<b.minX+a.radius?1:next[0]>b.maxX-a.radius?-1:0,0,next[2]<b.minZ+a.radius?1:-1];
+   if((rock||wall||boundary||fence)&&(a.bouncedAt||0)+.15<a.age){
+    a.bouncedAt=a.age;a.bounceCount++;a.hit.clear();let n=rock?direction(c,rock.p,old):wall?.normal||(fence?direction(c,grounded,next):[next[0]<b.minX+a.radius?1:next[0]>b.maxX-a.radius?-1:0,0,next[2]<b.minZ+a.radius?1:-1]);
     if(boundary&&!rock&&!wall)n=[next[0]<b.minX+a.radius?1:next[0]>b.maxX-a.radius?-1:0,0,next[2]<b.minZ+a.radius?1:next[2]>b.maxZ-a.radius?-1:0];n=c.unit(n);
     a.dir=c.unit(c.sub(a.dir,c.mul(n,2*dot(a.dir,n))));const turn=(c.random()-.5)*.6,theta=Math.atan2(a.dir[0],a.dir[2])+turn;a.dir=[Math.sin(theta),0,Math.cos(theta)];c.setDirection(a.dir);
     if(rock){c.explodeObject(rock,a.fanDamage,6,{src});c.gainArmor(c.maxHp*a.armorFraction);}if(wall)wall.hp=Math.max(0,wall.hp-a.damage);
@@ -129,13 +123,17 @@ export function updateGuardianSkill(a,c,dt){
   at('final',a.duration-.05,()=>shoot(a,c,origin,c.sub(a.finalTarget||target.pos,origin),{style:'sword',damage:a.finalDamage,r:.5,life:3,armorPiercing:true}));break;
  case 'shadow-dashes':
   at('plans',0,()=>{a.plans=Array.from({length:a.count},(_,i)=>{if(!i)return [...target.pos];const v=c.length(target.velocity)>.1?c.unit(target.velocity):direction(c,c.body,target.pos),side=[-v[2],0,v[0]];return c.fit(c.add(target.pos,c.add(c.mul(v,2),c.mul(side,(c.random()<.5?-1:1)*4))));});});
-  for(let i=0;i<a.count;i++)c.dash(a,i,a.plans[i],a.windup+i*a.interval,a.rushDuration,a.radius,a.damage);
+  for(let i=0;i<a.count;i++)c.dash(a,i,c.predict(target,.3),a.windup+i*a.interval,a.rushDuration,a.radius,a.damage);
   break;
  case 'shadow-clones':
   at('clones',a.windup,()=>{const real=Math.floor(c.random()*a.count);for(let i=0;i<a.count;i++){const theta=i*Math.PI*2/a.count,p=c.fit(c.add(c.body,[Math.sin(theta)*2.5,0,Math.cos(theta)*2.5]));c.object('clone',p,a.hp,a.radius,a.life,{...c.parameters(a),family:'shadow',real:i===real,targetId:c.choose(true).id,guided:i===0,origin:[...p],seed:c.random()*Math.PI*2,src});}});break;
  case 'shadow-domain':
-  at('domain',a.windup,()=>{a.center=[...target.pos];c.zone('dark',a.center,a.radius,a.life,{slow:a.slow});a.points=Array.from({length:a.count},(_,i)=>c.fit(c.add(a.center,[Math.sin(i*Math.PI*2/a.count)*a.radius*.65,0,Math.cos(i*Math.PI*2/a.count)*a.radius*.65])));for(const p of a.points)a.visuals.push(c.zone('shadow-point',p,.55,a.life));});
-  for(let i=0;i<Math.ceil(a.life/a.interval);i++)at(i,a.windup+i*a.interval,()=>{const p=a.points?.[i%a.count];if(!p)return;c.teleport(p);c.reveal(.8);const d=i%2===0?direction(c,c.body,target.pos):[Math.sin(c.random()*6.28),0,Math.cos(c.random()*6.28)];c.cone(c.body,d,a.range,Math.PI*.75,a.damage,{},src);for(const clone of c.all('clone').filter(e=>e.family==='shadow')){clone.targetId=target.id;clone.age=clone.attackAt+clone.warning;}});break;
+  at('plan-domain',0,()=>{a.center=[...target.pos];a.points=Array.from({length:a.count},(_,i)=>c.fitBody(c.add(a.center,[Math.sin(i*Math.PI*2/a.count)*a.radius*.65,0,Math.cos(i*Math.PI*2/a.count)*a.radius*.65]),'land'));a.strikes=[];});
+  at('domain',a.windup,()=>{c.zone('dark',a.center,a.radius,a.life,{slow:a.slow});for(const p of a.points)a.visuals.push(c.zone('shadow-point',p,.55,a.life));});
+  for(let i=0;i<Math.ceil(a.life/a.interval);i++){
+   at('tell-'+i,Math.max(0,a.windup+i*a.interval-.5),()=>{const p=a.points[i%a.count],d=direction(c,p,c.predict(target,.2));a.strikes[i]={p,d};c.telegraphLine(p,c.add(p,c.mul(d,a.range)),.2,.5,'#c49cea');});
+   at(i,a.windup+i*a.interval,()=>{const strike=a.strikes[i];if(!strike)return;c.teleport(strike.p);c.reveal(.8);c.cone(c.body,strike.d,a.range,Math.PI*.75,a.damage,{},src);for(const clone of c.all('clone').filter(e=>e.family==='shadow')){clone.targetId=target.id;clone.age=Math.min(clone.age,clone.attackAt);}});
+  }break;
  case 'stag-vines':
   at('vines',0,()=>{for(const p of points(a,c,a.count)){const near=c.all('spirit').some(s=>c.distance(s.p,p)<4),r=a.radius*(near?a.growth:1);c.warning(p,r,a.warning,e=>{c.area(e.p,e.r,a.damage,{root:a.controlDuration},src);c.zone('vines',e.p,e.r,a.life*(near?a.growth:1),{dps:0});},'vine',0,src);}});break;
  case 'stag-flowers':
@@ -143,6 +141,7 @@ export function updateGuardianSkill(a,c,dt){
  case 'stag-tree':
   at('tree',a.windup,()=>{const b=c.bounds(),p=[(b.minX+b.maxX)/2,0,(b.minZ+b.maxZ)/2];c.object('tree',p,a.hp,a.radius,a.life,{...c.parameters(a),stunTime:a.controlDuration,tick:0,links:[],src});});break;
  case 'tiger-claws':
+  if(a.automatic&&(a.dashes?.pounce?!a.dashes.pounce.done:c.distance(c.body,target.pos)>a.range))c.dash(a,'pounce',c.predict(target,.2),a.windup-.32,.3,0,0);
   for(let i=0;i<a.count;i++)at(i,a.windup+i*a.interval,()=>{const t=c.choose(true),d=direction(c,c.body,t.pos),side=[d[2],0,-d[0]],p=i===0?t.pos:i===1?c.fit(c.add(t.pos,c.mul(side,(c.random()<.5?-1:1)*1.8))):c.predict(t,.65);warn(a,c,p,'claw',{ground:true},()=>c.trail('ice',c.add(p,c.mul(d,-1.6)),c.add(p,c.mul(d,1.6)),.8,a.zoneLife,{slow:a.slow}));});break;
  case 'tiger-spikes':
   at('spikes',0,()=>{for(const p of points(a,c,a.count,Math.min(2,c.targets.length===1?2:c.targets.length))){warn(a,c,p,'ice',{air:.25},e=>{const spike=c.object('ice-spike',e.p,a.hp,a.radius,a.life,{solid:true,src});if(c.all('ice').some(z=>c.overlaps(z,e.p))){c.explodeObject(spike,a.shardDamage,a.shardCount,{speed:a.speed,style:'ice-shard',src});}});}});break;

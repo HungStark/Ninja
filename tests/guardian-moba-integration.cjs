@@ -1,22 +1,23 @@
 const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),{pathToFileURL}=require('node:url'),{spawn}=require('node:child_process'),{chromium}=require('playwright');
 (async()=>{
  const out='test-results/guardian-moba';await fs.mkdir(out,{recursive:true});
- const server=spawn(process.execPath,['server.cjs'],{env:{...process.env,PORT:'4358'},windowsHide:true,stdio:['ignore','pipe','pipe']});let browser,page;
+ const port=process.env.GUARDIAN_TEST_PORT||'4358',server=spawn(process.execPath,['server.cjs'],{env:{...process.env,PORT:port},windowsHide:true,stdio:['ignore','pipe','pipe']});let browser,page;
  try{
-  await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);});
+  await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(new Error('Test server exited before listening: '+code)));});
   browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--allow-file-access-from-files','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   const errors=[],checked=[];
   for(const variant of [{url:'index.html',width:1280,height:800,ids:['fire','water','lightning','wind','earth','light','dark','wood','ice']},{url:'index.en.html',width:1280,height:800,ids:['dark']},{url:'android-apk/www/index.html',width:915,height:412,touch:true,ids:['water','wood','ice']}]){
    if(process.argv.includes('--mobile-only')&&!variant.touch)continue;
    if(process.argv.includes('--dark-only')&&variant.touch)continue;
    page=await browser.newPage({viewport:{width:variant.width,height:variant.height},hasTouch:!!variant.touch,isMobile:!!variant.touch});page.on('pageerror',e=>errors.push(e.message));
-   await page.goto((variant.touch?pathToFileURL(path.resolve(variant.url)).href:'http://127.0.0.1:4358/'+variant.url)+'?test=1&mode=duel');await page.waitForFunction(()=>document.body.dataset.ready==='true');
+   await page.goto((variant.touch?pathToFileURL(path.resolve(variant.url)).href:'http://127.0.0.1:'+port+'/'+variant.url)+'?test=1&mode=duel');await page.waitForFunction(()=>document.body.dataset.ready==='true');
    const state=()=>page.evaluate(()=>__AN_HOA__.state()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t);
    for(const id of variant.ids){
     if(process.argv.includes('--dark-only')&&id!=='dark')continue;
     await page.locator('#startButton').click();await page.locator('[data-practice-type=guardian]').click();await page.locator('[data-practice-guardian='+id+']').click();assert.equal(await page.locator('#practiceGuardianSelected li').count(),3);await page.locator('#practiceOpponentConfirm').click();await page.locator('[name=practiceView][value=overhead]').check();await page.locator('#practiceViewConfirm').click();
     await page.evaluate(()=>{__AN_HOA__.setAIEnabled(true);__AN_HOA__.setHealth('player',100000);});await advance(.01);assert.equal((await state()).guardianPhases.thirdPerson,true);
     if(variant.touch){assert.equal(await page.locator('#mobileTacticalHUD').isVisible(),true);const pad=await page.locator('#tacticalJoystick').boundingBox(),client=await page.context().newCDPSession(page),before=(await state()).position;await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,x:pad.x+pad.width/2,y:pad.y+pad.height/2}]});await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{id:1,x:pad.x+pad.width*.8,y:pad.y+pad.height/2}]});await advance(.25);await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});assert.ok(Math.hypot((await state()).position[0]-before[0],(await state()).position[2]-before[2])>.1);}
+    await advance(10);assert.ok((await state()).guardianPhases.attacks>=3,id+' automatically chains attacks');assert.ok((await state()).guardianAnimation,id+' articulated rig');
     for(let i=0;i<3;i++){await page.evaluate(i=>__AN_HOA__.guardianArt(i),i);await advance(i===1?1.05:.97);const s=await state();assert.equal(s.cameraView,'practice-overhead');assert.equal(s.guardianPhases.thirdPerson,true);assert.ok(Object.values(s.guardianPhases.offset).every(Number.isFinite));}
     if(id==='dark'){assert.equal(await page.locator('#guardianNightVeil').isVisible(),true);await page.screenshot({path:out+'/dark-'+(variant.touch?'mobile':variant.url.includes('.en')?'en':'vi')+'.png'});}
     if(variant.touch)await page.screenshot({path:out+'/'+id+'-android.png'});

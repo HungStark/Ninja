@@ -1,5 +1,5 @@
 import {createGuardianBossCombat as createLegacy} from './guardian-legacy-combat.js';
-import {createGuardianBossCombat as createThirdPerson} from './guardian-moba-combat.js';
+import {createGuardianArsenalCombat as createThirdPerson} from './guardian-arsenal-combat.js';
 // A mode is selected only at encounter reset; a phase cannot silently switch rules.
 export function createGuardianBossCombat(scene){
  const legacy=createLegacy(scene),third=createThirdPerson(scene);let current=legacy;

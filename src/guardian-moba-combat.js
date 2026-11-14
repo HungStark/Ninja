@@ -1,9 +1,11 @@
 import * as T from 'three';
 import {ENEMY_MOVE_MULTIPLIER} from './game-pace.js';
-import {GUARDIAN_BOSS_DESIGNS} from './guardian-boss-designs.js';
+import {GUARDIAN_BOSS_DESIGNS} from './guardian-moba-designs.js';
 import {guardianSkillStats,guardianPassiveStats,GUARDIAN_AI_DEFAULTS as AI} from './guardian-balance.js';
 import {gameAudio} from './game-audio.js';
 import {updateGuardianSkill} from './guardian-moba-skills.js';
+import {guardianCommitment,GUARDIAN_BACKGROUND_SKILLS,planGuardianWave} from './guardian-tactics.js';
+import {createGuardianVfx} from './guardian-vfx.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),mul=(v,s)=>v.map(n=>n*s);
@@ -17,10 +19,13 @@ const angle=(a,b)=>Math.atan2(b[0]-a[0],b[2]-a[2]);
 
 // The simulation owns every timer, target identity and spawned object. No
 // rendering callback advances combat, and resetting an encounter removes it all.
-export function createGuardianBossCombat(scene){
+export function createGuardianBossCombat(scene,extension={}){
  const root=new T.Group();root.name='guardian-distinct-combat';
  const geo={orb:new T.IcosahedronGeometry(1,1),ring:new T.RingGeometry(.93,1,48),disk:new T.CircleGeometry(1,48),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,7),crystal:new T.OctahedronGeometry(1),arc:new T.TorusGeometry(1,.08,5,24,Math.PI*1.4),pillar:new T.CylinderGeometry(.7,1,1,8)};
- let id=null,design=null,passive={},phase=2,clock=0,serial=0,castSerial=0,ctx=null,action=null,entities=[],history=[],wait=1.5,attacks=0;
+ const vfx=createGuardianVfx();
+ const designBank=extension.designs||GUARDIAN_BOSS_DESIGNS,updateSkill=extension.updateSkill||updateGuardianSkill,director=extension.createDirector?.();
+ let memory={},combatStage=1,home=null,excursion=null,returning=null,blockedTime=0,castHits=new Map();
+ let id=null,design=null,passive={},phase=2,clock=0,serial=0,castSerial=0,ctx=null,action=null,entities=[],history=[],wait=.75,attacks=0,ongoing=[],moveSpeed=0;
  let body=null,origin=null,pose={},previousBody=null,stationary=0,armor=0,armorLevels=0,armorShell=null,tailCount=0,energy=0,energyTravel=0,speedStacks=0,rage=0,stagger=0,lastCombat=0,ambushReady=false;
  let seed=1,passiveAt=0,comboCursor=0,comboRepeats=0,comboSerial=0,previousCombo='',combo=[],cooldowns={},stats=new Map(),previousTargets=new Map(),safeX=0,enraged=false,movement=0,revealUntil=0;
  const alive=e=>!e.dead;
@@ -43,14 +48,16 @@ export function createGuardianBossCombat(scene){
  }
  function circle(p,r,color=design?.color,filled=false,parent=root){const m=mesh(filled?'disk':'ring',[p[0],.065,p[2]],[r,r,r],color,filled?.18:.7,parent);m.rotation.x=-Math.PI/2;return m;}
  function line(a,b,w=.12,color=design?.color,parent=root){const d=sub(b,a),m=mesh('box',add(a,mul(d,.5)),[w,w,Math.max(.001,length(d))],color,.65,parent);m.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),new T.Vector3(...unit(d)));return m;}
- function remove(node){if(!node)return;const materials=new Set();node.traverse(m=>{if(m.material)for(const mat of Array.isArray(m.material)?m.material:[m.material])materials.add(mat);});node.removeFromParent();for(const mat of materials)mat.dispose();}
- function entity(kind,p,properties={}){const group=new T.Group();group.position.fromArray(p);root.add(group);const e={id:++serial,kind,p:[...p],root:group,age:0,life:1,hit:new Set(),...properties};entities.push(e);return e;}
- function flash(p,r=1,color=design?.color){const e=entity('flash',[p[0],.12,p[2]],{r,life:.45});circle([0,0,0],r,color,false,e.root);return e;}
+ function remove(node){if(!node)return;const materials=new Set();node.traverse(m=>{if(m.material)for(const mat of Array.isArray(m.material)?m.material:[m.material])materials.add(mat);});node.removeFromParent();for(const mat of materials)if(!mat.userData.guardianShared)mat.dispose();}
+ function entity(kind,p,properties={}){const group=new T.Group();group.position.fromArray(p);root.add(group);const e={id:++serial,kind,p:[...p],root:group,age:0,life:1,hit:new Set(),...properties};if(['vortex','tornado'].includes(kind))vfx.vortex(e);entities.push(e);return e;}
+ function flash(p,r=1,color=design?.color){vfx.burst([p[0],p[1]+.2,p[2]],r);const e=entity('flash',[p[0],.12,p[2]],{r,life:.45});circle([0,0,0],r,color,false,e.root);return e;}
+ function skin(m,opacity=1){m.material.dispose();m.material=vfx.surface(opacity);return m;}
+ function beam(a,b,r,life){const e=entity('beam',[0,0,0],{life});vfx.beam(e.root,a,b,r);return e;}
  function destroy(e,broken=false){
   if(!e||e.dead)return;e.dead=true;remove(e.root);if(e.link)destroy(e.link);for(const link of e.links||[])destroy(link);
   if(broken&&e.kind==='spirit')rage=Math.min(passive.rageCap||3,rage+1);
   if(broken&&e.kind==='tree'){stagger=Math.max(stagger,e.stunTime||1.5);cancel(false);}
-  if(broken)flash(e.p,e.r||1);
+  if(broken){e.onBroken?.();flash(e.p,e.r||1);}
  }
  function randomPoint({avoid=null,near=null,radius=1,reserve=true}={}){
   const b=attackBounds(),occupied=all('hazard');let best;
@@ -98,7 +105,7 @@ export function createGuardianBossCombat(scene){
   if(ambush)damage*=1+passive.firstHitBonus;
   const shot={owner:'enemy',victimId:t.id,element:id,style:'guardian-'+src.type,damage,unreflectable:true,color:design.color,v:unit(sub(t.pos,body)),armorReduction,...extra};
   const result=ctx.impact(shot,t.pos)||shot.hitResult||{damage:0};
-  if(result.damage>0){lastCombat=clock;if(extra.passive!==false){if(bonus){s.stacks=0;s.stackTime=0;}if(ambush)ambushReady=false;applyPassive(t,src);}if(extra.slow)applySlow(t,extra.slow,extra.slowTime||1);if(extra.root)control(t,'root',extra.root);if(extra.air)control(t,'air',extra.air);}
+  if(result.damage>0){castHits.set(src.castId,(castHits.get(src.castId)||0)+1);lastCombat=clock;if(extra.passive!==false){if(bonus){s.stacks=0;s.stackTime=0;}if(ambush)ambushReady=false;applyPassive(t,src);}if(extra.slow)applySlow(t,extra.slow,extra.slowTime||1);if(extra.root)control(t,'root',extra.root);if(extra.air)control(t,'air',extra.air);}
   return result;
  }
  function area(p,r,damage,extra={},src){let hits=0;for(const t of targets())if(distance(t.pos,p)<=r+(t.hitboxScale||1)*.45&&(!extra.ground||t.pos[1]<3.5)){if(emit(damage,t,extra,src).damage>0)hits++;}flash(p,r);return hits;}
@@ -113,27 +120,30 @@ export function createGuardianBossCombat(scene){
  }
  function eruption(e){
   if(e.shape==='bolt'){let last=[0,9,0];for(let i=1;i<=7;i++){const p=[i===7?0:(i%2?-.25:.25),9-i*1.26,0];line(last,p,.15,'#eee5ff',e.root);last=p;}}
-  else if(e.shape==='flame')for(let i=0;i<3;i++)mesh('cone',[0,1.5+i*.3,0],[e.r*(1-i*.22),3.4-i*.4,e.r*(1-i*.22)],['#ff5c18','#ff9e37','#ffe2a0'][i],.85,e.root);
-  else if(e.shape==='claw')for(let i=-1;i<=1;i++)line([i*.25,.2,-e.r],[i*.25+.7,.2,e.r],.15,'#d0f5ff',e.root);
-  else mesh(e.shape==='vine'?'cone':e.shape==='ice'?'crystal':'pillar',[0,1.5,0],[e.r,3,e.r],design.color,.9,e.root);
+  else if(e.shape==='flame'){for(let i=0;i<3;i++)skin(mesh('cone',[(i-1)*e.r*.25,1.4+i*.3,0],[e.r*(1-i*.22),3.4-i*.4,e.r*(1-i*.22)],design.color,.85,e.root),.9);vfx.part(e.root,vfx.geo.orb,vfx.glow(.5),[0,.5,0],[e.r*.65,1.2,e.r*.65]);}
+  else if(e.shape==='claw')for(let i=-1;i<=1;i++){const slash=vfx.part(e.root,vfx.geo.slash,vfx.glow(.7),[i*.35,.25,0],[e.r*.6,e.r,e.r]);slash.rotation.set(Math.PI/3,0,-.5+i*.15);}
+  else skin(mesh(e.shape==='vine'?'cone':e.shape==='ice'?'crystal':'pillar',[0,1.5,0],[e.r,3,e.r],design.color,.9,e.root),.9);
  }
- function zone(tag,p,r,life,props={}){const e=entity('zone',[p[0],.03,p[2]],{tag,r,life,tick:0,...props});circle([0,0,0],r,tag==='fire'?'#f56b25':tag==='puddle'?'#4b9edf':tag==='electric'?'#c19aff':tag==='ice'?'#abe8ff':design.color,true,e.root);circle([0,0,0],r,design.color,false,e.root);return e;}
+ function zone(tag,p,r,life,props={}){const e=entity('zone',[p[0],.03,p[2]],{tag,r,life,tick:0,...props});circle([0,0,0],r,tag==='fire'?'#f56b25':tag==='puddle'?'#4b9edf':tag==='electric'?'#c19aff':tag==='ice'?'#abe8ff':design.color,true,e.root);circle([0,0,0],r,design.color,false,e.root);vfx.zone(e);return e;}
  function trail(tag,a,b,width,life,props={}){const e=zone(tag,add(a,mul(sub(b,a),.5)),width,life,{a:[...a],b:[...b],...props});remove(e.root);e.root=new T.Group();root.add(e.root);line([a[0],.08,a[2]],[b[0],.08,b[2]],width*2,design.color,e.root);return e;}
  function object(kind,p,hp,r,life,props={}){
   const e=entity(kind,[p[0],0,p[2]],{hp,maxHp:hp,r,life,...props});circle([0,0,0],r,design.color,false,e.root);
-  if(kind==='tree'){mesh('pillar',[0,1.6,0],[.5,3.2,.5],'#7e6540',1,e.root);for(const side of [-1,1]){line([0,2,0],[side*1.4,3.8,0],.23,'#7e6540',e.root);mesh('orb',[side*.8,3.7,0],[1.7,1,1.4],'#71ae62',.9,e.root);}}
+  if(kind==='tree'||kind==='treant'){mesh('pillar',[0,1.6,0],[.5,3.2,.5],'#7e6540',1,e.root);for(const side of [-1,1]){line([0,2,0],[side*1.4,3.8,0],.23,'#7e6540',e.root);mesh('orb',[side*.8,3.7,0],[1.7,1,1.4],'#71ae62',.9,e.root);}}
+  else if(kind==='prison'){skin(mesh('orb',[0,1.3,0],[r,1.5,r],design.color,.25,e.root),.25);for(let i=0;i<3;i++){const ring=circle([0,1.3,0],r,design.color,false,e.root);ring.rotation.set(i*Math.PI/3,0,i*.7);}}
+  else if(kind==='sun')skin(mesh('orb',[0,1.2,0],[r,r,r],design.color,.9,e.root),.9);
   else if(kind==='spirit'){mesh('cone',[0,.9,0],[.5,1.7,.5],'#71a95f',.9,e.root);mesh('orb',[0,1.9,0],[.5,.6,.5],'#e9ffd1',.9,e.root);}
   else if(kind==='flower'){for(let i=0;i<6;i++)mesh('orb',[Math.cos(i*Math.PI/3)*.5,.55,Math.sin(i*Math.PI/3)*.5],[.4,.3,.4],'#e4a1df',.9,e.root);mesh('orb',[0,.65,0],[.3,.3,.3],'#f3e6ad',1,e.root);}
   else if(kind==='feather'){const m=mesh('cone',[0,.55,0],[.1,1.1,.18],'#fff0ad',1,e.root);m.rotation.z=.35;}
   else if(kind==='clone'){
-   mesh('orb',[0,.6,0],[.45,.5,.9],design.color,.7,e.root);mesh('cone',[0,.9,.65],[.3,.6,.3],design.color,.9,e.root);for(const s of [-1,1])mesh('orb',[s*.15,1.06,.9],[.055,.055,.07],'#fff6e0',1,e.root);
-  }else mesh(kind==='ice-spike'?'crystal':'pillar',[0,1.3,0],[r,2.6,r],design.color,1,e.root);
+   skin(mesh('orb',[0,.6,0],[.45,.5,.9],design.color,.7,e.root),.7);skin(mesh('cone',[0,.9,.65],[.3,.6,.3],design.color,.9,e.root),.9);for(const side of [-1,1]){skin(mesh('cone',[side*.2,1.3,.65],[.12,.35,.12],design.color,.8,e.root),.8);for(const z of [-.5,.45])skin(mesh('cone',[side*.3,.22,z],[.12,.5,.15],design.color,.8,e.root),.8);}for(const s of [-1,1])mesh('orb',[s*.15,1.06,.9],[.055,.055,.07],'#fff6e0',1,e.root);
+  }else skin(mesh(kind==='ice-spike'?'crystal':'pillar',[0,1.3,0],[r,2.6,r],design.color,1,e.root));
   if(hp>0){mesh('box',[0,kind==='tree'?5:2.8,0],[1.6,.09,.08],'#243c35',1,e.root);e.healthBar=mesh('box',[0,kind==='tree'?5:2.8,.045],[1.6,.075,.08],'#b4e28b',1,e.root);}
   return e;
  }
  function projectile(p,d,props={}){
   const e=entity('projectile',[...p],{v:unit(d),speed:10,r:.35,life:4,damage:10,src:source(action),...props});
   const m=mesh(e.style==='windblade'?'arc':e.style==='feather'||e.style==='seed'?'cone':'orb',[0,0,0],e.style==='feather'?[.1,.8,.16]:[e.r,e.r,e.r],design.color,.9,e.root);e.model=m;
+  vfx.projectile(e,ctx?.quality===2);
   return e;
  }
  function radial(p,count,damage,speed=9,props={}){for(let i=0;i<count;i++){const a=i*Math.PI*2/count;projectile([p[0],1.1,p[2]],[Math.sin(a),0,Math.cos(a)],{damage,speed,life:2.5,...props});}}
@@ -141,7 +151,16 @@ export function createGuardianBossCombat(scene){
  function explodeObject(e,damage,count=6,props={}){radial(e.p,count,damage,props.speed||8,{style:'shard',ignoreObject:e.id,...props});flash(e.p,e.r+1);destroy(e);}
  function wave(p,d,props){
   const e=entity('wave',flat(p),{v:unit(flat(d)),progress:0,life:5,r:1,width:36,gap:3,gapOffset:0,damage:30,src:source(action),...props});
-  e.wall=mesh('box',[0,1.2,0],[e.width,2.4,.7],design.color,.25,e.root);e.safe=mesh('box',[e.gapOffset,.15,0],[e.gap,.08,50],'#87e5b3',.35,e.root);e.root.rotation.y=Math.atan2(e.v[0],e.v[2]);return e;
+  const gapLeft=clamp(e.gapOffset-e.gap/2,-e.width/2,e.width/2),gapRight=clamp(e.gapOffset+e.gap/2,-e.width/2,e.width/2);
+  for(const [left,right] of [[-e.width/2,gapLeft],[gapRight,e.width/2]])if(right-left>.01){skin(mesh('box',[(left+right)/2,.7,0],[right-left,1.4,e.r*2],design.color,.45,e.root),.75);for(let i=0;i<3;i++)mesh('box',[(left+right)/2,.5+i*.28,-e.r*.25],[right-left,.09,.15],'#d5f4ff',.75,e.root);}
+  e.safe=mesh('box',[e.gapOffset,.08,0],[e.gap,.045,e.r*2+.4],'#87e5b3',.4,e.root);e.root.rotation.y=Math.atan2(e.v[0],e.v[2]);return e;
+ }
+ function prepareWave(a,t,index){
+  const plan=planGuardianWave(t.pos,attackBounds(),index,a),side=[1,0,0];
+  for(const e of entities)if(alive(e)&&['vortex','hazard'].includes(e.kind)&&Math.abs(e.p[0]-plan.safeX)<plan.gap/2+(e.r||0)+1.5)destroy(e);
+  const corridor=entity('wave-corridor',[plan.safeX,.055,(plan.start[2]+plan.endZ)/2],{life:plan.warning+plan.travelTime});mesh('box',[0,0,0],[plan.gap,.035,plan.endZ-plan.start[2]],'#87e5b3',.16,corridor.root);
+  const left=add(plan.start,mul(side,-plan.width/2)),right=add(plan.start,mul(side,plan.width/2));telegraphLine(left,right,.15,plan.warning,'#60bce3');
+  const e=entity('wave-launch',plan.start,{life:plan.warning+.1});e.update=()=>{if(e.age<plan.warning)return;wave(plan.start,plan.direction,{damage:a.damage,speed:a.speed,life:plan.travelTime+.05,width:plan.width,r:Math.min(.55,a.radius),gap:plan.gap,gapOffset:plan.gapOffset,endZ:plan.endZ,src:source(a)});destroy(e);};
  }
  function overlaps(e,p,extra=0){return e.a?along(p,e.a,e.b)<=e.r+extra:distance(e.p,p)<=e.r+extra;}
  function constrain(from,to,padding=.5){
@@ -155,14 +174,15 @@ export function createGuardianBossCombat(scene){
   return goal;
  }
  function moveBody(to,speed,dt,solid=true){
-  const old=[...body],d=flat(sub(to,body)),step=Math.min(length(d),speed*dt);if(step>0)body=fit(add(body,mul(unit(d),step)),1.1);if(solid)body=constrain(old,body,1.1);return distance(old,body);
+  const old=[...body],d=flat(sub(to,body)),step=Math.min(length(d),speed*dt);if(step>0)body=fitBody(add(body,mul(unit(d),step)),'walk',old);if(solid)body=constrain(old,body,1.1);return distance(old,body);
  }
- function teleport(p){body=fit(flat(p),1.1);flash(body,1.2);}
+ function fitBody(p,mode='air',from=body){const fitted=fit(flat(p),1.1);return ctx?.constrainBossMovement?.(from||fitted,fitted,mode)||fitted;}
+ function teleport(p){body=fitBody(p,'land');flash(body,1.2);}
  function dash(a,key,destination,at,duration,r,damage,extra={}){
   if(!a.dashes)a.dashes={};let d=a.dashes[key];
-  if(!d&&a.age>=at-.55){d=a.dashes[key]={from:[...body],to:fit(flat(destination),.8),hit:new Set()};telegraphLine(d.from,d.to,r*.18,Math.max(.15,at-a.age),id==='dark'?'#b78ae8':'#d7bbff');}
+  if(!d&&a.age>=at-.4){d=a.dashes[key]={from:null,to:fitBody(destination,'land'),hit:new Set()};telegraphLine(body,d.to,Math.max(.12,r*.18),Math.max(.15,at-a.age),id==='dark'?'#b78ae8':'#d7bbff');}
   if(!d||a.age<at||d.done)return null;
-  const old=[...body],q=clamp((a.age-at)/duration,0,1);body=add(d.from,mul(sub(d.to,d.from),q));
+  d.from??=[...body];const old=[...body],q=clamp((a.age-at)/duration,0,1);body=fitBody(add(d.from,mul(sub(d.to,d.from),q)));pose.y=Math.sin(q*Math.PI)*(id==='dark'?.6:1.8);
   for(const t of targets())if(!d.hit.has(t.id)&&along(t.pos,old,body)<r+.45){d.hit.add(t.id);const marked=status(t.id).markTime>0;const result=emit(damage,t,extra,source(a));if(result.damage>0&&marked&&a.cooldownReduction&&!a.markCooldownReduced){a.markCooldownReduced=true;a.recoveryScale=a.cooldownReduction;cooldowns[a.index]=Math.max(clock+Math.max(0,a.duration-a.age),clock+Math.max(0,(cooldowns[a.index]||clock)-clock)*a.cooldownReduction);}}
   pose.lean=-.3;pose.yaw=angle(d.from,d.to);if(q>=1){d.done=true;extra.onFinish?.(d);}return d;
  }
@@ -171,20 +191,23 @@ export function createGuardianBossCombat(scene){
   if(action){for(const e of action.visuals||[])destroy(e);wait=recovery?(action.cooldown||0)*(enraged?AI.enrageCooldown:1)*(action.recoveryScale||1):1;}
   action=null;pose={};
  }
- function begin(index,player,boss,fighter){
-  if(!design||!Number.isInteger(index)||index<0||index>2)return false;
-  if(!body){body=flat(boss);origin=[...boss];}cancel(false);
-  const skill=design.skills[index],values=guardianSkillStats(skill.type),chosen=choose(true)||{id:'player',pos:player};
+ function begin(index,player,boss,fighter,automatic=false){
+  if(!design||!Number.isInteger(index)||index<0||index>=design.skills.length||returning)return false;
+  if(!body){body=flat(boss);origin=[...boss];home=[...body];}cancel(false);
+  const skill=design.skills[index],values=guardianSkillStats(skill.type),chosen=director?.target(body)||choose(true)||{id:'player',pos:player};
   const power=id==='wood'?1+rage*passive.ragePerSpirit:1;if(id==='wood')rage=0;
-  action={...values,...skill,index,age:0,castId:++castSerial,targetId:chosen.id,target:[...chosen.pos],origin:[...body],events:new Set(),visuals:[],power};
-  if(id==='dark'){if(hidden())ambushReady=true;revealUntil=clock+(values.windup||.6)+.4;}
+  action={...values,...skill,index,age:0,castId:++castSerial,targetId:chosen.id,target:[...chosen.pos],origin:[...body],events:new Set(),visuals:[],power,automatic};
+  action.commitment=automatic&&!design.arsenal?guardianCommitment(action):action.duration;
+  if(design.arsenal&&!excursion)excursion=[...body];
+  if(id==='dark'){if(design.arsenal&&['pursuit','melee'].includes(action.role))memory.trueTellUntil=clock+(values.windup||.6)+.1;if(hidden())ambushReady=true;revealUntil=clock+(values.windup||.6)+.4;}
   if(id==='wind')speedStacks=Math.min(passive.speedCap,speedStacks+1);
   attacks++;history.push({targetId:chosen.id,type:skill.type,name:skill.name,phase,at:clock,combo:comboSerial});if(history.length>48)history.shift();
-  cooldowns[index]=clock+values.duration+(values.cooldown||0)*(enraged?AI.enrageCooldown:1);
+  cooldowns[index]=clock+(GUARDIAN_BACKGROUND_SKILLS.has(skill.type)?values.duration:action.commitment)+(values.cooldown||0)*(enraged?AI.enrageCooldown:1);
   gameAudio.cast({element:id,rank:index===2?'SS':'S',style:skill.type});return skill.name;
  }
  function once(a,key,at,fn){if(a.age+1e-7>=at&&!a.events.has(key)){a.events.add(key);fn();}}
  function chooseSkill(){
+  if(director){const available=design.skills.map((_,i)=>i).filter(i=>(cooldowns[i]||0)<=clock&&!(memory.disabledGroups?.[i%3]>clock));const images=all('afterimage').length+all('clone').length,feathers=all('feather').length,plants=entities.filter(e=>e.plant&&!e.dead).length,ice=all('ice').length;return director.select({design,available,stage:combatStage,body,resources:{images,feathers,plants,ice,zones:all('zone').length,count:images+feathers+plants+ice},random,blocked:blockedTime,incoming:ctx.incomingShots?.some(s=>s.owner==='player'&&distance(s.p,body)<12)});}
   const synergy=id==='fire'?all('fire').length?1:0:id==='water'?all('vortex').length?0:1:id==='lightning'?all('electric').length?1:0:id==='wind'?all('tornado').length?0:1:id==='earth'?all('rock').length?1:0:id==='light'?all('feather').length>=4?2:0:id==='dark'?all('clone').length?2:1:id==='wood'?all('spirit').length?1:0:all('ice').length?1:0;
   if(comboCursor>=combo.length){
    let next=[...design.combo];if(enraged&&random()<.35)next=[synergy,...next.filter(i=>i!==synergy)];
@@ -193,8 +216,7 @@ export function createGuardianBossCombat(scene){
    if(comboRepeats>AI.maxRepeatedCombos){next=[next[1],next[0],next[2]];comboRepeats=1;}
    previousCombo=next.join('');combo=next;comboCursor=0;comboSerial++;
   }
-  const requested=combo[comboCursor],available=[0,1,2].filter(i=>(cooldowns[i]||0)<=clock);
-  if(id==='ice'&&requested===0&&choose(true)&&distance(body,choose(true).pos)>7)return null;
+  const requested=combo[comboCursor],available=[0,1,2].filter(i=>(cooldowns[i]||0)<=clock&&!ongoing.some(a=>a.index===i));
   if(!available.length)return null;
   const chosen=available.includes(requested)?requested:available.includes(synergy)?synergy:available[0];if(chosen===requested)comboCursor++;return chosen;
  }
@@ -211,8 +233,8 @@ export function createGuardianBossCombat(scene){
   }
  }
  function steer(dt){
-  if(!body||stagger>0||action?.dashing||['wolf-dashes','shadow-dashes','turtle-ram','eagle-dive','shadow-domain'].includes(action?.type))return;
-  const t=choose(true);if(!t)return;
+  if(!body||stagger>0||returning||design.arsenal&&excursion&&Math.abs(body[2]-home[2])>6||action?.stationary||design.arsenal&&action?.role==='pursuit'||action?.dashing||['wolf-dashes','shadow-dashes','tiger-claws','turtle-ram','eagle-dive','shadow-domain','dragon-pressure'].includes(action?.type))return;
+  if(design.arsenal&&!action&&ctx?.aiEnabled===false)return;const t=choose(true);if(!t)return;
   const d=distance(body,t.pos),range=passive.engageRange||8,melee=['lightning','dark','ice','earth'].includes(id),casting=!!action;
   let destination=[...body];
   if(d>range+1.4)destination=[...t.pos];else if(!melee&&d<range*.65)destination=add(body,mul(unit(flat(sub(body,t.pos))),4));
@@ -221,9 +243,9 @@ export function createGuardianBossCombat(scene){
   if(id==='water'&&all('puddle').some(e=>overlaps(e,body)))speed*=1+passive.speedBoost;
   if(id==='wind')speed*=1+speedStacks*passive.speedPerCast;
   if(id==='dark'&&hidden())speed*=1+passive.speedBoost;
-  if(id==='ice'&&action?.type==='tiger-blizzard')speed*=1+action.speedBoost;
-  if(casting&&id!=='ice')speed*=.45;
-  moveBody(destination,speed,dt);
+  if(id==='ice'&&design.arsenal)speed*=memory.iceSpeed||1;if(id==='ice'&&action?.type==='tiger-blizzard')speed*=1+action.speedBoost;
+  if(casting&&id!=='ice')speed*=.85;
+  const moved=moveBody(destination,speed,dt);blockedTime=distance(destination,body)>1&&moved<speed*dt*.2?blockedTime+dt:0;
  }
  function updateZones(e,dt){
   if(e.v){const delta=mul(e.v,e.speed*dt);e.p=add(e.p,delta);if(e.a){e.a=add(e.a,delta);e.b=add(e.b,delta);e.root.position.add(new T.Vector3(...delta));}else e.root.position.fromArray(e.p);}
@@ -296,6 +318,7 @@ export function createGuardianBossCombat(scene){
    if(forward>=-e.r-padding&&forward<=span+e.r+padding&&Math.abs(across)<e.width/2&&Math.abs(across-e.gapOffset)>e.gap/2-padding){e.hit.add(t.id);emit(e.damage,t,{},e.src);}
   }
   for(const vortex of all('vortex')){const delta=flat(sub(vortex.p,old)),forward=delta.reduce((n,v,i)=>n+v*e.v[i],0),across=delta.reduce((n,v,i)=>n+v*side[i],0);if(forward>=-e.r-vortex.r&&forward<=span+e.r+vortex.r&&Math.abs(across)<e.width/2){area(vortex.p,vortex.r+1,e.damage,{},e.src);destroy(vortex);}}
+  if(e.endZ!=null&&e.p[2]>e.endZ)destroy(e);
  }
  function updateEntities(dt){
   for(const e of [...entities]){
@@ -326,43 +349,55 @@ export function createGuardianBossCombat(scene){
   if(entities.length>320)for(const e of entities.slice(0,entities.length-320))destroy(e);
  }
  const skillContext={
-  get body(){return body;},get targets(){return targets();},get aimTargets(){return targets().filter(t=>!t.untargetable);},get passive(){return passive;},get tails(){return tailCount;},get pose(){return pose;},get clock(){return clock;},
-  target,choose,predict,random,randomPoint,bounds,attackBounds,fit,source,once,all,warning,zone,trail,object,projectile,radial,wave,feather,flash,telegraphLine,area,attackLine,cone,emit,control,applySlow,moveTarget,moveBody,teleport,dash,gainArmor,destroy,explodeObject,overlaps,status,
+  get mouthPosition(){return ctx?.mouthPosition?.(pose)||[body[0],1.6,body[2]];},
+  interrupt(seconds=0){cancel(false);stagger=Math.max(stagger,seconds);memory.exposedUntil=Math.max(memory.exposedUntil||0,clock+seconds);if(excursion){returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}},
+  forceSkill(type,targetId){const i=design.skills.findIndex(s=>s.type===type);if(i<0)return false;const result=begin(i,ctx.player,ctx.boss,ctx.fighter,true);if(result&&targetId)action.targetId=targetId;return result;},
+  get id(){return id;},get memory(){return memory;},get fighter(){return ctx?.fighter;},get action(){return action;},get stage(){return combatStage;},get home(){return home;},get incomingShots(){return ctx?.incomingShots||[];},get exposed(){return (memory.exposedUntil||0)>clock;},returnHome(){if(excursion&&distance(body,excursion)>.1)returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;},get body(){return body;},get targets(){return targets();},get aimTargets(){return targets().filter(t=>!t.untargetable);},get passive(){return passive;},get tails(){return tailCount;},get pose(){return pose;},get clock(){return clock;},
+  target,choose,predict,random,randomPoint,bounds,attackBounds,fit,fitBody,source,once,all,warning,zone,trail,object,projectile,radial,wave,prepareWave,feather,flash,telegraphLine,beam,area,attackLine,cone,emit,control,applySlow,moveTarget,moveBody,teleport,dash,gainArmor,destroy,explodeObject,overlaps,status,
   parameters:a=>guardianSkillStats(a.type),get maxHp(){return ctx?.fighter.maxHp||1000;},get designColor(){return design.color;},
-  setBody(p){body=[...p];},reveal(seconds){revealUntil=Math.max(revealUntil,clock+seconds);},
+  setBody(p,mode='air'){body=fitBody(p,mode);},reveal(seconds){revealUntil=Math.max(revealUntil,clock+seconds);},
   wallContact(a,b,padding){return ctx?.walls?.find(w=>w.hp>0&&w.life>0&&ctx.intersectWall?.([a[0],1.5,a[2]],[b[0],1.5,b[2]],w,padding))||null;},
   add,sub,mul,unit,flat,length,distance,angle,clamp,along,mesh,circle,line,entity,
   setAirborne(value){pose.y=value;},stun(seconds){stagger=Math.max(stagger,seconds);},setDirection(direction){pose.yaw=Math.atan2(direction[0],direction[2]);},
   takeRecovery(a){wait=Math.max(.18,Math.min(.45,(a.cooldown||0)*.2))*(enraged?AI.enrageCooldown:1)*(a.recoveryScale||1);}
  };
- function hidden(){return !!ctx&&id==='dark'&&clock-lastCombat>=passive.hideAfter&&clock>=revealUntil&&stagger<=0;}
- function clear(){for(const e of entities)destroy(e);for(const child of [...root.children])remove(child);root.removeFromParent();entities=[];history=[];action=null;ctx=null;body=origin=previousBody=null;armorShell=null;pose={};stats.clear();previousTargets.clear();armor=armorLevels=tailCount=energy=energyTravel=speedStacks=rage=stagger=stationary=lastCombat=movement=revealUntil=0;}
+ function hidden(){if(extension.hidden?.(skillContext))return true;return !!ctx&&id==='dark'&&clock-lastCombat>=passive.hideAfter&&clock>=revealUntil&&stagger<=0;}
+ function clear(){for(const e of entities)destroy(e);for(const child of [...root.children])remove(child);root.removeFromParent();memory={};combatStage=1;home=excursion=returning=null;blockedTime=0;castHits.clear();director?.reset();entities=[];ongoing=[];history=[];action=null;ctx=null;body=origin=previousBody=null;armorShell=null;pose={};stats.clear();previousTargets.clear();armor=armorLevels=tailCount=energy=energyTravel=speedStacks=rage=stagger=stationary=lastCombat=movement=moveSpeed=revealUntil=0;}
  const api={
-  reset(nextId,nextPhase=2){clear();id=nextId;design=GUARDIAN_BOSS_DESIGNS[id]||null;passive=guardianPassiveStats(id);phase=nextPhase;clock=serial=castSerial=attacks=0;wait=1.5;seed=Array.from(id||'').reduce((n,c)=>n+c.charCodeAt(0),123);comboCursor=comboRepeats=comboSerial=0;combo=[];previousCombo='';cooldowns={};enraged=ambushReady=false;passiveAt=passive.puddleInterval||passive.windInterval||passive.spiritInterval||Infinity;if(design)scene.add(root);},
+  reset(nextId,nextPhase=2){clear();id=nextId;design=designBank[id]||null;passive=guardianPassiveStats(id);phase=nextPhase;clock=serial=castSerial=attacks=0;wait=.75;seed=Array.from(id||'').reduce((n,c)=>n+c.charCodeAt(0),123);comboCursor=comboRepeats=comboSerial=0;combo=[];previousCombo='';cooldowns={};enraged=ambushReady=false;passiveAt=passive.puddleInterval||passive.windInterval||passive.spiritInterval||Infinity;if(design){scene.add(root);vfx.attach(root,id);}},
   clear,trigger:begin,
   update(dt,fighter,player,boss,impact,options={}){
    if(!design||options.enabled===false||fighter.hp<=0||dt<=0)return;
-   if(!body){body=flat(boss);origin=[...boss];safeX=(options.bounds?.minX??-6)+((options.bounds?.maxX??6)-(options.bounds?.minX??-6))*(.2+random()*.6);}
+   if(!body){body=flat(boss);origin=[...boss];home=[...body];safeX=(options.bounds?.minX??-6)+((options.bounds?.maxX??6)-(options.bounds?.minX??-6))*(.2+random()*.6);}
    const targetList=(options.targets||[{id:'player',pos:player,hitboxScale:options.playerHitboxScale||1}]).map(t=>{
     const last=previousTargets.get(t.id),raw=last?mul(sub(t.pos,last),1/dt):[0,0,0];return {...t,pos:[...t.pos],velocity:t.velocity||mul(raw,Math.min(1,8/(length(raw)||1)))};
    });
    ctx={...options,fighter,player:[...player],boss:[...boss],impact,targets:targetList};clock+=dt;stagger=Math.max(0,stagger-dt);const wasEnraged=enraged;enraged=fighter.hp/fighter.maxHp<AI.enrageThreshold;
    if(enraged&&!wasEnraged){wait*=AI.enrageCooldown;for(const key of Object.keys(cooldowns))if(cooldowns[key]>clock)cooldowns[key]=clock+(cooldowns[key]-clock)*AI.enrageCooldown;}
-   tickPassives(dt);previousBody=[...body];
-   if(options.controlled&&phase===2){cancel(false);}
+   combatStage=fighter.hp/fighter.maxHp>.7?1:fighter.hp/fighter.maxHp>.35?2:3;director?.observe(clock,targetList);tickPassives(dt);previousBody=[...body];extension.tick?.(skillContext,dt);
+   for(const cast of [...ongoing]){
+     const foregroundPose=pose;pose={};cast.age+=dt;updateSkill(cast,skillContext,dt);pose=foregroundPose;
+     if(cast.age+1e-7>=cast.duration){for(const e of cast.visuals)destroy(e);ongoing.splice(ongoing.indexOf(cast),1);}
+   }
+   if(options.controlled&&phase===2){cancel(false);if(excursion&&!returning){returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}}
    else if(stagger<=0){
     steer(dt);
-    if(!action&&options.aiEnabled!==false){wait-=dt;if(wait<=0){const next=chooseSkill();if(next!==null)begin(next,player,boss,fighter);}}
-    if(action){const current=action;action.age+=dt;updateGuardianSkill(action,skillContext,dt);if(action===current&&action.age+1e-7>=action.duration){cancel(true);if(comboCursor<combo.length)skillContext.takeRecovery(current);}}
+    if(!action&&!returning&&options.aiEnabled!==false){wait-=dt;if(wait<=0){const next=chooseSkill();if(next!==null)begin(next,player,boss,fighter,true);}}
+    if(action){const current=action;action.age+=dt;updateSkill(action,skillContext,dt);if(action===current&&action.age+1e-7>=action.commitment){
+     if(current.automatic&&GUARDIAN_BACKGROUND_SKILLS.has(current.type)&&current.age<current.duration){ongoing.push(current);action=null;pose={};}else cancel(true);
+     if(director){const result=director.finish(current,castHits.get(current.castId)>0);if(!current.automatic||options.aiEnabled===false)result.end=true;wait=result.recovery;if(result.end&&excursion){if(distance(body,excursion)>.15)returning={from:[...body],to:[...excursion],age:0,duration:Math.max(.45,Math.min(1,distance(body,excursion)/28))};excursion=null;}if(result.end)comboSerial++;}
+     else wait=(comboCursor<combo.length?.28:.95)*(enraged?AI.enrageCooldown:1)*(current.recoveryScale||1);
+    }}
    }
-   if(!['wolf-dashes','shadow-dashes','turtle-ram','eagle-dive'].includes(action?.type)&&choose(true))pose.yaw=angle(body,choose(true).pos);
-   movement=distance(body,previousBody);stationary=movement<.002?stationary+dt:0;
+   if(returning&&!options.controlled&&stagger<=0){returning.age+=dt;const q=clamp(returning.age/returning.duration,0,1);body=fitBody(add(returning.from,mul(sub(returning.to,returning.from),q)));pose.y=Math.sin(q*Math.PI)*2;pose.yaw=angle(returning.from,returning.to);if(q>=1){body=[...returning.to];returning=null;pose={};}}
+   if(!returning&&!['wolf-dashes','shadow-dashes','turtle-ram','eagle-dive'].includes(action?.type)&&choose(true))pose.yaw=angle(body,choose(true).pos);
+   movement=distance(body,previousBody);moveSpeed=movement/dt;stationary=movement<.002?stationary+dt:0;
    if(id==='lightning'){energyTravel+=movement;while(energyTravel>=passive.energyDistance){energyTravel-=passive.energyDistance;energy=Math.min(passive.energyCap,energy+1);}}
-   updateEntities(dt);for(const t of targetList)previousTargets.set(t.id,[...t.pos]);
+   updateEntities(dt);vfx.update(dt,clock,entities,body,action);for(const t of targetList)previousTargets.set(t.id,[...t.pos]);
   },
-  defense(){return {multiplier:id==='wind'&&action?.type==='eagle-dive'&&action.age<action.windup+action.rushDuration?0:id==='earth'&&stationary>=passive.stationaryTime?1-passive.damageReduction:1,reflect:0};},
+  defense(shot,p){const special=extension.defense?.(skillContext,shot,p);if(special)return special;return {multiplier:id==='wind'&&action?.type==='eagle-dive'&&action.age<action.windup+action.rushDuration?0:id==='earth'&&stationary>=passive.stationaryTime?1-passive.damageReduction:1,reflect:0};},
   absorbDamage(amount){if(id!=='earth'||armor<=0)return amount;const spent=Math.min(armor,amount);armor-=spent;if(armor<=1e-7){armor=0;radial(body,passive.shardCount,passive.shardDamage,9,{style:'shard',src:{type:'stone-armor',power:1}});}return amount-spent;},
-  onDamage(amount){if(amount>0){lastCombat=clock;ambushReady=false;}},
+  onDamage(amount,shot,p){extension.onDamage?.(skillContext,amount,shot,p);if(amount>0){lastCombat=clock;ambushReady=false;}},
   slowAt(p,direction=null,targetId='player'){
    if(!ctx)return 1;const s=status(targetId);if(s.rootTime>0)return 0;let slow=Math.max(s.slowTime>0?s.slow:0,id==='ice'?s.stacks*passive.slowPerStack:0);
    for(const e of entities)if(alive(e)&&e.kind==='zone'&&overlaps(e,p,.3)){
@@ -372,10 +407,10 @@ export function createGuardianBossCombat(scene){
   },
   constrainMovement:constrain,
   hidden,lockable(){return !hidden()&&!(id==='wind'&&action?.type==='eagle-dive'&&action.age<action.windup+action.rushDuration);},
-  breakPrison:()=>false,
+  breakPrison:damage=>extension.breakPrison?.(skillContext,damage)||false,
   intercept(shot,scale=1){
-   if(!ctx||shot.owner!=='player'||!shot.old||!shot.p)return false;
-   const hit=entities.filter(e=>alive(e)&&e.hp>0&&along(e.p,shot.old,shot.p)<e.r+(shot.size||.1)&&Math.min(shot.old[1],shot.p[1])<((e.kind==='tree'?5:3)+(shot.size||0))).sort((a,b)=>distance(a.p,shot.old)-distance(b.p,shot.old))[0];
+   if(!ctx||shot.owner!=='player'||!shot.old||!shot.p)return false;if(extension.intercept?.(skillContext,shot))return true;
+   const hit=entities.filter(e=>alive(e)&&e.hp>0&&along(e.p,shot.old,shot.p)<e.r+(shot.size||.1)&&Math.min(shot.old[1],shot.p[1])<((e.height??(e.kind==='tree'?5:3))+(shot.size||0))).sort((a,b)=>distance(a.p,shot.old)-distance(b.p,shot.old))[0];
    if(!hit)return false;const d=flat(sub(shot.p,shot.old)),q=clamp(flat(sub(hit.p,shot.old)).reduce((n,v,i)=>n+v*d[i],0)/(length(d)**2||1),0,1);shot.p=add(shot.old,mul(sub(shot.p,shot.old),q));hit.hp=Math.max(0,hit.hp-Math.max(0,shot.damage*scale));if(hit.hp<=0)destroy(hit,true);return true;
   },
   areaDamage(shot,p,r,scale=1){if(shot.owner!=='player')return;for(const e of [...entities])if(alive(e)&&e.hp>0&&distance(e.p,p)<=r+e.r){e.hp=Math.max(0,e.hp-shot.damage*scale);if(e.hp<=0)destroy(e,true);}},
@@ -383,14 +418,14 @@ export function createGuardianBossCombat(scene){
   obscures(p){return all('dark').some(e=>overlaps(e,p));},
   get offset(){return {x:body&&origin?body[0]-origin[0]:0,y:0,z:body&&origin?body[2]-origin[2]:0,lean:stagger>0?.5:0,...pose};},
   state(){return {
-   action:action?{targetId:action.targetId,type:action.type,name:action.name,age:action.age,stage:action.age<(action.windup||action.warning||.6)?'warning':'active',parameters:guardianSkillStats(action.type)}:null,
-   signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor,armorLevels,stationary,tailCount,energy,speedStacks,rage,enraged,recovery:wait,skillCooldowns:design?.skills.map((s,i)=>Math.max(0,(cooldowns[i]||0)-clock))||[],combo:[...combo],comboCursor,comboSerial,
-   aiOwnedMovement:!!design,bossPosition:body?[...body]:null,moving:movement>.002,difficulty:design?.difficulty||0,title:design?.title||'',role:design?.role||'',passive:design?.passive||'',counter:design?.counter||'',skills:design?.skills.map(s=>s.name)||[],passiveParameters:{...passive},
+   action:action?{index:action.index,role:action.role,targetId:action.targetId,type:action.type,name:action.name,age:action.age,stage:action.age<(action.windup||action.warning||.6)?'warning':'active',parameters:guardianSkillStats(action.type),commitment:action.commitment}:null,
+   vfx:vfx.state(),signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor,armorLevels,stationary,tailCount,energy,speedStacks,rage,enraged,recovery:wait,skillCooldowns:design?.skills.map((s,i)=>Math.max(0,(cooldowns[i]||0)-clock))||[],combo:[...combo],comboCursor,comboSerial,
+   arsenal:!!design?.arsenal,combatStage,mechanics:{...memory.summary},director:director?.state()||null,homePosition:home?[...home]:null,returning:returning?{destination:[...returning.to],age:returning.age}:null,aiOwnedMovement:!!design,bossPosition:body?[...body]:null,moving:movement>.002,moveSpeed,moveVelocity:body&&previousBody?[(body[0]-previousBody[0])/(movement||1)*moveSpeed,0,(body[2]-previousBody[2])/(movement||1)*moveSpeed]:[0,0,0],ongoing:ongoing.map(a=>({type:a.type,age:a.age,duration:a.duration})),difficulty:design?.difficulty||0,title:design?.title||'',role:design?.role||'',passive:design?.passive||'',counter:design?.counter||'',skills:design?.skills.map(s=>s.name)||[],passiveParameters:{...passive},
    statuses:[...stats].map(([key,s])=>({id:key,stacks:s.stacks,stackTime:s.stackTime,markTime:s.markTime,slow:s.slow,slowTime:s.slowTime,rootTime:s.rootTime,freezeImmune:s.freezeImmune})),
-   exposed:0,stagger,hidden:hidden(),lockable:api.lockable(),night:all('dark').some(e=>targets().some(t=>t.id==='player'&&overlaps(e,t.pos))),prison:null,shelters:[],lamps:[],
+   exposed:Math.max(0,(memory.exposedUntil||0)-clock),stagger,hidden:hidden(),lockable:api.lockable(),night:all('dark').some(e=>targets().some(t=>t.id==='player'&&overlaps(e,t.pos))),prison:memory.prison&&!memory.prison.dead?{hp:memory.prison.hp,remaining:memory.prison.life-memory.prison.age}:null,shelters:[],lamps:[],
    entities:entities.filter(alive).map(e=>({id:e.id,kind:e.kind,tag:e.tag||e.style||null,position:[...e.p],radius:e.r,hp:e.hp,maxHp:e.maxHp,age:e.age,life:e.life,delay:e.delay,solid:!!e.solid,targetId:e.targetId,real:e.real,returning:e.family==='lightning'&&e.age>=e.returnAt,gapWidth:e.gap,damage:e.damage,enlarged:!!e.enlarged,boosted:!!e.boosted,recycled:!!e.recycled,stored:e.stored,source:e.src?.type})),
    hazards:all('hazard').map(e=>({position:[...e.p],radius:e.r,remaining:Math.max(0,e.delay-e.age),hit:!!e.fired})),offset:api.offset
   };},
-  dispose(){clear();for(const g of Object.values(geo))g.dispose();}
+  dispose(){clear();vfx.dispose();for(const g of Object.values(geo))g.dispose();}
  };return api;
 }
