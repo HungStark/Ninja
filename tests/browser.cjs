@@ -96,7 +96,7 @@ const { chromium } = require('playwright');
     await page.keyboard.press('Escape');await click('changeLoadout');assert.equal((await state()).started,false);assert.equal(await page.locator('#startScreen').isVisible(),true);
     await click('presetDefense');await click('startButton');await center();assert.equal((await state()).equipped.filter(id=>id.endsWith('barrier')||id.endsWith('reflect')).length,3);
     await page.keyboard.press('Escape');await click('changeLoadout');await click('presetAttack');await click('startButton');await center();
-    for(const expected of ['Thấp','Cao','Cân bằng']){await click('qualityButton');assert.equal((await state()).quality,expected);await advance(.1);}
+    for(const expected of ['Cao','Cân bằng','Thấp']){await click('qualityButton');assert.equal((await state()).quality,expected);await advance(.1);}
     await page.setViewportSize({width:900,height:650});await advance(.2);await page.screenshot({path:'test-results/compact.png'});
     await page.keyboard.press('Escape');await click('changeLoadout');await page.screenshot({path:'test-results/compact-scroll.png'});
     await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/mobile-scroll.png'});

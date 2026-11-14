@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {MOVEMENT_SPEED_MULTIPLIER} from './game-pace.js';
 import {createSpellAimGuide} from './spell-aim-vfx.js';
 
@@ -26,7 +27,13 @@ export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
   playerMarker.scale.setScalar(actorScale);
   const fence=new T.Group(),wood=new T.MeshStandardMaterial({color:'#85664b',roughness:.9});scene.add(fence);fence.visible=false;
   environment?.push(fence);
-  for(const z of [PRACTICE_ARENA.minZ,...PRACTICE_DIVIDERS,PRACTICE_ARENA.maxZ]){const row=new T.Group();row.name=PRACTICE_DIVIDERS.includes(z)?'practice-divider':'practice-end-fence';row.position.z=z;fence.add(row);for(const y of [.55,1.25]){const rail=new T.Mesh(new T.BoxGeometry(32,.12,.15),wood);rail.position.set(0,y,0);row.add(rail);}for(let x=-16;x<=16;x+=4){const post=new T.Mesh(new T.BoxGeometry(.25,1.7,.25),wood);post.position.set(x,.85,0);row.add(post);}}
+  // One shared mesh per row instead of separate draw calls for every post/rail.
+  // Keep ordinary geometry and the snowSurface tag so snow can still land on it.
+  const fenceParts=[];
+  for(const y of [.55,1.25])fenceParts.push(new T.BoxGeometry(32,.12,.15).translate(0,y,0));
+  for(let x=-16;x<=16;x+=4)fenceParts.push(new T.BoxGeometry(.25,1.7,.25).translate(x,.85,0));
+  const fenceGeometry=mergeGeometries(fenceParts);fenceParts.forEach(g=>g.dispose());
+  for(const z of [PRACTICE_ARENA.minZ,...PRACTICE_DIVIDERS,PRACTICE_ARENA.maxZ]){const row=new T.Group();row.name=PRACTICE_DIVIDERS.includes(z)?'practice-divider':'practice-end-fence';row.position.z=z;fence.add(row);row.add(new T.Mesh(fenceGeometry,wood));}
   fence.traverse(o=>{if(o.isMesh)o.userData.snowSurface='fence';});
   const ray=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,1,0),0),hit=new T.Vector3();
   const focus=new T.Vector3(0,0,-4),back=new T.Vector3(Math.sin(CAMERA_YAW)*Math.cos(CAMERA_PITCH),Math.sin(CAMERA_PITCH),Math.cos(CAMERA_YAW)*Math.cos(CAMERA_PITCH));

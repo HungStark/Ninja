@@ -5,12 +5,29 @@ import {configureOpponent,createOpponentRules,opponentDamageMultiplier,opponentS
 import {encounterProfile} from '../src/progression.js';
 import {newJourney,VILLAGES} from '../src/adventure-data.js';
 import {INTRO_SQUAD} from '../src/journey-story.js';
+import {VILLAGE_EVENTS,villageEventEncounter} from '../src/village-events.js';
 import {guardianPhaseHealth} from '../src/guardian-arts.js';
 import {opponentDocument,updateOpponentSource,parseOpponentOverrides} from '../tools/opponent-balance-data.mjs';
 const {GameRules,Fighter,spells}=SealGameCore,spell=id=>spells.find(s=>s.id===id),close=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
 const source=await fs.readFile('src/opponent-balance.js','utf8'),core=await fs.readFile('game-core.js','utf8'),document=opponentDocument(source,core);
 assert.equal(new Set(document.rows.map(r=>r.id)).size,document.rows.length);assert.equal(document.rows.filter(r=>r.category==='guardian').length,21);assert.equal(document.spells.length,45);
 const row=id=>document.rows.find(r=>r.id===id);
+for(const [village,chapter] of Object.entries(VILLAGE_EVENTS))for(const [step,event] of chapter.stages.entries()){
+ if(!event.battle)continue;
+ const prefix=event.storyBoss?'story:'+event.battle+':':'event:'+event.battle+':';
+ assert.ok(document.rows.some(r=>r.id.startsWith(prefix)),event.battle+' appears automatically in the editor');
+ assert.ok(villageEventEncounter(village,step),event.battle+' has a runtime encounter');
+}
+assert.ok(Object.keys(document.overrides).every(id=>row(id)),'All existing saved settings remain editable');
+assert.doesNotThrow(()=>updateOpponentSource(source,core,document.overrides),'Existing settings can be saved after adding story characters');
+const eventSettings={'event:fire-jail:0':{hp:321},'event:fire-general:0':{hp:654}};
+for(const [step,id,hp] of [[1,'fire-jail',321],[4,'fire-general',654]]){
+ const event=villageEventEncounter('fire',step),profile=configureOpponent({...event,kind:'village-event'},eventSettings);
+ assert.equal(profile.hp,hp);assert.equal(profile.squad[0].balanceStages[0].id,'event:'+id+':0');
+}
+const storySettings={'story:crescent-light:1':{hp:711,mana:165},'story:crescent-light:2':{hp:922}};
+const storyBoss=configureOpponent({...encounterProfile(newJourney(),'boss','light'),kind:'boss',village:'light',storyBoss:true,storyBattle:'crescent-light',guardianVillage:'light'},storySettings);
+assert.deepEqual(storyBoss.phaseHealth,[711,922]);assert.equal(createOpponentRules(GameRules,storyBoss).maxChakra,165);
 assert.equal(row('ninja:random:water').defaults.baseDamagePercent,33.5);
 assert.equal(row('ninja:random:dark').defaults.baseDamagePercent,61.5);
 assert.equal(row('guardian:water:1').defaults.baseDamagePercent,61);

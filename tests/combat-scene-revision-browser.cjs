@@ -25,8 +25,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),{spawn
       await enemy('water-barrier',[-9,1.72,-21],[1,0,0]);const bubbles=(await state()).waterBubbles.bubbles;assert.equal(bubbles.length,4);for(const axis of [0,2])assert.ok(Math.abs(bubbles.reduce((sum,b)=>sum+b.position[axis],0)/4-player[axis])<1e-6);
       // Reset before formation/visibility checks so area effects cannot interrupt them.
       await page.keyboard.press('Escape');await page.locator('#resetButton').click();await page.locator('#startButton').click();await page.locator('#practiceOpponentConfirm').click();await page.locator('[name=practiceView][value=overhead]').check();await page.locator('#practiceViewConfirm').click();await page.evaluate(()=>{__AN_HOA__.setAIEnabled(false);__AN_HOA__.setHealth('player',10000);__AN_HOA__.setHealth('enemy',10000);});
-      checkpoint=label+' enlarged creatures release at 0.1s';console.log('CHECK '+checkpoint);
-      for(const [id,style,size] of [['fire-lance','dragon',1.44],['lightning-volley','bird',1.8]]){
+      checkpoint=label+' restored creatures release at 0.1s';console.log('CHECK '+checkpoint);
+      for(const [id,style,size] of [['fire-lance','dragon',.72],['lightning-volley','bird',.9]]){
         await enemy(id,[0,1.72,-18],[0,0,1]);let shot=(await state()).projectiles.find(s=>s.style===style);assert.equal(shot.phase,'forming');assert.equal(shot.size,size);
         await advance(.09);shot=(await state()).projectiles.find(s=>s.style===style);assert.equal(shot.phase,'forming');
         await advance(.01);shot=(await state()).projectiles.find(s=>s.style===style);assert.equal(shot.phase,'flying');
@@ -41,6 +41,6 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),{spawn
       }
       assert.deepEqual(errors,[]);await page.close();
     }
-    console.log('PASS: desktop/touch exact AI area centers, doubled creatures with 0.1s formation, direction and circle guides under full snow.');
+    console.log('PASS: desktop/touch exact AI area centers, original-size creatures with 0.1s formation, direction and circle guides under full snow.');
   }catch(error){await page?.screenshot({path:out+'/failure.png'}).catch(()=>{});await fs.writeFile(out+'/failure.json',JSON.stringify({checkpoint,message:error.message,state:await page?.evaluate(()=>__AN_HOA__?.state()).catch(()=>null)},null,2));error.message=checkpoint+': '+error.message;throw error;}finally{await browser?.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

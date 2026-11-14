@@ -5,11 +5,15 @@ export function carriedSpellMarkup(spell,index,selected){
 }
 export function updateSpellAvailability(button,spell,remaining,chakra,available=true){
   const cooling=remaining>.001,missing=chakra+1e-7<spell.cost,elapsed=1-Math.min(1,remaining/Math.max(.001,spell.cooldown,remaining));
-  button.style.setProperty('--cooldown-sweep',(elapsed*360).toFixed(2)+'deg');
+  const sweep=(elapsed*360).toFixed(2)+'deg';
+  if(button.style.getPropertyValue('--cooldown-sweep')!==sweep)button.style.setProperty('--cooldown-sweep',sweep);
   button.classList.toggle('on-cooldown',cooling);button.classList.toggle('chakra-missing',missing);
   button.classList.toggle('spell-unavailable',!available||cooling||missing);
-  const counter=button.querySelector('[data-cooldown]');counter.textContent=cooling?(remaining>=10?Math.ceil(remaining):remaining.toFixed(1)):'';
-  button.dataset.chakraMissing=String(missing);button.setAttribute('aria-label',spell.name+(cooling?' · hồi '+remaining.toFixed(1)+' giây':'')+(missing?' · không đủ mana':''));
+  const counter=button.querySelector('[data-cooldown]'),text=cooling?String(remaining>=10?Math.ceil(remaining):remaining.toFixed(1)):'';
+  if(counter.textContent!==text)counter.textContent=text;
+  if(button.dataset.chakraMissing!==String(missing))button.dataset.chakraMissing=String(missing);
+  const label=spell.name+(cooling?' · hồi '+remaining.toFixed(1)+' giây':'')+(missing?' · không đủ mana':'');
+  if(button.getAttribute('aria-label')!==label)button.setAttribute('aria-label',label);
 }
 export function renderEnemySeals(element,sequence,cast=false){
   const keys=sequence.filter(k=>/^[a-z]$/i.test(k)).map(k=>k.toUpperCase());

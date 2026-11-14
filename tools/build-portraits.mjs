@@ -7,10 +7,10 @@ import {portraitPresets} from '../src/portrait-presets.js';
 import {PORTRAIT_IMAGES} from '../src/portrait-images.js';
 import {prunePortraitFiles} from './prune-portrait-files.mjs';
 
-const out='assets/portraits',allPresets=portraitPresets(),eldersOnly=process.argv.includes('--elders'),heroOnly=process.argv.includes('--hero');
-const presets=heroOnly?allPresets.filter(([,spec])=>spec.kind==='hero'):eldersOnly?allPresets.filter(([,spec])=>spec.kind==='villager'&&spec.profile.age==='elder'):allPresets;
+const out='assets/portraits',allPresets=portraitPresets(),eldersOnly=process.argv.includes('--elders'),heroOnly=process.argv.includes('--hero'),missingOnly=process.argv.includes('--missing');
+const presets=missingOnly?allPresets.filter(([key])=>!PORTRAIT_IMAGES[key]):heroOnly?allPresets.filter(([,spec])=>spec.kind==='hero'):eldersOnly?allPresets.filter(([,spec])=>spec.kind==='villager'&&spec.profile.age==='elder'):allPresets;
 const validKeys=new Set(allPresets.map(([key])=>key));
-const images=eldersOnly||heroOnly?Object.fromEntries(Object.entries(PORTRAIT_IMAGES).filter(([key])=>validKeys.has(key))):{},server=spawn(process.execPath,['server.cjs'],{env:{...process.env,PORT:'4331'},windowsHide:true,stdio:['ignore','pipe','pipe']});let browser;
+const images=eldersOnly||heroOnly||missingOnly?Object.fromEntries(Object.entries(PORTRAIT_IMAGES).filter(([key])=>validKeys.has(key))):{},server=spawn(process.execPath,['server.cjs'],{env:{...process.env,PORT:'4331'},windowsHide:true,stdio:['ignore','pipe','pipe']});let browser;
 await fs.mkdir(out,{recursive:true});
 try{
   await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);});

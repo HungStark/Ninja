@@ -4,6 +4,7 @@ import {createVillager} from './villager.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {createNinja} from './ninja.js';
 import {createEncounterCreature} from './encounter-appearance.js';
+import {crescentEmblem} from './island-occupation.js';
 
 const WIDTH=256,HEIGHT=304;let renderer=null,previous=null;
 function disposeModel(model){
@@ -22,6 +23,7 @@ export async function renderPortrait(spec){
     else if(spec.kind==='guardian')model=createEncounterCreature(spec.village);
     else if(spec.kind==='ninja'){model=createNinja(spec.profile);model.setStoryPose(spec.pose);}
     else model=createVillager({...spec.profile,activity:null,memorialOffering:false});
+    if(spec.emblem)crescentEmblem(model.root);
     scene.add(model.root);await model.ready;
     if(spec.kind==='hero'?!model.root.userData.referenceAppearance:spec.kind!=='guardian'&&!model.modelReady)throw Error('Portrait model is unavailable');
     model.update?.(0,false,null,0);model.setInkViewport?.(WIDTH,HEIGHT);model.root.rotation.y=.10;model.root.updateMatrixWorld(true);

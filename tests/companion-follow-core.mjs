@@ -5,6 +5,11 @@ const fixture=(options={})=>{
   const hero={x:0,y:0,z:0},position={x:0,y:0,z:-FOLLOW_GAP};
   const follow=createCompanionFollow({position,...options});follow.reset(hero,{yaw:0});return {hero,position,follow};
 };
+{
+  const {hero,position,follow}=fixture();let previous=position.y;
+  for(let i=0;i<300;i++){hero.y+=3.5/60;follow.update(1/60,hero,{yaw:0,riding:true});assert.ok(Math.abs(position.y-previous)<.3);previous=position.y;}
+  assert.ok(hero.y-position.y<2,'The companion climbs a vertical ladder instead of remaining below');assert.equal(follow.state().catchups,0);
+}
 for(const fps of [30,60,144]){
   const {hero,position,follow}=fixture();let distance=0;
   for(let i=0;i<fps*12;i++){

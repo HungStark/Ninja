@@ -252,7 +252,7 @@ export class LightArts {
     for(const [shot,art] of this.jacobs)if(!current.has(shot)){art.root.removeFromParent();art.gold.material.dispose();this.jacobs.delete(shot);}
     for(const shot of current){const a=this.jacobs.get(shot)||this.jacobModel(shot),height=shot.cloudPoint[1];
       a.portal.rotation.y=time*.24;a.portal.scale.setScalar(Math.min(1,shot.age/.35));
-      const descending=T.MathUtils.clamp((shot.age-shot.strikeTime)/shot.returnTime,0,1),fade=Math.max(0,1-(shot.age-shot.impactTime)/1.1),bottom=height*(1-descending),beamHeight=Math.max(.001,height-bottom);
+      const descending=T.MathUtils.clamp((shot.age-shot.strikeTime)/(shot.descentTime??shot.returnTime),0,1),fade=Math.max(0,1-(shot.age-shot.impactTime)/1.1),bottom=height*(1-descending),beamHeight=Math.max(.001,height-bottom);
       for(const [m,r] of [[a.core,1.05],[a.glow,1.6],[a.gold,shot.blastRadius]]){m.visible=shot.age>=shot.strikeTime;m.position.set(0,bottom+beamHeight/2,0);m.scale.set(r*fade,beamHeight,r*fade);}
       a.floor.scale.setScalar(shot.blastRadius*(1+Math.max(0,shot.age-shot.impactTime)*.4));
       for(const rung of a.stairs){rung.visible=shot.age>=shot.strikeTime&&rung.position.y>=bottom;rung.rotation.z=time*.3;}}

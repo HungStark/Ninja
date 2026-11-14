@@ -139,7 +139,7 @@ export class FireArts {
   orb(salvo = false) {
     const g = new T.Group();
     part(g, this.sphere, this.fire);
-    part(g, this.sphere, this.red, [0, 0, 0], [1.2, 1.2, 1.2]);
+    g.userData.orbShell=part(g, this.sphere, this.red, [0, 0, 0], [1.2, 1.2, 1.2]);
     const ribbons = new T.Group(); g.add(ribbons); g.userData.ribbons = ribbons;
     for (let j = 0; j < 3; j++) this.ribbon(ribbons, 1.4, salvo ? 5 : 4, 1.05, j * Math.PI * 2 / 3, j === 0 ? this.hot : this.gold);
     for (let j = 0; j < 5; j++) {
@@ -465,7 +465,14 @@ export class FireArts {
         if (g.userData.ribbons) g.userData.ribbons.visible = true;
         for (const child of g.children) if (child.geometry === this.cone) child.visible = true;
       }
-      if (g.userData.ribbons) g.userData.ribbons.rotation.z = time * (shot.style === 'meteor' ? 2 : 5);
+      if(g.userData.orbShell){
+        // Keep the projectile core and two flame tails; omit overlapping glow layers.
+        // Gameplay/projectile counts are independent of this visual detail budget.
+        g.userData.orbShell.visible=quality!==2;
+        g.userData.ribbons.visible=quality!==2&&shot.phase!=='staged';
+        let tail=0;for(const child of g.children)if(child.geometry===this.cone)child.visible=shot.phase!=='staged'&&(quality!==2||tail++<2);
+      }
+      if (g.userData.ribbons?.visible) g.userData.ribbons.rotation.z = time * (shot.style === 'meteor' ? 2 : 5);
       if (g.userData.segments) {
         this.updateDragon(g, shot, time, quality);
       }

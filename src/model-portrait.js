@@ -3,7 +3,7 @@ import {portraitKey} from './portrait-key.js';
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cached=new Map();
 const WIDTH=256,HEIGHT=304;
-function portraitKind(speaker){return portraitKey(speaker).split('/')[0]==='npc'?'villager':portraitKey(speaker).split('/')[0]==='ha-ly'?'ninja':portraitKey(speaker).split('/')[0];}
+function portraitKind(speaker){const kind=portraitKey(speaker).split('/')[0];return kind==='npc'?'villager':kind==='ha-ly'||kind==='story'||kind==='ninja-model'?'ninja':kind;}
 export function portraitURL(speaker){const key=portraitKey(speaker),village=speaker.appearance?.village||speaker.village||'nameless';const name=PORTRAIT_IMAGES[key]||PORTRAIT_IMAGES['npc/'+village+'/lore']||PORTRAIT_IMAGES['npc/nameless/lore'],path='assets/portraits/'+name;return typeof document==='undefined'?path:new URL(path,document.baseURI).href;}
 export function modelPortrait(speaker){const url=portraitURL(speaker);if(!cached.has(url)){const image=new Image();image.src=url;const ready=image.decode().then(()=>url);cached.set(url,ready);ready.catch(()=>cached.delete(url));if(cached.size>64)cached.delete(cached.keys().next().value);}return cached.get(url);}
 

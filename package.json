@@ -22,7 +22,7 @@
     "test:browser": "node tests/browser.cjs",
     "test:loadout": "node tests/loadout.cjs",
     "test:graphics": "node tests/graphics.cjs",
-    "test:low-graphics": "node tests/presentation-core.mjs && node tools/build-android.mjs && node tests/low-graphics-browser.cjs",
+    "test:low-graphics": "node tests/render-budget-core.mjs && node tests/presentation-core.mjs && node tools/build-android.mjs && node tests/low-graphics-browser.cjs",
     "test:anime": "node tests/anime-style.cjs",
     "preview:capture": "node tools/capture.cjs",
     "test:layout": "node tests/layout.cjs",
@@ -147,7 +147,9 @@
     "test:island-campaign": "node tests/island-campaign-core.mjs && node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tools/build-android.mjs && node tests/island-campaign-browser.cjs && node tests/island-campaign-browser.cjs --mobile && node tests/campaign-presentation-browser.cjs",
     "test:crescent-phoenix": "node tests/crescent-phoenix-core.mjs && node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tests/companion-health-core.mjs && node tests/companion-collateral-core.mjs && node tests/guard-ambush-core.mjs && node tools/build-android.mjs && node tests/crescent-phoenix-browser.cjs && node tests/crescent-phoenix-browser.cjs --mobile && node tests/crescent-phoenix-browser.cjs --revival-only",
     "test:checkpoint-revision": "node tests/checkpoint-revision-core.mjs && node tests/campaign-rewrite-core.mjs && node tests/campaign-rewrite-world.mjs && node tests/earth-departure-trial-core.mjs && node tests/wood-tournament-core.mjs && node tools/build-android.mjs && node tests/checkpoint-revision-browser.cjs && node tests/checkpoint-revision-browser.cjs --mobile",
-    "test:combat-scene-revision": "node tests/combat-scene-revision-core.mjs && node tests/wood-tournament-core.mjs && node tools/build-android.mjs && node tests/combat-scene-revision-browser.cjs && node tests/wood-tournament-browser.cjs && node tests/wood-tournament-browser.cjs --mobile"
+    "test:combat-scene-revision": "node tests/combat-scene-revision-core.mjs && node tests/wood-tournament-core.mjs && node tools/build-android.mjs && node tests/combat-scene-revision-browser.cjs && node tests/wood-tournament-browser.cjs && node tests/wood-tournament-browser.cjs --mobile",
+    "test:sky-strike-revision": "node tests/combat-scene-revision-core.mjs && node tests/opponent-balance-core.mjs && node tests/campaign-rewrite-world.mjs && node tools/build-android.mjs && node tests/sky-strike-revision-browser.cjs && node tests/opponent-balance-editor.mjs",
+    "test:story-characters": "node tests/story-characters-core.mjs && node tests/model-portraits-core.mjs && node tests/companion-follow-core.mjs && node tests/companion-follow-scene-core.mjs && node tools/build-android.mjs && node tests/story-characters-browser.cjs"
   },
   "dependencies": {
     "three": "0.186.1"

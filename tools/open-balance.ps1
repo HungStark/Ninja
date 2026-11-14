@@ -9,11 +9,17 @@ $balancePort = 4180
 $balanceUrl = "http://127.0.0.1:$balancePort/$Page"
 $balanceRunning = $false
 $balanceUpgrade = $false
+$balanceRevision = (& $balanceNode (Join-Path $balanceRoot 'tools\balance-server.mjs') --revision | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $balanceRevision) { throw 'Khong doc duoc phien ban bang can bang. Kiem tra tep du an.' }
 try {
     $balanceResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$balancePort/balance/api" -TimeoutSec 2
     $balanceRunning = $balanceResponse.StatusCode -eq 200
     if ($balanceRunning) {
-        try { $null = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$balancePort/guardians/api" -TimeoutSec 2 }
+        try {
+            $balanceHealth = Invoke-RestMethod -Uri "http://127.0.0.1:$balancePort/health" -TimeoutSec 2
+            $balanceUpgrade = $balanceHealth.app -ne 'cuu-an-balance' -or $balanceHealth.revision -ne $balanceRevision
+            if (-not $balanceUpgrade) { $null = Invoke-WebRequest -UseBasicParsing -Uri "$balanceUrl/api" -TimeoutSec 2 }
+        }
         catch { $balanceUpgrade = $true }
     }
 } catch { }

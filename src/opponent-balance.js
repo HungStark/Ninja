@@ -661,13 +661,15 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export function opponentBalanceId(profile,phase=1){
   if(profile.balanceId)return profile.balanceId;
+  if(profile.storyBattle)return profile.storyBoss?'story:'+profile.storyBattle+':'+phase:'event:'+profile.storyBattle+':0';
   if(profile.kind==='boss')return 'guardian:'+profile.village+':'+phase;
   if(profile.kind==='practice-ninja')return 'ninja:practice';
   if(profile.kind==='village-guard'&&profile.guardRole==='guardian')return 'ninja:guardian-guard:'+profile.village;
   return 'ninja:'+profile.kind+':'+(profile.village||profile.element);
 }
 function stageSettings(profile,phase,overrides){
-  const id=opponentBalanceId(profile,phase),value=overrides[id]||{},beast=profile.kind==='boss'&&phase===2;
+  const id=opponentBalanceId(profile,phase),legacy=profile.storyBoss?'guardian:'+(profile.guardianVillage||profile.village)+':'+phase:profile.legacyBalanceId||(profile.storyBattle?'ninja:village-event:'+profile.village:id);
+  const value={...overrides[legacy],...overrides[id]},beast=profile.kind==='boss'&&phase===2;
   return {id,...(value.baseDamagePercent!==undefined?{baseDamagePercent:value.baseDamagePercent}:{}),
     mana:value.mana??100,infiniteMana:value.infiniteMana??profile.kind==='boss',
     sealDelay:value.sealDelay??profile.sealDelay??.42,
@@ -687,7 +689,7 @@ export function configureOpponent(profile,overrides=opponentBalanceOverrides){
   }else result.hp=result.balanceStages[0].hp??profile.hp;
   if(result.balanceStages[0].spellIds)result.spellIds=[...result.balanceStages[0].spellIds];
   if(profile.squad){
-    result.squad=profile.squad.map((member,i)=>configureOpponent({...member,kind:profile.kind,village:member.village||profile.village,guardRole:member.guardRole||profile.guardRole,balanceId:profile.kind==='intro-trio'?'intro:'+member.element:profile.guardRole==='guardian'?'ninja:guardian-guard:'+profile.village:'event:'+profile.village+':'+i},overrides));
+    result.squad=profile.squad.map((member,i)=>configureOpponent({...member,kind:profile.kind,village:member.village||profile.village,guardRole:member.guardRole||profile.guardRole,...(profile.storyBattle?{storyBattle:profile.storyBattle,legacyBalanceId:'event:'+profile.village+':'+i}:{}),balanceId:profile.kind==='intro-trio'?'intro:'+member.element:profile.guardRole==='guardian'?'ninja:guardian-guard:'+profile.village:'event:'+(profile.storyBattle||profile.village)+':'+i},overrides));
     const first=result.squad[0];
     Object.assign(result,{hp:first.hp,spellIds:first.spellIds,balanceStages:first.balanceStages});
   }

@@ -2,7 +2,7 @@ import {revisionOf,readCore} from './spell-balance-data.mjs';
 import {newJourney,VILLAGES} from '../src/adventure-data.js';
 import {encounterProfile} from '../src/progression.js';
 import {INTRO_SQUAD} from '../src/journey-story.js';
-import {villageEventEncounter} from '../src/village-events.js';
+import {villageEventEncounter,VILLAGE_EVENTS} from '../src/village-events.js';
 import {guardianPhaseHealth} from '../src/guardian-arts.js';
 import {GUARDIAN_FORMS} from '../src/guardian-beasts.js';
 import {PRACTICE_BOT_HP} from '../src/enemy-balance.js';
@@ -15,13 +15,16 @@ export function opponentDocument(source,coreSource){
   const core=readCore(coreSource),overrides=parseOpponentOverrides(source),rows=[];
   const save=newJourney();save.story.stage='infiltrate';save.story.villageOrder=['water','fire','lightning','earth','wind','light','ice','wood','dark'];
   const add=(id,name,village,category,profile,phase=1)=>{
-    const guardian=category==='guardian',beast=guardian&&phase===2;
-    const hp=guardian?guardianPhaseHealth(profile.hp,village)[phase-1]:profile.hp;
+    if(rows.some(row=>row.id===id))return;
+    const guardian=category==='guardian'||!!profile.storyBoss,beast=guardian&&phase===2,family=profile.guardianVillage||village;
+    const hp=guardian?guardianPhaseHealth(profile.hp,family)[phase-1]:profile.hp;
     const baseDamagePercent=Number((opponentBaseDamageMultiplier({...profile,kind:guardian?'boss':profile.kind},phase)*100).toFixed(6));
     const defaults={hp,mana:100,infiniteMana:guardian,sealDelay:profile.sealDelay??.42,baseDamagePercent,spellIds:[...(guardian&&phase>1?profile.phaseSpellIds:profile.spellIds)]};
-    rows.push({id,name,village,villageName:VILLAGES.find(v=>v.id===village)?.name||'Luyện tập',category,phase,form:guardian?(phase===1?'Ninja':phase===2?'Linh thú':'Hợp nhất'):'Ninja',canEditSpells:!guardian||phase===1,usesMana:!beast,defaults,values:{...defaults,...overrides[id]}});
+    const inherited=profile.storyBoss?overrides['guardian:'+family+':'+phase]:profile.legacyBalanceId?overrides[profile.legacyBalanceId]:null;
+    if(inherited)Object.assign(defaults,inherited);
+    rows.push({id,name,village,villageName:VILLAGES.find(v=>v.id===village)?.name||'Luyện tập',category,phase,storyBattle:profile.storyBattle||null,form:guardian?(phase===1?'Ninja':phase===2?'Linh thú':'Hợp nhất'):profile.storyBeast?'Linh thú':'Ninja',canEditSpells:!guardian||phase===1,usesMana:!beast,defaults,values:{...defaults,...overrides[id]}});
   };
-  const kinds={random:'Ninja lang thang',quest:'Đối thủ việc làng',sidequest:'Ninja nhiệm vụ phụ','village-guard':'Cảnh vệ làng','guardian-guard':'Cận vệ linh thú',arena:'Ninja võ đường'};
+  const kinds={random:'Ninja lang thang',quest:'Đối thủ việc làng',sidequest:'Ninja nhiệm vụ phụ','village-guard':'Cảnh vệ làng','guardian-guard':'Cận vệ linh thú',arena:'Ninja võ đường','village-event':'Đối thủ sự kiện · Mặc định'};
   for(const village of VILLAGES){
     for(const [kind,label]of Object.entries(kinds)){
       if(village.id==='nameless'&&['village-guard','guardian-guard'].includes(kind))continue;
@@ -31,12 +34,24 @@ export function opponentDocument(source,coreSource){
     for(let phase=1;phase<=(village.id==='dark'?3:2);phase++)add('guardian:'+village.id+':'+phase,GUARDIAN_FORMS[village.id].name+' · GĐ '+phase,village.id,'guardian',profile,phase);
   }
   for(const member of INTRO_SQUAD)add('intro:'+member.element,member.name,member.element,'intro',{...member,...enemySealTiming(0,'random')});
-  for(const village of ['fire','dark']){
-    const authored=villageEventEncounter(village),base=encounterProfile(save,'village-event',village),scale=1+Math.max(0,base.rank-1)*.08;
-    const prepare=member=>({...member,hp:Math.round(member.hp/BOT_HEALTH_SCALE*scale)*BOT_HEALTH_SCALE,damageMultiplier:member.damageMultiplier*scale,...enemySealTiming(base.rank,'random')});
-    if(authored.squad)authored.squad.forEach((member,i)=>add('event:'+village+':'+i,member.name,village,'event',prepare(member)));
-    else add('ninja:village-event:dark','Kẻ giữ màn sương','dark','event',prepare(authored));
-  }
+  for(const [village,chapter] of Object.entries(VILLAGE_EVENTS))chapter.stages.forEach((event,step)=>{
+    if(!event.battle)return;
+    if(event.storyBoss){
+      const family=event.guardianVillage,profile={...encounterProfile(save,'boss',family),kind:'boss',storyBoss:true,storyBattle:event.battle,guardianVillage:family};
+      for(let phase=1;phase<=(family==='dark'?3:2);phase++)add('story:'+event.battle+':'+phase,event.enemy+' · GĐ '+phase,village,'event',profile,phase);
+      return;
+    }
+    const authored=villageEventEncounter(village,step,save);if(!authored)return;
+    const base=encounterProfile(save,'village-event',village),scale=1+Math.max(0,base.rank-1)*.08;
+    const members=authored.squad||[authored];
+    members.forEach((member,i)=>{
+      const legacy=authored.squad?'event:'+village+':'+i:'ninja:village-event:'+village;
+      const profile={...base,...member,kind:'village-event',storyBattle:event.battle,legacyBalanceId:legacy,hp:Math.round(member.hp/BOT_HEALTH_SCALE*scale)*BOT_HEALTH_SCALE,damageMultiplier:member.damageMultiplier*scale,...enemySealTiming(base.rank,'random')};
+      add('event:'+event.battle+':'+i,member.name,village,'event',profile);
+      // Keep saved pre-campaign settings editable as inherited event defaults.
+      if(authored.squad&&overrides[legacy])add(legacy,member.name+' · Mặc định sự kiện',village,'event',{...profile,legacyBalanceId:null});
+    });
+  });
   add('ninja:practice','Ninja tập luyện','practice','practice',{hp:PRACTICE_BOT_HP,spellIds:core.defaultLoadout,sealDelay:.42});
   return {revision:revisionOf(source),overrides,rows,villages:VILLAGES.map(v=>({id:v.id,name:v.name})),spells:core.spells.map(s=>({id:s.id,name:s.name,element:s.element,glyph:s.glyph,rank:s.rank})),elements:core.elements};
 }

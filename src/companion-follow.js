@@ -7,12 +7,14 @@ export function createCompanionFollow({position,canOccupy=()=>true,safePoint=p=>
   const mix=(a,b,t)=>({...a,x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,yaw:a.yaw+Math.atan2(Math.sin(b.yaw-a.yaw),Math.cos(b.yaw-a.yaw))*t,airHeight:a.airHeight+(b.airHeight-a.airHeight)*t,verticalSpeed:a.verticalSpeed+(b.verticalSpeed-a.verticalSpeed)*t,s:a.s+(b.s-a.s)*t});
   function at(s){let i=1;while(i<samples.length-1&&samples[i].s<s-1e-8)i++;const a=samples[i-1],b=samples[i]||a;return mix(a,b,b.s>a.s?Math.max(0,Math.min(1,(s-a.s)/(b.s-a.s))):1);}
   function reset(hero,meta={}){
-    clock=0;cursor=0;stuck=0;moving=false;discontinuous=false;total=Math.hypot(hero.x-position.x,hero.z-position.z);
+    clock=0;cursor=0;stuck=0;moving=false;discontinuous=false;total=Math.hypot(hero.x-position.x,hero.z-position.z,meta.riding?hero.y-position.y:0);
     samples=[{...copy(position,meta),s:0},copy(hero,meta)];lastHero=copy(hero,meta);pose=copy(position,meta);
   }
   function update(dt,hero,meta={}){
     if(!lastHero)reset(hero,meta);moving=false;if(dt<=0)return result({x:0,y:0,z:0});clock+=dt;
-    const before={x:position.x,y:position.y,z:position.z},travel=Math.hypot(hero.x-lastHero.x,hero.z-lastHero.z);
+    // Ladders need vertical route distance; horizontal-only samples leave the
+    // companion at the foot of a straight rope ladder while the hero climbs.
+    const before={x:position.x,y:position.y,z:position.z},travel=Math.hypot(hero.x-lastHero.x,hero.z-lastHero.z,meta.riding||lastHero.riding?hero.y-lastHero.y:0);
     if(travel>Math.max(10,dt*60))discontinuous=true;
     total+=travel;const recorded=copy(hero,meta);samples.push(recorded);lastHero=recorded;
     const desired=Math.max(0,total-gap);let blocked=discontinuous,recovered=false;

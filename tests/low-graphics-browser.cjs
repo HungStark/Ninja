@@ -19,9 +19,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
    const state=()=>page.evaluate(()=>__AN_HOA__.state()),advance=t=>page.evaluate(t=>__AN_HOA__.advance(t),t);
    const quality=async name=>{for(let i=0;i<3&&(await state()).quality!==name;i++)await page.evaluate(()=>document.getElementById('qualityButton').click());await advance(.001);assert.equal((await state()).quality,name);};
    await page.goto(`http://127.0.0.1:${server.address().port}/index.html?test=1&mode=duel`);await page.waitForFunction(()=>document.body.dataset.ready==='true',null,{timeout:90000});
+   assert.equal((await state()).quality,'Thấp','smoothness is the default on desktop and mobile');
+   assert.equal((await state()).graphics.antialias,false,'no hidden default-framebuffer MSAA cost');
    await page.evaluate(()=>{document.getElementById('startButton').click();document.getElementById('practiceOpponentConfirm').click();document.getElementById('practiceViewConfirm').click();__AN_HOA__.setAIEnabled(false);__AN_HOA__.setHealth('player',100000);__AN_HOA__.setHealth('enemy',100000);__AN_HOA__.audio.configure({muted:true});});
-   await quality('Cân bằng');const balanced=(await state()).graphics;assert.equal(balanced.shadowMap,true);assert.equal(balanced.circularShadows,0);assert.equal(balanced.groundCoverMeshes,0);
+   await quality('Cân bằng');const balanced=(await state()).graphics;assert.equal(balanced.shadowMap,true);assert.equal(balanced.circularShadows,0);assert.equal(balanced.groundCoverMeshes,0);assert.equal(balanced.renderPath,'postprocessing');assert.ok(balanced.postprocessWidth>1);
    await quality('Thấp');let s=await state();assert.equal(s.graphics.shadowMap,false);assert.equal(s.graphics.circularShadows,2);assert.equal(s.graphics.groundCoverMeshes,0);assert.equal(s.graphics.particleLimit,180);
+   assert.equal(s.graphics.renderPath,'direct');assert.equal(s.graphics.postprocessWidth,1);assert.equal(s.graphics.postprocessHeight,1);
+   const mutations=await page.evaluate(()=>{const observer=new MutationObserver(()=>{});observer.observe(document.getElementById('comboSlots'),{childList:true,subtree:true});__AN_HOA__.advance(.2);const count=observer.takeRecords().length;observer.disconnect();return count;});
+   assert.equal(mutations,0,'unchanged seal slots are not rebuilt every simulation frame');
    await page.screenshot({path:`${out}/${mobile?'mobile':'desktop'}-low.png`});
    const volley=async()=>{await page.evaluate(()=>{for(let i=0;i<8;i++)__AN_HOA__.launchEnemy('fire-volley');});await advance(.65);return state();};
    const low=await volley();assert.ok(low.graphics.particles>0);assert.ok(low.graphics.particles<=180);assert.ok(low.graphics.renderedParticles<=180);assert.ok(low.graphics.smoke<=48);
@@ -31,7 +36,15 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
    await page.screenshot({path:`${out}/${mobile?'mobile':'desktop'}-wood-low.png`});
    await page.evaluate(()=>__AN_HOA__.launchEnemy('ice-reflect'));await advance(1);assert.equal((await state()).graphics.shadowMap,false);
    await quality('Cao');assert.equal((await state()).graphics.shadowMap,true);assert.equal((await state()).graphics.groundCoverMeshes,0);await quality('Thấp');assert.equal((await state()).graphics.circularShadows,2);
-   assert.deepEqual(errors,[]);reports.push({mobile,balanced,low:low.graphics,regular:regular.graphics});await page.close();
+   await page.setViewportSize({width:1920,height:1080});await page.waitForFunction(()=>{const c=document.getElementById('world');return c.width===1280&&c.height===720;});await advance(.01);s=await state();assert.ok(s.graphics.bufferWidth*s.graphics.bufferHeight<=1280*720,'low 3D buffer stays within 720p at a large viewport');assert.equal(s.graphics.postprocessWidth,1);
+   reports.push({mobile,balanced,low:low.graphics,regular:regular.graphics,largeViewport:s.graphics});
+   const {newJourney}=await import('../src/adventure-data.js'),save=newJourney();save.story.stage='infiltrate';save.story.guardianRestored=true;
+   await page.addInitScript(save=>localStorage.setItem('anhoa-adventure-v1',JSON.stringify(save)),save);
+   await page.goto(`http://127.0.0.1:${server.address().port}/index.html?test=1&adventure=1`);await page.waitForFunction(()=>document.body.dataset.ready==='true',null,{timeout:90000});await page.locator('#continueJourney').click();await advance(.1);
+   const village=await page.evaluate(()=>__AN_HOA__.adventure());assert.equal(village.phase,'explore');assert.equal(village.presentation.quality,2);assert.equal((await state()).graphics.renderPath,'direct');
+   await page.screenshot({path:`${out}/${mobile?'mobile':'desktop'}-exploration-low.png`});
+   await quality('Cao');assert.equal((await page.evaluate(()=>__AN_HOA__.adventure())).presentation.quality,0);await quality('Thấp');assert.equal((await page.evaluate(()=>__AN_HOA__.adventure())).presentation.quality,2);
+   assert.deepEqual(errors,[]);await page.close();
   }
   await fs.writeFile(out+'/report.json',JSON.stringify(reports,null,2));console.log('PASS: desktop/mobile bare combat terrain, low circular shadows, no shadow maps, fewer generated particles, bounded smoke, quality restoration, Wood garden and Ice spell compatibility.');
  }finally{await browser?.close();await new Promise(r=>server.close(r));}

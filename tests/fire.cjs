@@ -197,7 +197,7 @@ const fs = require('node:fs/promises');
       await screenshot(`layout-${width}`);
     }
     await page.setViewportSize({ width: 1440, height: 900 });
-    for (const preset of ['Thấp', 'Cao', 'Cân bằng']) {
+    for (const preset of ['Cao', 'Cân bằng', 'Thấp']) {
       await click('qualityButton'); assert.equal((await state()).quality, preset);
       await reset(); await cast('fire-lance'); await advance(.32);
       assert.ok((await state()).fireArt.projectiles > 0);

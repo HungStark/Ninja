@@ -39,5 +39,5 @@ for(const id of ['fire-lance','light-lance','fire-reflect']){
   assert.ok(meshes.length);for(const mesh of meshes){assert.equal(mesh.material.depthTest,false);assert.equal(mesh.material.fog,false);assert.ok(mesh.renderOrder>30);assert.ok([...mesh.geometry.attributes.position.array].every(Number.isFinite));}
   assert.equal(aim.state().visible,true);
 }
-assert.equal(spell('fire-lance').size,1.44);assert.equal(spell('lightning-volley').size,1.8);
-console.log('PASS: uniform dome slow, first-edge stun/expiry/re-entry/new dome/both owners, aim guides above snow and enlarged hitboxes.');
+assert.equal(spell('fire-lance').size,.72);assert.equal(spell('lightning-volley').size,.9);
+console.log('PASS: uniform dome slow, first-edge stun/expiry/re-entry/new dome/both owners, aim guides above snow and restored hitboxes.');

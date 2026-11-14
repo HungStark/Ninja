@@ -58,7 +58,7 @@ export function villageEventEncounter(id,step=1,save){
   const event=VILLAGE_EVENTS[id]?.stages[step];if(!event?.battle)return null;
   if(event.storyBoss){
     const family=event.guardianVillage,context=save||{story:{villageOrder:[]},visited:[]};
-    const base=encounterProfile(context,'boss',family),boss=configureOpponent({...base,kind:'boss',village:family,name:event.enemy});
+    const base=encounterProfile(context,'boss',family),boss=configureOpponent({...base,kind:'boss',village:family,name:event.enemy,storyBoss:true,storyBattle:event.battle,guardianVillage:family});
     return {...boss,kind:'village-event',village:id,guardianVillage:family,storyBoss:true,eventStep:step,storyBattle:event.battle,guardianName:REGIONS[family].boss.guardian};
   }
   const profile=(name,element,hp)=>({name,element,village:element,hp:botHealth(hp),spellIds:[...GUARD_ARSENALS[element]],damageMultiplier:.55,restTime:3.8,weaponInterval:4,initialDelay:2});
