@@ -1414,7 +1414,7 @@
   "Giọng nhân vật chính": "Hero voice",
   "Nữ": "Female",
   "NPC tự đổi giọng theo giới tính và tuổi của nhân vật.": "NPC voices adapt to the character’s gender and age.",
-  "Game tự dùng giọng Việt cài sẵn khi máy thiếu giọng đọc. Không cần mạng hoặc cài thêm bộ đọc.": "The game uses its bundled voice when no system voice is available. No network or extra voice installation is needed.",
+  "Game dùng giọng đọc cài sẵn cho hội thoại và tên chiêu. Không cần mạng hoặc cài thêm bộ đọc.": "The game uses its bundled voice for dialogue and technique names. No network or extra voice installation is needed.",
   "♪ Nghe thử": "♪ Preview",
   "Nghe thử giọng Việt": "Preview English voice",
   "Âm lượng đa phương tiện của máy đang tắt.": "The device’s media volume is muted.",
