@@ -18,11 +18,11 @@
     ice: ['Băng cầu', 'Băng thương', 'Băng liên kích', 'Băng bích', 'Băng kính']
   };
   const variants = [
-    { kind: 'attack', style: 'orb', rank: 'D', suffix: '', cost: 28, damage: 38, size: .4, count: 1, subtitle: 'Đạn cơ bản • một mục tiêu' },
-    { kind: 'attack', style: 'lance', rank: 'B', suffix: 'df', cost: 34, damage: 46, size: .22, count: 1, subtitle: 'Mũi xuyên nhanh • sát thương cao' },
-    { kind: 'attack', style: 'volley', rank: 'S', suffix: 'cvzx', cost: 56, damage: 58, size: .25, count: 3, subtitle: 'Ba đạn mạnh xòe ngang • vùng sát thương lớn' },
-    { kind: 'defense', style: 'barrier', rank: 'C', suffix: 'a', cost: 26, damage: 0, shield: 65, duration: 4.5, subtitle: 'Khiên hấp thụ • 4,5 giây' },
-    { kind: 'defense', style: 'reflect', rank: 'A', suffix: 'zxc', cost: 32, damage: 0, shield: 25, duration: 2.8, subtitle: 'Phản lại một đạn • 2,8 giây' }
+    { kind: 'attack', style: 'orb', rank: 'D', suffix: '', cost: 23, damage: 38, size: .4, count: 1, subtitle: 'Đạn cơ bản • một mục tiêu' },
+    { kind: 'attack', style: 'lance', rank: 'B', suffix: 'df', cost: 29, damage: 46, size: .22, count: 1, subtitle: 'Mũi xuyên nhanh • sát thương cao' },
+    { kind: 'attack', style: 'volley', rank: 'S', suffix: 'cvzx', cost: 51, damage: 58, size: .25, count: 3, subtitle: 'Ba đạn mạnh xòe ngang • vùng sát thương lớn' },
+    { kind: 'defense', style: 'barrier', rank: 'C', suffix: 'a', cost: 21, damage: 0, shield: 65, duration: 4.5, subtitle: 'Khiên hấp thụ • 4,5 giây' },
+    { kind: 'defense', style: 'reflect', rank: 'A', suffix: 'zxc', cost: 27, damage: 0, shield: 25, duration: 2.8, subtitle: 'Phản lại một đạn • 2,8 giây' }
   ];
   // Shared Phong benchmarks: quick projectiles and large travelling techniques.
   const flightSpeeds = { quick: 29, heavy: 22 };
@@ -30,71 +30,71 @@
   // Each element keeps its unique prefix; suffixes use only the other ten seals.
   // Keep the saved fire IDs while replacing their formulas and behavior.
   const fireSpells = [
-    { id: 'fire-volley', name: 'Hỏa Vũ Liên Châu', kind: 'attack', style: 'volley', rank: 'B', sequence:[...'qw'],cooldown:4, cost:20, damage:6, baseDamage:6, size: .075, count: 3, speed: flightSpeeds.quick, holdTime: .5, salvoInterval: .1, subtitle: 'Ba hỏa cầu nhỏ xếp ngang • mỗi viên 6 sát thương gốc • giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây' },
-    { id: 'fire-lance', name: 'Hỏa Long Cuồng Vũ', kind: 'attack', style: 'dragon', rank: 'S', sequence:[...'qwfar'],cooldown:20, cost: 56, damage: 104, size: .72, count: 1, speed: flightSpeeds.heavy, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
-    { id: 'fire-meteor', name: 'Thiên Hỏa Vẫn Tinh', kind: 'attack', style: 'meteor', rank: 'SS', sequence:[...'qwrera'],cooldown:35, cost: 82, damage: 150, size: 1.5, count: 1, speed: flightSpeeds.heavy, blastRadius: 5.5, subtitle: 'Thiên thạch từ trời • nổ lan bán kính 5,5 m' },
-    { id: 'fire-barrier', name: 'Liệt Diễm Bùng Phát', kind: 'defense', style: 'ignite', rank: 'C', sequence:[...'qwz'],cooldown:8, cost: 26, damage: 0, count: 0, requiresBurn:true, subtitle: 'Tiêu thụ 1–5 tầng bỏng • bốc cháy gây 10 / 20 / 30 / 45 / 60 sát thương' },
-    { id: 'fire-reflect', name: 'Hỏa Bích Thiên Thành', kind: 'defense', style: 'firewall', rank: 'A', sequence:[...'qwc'],cooldown:13, cost:28, damage: 0, shield: 120, duration:9, count: 0, wallWidth: 7, wallHeight: 4.2, subtitle: 'Tường lửa phía trước • chặn đạn, tồn tại 9 giây' }
+    { id: 'fire-volley', name: 'Hỏa Vũ Liên Châu', kind: 'attack', style: 'volley', rank: 'B', sequence:[...'qw'],cooldown:4, cost: 15, damage:6, baseDamage:6, size: .075, count: 3, speed: flightSpeeds.quick, holdTime: .5, salvoInterval: .1, subtitle: 'Ba hỏa cầu nhỏ xếp ngang • mỗi viên 6 sát thương gốc • giữ 0,5 giây rồi phóng lần lượt cách nhau 0,1 giây' },
+    { id: 'fire-lance', name: 'Hỏa Long Cuồng Vũ', kind: 'attack', style: 'dragon', rank: 'S', sequence:[...'qwfar'],cooldown:20, cost: 51, damage: 104, size: .72, count: 1, speed: flightSpeeds.heavy, subtitle: 'Rồng lửa khổng lồ • thân uốn lượn, sừng và nanh' },
+    { id: 'fire-meteor', name: 'Thiên Hỏa Vẫn Tinh', kind: 'attack', style: 'meteor', rank: 'SS', sequence:[...'qwrera'],cooldown:35, cost: 77, damage: 150, size: 1.5, count: 1, speed: flightSpeeds.heavy, blastRadius: 5.5, subtitle: 'Thiên thạch từ trời • nổ lan bán kính 5,5 m' },
+    { id: 'fire-barrier', name: 'Liệt Diễm Bùng Phát', kind: 'defense', style: 'ignite', rank: 'C', sequence:[...'qwz'],cooldown:8, cost: 21, damage: 0, count: 0, requiresBurn:true, subtitle: 'Tiêu thụ 1–5 tầng bỏng • bốc cháy gây 10 / 20 / 30 / 45 / 60 sát thương' },
+    { id: 'fire-reflect', name: 'Hỏa Bích Thiên Thành', kind: 'defense', style: 'firewall', rank: 'A', sequence:[...'qwc'],cooldown:13, cost: 23, damage: 0, shield: 120, duration:9, count: 0, wallWidth: 7, wallHeight: 4.2, subtitle: 'Tường lửa phía trước • chặn đạn, tồn tại 9 giây' }
   ].map(s => ({ ...s, element: 'fire', glyph: '火', color: '#ff844b', heal: 0, shield: s.shield || 0 }));
   // Preserve saved water IDs; the former lance/volley/reflect now have water-specific behavior.
   // Explicit base damage; shared strength and equipment scale it during combat.
   const waterSpells = [
-    { id: 'water-lance', name: 'Huyền Thủy Lao Lung', kind: 'attack', style: 'prison', rank: 'A', sequence:[...'wev'],cooldown:10, cost: 38, damage: 14.4, size: .55, count: 1, speed: flightSpeeds.quick, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
-    { id: 'water-volley', name: 'Thiên Chu Trấn Hải', kind: 'attack', style: 'boat', rank: 'S', sequence:[...'werdx'],cooldown:22, cost: 56, damage: 108, size: 1.7, count: 1, speed: flightSpeeds.heavy, blastRadius: 3.5, controlDuration:1, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm • 108 sát thương và choáng 1 giây khi trúng' },
-    { id: 'water-tsunami', name: 'Thương Hải Nộ Triều', kind: 'attack', style: 'tsunami', rank: 'SS', sequence:[...'wercva'],cooldown:30, cost: 72, damage: 79, size: 1, count: 1, speed: flightSpeeds.heavy, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức • đẩy phân thân ra sau đối thủ, không phá hủy • sát thương vừa phải' },
-    { id: 'water-barrier', name: 'Thủy Bộc Phá Không', kind: 'attack', style: 'waterbubbles', rank: 'C', sequence:[...'we'], cost:22, damage:7.5, duration:1, detonationInterval:.25, cooldown:5, count:4, size:.5, placementRadius:2.1, blastRadius:2.8, subtitle:'4 bong bóng nổ lần lượt ở giây 0,25–0,5–0,75–1 • mỗi quả 7,5 sát thương gốc, bán kính 2,8 m • nhận đầy đủ hệ số tăng sát thương • hồi 5 giây' },
-    { id: 'water-reflect', name: 'Huyền Thủy Hộ Thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence:[...'wef'],cooldown:12, cost:26, damage: 0, shield: 95, duration:8, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
+    { id: 'water-lance', name: 'Huyền Thủy Lao Lung', kind: 'attack', style: 'prison', rank: 'A', sequence:[...'wev'],cooldown:10, cost: 33, damage: 14.4, size: .55, count: 1, speed: flightSpeeds.quick, controlDuration: 3, subtitle: 'Giam đối thủ trong quả cầu nước • khóa di chuyển và thi triển 3 giây' },
+    { id: 'water-volley', name: 'Thiên Chu Trấn Hải', kind: 'attack', style: 'boat', rank: 'S', sequence:[...'werdx'],cooldown:22, cost: 51, damage: 108, size: 1.7, count: 1, speed: flightSpeeds.heavy, blastRadius: 3.5, controlDuration:1, subtitle: 'Triệu hồi thuyền hải tặc • ném thẳng tới điểm ngắm • 108 sát thương và choáng 1 giây khi trúng' },
+    { id: 'water-tsunami', name: 'Thương Hải Nộ Triều', kind: 'attack', style: 'tsunami', rank: 'SS', sequence:[...'wercva'],cooldown:30, cost: 67, damage: 79, size: 1, count: 1, speed: flightSpeeds.heavy, waveWidth: 12, waveHeight: 5, subtitle: 'Sóng lớn cuốn chiêu thức • đẩy phân thân ra sau đối thủ, không phá hủy • sát thương vừa phải' },
+    { id: 'water-barrier', name: 'Thủy Bộc Phá Không', kind: 'attack', style: 'waterbubbles', rank: 'C', sequence:[...'we'], cost: 17, damage:7.5, duration:1, detonationInterval:.25, cooldown:5, count:4, size:.5, placementRadius:2.1, blastRadius:2.8, subtitle:'4 bong bóng nổ lần lượt ở giây 0,25–0,5–0,75–1 • mỗi quả 7,5 sát thương gốc, bán kính 2,8 m • nhận đầy đủ hệ số tăng sát thương • hồi 5 giây' },
+    { id: 'water-reflect', name: 'Huyền Thủy Hộ Thuẫn', kind: 'defense', style: 'waterwall', rank: 'B', sequence:[...'wef'],cooldown:12, cost: 21, damage: 0, shield: 95, duration:8, count: 0, wallRadius: 2.2, subtitle: 'Khiên nước tròn trước mặt • chặn chiêu bay qua mặt chắn' }
   ].map(s => ({ ...s, baseDamage:s.damage, element: 'water', glyph: '水', color: '#50baff', heal: 0, shield: s.shield || 0 }));
   // Keep saved lightning IDs while giving each art its own behavior.
   const lightningSpells = [
-    { id: 'lightning-lance', name: 'Lôi Đình Nhất Kích', kind: 'attack', style: 'lance', rank: 'B', sequence:[...'er'],cooldown:4, cost:20, damage:22, baseDamage:22, size: .3, count: 1, speed: 38, subtitle: 'Thương sét dài • mũi nhọn và đuôi điện' },
-    { id: 'lightning-volley', name: 'Lôi Điểu Phá Thiên', kind: 'attack', style: 'bird', rank: 'S', sequence:[...'erxqx'],cooldown:20, cost: 56, damage: 102, size: .9, count: 1, speed: 27, subtitle: 'Chim hiện ra từ cầu sét rồi lao tới • góc nhìn trên cao' },
-    { id: 'lightning-thunder', name: 'Thiên Lôi Giáng Thế', kind: 'attack', style: 'thunder', rank: 'SS', sequence:[...'erfzvq'],cooldown:35, cost: 82, damage: 150, size: 1, count: 1, speed: 0, blastRadius: 4.5, chargeTime: .98, subtitle: 'Ngước nhìn mây chớp điện • trả góc nhìn rồi sét đánh xuống' },
-    { id: 'lightning-barrier', name: 'Lôi Mạch Tê Liệt', kind: 'defense', style: 'discharge', rank: 'C', sequence:[...'era'],cooldown:10, cost: 26, damage: 0, count: 0, requiresStatic:true, subtitle: 'Tiêu thụ 1–3 điểm tĩnh điện • choáng 0,5 / 1 / 2 giây, sau đó từ tính hút chiêu Lôi 3 / 5 / 7 giây' },
-    { id: 'lightning-reflect', name: 'Lôi Đình Kết Giới', kind: 'defense', style: 'stormfield', rank: 'A', sequence:[...'erqw'],cooldown:8, cost: 36, damage: 0, shield: 0, duration: 5, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .05, subtitle: 'Vùng điện rộng 5 giây • đạn đối phương còn 5% tốc độ trong vùng' }
+    { id: 'lightning-lance', name: 'Lôi Đình Nhất Kích', kind: 'attack', style: 'lance', rank: 'B', sequence:[...'er'],cooldown:4, cost: 15, damage:22, baseDamage:22, size: .3, count: 1, speed: 38, subtitle: 'Thương sét dài • mũi nhọn và đuôi điện' },
+    { id: 'lightning-volley', name: 'Lôi Điểu Phá Thiên', kind: 'attack', style: 'bird', rank: 'S', sequence:[...'erxqx'],cooldown:20, cost: 51, damage: 102, size: .9, count: 1, speed: 27, subtitle: 'Chim hiện ra từ cầu sét rồi lao tới • góc nhìn trên cao' },
+    { id: 'lightning-thunder', name: 'Thiên Lôi Giáng Thế', kind: 'attack', style: 'thunder', rank: 'SS', sequence:[...'erfzvq'],cooldown:35, cost: 77, damage: 150, size: 1, count: 1, speed: 0, blastRadius: 4.5, chargeTime: .98, subtitle: 'Ngước nhìn mây chớp điện • trả góc nhìn rồi sét đánh xuống' },
+    { id: 'lightning-barrier', name: 'Lôi Mạch Tê Liệt', kind: 'defense', style: 'discharge', rank: 'C', sequence:[...'era'],cooldown:10, cost: 21, damage: 0, count: 0, requiresStatic:true, subtitle: 'Tiêu thụ 1–3 điểm tĩnh điện • choáng 0,5 / 1 / 2 giây, sau đó từ tính hút chiêu Lôi 3 / 5 / 7 giây' },
+    { id: 'lightning-reflect', name: 'Lôi Đình Kết Giới', kind: 'defense', style: 'stormfield', rank: 'A', sequence:[...'erqw'],cooldown:8, cost: 31, damage: 0, shield: 0, duration: 5, count: 0, fieldRadius: 9, fieldHeight: 8, slowFactor: .05, subtitle: 'Vùng điện rộng 5 giây • đạn đối phương còn 5% tốc độ trong vùng' }
   ].map(s => ({ ...s, element: 'lightning', glyph: '雷', color: '#c6a2ff', heal: 0, shield: s.shield || 0 }));
   const windSpells = [
-    {id:'wind-orb',name:'Vô Ảnh Phong Đao',kind:'attack',style:'windslash',rank:'D',sequence:[...'ra'],cooldown:4,cost:16,damage:24,size:.55,speed:flightSpeeds.quick,count:1,subtitle:'Phóng một nhát chém gió hình lưỡi liềm về phía ngắm'},
-    {id:'wind-volley',name:'Cuồng Phong Toàn Vũ',kind:'attack',style:'tornado',rank:'S',sequence:[...'rasw'],cooldown:12,cost:46,damage:70,size:1.15,speed:flightSpeeds.heavy,count:1,controlDuration:2,subtitle:'Lốc xoáy 3D lao tới · 70 sát thương, hất tung và khóa đối thủ 2 giây'},
-    {id:'wind-lance',name:'Phong Nhận Loạn Vũ',kind:'attack',style:'aircombo',rank:'B',sequence:[...'rae'],cooldown:10,cost:22,damage:70,count:8,duration:2,requiresAirborne:true,subtitle:'Nối lốc khi địch còn trên không · chém liên tục tổng 70 sát thương, giữ thêm 2 giây · một lần mỗi lốc'},
-    {id:'wind-barrier',name:'Phong Thuẫn Thiên Thành',kind:'defense',style:'windwall',rank:'A',sequence:[...'raz'],cooldown:13,cost:26,damage:0,shield:110,duration:9,count:0,wallWidth:7,wallHeight:5,subtitle:'Tường gió phía trước · chặn chiêu, 110 độ bền trong 9 giây'},
-    {id:'wind-reflect',name:'Phong Linh Triệu Hoán',kind:'defense',style:'windspirit',rank:'SS',sequence:[...'raqxzx'],cooldown:24,cost:70,damage:0,count:0,duration:5,formation:1.8,guardWidth:8,guardRange:10,guardHeight:10,subtitle:'Tinh linh toon xuất hiện phía trước mặt · giữ góc nhìn FPS · thổi gió liên tục 5 giây, phản chiêu bay tới từ phía trước'}
+    {id:'wind-orb',name:'Vô Ảnh Phong Đao',kind:'attack',style:'windslash',rank:'D',sequence:[...'ra'],cooldown:4,cost: 11,damage:24,size:.55,speed:flightSpeeds.quick,count:1,subtitle:'Phóng một nhát chém gió hình lưỡi liềm về phía ngắm'},
+    {id:'wind-volley',name:'Cuồng Phong Toàn Vũ',kind:'attack',style:'tornado',rank:'S',sequence:[...'rasw'],cooldown:12,cost: 41,damage:70,size:1.15,speed:flightSpeeds.heavy,count:1,controlDuration:2,subtitle:'Lốc xoáy 3D lao tới · 70 sát thương, hất tung và khóa đối thủ 2 giây'},
+    {id:'wind-lance',name:'Phong Nhận Loạn Vũ',kind:'attack',style:'aircombo',rank:'B',sequence:[...'rae'],cooldown:10,cost: 17,damage:70,count:8,duration:2,requiresAirborne:true,subtitle:'Nối lốc khi địch còn trên không · chém liên tục tổng 70 sát thương, giữ thêm 2 giây · một lần mỗi lốc'},
+    {id:'wind-barrier',name:'Phong Thuẫn Thiên Thành',kind:'defense',style:'windwall',rank:'A',sequence:[...'raz'],cooldown:13,cost: 21,damage:0,shield:110,duration:9,count:0,wallWidth:7,wallHeight:5,subtitle:'Tường gió phía trước · chặn chiêu, 110 độ bền trong 9 giây'},
+    {id:'wind-reflect',name:'Phong Linh Triệu Hoán',kind:'defense',style:'windspirit',rank:'SS',sequence:[...'raqxzx'],cooldown:24,cost: 65,damage:0,count:0,duration:5,formation:1.8,guardWidth:8,guardRange:10,guardHeight:10,subtitle:'Tinh linh toon xuất hiện phía trước mặt · giữ góc nhìn FPS · thổi gió liên tục 5 giây, phản chiêu bay tới từ phía trước'}
   ].map(s=>({...s,element:'wind',glyph:'風',color:'#9fe9ce',heal:0,shield:s.shield||0}));
   // Keep all five saved Light IDs while replacing their spells.
   const earthSpells = [
-    {id:'earth-orb',name:'Địa Mạch Phá Kích',kind:'attack',style:'earthspikes',rank:'D',sequence:[...'as'],cooldown:4,cost:16,damage:26,count:1,duration:3,range:36,speed:32,subtitle:'Chạy ngầm làm đất nứt và nhô nhẹ, tới đối thủ mới bật gai · 26 sát thương · để lại gờ đá trong 3 giây'},
-    {id:'earth-lance',name:'Vạn Thứ Xuyên Địa',kind:'attack',style:'earthcraterspikes',rank:'B',sequence:[...'ase'],cooldown:8,cost:34,damage:50,count:1,radius:5,requiresCrater:true,subtitle:'Cần hố Địa Bộc Thiên Tinh của bạn · phủ chông dưới đáy hố tới khi hố biến mất · 50 sát thương một lần khi chạm chông'},
-    {id:'earth-volley',name:'Sơn Hà Nghịch Chuyển',kind:'attack',style:'earthquake',rank:'S',sequence:[...'asdx'],cooldown:24,cost:56,damage:20,count:5,duration:5,residualTime:5,radius:5.8,subtitle:'Địa hình nhấp nhô 5 đợt trong 5 giây · mỗi đợt 20 sát thương · địa hình gồ ghề còn lại 5 giây'},
-    {id:'earth-barrier',name:'Đại Địa Hộ Thành',kind:'defense',style:'earthwall',rank:'A',sequence:[...'asq'],cooldown:14,cost:30,damage:0,count:0,duration:10,shield:130,wallWidth:7,wallHeight:3.2,subtitle:'Tường đá cong trước mặt · chặn đạn và đường đi · 130 độ bền, nứt dần trong 10 giây'},
-    {id:'earth-reflect',name:'Địa Bộc Thiên Tinh',kind:'attack',style:'earthgravity',rank:'SS',sequence:[...'asvcwc'],cooldown:40,cost:82,damage:135,count:1,chargeTime:1,pullTime:5.4,pullSpeed:10,pullAcceleration:42,liftBatchSize:5,liftBatchInterval:.2,holdTime:3,fallTime:.65,craterTime:1.5,radius:5.5,craterRadius:6.5,captureDamage:60,fallDamage:75,subtitle:'Ném lõi đen, nứt đất, nâng mảng trung tâm rồi gom từng đợt đá · giam 3 giây, gây 60 rồi 75 khi rơi · hố biến mất 1,5 giây sau khi địch rơi'}
+    {id:'earth-orb',name:'Địa Mạch Phá Kích',kind:'attack',style:'earthspikes',rank:'D',sequence:[...'as'],cooldown:4,cost: 11,damage:26,count:1,duration:3,range:36,speed:32,subtitle:'Chạy ngầm làm đất nứt và nhô nhẹ, tới đối thủ mới bật gai · 26 sát thương · để lại gờ đá trong 3 giây'},
+    {id:'earth-lance',name:'Vạn Thứ Xuyên Địa',kind:'attack',style:'earthcraterspikes',rank:'B',sequence:[...'ase'],cooldown:8,cost: 29,damage:50,count:1,radius:5,requiresCrater:true,subtitle:'Cần hố Địa Bộc Thiên Tinh của bạn · phủ chông dưới đáy hố tới khi hố biến mất · 50 sát thương một lần khi chạm chông'},
+    {id:'earth-volley',name:'Sơn Hà Nghịch Chuyển',kind:'attack',style:'earthquake',rank:'S',sequence:[...'asdx'],cooldown:24,cost: 51,damage:20,count:5,duration:5,residualTime:5,radius:5.8,subtitle:'Địa hình nhấp nhô 5 đợt trong 5 giây · mỗi đợt 20 sát thương · địa hình gồ ghề còn lại 5 giây'},
+    {id:'earth-barrier',name:'Đại Địa Hộ Thành',kind:'defense',style:'earthwall',rank:'A',sequence:[...'asq'],cooldown:14,cost: 25,damage:0,count:0,duration:10,shield:130,wallWidth:7,wallHeight:3.2,subtitle:'Tường đá cong trước mặt · chặn đạn và đường đi · 130 độ bền, nứt dần trong 10 giây'},
+    {id:'earth-reflect',name:'Địa Bộc Thiên Tinh',kind:'attack',style:'earthgravity',rank:'SS',sequence:[...'asvcwc'],cooldown:40,cost: 77,damage:135,count:1,chargeTime:1,pullTime:5.4,pullSpeed:10,pullAcceleration:42,liftBatchSize:5,liftBatchInterval:.2,holdTime:3,fallTime:.65,craterTime:1.5,radius:5.5,craterRadius:6.5,captureDamage:60,fallDamage:75,subtitle:'Ném lõi đen, nứt đất, nâng mảng trung tâm rồi gom từng đợt đá · giam 3 giây, gây 60 rồi 75 khi rơi · hố biến mất 1,5 giây sau khi địch rơi'}
   ].map(s=>({...s,element:'earth',glyph:'土',color:'#d9ae69',heal:0,shield:s.shield||0}));
   const lightSpells = [
-    {id:'light-orb',name:'Cực Quang Xuyên Kích',kind:'attack',style:'lightray',rank:'D',sequence:[...'sd'],cooldown:4,cost:16,damage:26,count:1,chargeTime:.08,range:55,subtitle:'Tia laser thẳng trắng–vàng · 26 sát thương; qua cầu thủy tinh thành 7 sắc và 45,5 sát thương'},
-    {id:'light-barrier',name:'Huyễn Quang Tinh Cầu',kind:'defense',style:'lightsphere',rank:'S',sequence:[...'sdex'],cooldown:12,cost:32,damage:0,count:0,duration:8,amplification:1.75,subtitle:'Cầu trong suốt ngay trước mặt, tồn tại 8 giây · laser xuyên qua thành tia 7 sắc cầu vồng, tăng 75% sát thương'},
-    {id:'light-lance',name:'Kính Giới Phản Quang',kind:'attack',style:'lightdome',rank:'S',sequence:[...'sdzwcw'],cooldown:30,cost:54,damage:20,count:0,duration:10,domeRadius:6.2,domeBuildTime:1,subtitle:'Gương rơi ghép vòm trong 1 giây · được đi ra khỏi vòm · khóa G khi chưa thoát hẳn · tốc độ còn 25% trong và ở mép vòm, chạm mép lần đầu choáng 1 giây · tồn tại 10 giây · mỗi laser nảy gây 20 sát thương/giây, tia 7 sắc giữ nguyên màu và gây 35 · nhiều laser cộng dồn'},
-    {id:'light-reflect',name:'Thiên Kính Phản Quang',kind:'defense',style:'lightmirror',rank:'A',sequence:[...'sda'],cooldown:8,cost:22,damage:0,count:0,shield:120,duration:2.5,subtitle:'Gương trước mặt tồn tại 2,5 giây · 120 độ bền · phản các đòn tấn công bay tới từ phía trước, kể cả laser'},
-    {id:'light-volley',name:'Thiên Giai Thánh Phạt',kind:'attack',style:'jacob',rank:'SS',sequence:[...'sdzfzx'],cooldown:35,cost:82,damage:150,count:1,size:1,chargeTime:1.25,blastRadius:3.5,speed:0,subtitle:'Ngước nhìn trời rồi lia xuống theo cột sáng trắng–vàng giáng xuống · 150 sát thương trong bán kính 3,5 m'}
+    {id:'light-orb',name:'Cực Quang Xuyên Kích',kind:'attack',style:'lightray',rank:'D',sequence:[...'sd'],cooldown:4,cost: 11,damage:26,count:1,chargeTime:.08,range:55,subtitle:'Tia laser thẳng trắng–vàng · 26 sát thương; qua cầu thủy tinh thành 7 sắc và 45,5 sát thương'},
+    {id:'light-barrier',name:'Huyễn Quang Tinh Cầu',kind:'defense',style:'lightsphere',rank:'S',sequence:[...'sdex'],cooldown:12,cost: 27,damage:0,count:0,duration:8,amplification:1.75,subtitle:'Cầu trong suốt ngay trước mặt, tồn tại 8 giây · laser xuyên qua thành tia 7 sắc cầu vồng, tăng 75% sát thương'},
+    {id:'light-lance',name:'Kính Giới Phản Quang',kind:'attack',style:'lightdome',rank:'S',sequence:[...'sdzwcw'],cooldown:30,cost: 49,damage:20,count:0,duration:10,domeRadius:6.2,domeBuildTime:1,subtitle:'Gương rơi ghép vòm trong 1 giây · được đi ra khỏi vòm · khóa G khi chưa thoát hẳn · tốc độ còn 25% trong và ở mép vòm, chạm mép lần đầu choáng 1 giây · tồn tại 10 giây · mỗi laser nảy gây 20 sát thương/giây, tia 7 sắc giữ nguyên màu và gây 35 · nhiều laser cộng dồn'},
+    {id:'light-reflect',name:'Thiên Kính Phản Quang',kind:'defense',style:'lightmirror',rank:'A',sequence:[...'sda'],cooldown:8,cost: 17,damage:0,count:0,shield:120,duration:2.5,subtitle:'Gương trước mặt tồn tại 2,5 giây · 120 độ bền · phản các đòn tấn công bay tới từ phía trước, kể cả laser'},
+    {id:'light-volley',name:'Thiên Giai Thánh Phạt',kind:'attack',style:'jacob',rank:'SS',sequence:[...'sdzfzx'],cooldown:35,cost: 77,damage:150,count:1,size:1,chargeTime:1.25,blastRadius:3.5,speed:0,subtitle:'Ngước nhìn trời rồi lia xuống theo cột sáng trắng–vàng giáng xuống · 150 sát thương trong bán kính 3,5 m'}
   ].map(s=>({...s,element:'light',glyph:'光',color:'#fff2bd',heal:0,shield:s.shield||0}));
   const darkSpells = [
-    { id:'dark-orb', name:'U Minh Phân Ảnh', kind:'attack', style:'shadowclone', rank:'C', cooldown:2, sequence:[...'dfz'], cost:15, damage:20, count:2, cloneCount:2, maxClones:4, upgradeDamage:30, subtitle:'Tạo 2 chó bóng mỗi lần, tối đa 4 ảnh · chó gây 20 sát thương · đủ 4 ảnh thì mỗi lần nâng tối đa 2 chó thành bò gây 30 sát thương · không bị chiêu đối thủ phá hủy, không cản đạn' },
-    { id:'dark-lance', name:'U Ảnh Tuyệt Sát', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'],cooldown:8, cost:20, damage:20, count:1, requiresClones:true, subtitle:'Lấy đà rồi bám theo mục tiêu được chọn · chó 20, bò 30 sát thương · bị tường cản và trừ sát thương · ngoài lãnh địa biến mất, trong lãnh địa tự trồi lên lại' },
-    { id:'dark-volley', name:'U Ảnh Huyễn Tượng', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfwq'],cooldown:20, cost:56, damage:90, fallTime:.7, duration:2, count:1, subtitle:'Voi bóng rơi xuống đầu đối thủ, gây 90 sát thương · trong lãnh địa mới nhấn chìm, khóa mọi thao tác 2 giây và nhìn qua bóng đen · có thể né trước khi voi đáp' },
-    { id:'dark-domain', name:'U Minh Lĩnh Vực', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfrzsq'],cooldown:45, cost:70, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · voi bóng nhấn chìm địch và mở khóa lặn, phân thân bị đánh sẽ trồi lên lại' },
-    { id:'dark-reflect', name:'U Ảnh Thuấn Di', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfa'],cooldown:8, cost:32, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
+    { id:'dark-orb', name:'U Minh Phân Ảnh', kind:'attack', style:'shadowclone', rank:'C', cooldown:2, sequence:[...'dfz'], cost: 10, damage:20, count:2, cloneCount:2, maxClones:4, upgradeDamage:30, subtitle:'Tạo 2 chó bóng mỗi lần, tối đa 4 ảnh · chó gây 20 sát thương · đủ 4 ảnh thì mỗi lần nâng tối đa 2 chó thành bò gây 30 sát thương · không bị chiêu đối thủ phá hủy, không cản đạn' },
+    { id:'dark-lance', name:'U Ảnh Tuyệt Sát', kind:'attack', style:'shadowcommand', rank:'B', sequence:[...'df'],cooldown:8, cost: 15, damage:20, count:1, requiresClones:true, subtitle:'Lấy đà rồi bám theo mục tiêu được chọn · chó 20, bò 30 sát thương · bị tường cản và trừ sát thương · ngoài lãnh địa biến mất, trong lãnh địa tự trồi lên lại' },
+    { id:'dark-volley', name:'U Ảnh Huyễn Tượng', kind:'attack', style:'shadowbind', rank:'S', sequence:[...'dfwq'],cooldown:20, cost: 51, damage:90, fallTime:.7, duration:2, count:1, subtitle:'Voi bóng rơi xuống đầu đối thủ, gây 90 sát thương · trong lãnh địa mới nhấn chìm, khóa mọi thao tác 2 giây và nhìn qua bóng đen · có thể né trước khi voi đáp' },
+    { id:'dark-domain', name:'U Minh Lĩnh Vực', kind:'attack', style:'domain', rank:'SS', sequence:[...'dfrzsq'],cooldown:45, cost: 65, damage:0, count:0, duration:30, subtitle:'Mái vòm đen nở thành đầm mực trong 30 giây · voi bóng nhấn chìm địch và mở khóa lặn, phân thân bị đánh sẽ trồi lên lại' },
+    { id:'dark-reflect', name:'U Ảnh Thuấn Di', kind:'defense', style:'shadowdive', rank:'A', sequence:[...'dfa'],cooldown:8, cost: 27, damage:0, count:0, duration:3, requiresDomain:true, subtitle:'Lặn dưới đất 3 giây, nhìn ra qua bóng đen mờ · miễn nhiễm tấn công, vẫn ngắm, né, kết ấn và thi triển' }
   ].map(s=>({...s,element:'dark',glyph:'闇',color:'#a48fd8',size:.36,speed:24,heal:0,shield:0,requiresDomain:!!s.requiresDomain}));
   const woodSpells=[
-    {id:'wood-orb',name:'Bách Hoa Độc Vũ',kind:'attack',style:'flowerpoison',rank:'D',sequence:[...'fz'],cooldown:6,cost:22,damage:30,count:0,requiresGarden:true,subtitle:'Miệng hoa nhả khói tím lan quanh cây trong 6 giây · vùng rộng 2–5 m theo cây · địch chỉ mất 5–15 máu/giây khi ở trong vùng'},
-    {id:'wood-lance',name:'Vạn Đằng Phược Ấn',kind:'attack',style:'vinebind',rank:'B',sequence:[...'fzx'],cooldown:10,cost:34,damage:18,count:1,controlDuration:2,requiresGarden:true,subtitle:'Dây leo từ vườn bò tới quấn đối thủ · 18–54 sát thương, trói 2–6 giây theo kích thước cây'},
-    {id:'wood-volley',name:'Trúc Diệp Loạn Vũ',kind:'attack',style:'bamboostab',rank:'S',sequence:[...'fzvd'],cooldown:20,cost:50,damage:75,count:12,requiresGarden:true,subtitle:'Các bụi tre rung lên, mọc cành lá phát sáng rồi phóng lá sắc thành 1–3 đợt về điểm ngắm · tổng 75–225 sát thương theo cây, có thể ngắm trượt và bị chắn'},
-    {id:'wood-barrier',name:'Hồ Đào Cự Vệ',kind:'defense',style:'walnutwall',rank:'A',sequence:[...'fza'],cooldown:13,cost:24,damage:0,count:0,shield:90,duration:8,requiresGarden:true,subtitle:'Cây trước mặt bên phải thả quả óc chó, quả rơi và hóa lớn chắn phía trước · 90–270 độ bền trong 8–10 giây'},
-    {id:'wood-reflect',name:'Vạn Mộc Sinh Giới',kind:'attack',style:'woodseed',rank:'SS',sequence:[...'fzrerd'],cooldown:15,cost:50,damage:0,count:0,oncePerMatch:true,growthTime:60,subtitle:'6 ấn · gieo rừng hoa độc, dây leo và tre bao quanh đối thủ, cả trước, sau và hai bên, óc chó trước mặt bên phải · không gây sát thương, một lần mỗi trận · trưởng thành sau 60 giây, cây phía sau lớn nhỏ xen kẽ · cây phía trước cao tối đa nửa người đối thủ, phía sau cao tới 3/4 cổng cũ'}
+    {id:'wood-orb',name:'Bách Hoa Độc Vũ',kind:'attack',style:'flowerpoison',rank:'D',sequence:[...'fz'],cooldown:6,cost: 17,damage:30,count:0,requiresGarden:true,subtitle:'Miệng hoa nhả khói tím lan quanh cây trong 6 giây · vùng rộng 2–5 m theo cây · địch chỉ mất 5–15 máu/giây khi ở trong vùng'},
+    {id:'wood-lance',name:'Vạn Đằng Phược Ấn',kind:'attack',style:'vinebind',rank:'B',sequence:[...'fzx'],cooldown:10,cost: 29,damage:18,count:1,controlDuration:2,requiresGarden:true,subtitle:'Dây leo từ vườn bò tới quấn đối thủ · 18–54 sát thương, trói 2–6 giây theo kích thước cây'},
+    {id:'wood-volley',name:'Trúc Diệp Loạn Vũ',kind:'attack',style:'bamboostab',rank:'S',sequence:[...'fzvd'],cooldown:20,cost: 45,damage:75,count:12,requiresGarden:true,subtitle:'Các bụi tre rung lên, mọc cành lá phát sáng rồi phóng lá sắc thành 1–3 đợt về điểm ngắm · tổng 75–225 sát thương theo cây, có thể ngắm trượt và bị chắn'},
+    {id:'wood-barrier',name:'Hồ Đào Cự Vệ',kind:'defense',style:'walnutwall',rank:'A',sequence:[...'fza'],cooldown:13,cost: 19,damage:0,count:0,shield:90,duration:8,requiresGarden:true,subtitle:'Cây trước mặt bên phải thả quả óc chó, quả rơi và hóa lớn chắn phía trước · 90–270 độ bền trong 8–10 giây'},
+    {id:'wood-reflect',name:'Vạn Mộc Sinh Giới',kind:'attack',style:'woodseed',rank:'SS',sequence:[...'fzrerd'],cooldown:15,cost: 45,damage:0,count:0,oncePerMatch:true,growthTime:60,subtitle:'6 ấn · gieo rừng hoa độc, dây leo và tre bao quanh đối thủ, cả trước, sau và hai bên, óc chó trước mặt bên phải · không gây sát thương, một lần mỗi trận · trưởng thành sau 60 giây, cây phía sau lớn nhỏ xen kẽ · cây phía trước cao tối đa nửa người đối thủ, phía sau cao tới 3/4 cổng cũ'}
   ].map(s=>({...s,element:'wood',glyph:'木',color:'#9ed26c',heal:0,shield:s.shield||0}));
   const iceSpells=[
-    {id:'ice-orb',name:'Tuyết táng',kind:'attack',style:'snowball',rank:'SS',sequence:[...'zx'],cooldown:45,cost:20,damage:250,count:1,snowCost:35,speed:6.2,radius:4.8,subtitle:'Tiêu hao 35 tuyết · cầu tuyết bám mục tiêu, phá chiêu thức và xuyên mọi lớp phòng thủ mà không giảm sát thương · không bị phản lại · chạm đối thủ gây 250 sát thương rồi vỡ · tuyết vẫn tiếp tục rơi'},
-    {id:'ice-lance',name:'Hàn Băng Phong Tỏa',kind:'attack',style:'icebind',rank:'B',sequence:[...'zxs'],cooldown:8,cost:28,damage:0,count:1,size:.38,speed:27,controlDuration:3,subtitle:'Bắn tinh thể băng ngay lập tức · khóa di chuyển và kết ấn 3 giây, không gây sát thương'},
-    {id:'ice-volley',name:'Huyễn Sương Vô Ảnh',kind:'defense',style:'icefog',rank:'S',sequence:[...'zxce'],cooldown:11,cost:34,damage:0,count:0,duration:5,subtitle:'Ẩn người thật trong 5 giây · sương che nửa thân dưới trên toàn bộ nửa sân của bạn · tạo ảo ảnh lệch vị trí'},
-    {id:'ice-barrier',name:'Bão Tuyết',kind:'defense',style:'blizzard',rank:'A',sequence:[...'zxv'],cooldown:12,cost:24,damage:0,count:0,duration:8,snowMultiplier:2,requiresSnow:true,subtitle:'Cần đang gọi tuyết · tăng gấp đôi tốc độ tích tuyết trong 8 giây · tuyết rơi dày hơn, nhanh hơn và hơi chéo · không tạo tường chắn'},
-    {id:'ice-reflect',name:'Thiên Địa Tuyết Táng',kind:'attack',style:'snowstorm',rank:'SS',sequence:[...'zxwqwq'],cooldown:15,cost:50,damage:0,count:0,oncePerMatch:true,snowTime:90,slowPerSnow:.005,subtitle:'6 ấn · gọi tuyết một lần mỗi trận, mỗi giây thêm 1, tối đa 90 tuyết · mỗi tuyết làm đối thủ chậm 0,5%, tối đa 45% · dùng Tuyết táng trừ 35 tuyết, tuyết vẫn tiếp tục rơi'}
+    {id:'ice-orb',name:'Tuyết táng',kind:'attack',style:'snowball',rank:'SS',sequence:[...'zx'],cooldown:45,cost: 15,damage:250,count:1,snowCost:35,speed:6.2,radius:4.8,subtitle:'Tiêu hao 35 tuyết · cầu tuyết bám mục tiêu, phá chiêu thức và xuyên mọi lớp phòng thủ mà không giảm sát thương · không bị phản lại · chạm đối thủ gây 250 sát thương rồi vỡ · tuyết vẫn tiếp tục rơi'},
+    {id:'ice-lance',name:'Hàn Băng Phong Tỏa',kind:'attack',style:'icebind',rank:'B',sequence:[...'zxs'],cooldown:8,cost: 23,damage:0,count:1,size:.38,speed:27,controlDuration:3,subtitle:'Bắn tinh thể băng ngay lập tức · khóa di chuyển và kết ấn 3 giây, không gây sát thương'},
+    {id:'ice-volley',name:'Huyễn Sương Vô Ảnh',kind:'defense',style:'icefog',rank:'S',sequence:[...'zxce'],cooldown:11,cost: 29,damage:0,count:0,duration:5,subtitle:'Ẩn người thật trong 5 giây · sương che nửa thân dưới trên toàn bộ nửa sân của bạn · tạo ảo ảnh lệch vị trí'},
+    {id:'ice-barrier',name:'Bão Tuyết',kind:'defense',style:'blizzard',rank:'A',sequence:[...'zxv'],cooldown:12,cost: 19,damage:0,count:0,duration:8,snowMultiplier:2,requiresSnow:true,subtitle:'Cần đang gọi tuyết · tăng gấp đôi tốc độ tích tuyết trong 8 giây · tuyết rơi dày hơn, nhanh hơn và hơi chéo · không tạo tường chắn'},
+    {id:'ice-reflect',name:'Thiên Địa Tuyết Táng',kind:'attack',style:'snowstorm',rank:'SS',sequence:[...'zxwqwq'],cooldown:15,cost: 45,damage:0,count:0,oncePerMatch:true,snowTime:90,slowPerSnow:.005,subtitle:'6 ấn · gọi tuyết một lần mỗi trận, mỗi giây thêm 1, tối đa 90 tuyết · mỗi tuyết làm đối thủ chậm 0,5%, tối đa 45% · dùng Tuyết táng trừ 35 tuyết, tuyết vẫn tiếp tục rơi'}
   ].map(s=>({...s,element:'ice',glyph:'氷',color:'#a6edff',heal:0,shield:s.shield||0}));
   const spells = elements.flatMap(el => el.id === 'wood' ? woodSpells : el.id === 'ice' ? iceSpells : el.id === 'fire' ? fireSpells : el.id === 'water' ? waterSpells : el.id === 'lightning' ? lightningSpells : el.id === 'wind' ? windSpells : el.id === 'earth' ? earthSpells : el.id === 'light' ? lightSpells : el.id === 'dark' ? darkSpells : variants.map((v, i) => ({
     ...v, id: el.id + '-' + v.style, name: titles[el.id][i], element: el.id,
@@ -115,43 +115,43 @@
   const spellBalanceOverrides=/* spell-balance:start */{
   "dark-lance": {
     "cooldown": 5,
-    "cost": 28
+    "cost": 23
   },
   "dark-orb": {
     "cooldown": 3,
     "upgradeDamage": 14,
     "damage": 9,
-    "cost": 25
+    "cost": 20
   },
   "dark-volley": {
-    "cost": 52,
+    "cost": 47,
     "duration": 1,
     "damage": 70
   },
   "fire-lance": {
-    "cost": 50,
+    "cost": 45,
     "damage": 80
   },
   "fire-meteor": {
-    "cost": 65,
+    "cost": 60,
     "damage": 120
   },
   "water-barrier": {
     "damage": 7,
     "cooldown": 4,
-    "cost": 21
+    "cost": 16
   },
   "water-lance": {
     "damage": 15,
-    "cost": 25,
+    "cost": 20,
     "controlDuration": 2
   },
   "water-tsunami": {
-    "cost": 65,
+    "cost": 60,
     "damage": 75
   },
   "water-volley": {
-    "cost": 50,
+    "cost": 45,
     "cooldown": 21,
     "damage": 80,
     "controlDuration": 0.5
@@ -160,20 +160,20 @@
     "damage": 8
   },
   "dark-reflect": {
-    "cost": 26
+    "cost": 21
   },
   "water-reflect": {
-    "cost": 25,
+    "cost": 20,
     "shield": 70
   },
   "fire-reflect": {
     "shield": 70,
     "duration": 8,
-    "cost": 25,
+    "cost": 20,
     "cooldown": 12
   },
   "fire-barrier": {
-    "cost": 25,
+    "cost": 20,
     "ignitionDamages": [
       7,
       14,
@@ -185,7 +185,7 @@
   "lightning-reflect": {
     "cooldown": 12,
     "duration": 6,
-    "cost": 25
+    "cost": 20
   },
   "lightning-barrier": {
     "stunDurations": [
@@ -198,26 +198,26 @@
       7,
       9
     ],
-    "cost": 25
+    "cost": 20
   },
   "lightning-lance": {
     "damage": 24
   },
   "lightning-volley": {
     "damage": 80,
-    "cost": 50
+    "cost": 45
   },
   "lightning-thunder": {
-    "cost": 65,
+    "cost": 60,
     "damage": 120
   },
   "wind-volley": {
-    "cost": 35,
+    "cost": 30,
     "damage": 60,
     "cooldown": 15
   },
   "wind-lance": {
-    "cost": 40,
+    "cost": 35,
     "cooldown": 15,
     "damage": 60
   },
@@ -225,11 +225,11 @@
     "cooldown": 12,
     "duration": 8,
     "shield": 70,
-    "cost": 25
+    "cost": 20
   },
   "wind-reflect": {
     "duration": 7,
-    "cost": 60
+    "cost": 55
   },
   "wood-orb": {
     "cooldown": 5,
@@ -238,18 +238,18 @@
   "wood-volley": {
     "damage": 45,
     "cooldown": 22,
-    "cost": 55
+    "cost": 50
   },
   "wood-lance": {
-    "cost": 25
+    "cost": 20
   },
   "wood-barrier": {
     "cooldown": 12,
     "shield": 40,
-    "cost": 25
+    "cost": 20
   },
   "ice-lance": {
-    "cost": 25,
+    "cost": 20,
     "controlDuration": 2
   },
   "ice-reflect": {
@@ -257,73 +257,73 @@
   },
   "wood-reflect": {
     "cooldown": 1,
-    "cost": 55
+    "cost": 50
   },
   "ice-volley": {
     "cooldown": 12,
     "duration": 6,
-    "cost": 25
+    "cost": 20
   },
   "ice-barrier": {
-    "cost": 45,
+    "cost": 40,
     "duration": 6
   },
   "light-reflect": {
     "duration": 3,
     "cooldown": 10,
     "shield": 80,
-    "cost": 25
+    "cost": 20
   },
   "light-orb": {
     "damage": 25,
-    "cost": 20
+    "cost": 15
   },
   "light-barrier": {
-    "cost": 25,
+    "cost": 20,
     "amplification": 1.6
   },
   "light-lance": {
     "cooldown": 35,
-    "cost": 55
+    "cost": 50
   },
   "light-volley": {
-    "cost": 65,
+    "cost": 60,
     "damage": 120
   },
   "earth-orb": {
     "damage": 24,
-    "cost": 20
+    "cost": 15
   },
   "earth-lance": {
     "cooldown": 20,
-    "cost": 30,
+    "cost": 25,
     "damage": 36
   },
   "earth-reflect": {
-    "cost": 65,
+    "cost": 60,
     "cooldown": 35,
     "fallDamage": 45,
     "captureDamage": 45,
     "holdTime": 2
   },
   "earth-volley": {
-    "cost": 50,
+    "cost": 45,
     "cooldown": 20,
     "damage": 18
   },
   "earth-barrier": {
     "shield": 80,
-    "cost": 26,
+    "cost": 21,
     "duration": 8,
     "cooldown": 13
   },
   "ice-orb": {
-    "cost": 56,
+    "cost": 51,
     "cooldown": 20,
     "damage": 150
   },
   "wind-orb": {
-    "cost": 20
+    "cost": 15
   }
 }/* spell-balance:end */;
   for(const spell of spells){

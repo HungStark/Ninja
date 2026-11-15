@@ -62,22 +62,24 @@ export function createGuardianBossCombat(scene){
       unreflectable:true,color:design.color,v:[0,0,1],...extra};
     const result=ctx.impact(shot,p)||shot.hitResult;
     // Blocked/immune hits do not accumulate the boss-specific status.
-    if(!(result?.damage>0)||extra.victimId==='ha-ly')return;
+    if(!(result?.damage>0)||extra.victimId==='ha-ly')return result;
     if(village==='lightning'||village==='ice'){
       stack++;stackLife=passive.stackDuration;
       if(stack>=passive.stackCount){stack=0;control(village==='ice'?'ice':'lightning',passive.controlDuration);}
     }
     if(extra.bind)control('wood',extra.bind);
+    return result;
   }
   function hazard(p,r,delay,damage,kind='pillar',extra={}){
     const e={id:++serial,kind:'hazard',shape:kind,p:[...p],r,delay,life:delay+.65,age:0,damage,visuals:[circle(p,r,'#ff5757',true)],...extra};
     entities.push(e);return e;
   }
   function projectile(from,target,{kind='fireball',speed=8,damage=17,homing=0,r=.45,delay=0,life=5,...extra}={}){
+    delay=Math.max(.45,delay);life+=delay;
     const d=new T.Vector3(...target).sub(new T.Vector3(...from)).normalize();
     const m=mesh(kind==='windblade'?'arc':kind==='feather'?'cone':'orb',from,kind==='feather'?[.13,.85,.15]:[r,r,r],design.color,.9);
     m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d);
-    const e={id:++serial,kind:'projectile',style:kind,p:[...from],v:d.toArray(),r,age:0,life,speed,damage,homing,delay,visuals:[m],...extra};entities.push(e);return e;
+    const tell=line(from,target,r*2,'#ff728b');m.visible=false;const e={id:++serial,kind:'projectile',style:kind,p:[...from],v:d.toArray(),r,age:0,life,speed,damage,homing,delay,tell,visuals:[m,tell],...extra};entities.push(e);return e;
   }
   function object(kind,p,hp,life=14,stats={}){
     const visuals=[circle(p,kind==='grass'?2:1,'#9dffd0')];
@@ -86,7 +88,7 @@ export function createGuardianBossCombat(scene){
       visuals.push(mesh('orb',[p[0],2.5,p[2]],[.4,.5,.4],'#e8ffc5',.9));
       visuals.push(mesh('cone',[p[0],1.5,p[2]],[1,1.4,1],design.color,.65));
     }
-    const e={...stats,id:++serial,kind,p:[p[0],1.2,p[2]],hp,maxHp:hp,r:kind==='grass'?.9:.8,age:0,life,visuals};entities.push(e);return e;
+    const e={...stats,id:++serial,kind,p:[p[0],1.2,p[2]],hp,maxHp:hp,r:kind==='grass'?.9:.8,age:0,life:life+.6,activationDelay:.6,visuals};for(const m of visuals)m.visible=false;entities.push({id:++serial,kind:'tell',p:[...p],age:0,life:.6,visuals:[circle(p,kind==='crystal'?stats.blast||1:1,'#ff728b',true)]});if(kind==='crystal'&&Number.isFinite(stats.explodeAt))entities.push({id:++serial,kind:'tell',p:[...p],age:0,life:stats.explodeAt,visuals:[circle(p,stats.blast||1,'#ff728b')]});entities.push(e);return e;
   }
   function wolf(p,target,delay=0){
     const m=new T.Group();m.name='guardian-shadow-wolf';root.add(m);
@@ -94,7 +96,7 @@ export function createGuardianBossCombat(scene){
     m.add(body,head);body.position.set(0,.7,0);head.position.set(0,1.25,.7);
     for(const side of [-1,1]){const eye=mesh('orb',[0,0,0],[.07,.07,.1],'#ead0ff',1);m.add(eye);eye.position.set(side*.2,1.3,1);}
     m.position.fromArray(p);
-    entities.push({id:++serial,kind:'wolf',p:[...p],target:[...target],age:0,delay,life:action.life,speed:action.speed,damage:action.damage,radius:action.radius,visuals:[...m.children,m],group:m});
+    const tell=line([p[0],.1,p[2]],[target[0],.1,target[2]],action.radius*2,'#ff728b');m.visible=false;entities.push({id:++serial,kind:'wolf',p:[...p],target:[...target],age:0,delay,life:action.life,speed:action.speed,damage:action.damage,radius:action.radius,tell,visuals:[...m.children,m,tell],group:m});
   }
   function beam(from,target,width,color=design.color){const m=line(from,target,width,color);return m;}
   function addEnvironment(player,boss){
@@ -110,10 +112,11 @@ export function createGuardianBossCombat(scene){
     if(village==='wood')for(const x of [-3,0,3])object('grass',[x,.1,boss[2]+3],passive.hp,passive.life,{healRate:passive.healRate});
   }
   function begin(index,player,boss,fighter){
-    if(!design||!Number.isInteger(index)||index<0||index>=3)return false;
+    if(!design||!Number.isInteger(index)||index<0||index>=design.skills.length)return false;
     cancelAction();
     const skill=design.skills[index];
     action={...skill,...guardianSkillStats(skill.type),index,age:0,target:[...player],origin:[...boss],events:new Set(),visuals:[],hit:false};
+    action.visuals.push(circle([boss[0],0,boss[2]],2,'#ff728b'));
     attacks++;
     history.push({type:skill.type,name:skill.name,phase,at:clock});if(history.length>30)history.shift();
     gameAudio.cast({element:village,rank:index===2?'SS':'S',style:skill.type});
@@ -190,17 +193,13 @@ export function createGuardianBossCombat(scene){
       }
       case 'fox-nine-pillars':once('pillars',0,()=>castAtLanes(a.count,a.interval,a.damage,a.radius,'flame'));break;
       case 'dragon-pressure':{
-        once('line',0,()=>{a.end=[...a.target];a.visuals.push(beam(origin,a.end,.16,'#ff7f72'));});
+        once('line',0,()=>{a.end=[...a.target];a.visuals.push(beam(origin,a.end,a.radius*2,'#ff7f72'));});
         once('fire',a.windup,()=>{a.ray=beam(origin,a.end,a.radius*.8);a.visuals.push(a.ray);});
         if(t>=a.windup&&t<a.windup+a.beamDuration){a.tick=(a.tick||0)+dt;if(a.tick>=a.tickInterval){const tick=a.tick;a.tick=0;emitWhere(a.damagePerSecond*tick,p=>segmentDistance(p,origin,a.end)<a.radius+playerPadding(),{blockable:true,old:origin});}}break;
       }
       case 'dragon-prison':
-        once('warning',0,()=>warning(a.target,a.radius));
-        once('capture',a.windup,()=>{
-          if(distance(player,a.target)>a.radius+playerPadding())return;
-          const m=mesh('orb',player,[1.2,1.7,1.2],'#61d6ff',.3),rim=mesh('orb',player,[1.22,1.72,1.22],'#d2f8ff',.5);rim.material.wireframe=true;
-          prison={id:++serial,kind:'prison',p:[...player],r:1.4,hp:a.hp,maxHp:a.hp,age:0,life:a.life,damage:a.damage,tickInterval:a.tickInterval,visuals:[m,rim]};entities.push(prison);
-        });break;
+        once('warning',0,()=>{a.prisonFrom=ctx.mouthPosition?.(pose)||[...origin];a.visuals.push(beam(a.prisonFrom,a.target,a.radius*2,'#ff7f72'));});
+        once('launch',a.windup,()=>{if(ctx.launchWaterPrison){const d=new T.Vector3(...a.target).sub(new T.Vector3(...a.prisonFrom)).normalize().toArray();ctx.launchWaterPrison(a.prisonFrom,d,{damage:a.damage*(phase===3?.6:1),speed:a.speed,range:32,controlDuration:a.controlDuration});return;}projectile(a.prisonFrom,a.target,{kind:'waterball',speed:a.speed,r:a.radius,damage:a.damage,homing:0,life:4,captureDuration:a.controlDuration});});break;
       case 'dragon-tsunami':
         once('wave',0,()=>{
           const gap=lanes[(cycle+Math.floor(clock))%3],gapWidth=a.gapWidth,visuals=[],z=origin[2]+3;
@@ -217,7 +216,7 @@ export function createGuardianBossCombat(scene){
         const storm=a.type==='wolf-tempest',start=a.windup;
         once('path',0,()=>{
           a.path=[origin,[clamp(a.target[0]-3,-5,5),1.7,a.target[2]-7],[clamp(a.target[0]+3,-5,5),1.7,a.target[2]-3],[a.target[0],1.7,a.target[2]+1]];
-          for(let i=1;i<a.path.length;i++)a.visuals.push(line(a.path[i-1],a.path[i],.12,'#ff728b'));
+          for(let i=1;i<a.path.length;i++)a.visuals.push(line(a.path[i-1],a.path[i],a.radius*2,'#ff728b'));
         });
         if(storm)for(let i=0;i<a.count;i++)once('storm'+i,a.boltStart+i*a.interval,()=>hazard(targetPoint(player),a.boltRadius,a.warning,a.boltDamage,'bolt'));
         if(t>=start&&t<start+a.rushDuration){
@@ -238,18 +237,18 @@ export function createGuardianBossCombat(scene){
         pose.y=2.5;
         once('vortices',0,()=>{
           for(let i=0;i<a.count;i++){
-            const p=[spread(a.count)[i],.1,a.target[2]-1],visuals=[];
+            const p=[Math.sin(i*2.1)*a.travelAmplitude,.1,a.target[2]-1],visuals=[];
             const funnel=mesh('cone',[p[0],1.6,p[2]],[1.1,3.2,1.1],design.color,.16);funnel.rotation.z=Math.PI;visuals.push(funnel);
             for(let j=0;j<5;j++)visuals.push(mesh('arc',[p[0],.3+j*.65,p[2]],[.4+j*.18,.3,.4+j*.18],design.color,.55));
-            entities.push({id:++serial,kind:'tornado',p,age:0,delay:a.windup,life:a.life,damage:a.damage,seed:i,tick:0,tickInterval:a.tickInterval,radius:a.radius,orbitSpeed:a.orbitSpeed,travelAmplitude:a.travelAmplitude,visuals});
+            for(const m of visuals)m.visible=false;entities.push({id:++serial,kind:'tell',p:[...p],age:0,life:a.windup,visuals:[circle(p,a.radius,'#ff728b',true)]});entities.push({id:++serial,kind:'tornado',p,age:0,delay:a.windup,life:a.life,damage:a.damage,seed:i,tick:0,tickInterval:a.tickInterval,radius:a.radius,orbitSpeed:a.orbitSpeed,travelAmplitude:a.travelAmplitude,visuals});
           }
         });break;
       case 'turtle-quake':
         for(let i=0;i<a.count;i++)once(i,a.windup+i*a.interval,()=>{
-          const p=[origin[0],.1,origin[2]],m=circle(p,.2);entities.push({id:++serial,kind:'shockwave',p,age:0,life:a.life,r:0,damage:a.damage,speed:a.speed,radius:a.radius,visuals:[m],hit:false});
+          const p=[origin[0],.1,origin[2]],m=circle(p,.2),tell=circle(p,.2,'#ff728b');m.visible=false;entities.push({id:++serial,kind:'shockwave',p,age:0,delay:.6,life:a.life+.6,r:0,damage:a.damage,speed:a.speed,radius:a.radius,visuals:[m,tell],hit:false});
         });break;
       case 'turtle-rebound':
-        once('shell',0,()=>{a.visuals.push(mesh('orb',origin,[3,2.2,3],design.color,.32));});pose.lean=.15;break;
+        once('shell',a.windup,()=>{a.visuals.push(mesh('orb',origin,[3,2.2,3],design.color,.32));});pose.lean=.15;break;
       case 'turtle-mountains':once('mountains',0,()=>castAtLanes(a.count,a.interval,a.damage,a.radius,'stone'));break;
       case 'gold-feathers':
         pose.y=3;
@@ -266,7 +265,7 @@ export function createGuardianBossCombat(scene){
         once('blades',0,()=>{
           for(const side of [-1,1]){
             const p=[origin[0]+side*a.sideOffset,1.7,origin[2]],end=[clamp(a.target[0]+side*a.sideOffset,-5,5),1.7,a.target[2]+3],direction=new T.Vector3(...end).sub(new T.Vector3(...p)).normalize().toArray();
-            a.visuals.push(line(p,end,.15,'#ff7777'));
+            a.visuals.push(line(p,end,a.radius*2,'#ff7777'));
             const m=mesh('box',p,[.18,4,1.6],design.color,.9);m.rotation.z=side*.35;
             entities.push({id:++serial,kind:'blade',p,v:direction,age:0,delay:a.windup,life:a.life,damage:a.damage,speed:a.speed,radius:a.radius,hit:false,visuals:[m]});
           }
@@ -306,6 +305,7 @@ export function createGuardianBossCombat(scene){
         });break;
       case 'tiger-blizzard':
         once('shelter',0,()=>{
+          a.visuals.push(mesh('box',[0,.045,a.target[2]-2],[12,.025,14],'#ff6477',.14));
           // At least two reachable fixed shelters exist even if no earlier
           // crystal was broken. Destroying these crystals creates extra cover.
           for(const x of [-5,5]){const p=[x,.1,a.target[2]],r=a.fixedShelterRadius,m=circle(p,r,'#a5ffd9',true);shelters.push({p,r,life:a.fixedShelterDuration,m});}
@@ -327,7 +327,7 @@ export function createGuardianBossCombat(scene){
   }
   function updateEntities(dt,player,boss){
     for(const e of entities){
-      if(e.dead)continue;e.age+=dt;
+      if(e.dead)continue;e.age+=dt;if(e.activationDelay){if(e.age<e.activationDelay)continue;e.activationDelay=0;for(const m of e.visuals)m.visible=true;}
       if(e.kind==='hazard'){
         if(e.age>=e.delay&&!e.fired){
           e.fired=true;erupt(e);
@@ -337,14 +337,16 @@ export function createGuardianBossCombat(scene){
         if(!e.fired)e.visuals[0].material.opacity=.22+(Math.sin(e.age*12)+1)*.16;
       }else if(e.kind==='projectile'){
         if(e.age>=e.delay){
+          e.visuals[0].visible=true;if(e.tell)e.tell.visible=false;
           const old=[...e.p],d=new T.Vector3(...player).sub(new T.Vector3(...e.p)).normalize(),v=new T.Vector3(...e.v);
           if(e.homing)v.lerp(d,Math.min(1,dt*e.homing)).normalize();e.v=v.toArray();
           e.p=e.p.map((p,i)=>p+e.v[i]*e.speed*dt);e.visuals[0].position.fromArray(e.p);e.visuals[0].rotation.z+=dt*5;
           if(blockedProjectile(e,old,e.r)){destroy(e);continue;}
-          const victim=targets().filter(t=>segmentDistance(t.pos,old,e.p)<e.r+.5+playerPadding()).sort((a,b)=>distance(a.pos,old)-distance(b.pos,old))[0];if(victim){emit(e.damage,victim.pos,{v:e.v,victimId:victim.id});destroy(e);}
+          const victim=targets().filter(t=>segmentDistance(t.pos,old,e.p)<e.r+.5+playerPadding()).sort((a,b)=>distance(a.pos,old)-distance(b.pos,old))[0];if(victim){const result=emit(e.damage,victim.pos,{v:e.v,victimId:victim.id});if(e.captureDuration&&result?.damage>0){control('water',e.captureDuration);const m=mesh('orb',victim.pos,[1.2,1.7,1.2],'#61d6ff',.3),rim=mesh('orb',victim.pos,[1.22,1.72,1.22],'#d2f8ff',.5);rim.material.wireframe=true;prison={id:++serial,kind:'prison',p:[...victim.pos],r:1.4,hp:0,maxHp:0,breakable:false,age:0,life:e.captureDuration,visuals:[m,rim]};entities.push(prison);}destroy(e);}
         }
       }else if(e.kind==='wolf'){
         if(e.age>=e.delay){
+          e.group.visible=true;if(e.tell)e.tell.visible=false;
           const d=new T.Vector3(player[0]-e.p[0],0,player[2]-e.p[2]).normalize(),old=[...e.p];
           e.p[0]+=d.x*e.speed*dt;e.p[2]+=d.z*e.speed*dt;e.group.position.fromArray(e.p);e.group.rotation.y=Math.atan2(d.x,d.z);
           if(blockedProjectile(e,[old[0],.8,old[2]],e.radius)){destroy(e);continue;}
@@ -355,11 +357,13 @@ export function createGuardianBossCombat(scene){
           e.hitIds??=new Set();emitWhere(e.damage,(p,t)=>{if(e.hitIds.has(t.id)||p[2]<old-1-playerPadding()||p[2]>e.p[2]+1+playerPadding())return false;e.hitIds.add(t.id);return Math.abs(p[0]-e.gap)>e.gapWidth/2-.25-playerPadding();});}
       }else if(e.kind==='tornado'){
         if(e.age>=e.delay){
+          for(const m of e.visuals)m.visible=true;
           e.p[0]=Math.sin((e.age-e.delay)*e.orbitSpeed+e.seed*2.1)*e.travelAmplitude;
           e.visuals.forEach((m,i)=>{m.position.x=e.p[0]+Math.sin(e.age*4+i)*.15;m.rotation.y=e.age*3+i;if(m.geometry===geometry.arc)m.rotation.x=Math.PI/2;});
           e.tick+=dt;if(e.tick>=e.tickInterval){e.tick=0;emitWhere(e.damage,p=>distance(p,e.p)<e.radius+playerPadding());}
         }
       }else if(e.kind==='shockwave'){
+        e.visuals[1].scale.setScalar(Math.max(.1,e.age*e.speed));if(e.age<e.delay)continue;e.visuals[0].visible=true;
         const old=e.r;e.r+=dt*e.speed;e.visuals[0].scale.setScalar(Math.max(.1,e.r));
         e.hitIds??=new Set();emitWhere(e.damage,(p,t)=>{const d=distance(p,e.p);if(e.hitIds.has(t.id)||d<old-e.radius-playerPadding()||d>e.r+e.radius+playerPadding())return false;e.hitIds.add(t.id);return p[1]<2.8;});
       }else if(e.kind==='blade'){
@@ -370,9 +374,8 @@ export function createGuardianBossCombat(scene){
         e.visuals[1].rotation.y+=dt;
         if(e.age>=e.explodeAt){emitWhere(e.damage,p=>distance(p,e.p)<e.blast+playerPadding());destroy(e);}
       }else if(e.kind==='prison'){
-        // Captured players may still seal and attack the bubble to escape.
+        // Timed captivity is applied only by a released projectile hitting.
         e.visuals.forEach(m=>m.position.fromArray(player));e.p=[...player];
-        e.tick=(e.tick||0)+dt;if(e.tick>=e.tickInterval){e.tick=0;emit(e.damage,player);}
       }else if(e.kind==='spirit'||e.kind==='sapling'||e.kind==='grass'){
         e.visuals[1].rotation.y+=dt*.3;
         if(village==='wood'&&(e.kind!=='grass'||distance(e.p,boss)<passive.healRadius)){
@@ -391,7 +394,7 @@ export function createGuardianBossCombat(scene){
     if(village==='wind')return {multiplier:exposed>0?passive.vulnerability:(pose.y||0)>.5?1-passive.airborneReduction:1,reflect:0};
     if(village==='earth'){
       if(stagger>0)return {multiplier:passive.toppleMultiplier,reflect:0};
-      if(action?.type==='turtle-rebound')return {multiplier:1-action.damageReduction,reflect:action.reflection};
+      if(action?.type==='turtle-rebound'&&action.age>=action.windup)return {multiplier:1-action.damageReduction,reflect:action.reflection};
       // Actual shot contact height selects legs/head/shell; no random weak spot.
       const localY=(p?.[1]??ctx.boss[1])-(ctx.boss[1]-2.2),part=shot.guardianPart||'';
       const leg=/tortoise-(leg|claw)/.test(part)||(!part&&localY<1.25),head=/tortoise-(head|neck|beak)|guardian-eye/.test(part);
@@ -406,7 +409,7 @@ export function createGuardianBossCombat(scene){
     clear,trigger:begin,
     update(dt,fighter,player,boss,impact,options={}){
       if(!design||options.enabled===false||fighter.hp<=0)return;
-      ctx={fighter,player:[...player],boss:[...boss],impact,interceptProjectile:options.interceptProjectile,control:options.control,playerHitboxScale:options.playerHitboxScale??1,targets:options.targets};
+      ctx={fighter,player:[...player],boss:[...boss],impact,mouthPosition:options.mouthPosition,launchWaterPrison:options.launchWaterPrison,interceptProjectile:options.interceptProjectile,control:options.control,playerHitboxScale:options.playerHitboxScale??1,targets:options.targets};
       clock+=dt;exposed=Math.max(0,exposed-dt);stagger=Math.max(0,stagger-dt);night=Math.max(0,night-dt);
       stackLife=Math.max(0,stackLife-dt);if(!stackLife)stack=0;
       if(!environmentReady){environmentReady=true;addEnvironment(player,boss);}
@@ -415,7 +418,7 @@ export function createGuardianBossCombat(scene){
       if(village==='dark')for(const m of passiveVisuals)if(m.geometry===geometry.disk)m.material.opacity=illuminated(player)?.55:.25;
       if(options.controlled&&phase===2){cancelAction();for(const e of entities)if(['projectile','hazard','wolf','wave','blade','shockwave','tornado','decoy','prison'].includes(e.kind))destroy(e);pose={};}
       else{
-        if(!action&&stagger<=0){wait-=dt;if(wait<=0){begin(cycle%3,player,boss,fighter);cycle++;}}
+        if(!action&&stagger<=0){wait-=dt;if(wait<=0){begin(cycle%design.skills.length,player,boss,fighter);cycle++;}}
         updateAction(dt,player,boss);
       }
       updateEntities(dt,player,boss);
@@ -430,7 +433,7 @@ export function createGuardianBossCombat(scene){
     },
     slowAt(p){if(!active())return 1;if(prison)return 0;if(village==='water')return clamp(1-waterLevel*passive.slowPerLevel,0,1);return 1;},
     hidden,lockable:()=>!hidden(),
-    breakPrison(damage){if(!active()||!prison)return false;damageObject(prison,Math.max(0,damage));return true;},
+    breakPrison:()=>false,
     intercept(shot,damageScale=1){
       if(!active()||shot.owner!=='player'||!shot.old||!shot.p)return false;
       const hit=entities.filter(e=>!e.dead&&e.hp>0&&segmentDistance(e.p,shot.old,shot.p)<e.r+(shot.size||.1)).sort((a,b)=>distance(a.p,shot.old)-distance(b.p,shot.old))[0];
@@ -442,7 +445,7 @@ export function createGuardianBossCombat(scene){
       signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor:0,
       difficulty:design?.difficulty||0,passive:design?.passive||'',counter:design?.counter||'',skills:design?.skills.map(s=>s.name)||[],
       exposed,stagger,tailCount,stacks:stack,stackLife,waterLevel,hidden:hidden(),lockable:!hidden(),night:night>0,
-      prison:prison?{hp:prison.hp,maxHp:prison.maxHp,remaining:prison.life-prison.age}:null,
+      prison:prison?{hp:prison.hp,maxHp:prison.maxHp,breakable:prison.breakable!==false,remaining:prison.life-prison.age}:null,
       entities:entities.filter(e=>!e.dead).map(e=>({id:e.id,kind:e.kind,position:[...e.p],hp:e.hp,maxHp:e.maxHp,age:e.age,delay:e.delay,r:e.r,gap:e.gap,gapWidth:e.gapWidth})),
       hazards:entities.filter(e=>!e.dead&&e.kind==='hazard').map(e=>({position:[...e.p],radius:e.r,remaining:Math.max(0,e.delay-e.age),hit:!!e.fired})),
       shelters:shelters.map(({p,r,life})=>({position:[...p],radius:r,remaining:life})),lamps:lamps.map(({p,r})=>({position:[...p],radius:r}))};},

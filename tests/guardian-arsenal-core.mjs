@@ -15,14 +15,14 @@ try{
   g.clear();assert.equal(scene.children.length,0);
  }
  assert.equal(count,80);
- reset('water');g.trigger(4,player,boss,f);step(1);assert.ok(g.state().prison?.hp>0,'water prison is actionable');assert.ok(g.breakPrison(30));assert.equal(g.state().prison,null,'attacking breaks the prison');
+ assert.equal(designs.water.skills.length,8);
  reset('water');g.trigger(6,player,boss,f);step(.1);g.onDamage(110,{guardianPart:'dragon-white-underbelly'});assert.equal(g.state().action,null);assert.ok(g.state().exposed>0,'chest damage interrupts pressure buildup');
  reset('fire');g.trigger(8,player,boss,f);step(.1);g.onDamage(130,{guardianPart:'fire-tail-2'});step(.01);assert.ok(g.state().mechanics.tailGroupsDisabled>0);assert.ok(g.state().exposed>0);
  reset('earth');g.onDamage(95,{guardianPart:'leg-front-left'});g.onDamage(95,{guardianPart:'leg-back-left'});step(.01);assert.equal(g.state().mechanics.brokenLegs,2);assert.ok(g.state().mechanics.toppled);assert.equal(g.defense({guardianPart:'mountain-shell'}).multiplier,2);
- reset('light');g.trigger(3,player,boss,f);step(.1);assert.ok(g.defense({v:[0,0,-1],old:[0,1,0],p:[0,1,-1]}).reflect>0,'boss retains frontal projectile reflection');g.defense({v:[0,0,1]});assert.ok(g.state().exposed>0,'rear hit breaks the stance');
- reset('lightning');g.trigger(5,player,boss,f);step(.1);g.defense({v:[0,0,-1]});assert.equal(g.state().action.type,'wolf-bite','boss counterattack branches to an offensive rush');
- reset('dark');g.trigger(7,player,boss,f);step(.1);g.defense({v:[0,0,-1]});assert.equal(g.state().action.type,'shadow-stalk');
- reset('ice');g.trigger(5,player,boss,f);step(.8);const mirror=g.state().entities.find(e=>e.kind==='ice-spike');assert.ok(mirror);g.areaDamage({owner:'player',damage:40},mirror.position,.1);assert.ok(!g.state().entities.some(e=>e.id===mirror.id),'ice mirrors are destructible');
+ reset('light');g.trigger(3,player,boss,f);step(.6);assert.ok(g.defense({v:[0,0,-1],old:[0,1,0],p:[0,1,-1]}).reflect>0,'boss retains frontal projectile reflection');g.defense({v:[0,0,1]});assert.ok(g.state().exposed>0,'rear hit breaks the stance');
+ reset('lightning');g.trigger(5,player,boss,f);step(.6);g.defense({v:[0,0,-1]});assert.equal(g.state().action.type,'wolf-bite','boss counterattack branches to an offensive rush');
+ reset('dark');g.trigger(7,player,boss,f);step(.6);g.defense({v:[0,0,-1]});assert.equal(g.state().action.type,'shadow-stalk');
+ reset('ice');g.trigger(5,player,boss,f);step(1.3);const mirror=g.state().entities.find(e=>e.kind==='ice-spike');assert.ok(mirror);g.areaDamage({owner:'player',damage:40},mirror.position,.1);assert.ok(!g.state().entities.some(e=>e.id===mirror.id),'ice mirrors are destructible');
  for(const id of Object.keys(designs)){
   reset(id);options.aiEnabled=true;step(35,true);const state=g.state();assert.ok(state.attacks>=5,id+' pressure while player moves');assert.ok(state.director.reactionDelay>=.2);assert.ok(state.entities.length<=320);assert.ok(state.vfx.particles<=96);
   const b=practiceMovementBounds('enemy',3,home);for(const m of moves.filter(m=>m.mode==='walk'))assert.ok(m.p[2]>=b.minZ-.001&&m.p[2]<=b.maxZ+.001,id+' walks only in its home court');

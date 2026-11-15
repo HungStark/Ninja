@@ -16,12 +16,12 @@ export function updateLifeSkill(a,c,dt){
   at('tell',0,()=>{a.image=resources().images.sort((x,y)=>c.distance(x.p,t.pos)-c.distance(y.p,t.pos))[0];if(a.image)c.telegraphLine(a.image.p,predict(t,.3),.16,a.windup);});
   at('swap',a.windup,()=>{if(!a.image||a.image.dead)return;const old=[...c.body];c.teleport(a.image.p);a.image.p=old;a.image.root.position.fromArray(old);hurt(c.body,1.8,a.damage*.7);});break;
  case 'shadow-replay':
-  at('replays',a.windup,()=>{const log=(c.memory.replays||[]).filter(e=>c.clock-e.at<7).slice(-3);for(const [i,e]of log.entries()){c.telegraphLine(e.from,e.to,.18,.6+i*.15);later(.6+i*.15,()=>c.attackLine(e.from,e.to,.6,e.damage*.65,{},src));}});break;
+  at('replays',a.windup,()=>{const log=(c.memory.replays||[]).filter(e=>c.clock-e.at<7).slice(-3);for(const [i,e]of log.entries()){c.telegraphLine(e.from,e.to,1.2,.6+i*.15);later(.6+i*.15,()=>c.attackLine(e.from,e.to,.6,e.damage*.65,{},src));}});break;
  case 'shadow-stalk':
   at('mark',0,()=>{c.status(t.id).markTime=6;c.memory.hiddenUntil=c.clock+.5;const v=c.unit(t.velocity||[0,0,1]);a.behind=c.fit(c.sub(predict(t,.35),c.mul(v,2)));});
   {const d=c.dash(a,'stalk',a.behind,a.windup,.3,1,a.damage);if(d?.done)c.reveal(.6);}break;
  case 'shadow-counter':
-  at('stance',0,()=>c.memory.counter={kind:'shadow',until:c.clock+a.duration,used:false});break;
+  at('tell',0,()=>mark(c.body,2,a.windup,()=>{},'none'));at('stance',a.windup,()=>c.memory.counter={kind:'shadow',until:c.clock+a.duration-a.windup,used:false});break;
  case 'shadow-night':
   at('night',0,()=>{c.memory.nightUntil=c.clock+a.duration;patch('dark',t.pos,7,a.duration,{slow:.1});for(let i=0;i<4;i++){const e=image(c.add(c.body,[Math.sin(i*1.57)*3,0,Math.cos(i*1.57)*3]),false,a.duration);e.illusion=true;}});
   for(let i=0;i<4;i++){at('true-tell'+i,a.windup+i*1.1-.45,()=>{c.memory.trueTellUntil=c.clock+.55;c.reveal(.65);});rush(i,a.windup+i*1.1,a.damage*.7);}
@@ -40,7 +40,7 @@ export function updateLifeSkill(a,c,dt){
  case 'stag-leaves':
   for(let i=0;i<3;i++)at(i,a.windup+i*.25,()=>fan(5,1.1,predict(t,.35),{style:'seed',speed:13,piercing:true}));break;
  case 'stag-awaken':
-  at('awaken',a.windup,()=>{const old=resources().plants.filter(e=>e.plant==='ironwood'||e.plant==='worldtree').slice(0,2);for(const e of old){const p=[...e.p];c.destroy(e);const tree=plant('treant',p,55,7);tree.update=step=>{const victim=c.target(t.id);if(!victim)return;tree.p=c.fit(c.add(tree.p,c.mul(direction(tree.p,victim.pos),step*2.2)));tree.root.position.fromArray(tree.p);tree.root.rotation.y=c.angle(tree.p,victim.pos);tree.tick=(tree.tick||0)+step;if(tree.tick>1.6){tree.tick=0;const from=[...tree.p],to=predict(victim,.2);c.telegraphLine(from,to,.12,.6);later(.6,()=>c.attackLine(from,to,.7,a.damage,{},src));}};}});break;
+  at('awaken',a.windup,()=>{const old=resources().plants.filter(e=>e.plant==='ironwood'||e.plant==='worldtree').slice(0,2);for(const e of old){const p=[...e.p];c.destroy(e);const tree=plant('treant',p,55,7);tree.update=step=>{const victim=c.target(t.id);if(!victim)return;tree.p=c.fit(c.add(tree.p,c.mul(direction(tree.p,victim.pos),step*2.2)));tree.root.position.fromArray(tree.p);tree.root.rotation.y=c.angle(tree.p,victim.pos);tree.tick=(tree.tick||0)+step;if(tree.tick>1.6){tree.tick=0;const from=[...tree.p],to=predict(victim,.2);c.telegraphLine(from,to,1.4,.6);later(.6,()=>c.attackLine(from,to,.7,a.damage,{},src));}};}});break;
  case 'stag-sacrifice':
   at('sacrifice-warning',0,()=>{channel('grove');a.plants=[...resources().plants];for(const e of a.plants)mark(e.p,2,a.windup,()=>{if(e.dead||c.memory.channel?.broken)return;hurt(e.p,2,a.damage);c.destroy(e);});});
   at('heal',a.windup,()=>{if(!c.memory.channel?.broken)c.fighter.hp=Math.min(c.maxHp,c.fighter.hp+c.maxHp*.012*(a.plants||[]).filter(e=>!e.dead).length);});break;
@@ -60,6 +60,7 @@ export function updateLifeSkill(a,c,dt){
  case 'tiger-mirrors':
   at('mirrors',a.windup,()=>{for(const side of [-1,1]){const p=c.fitBody(c.add(c.home,[side*4,0,1]),'walk'),e=c.object('ice-spike',p,24,.65,7,{mirror:true,src});e.root.scale.set(1,1.4,.25);}});break;
  case 'tiger-roar':
+  at('roar-tell',0,()=>mark(c.body,8,a.windup,()=>{},'none'));
   at('roar',a.windup,()=>{ring(c.body,a.damage,10);for(const victim of c.targets)if(c.status(victim.id).stacks>0&&c.distance(victim.pos,c.body)<8)c.applySlow(victim,.3,1.3);});break;
  case 'tiger-shatter':
   at('shatter-tell',0,()=>{a.ice=[...resources().ice];for(const e of a.ice)mark(e.p,e.r+.5,a.windup,()=>{if(e.dead)return;c.explodeObject(e,a.damage*.45,5,{speed:10,style:'ice-shard',src});},'ice');});break;

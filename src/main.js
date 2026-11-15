@@ -199,10 +199,15 @@ async function main() {
     const blocked=snowBlocks(scaled)||crossWalls(scaled,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,scaled));
     shot.damage=scale>0?scaled.damage/scale:0;return blocked;
   }
+  function launchGuardianWaterPrison(from,direction,parameters){
+    const template=spells.find(s=>s.id==='water-lance'),start=shots.length;
+    launch({...template,id:'guardian-water-prison',count:1,damage:parameters.damage,baseDamage:parameters.damage,speed:parameters.speed/PROJECTILE_SPEED_MULTIPLIER,size:template.size,controlDuration:parameters.controlDuration},'enemy',from,direction);
+    for(const shot of shots.slice(start)){shot.guardianSkill='dragon-prison';shot.unreflectable=true;shot.life=flightTimeAt(parameters.range||32,parameters.speed);}
+  }
   function guardianImpact(shot,pos){if(shot.blockable&&guardianIntercept(shot))return {damage:0};const scaled={...shot,damage:shot.damage*bossDamageMultiplier()/baseEnemyDamageMultiplier()};impact(scaled,pos);shot.hitResult=scaled.hitResult;return scaled.hitResult;}
   function guardianControl(kind,duration,id='player'){if(id==='ha-ly'){const f=campaignAlly.actor()?.fighter;if(f)f[kind==='ice'?'iceControlTime':kind==='wood'?'woodControlTime':kind==='air'?'windControlTime':'lightningControlTime']=duration;return;}
     if(kind==='air'){windArts.lift('enemy',{owner:'player',pos:playerPos(),fighter:player},duration);interruptActor('player');return;}
-    const key=kind==='ice'?'iceControlTime':kind==='wood'?'woodControlTime':'lightningControlTime';
+    const key=kind==='water'?'waterControlTime':kind==='ice'?'iceControlTime':kind==='wood'?'woodControlTime':'lightningControlTime';
     player[key]=Math.max(player[key]||0,duration);interruptActor('player');
   }
 
@@ -480,7 +485,6 @@ async function main() {
     gameAudio.cast(spell,owner!=='player');
     if(!natureArts.canCast(owner,spell))return false;
     spell=natureArts.empower(owner,spell);if(owner==='player')playerAvatar.cast(spell);
-    if(owner==='player'&&spell.kind==='attack'&&guardianPhases.breakPrison((spell.damage||15)*damageMultiplierFor(battlePlayerStats,spell.element)))return true;
     if(spell.style==='waterbubbles'){
       waterBubbles.cast(owner,spell,owner==='player'&&mobileTactical()?(mobileManualAim?practiceAimPoint():mobileEnemy().pos):owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:owner!=='player'?playerPos():natureArts.perceivedPosition(owner,windActors()));
       if(owner==='player')announce('Thủy Bộc Phá Không · 4 bong bóng nổ lần lượt ở giây 0,25; 0,5; 0,75; 1.');
@@ -656,7 +660,6 @@ async function main() {
   function launchShuriken(owner,weapon,pos,dir,sourceProfile=null){
     if(owner==='enemy')weapon={...weapon,damage:weapon.damage*(sourceProfile?opponentDamageMultiplier(sourceProfile):bossDamageMultiplier())/baseEnemyDamageMultiplier()};
     gameAudio.shuriken(owner!=='player');if(owner==='player')playerAvatar.throwWeapon();else if(!sourceProfile)opponent.throwWeapon();
-    if(owner==='player'&&guardianPhases.breakPrison(weapon.damage*damageMultiplierFor(battlePlayerStats,'weapon')))return weapon;
     const infused=weapon,point=owner==='player'&&overheadPractice()?practiceOverhead.point():volleyTarget(owner,pos,dir),designatedId=owner==='player'&&mobileTactical()&&!mobileManualAim?mobileTargetId:null;
     const locked=selectShurikenTarget(pos,dir,point,volleyAimActors(owner),{pointAim:owner==='player'&&overheadPractice(),designatedId}),target=locked?[...locked.pos]:point,side=vnorm([-dir[2],0,dir[0]]),p=vadd(vadd(pos,vmul(dir,.7)),vmul(side,.15));p[1]-=.12;
     shots.push({owner,element:'weapon',shurikenType:weapon.shurikenType||'iron',energy:true,waterInfused:!!infused.waterInfused,style:'shuriken',phase:'flying',aimedTargetId:locked?.id??null,homingTargetId:locked?.id??null,homingOwner:owner,p,old:[...p],v:vmul(vnorm(vsub(target,p)),infused.speed),size:infused.size,damage:infused.damage,color:weapon.color||'#707983',life:4,age:0,flightAge:0,trail:0,reflected:false});
@@ -1223,7 +1226,7 @@ async function main() {
       lightArts.advance(dt,damageActors(),walls,(shot,p)=>{impact(shot,p);return shot.hitResult;},shot=>snowBlocks(shot)||guardianObjectBlocks(shot));
       if(checkGuardianDefeat()){updateUI();return;}
       const guardianBase=guardianAnchor?[guardianAnchor.x,guardianAnchor.y+(opponent.group.userData.height||4)*characterScale()*.55,guardianAnchor.z]:enemyPos();
-      guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0,mouthPosition:p=>opponent.guardianMouth(p),control:guardianControl,targets:alliedTargets(),playerHitboxScale:characterScale(),interceptProjectile:guardianIntercept,...(overheadPractice()?{targets:alliedTargets(),bounds:{minX:PRACTICE_ARENA.minX+1,maxX:PRACTICE_ARENA.maxX-1,minZ:PRACTICE_ARENA.minZ+1,maxZ:PRACTICE_ARENA.maxZ-1},attackBounds:combatMovementBounds('player',playerPos()),quality,incomingShots:shots,constrainBossMovement:(from,to,mode)=>clampGuardianMovement(mode==='walk'?guardianBase:from,to,mode,movementClearance('enemy'),boundedCombat()),setTargetPosition:(id,p)=>{if(id==='player')setEarthActorPosition('player',practiceActorPoint('player',p));},walls,intersectWall:intersectFireWall,random:rand}:{} )});
+      guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0,mouthPosition:p=>opponent.guardianMouth(p),launchWaterPrison:launchGuardianWaterPrison,control:guardianControl,targets:alliedTargets(),playerHitboxScale:characterScale(),interceptProjectile:guardianIntercept,...(overheadPractice()?{targets:alliedTargets(),bounds:{minX:PRACTICE_ARENA.minX+1,maxX:PRACTICE_ARENA.maxX-1,minZ:PRACTICE_ARENA.minZ+1,maxZ:PRACTICE_ARENA.maxZ-1},attackBounds:combatMovementBounds('player',playerPos()),quality,incomingShots:shots,constrainBossMovement:(from,to,mode)=>clampGuardianMovement(mode==='walk'?guardianBase:from,to,mode,movementClearance('enemy'),boundedCombat()),setTargetPosition:(id,p)=>{if(id==='player')setEarthActorPosition('player',practiceActorPoint('player',p));},walls,intersectWall:intersectFireWall,random:rand}:{} )});
       updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);guardianAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),(actor,amount)=>{const r=actor.fighter.receive(amount,true,false,'wind');if(r.damage>0){enemyHit=.25;hitTimer=.1;if(overheadPractice())damageFeedback.trigger(actor.id,actor.pos);}return r.damage;},!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);battleMetrics.observeWalls(walls);
       campaignAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),undefined,!testAIDisabled);
       enemyDashAura.update(dt,[opponent.group.position.x,earthFloor('enemy',opponent.group.position.x,opponent.group.position.z),opponent.group.position.z],enemy.hp>0&&enemyMovement.state().dashBoost.dashing>0,reducedMotion);
@@ -1272,15 +1275,15 @@ async function main() {
     if(activeBoss()&&guardianPhases.phase===2)$('enemyAction').textContent=guardianPhases.state().signature||'Quan sát · chuẩn bị thi triển';
     const guardianInfo=guardianPhases.state();
     if(guardianInfo.passive){$('enemyShield').textContent+=' · '+guardianInfo.passive+(guardianInfo.tailCount?' '+guardianInfo.tailCount+'/'+guardianInfo.passiveParameters.tailCap:'')+(guardianInfo.exposed>0?' · Lộ điểm yếu '+guardianInfo.exposed.toFixed(1)+'s':'');}
-    if(guardianInfo.prison)$('shieldStatus').textContent+=' · Thủy Lao '+Math.ceil(guardianInfo.prison.hp)+' HP · Tấn công để phá';
+    if(guardianInfo.prison)$('shieldStatus').textContent+=' · Thủy Lao · '+guardianInfo.prison.remaining.toFixed(1)+'s';
     if(guardianInfo.stacks)$('shieldStatus').textContent+=' · '+(activeBoss()?.village==='ice'?'Hàn Khí ':'Lôi Tích ')+guardianInfo.stacks+'/'+guardianInfo.passiveParameters.stackCount;
     if(activeBoss()&&guardianInfo.armor>0)$('enemyShield').textContent+=guardianInfo.thirdPerson?' · Giáp đá '+Math.ceil(guardianInfo.armor)+' HP':' · Giáp hộ vệ −35% sát thương · '+guardianInfo.armor.toFixed(1)+'s';
     if(guardianInfo.thirdPerson){const s=guardianInfo.statuses?.find(s=>s.id==='player'),labels={fire:'Hỏa Ấn',water:'Ướt',light:'Kim Ấn',ice:'Hàn Khí'};if(s?.stacks)$('shieldStatus').textContent+=' · '+labels[activeBoss()?.village]+' '+s.stacks;if(s?.markTime>0)$('shieldStatus').textContent+=' · '+(activeBoss()?.village==='dark'?'U Minh Ấn':'Lôi Ấn');if(s?.slowTime>0)$('shieldStatus').textContent+=' · Chậm '+Math.round(s.slow*100)+'%';if(s?.rootTime>0)$('shieldStatus').textContent+=' · Trói chân '+s.rootTime.toFixed(1)+'s';if(s?.freezeImmune>0)$('shieldStatus').textContent+=' · Kháng đóng băng '+s.freezeImmune.toFixed(1)+'s';if(guardianInfo.enraged)$('enemyAction').textContent+=' · Cuồng nộ';}
     const boost=dashBoost.state();
     $('moveHint').textContent = overheadPractice()?'CHUỘT PHẢI: DI CHUYỂN · G: LƯỚT THEO CON TRỎ · SPACE: THI TRIỂN':boost.ready>0?'TĂNG LỰC '+boost.ready.toFixed(1)+'s · CLICK TRÁI / PHẢI ĐỂ LƯỚT 5 M':moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'GIỮ TRÁI / PHẢI ĐỂ DI CHUYỂN LIÊN TỤC';
-    $('dashBoostButton').disabled=cinematicActive()||!started||paused||won||player.controlTime>0||natureArts.buried('player')||lightArts.blocksDash('player',playerPos())||boost.ready>0||boost.cooldown>0||rules.chakra+1e-8<DASH_MANA_COST;
-    $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':rules.chakra+1e-8<DASH_MANA_COST?'Thiếu mana · cần 10':overheadPractice()?'Lướt · 10 mana':'Tăng lực · 10 mana';
-    $('dashBoostButton').title=overheadPractice()?'G: lướt ngay 5 m theo con trỏ, tốn 10 mana, hồi 1 giây':'G: tốn 10 mana để tăng lực trong 3 giây; click trái/phải lướt 5 m, hồi 1 giây';
+    $('dashBoostButton').disabled=cinematicActive()||!started||paused||won||player.controlTime>0||natureArts.buried('player')||lightArts.blocksDash('player',playerPos())||boost.ready>0||boost.dashing>0||boost.cooldown>0||rules.chakra+1e-8<DASH_MANA_COST;
+    $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':rules.chakra+1e-8<DASH_MANA_COST?'Thiếu mana · cần 5':overheadPractice()?'Lướt · 5 mana':'Tăng lực · 5 mana';
+    $('dashBoostButton').title=overheadPractice()?'G: lướt ngay 5 m theo con trỏ, tốn 5 mana, hồi 0,5 giây':'G: tốn 5 mana để tăng lực trong 3 giây; click trái/phải lướt 5 m, hồi 0,5 giây';
     $('flash').style.opacity = 0; $('hitMarker').style.opacity = !overheadPractice()&&hitTimer > 0 ? 1 : 0;
     const targetEntity=aimedEnemy(),delta = vsub(adventure?.encounter?.squad?targetEntity.pos:natureArts.perceivedPosition('player',windActors()), playerPos()), d = aim(), onTarget = guardianPhases.lockable()&&vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7*characterScale();
     $('reticle').classList.toggle('on-target', onTarget && targetEntity.fighter.hp > 0 && !waveView);

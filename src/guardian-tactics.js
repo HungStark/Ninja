@@ -14,7 +14,7 @@ export function guardianCommitment(a){
 // The refuge is close enough to reach during the warning, and every wave has
 // a real hole in both its collider and its rendered wall.
 export function planGuardianWave(target,bounds,index,parameters){
- const padding=.7,gap=Math.max(4.4,parameters.gapWidth||0),width=Math.min(parameters.waveWidth||18,bounds.maxX-bounds.minX),half=gap/2;
+ const padding=.7,gap=parameters.gapWidth===0?0:Math.max(4.4,parameters.gapWidth||0),width=Math.min(parameters.waveWidth||18,bounds.maxX-bounds.minX),half=gap/2;
  const safeX=clamp(target[0]+(index%2?-1:1)*2,bounds.minX+half+padding,bounds.maxX-half-padding);
  const centerX=clamp(target[0],bounds.minX+width/2,bounds.maxX-width/2),minZ=Math.max(bounds.minZ,target[2]-7),maxZ=Math.min(bounds.maxZ,target[2]+7);
  const r=Math.min(.55,parameters.radius||.55),start=[centerX,0,minZ-r-1],endZ=maxZ+r+1;

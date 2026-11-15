@@ -5,7 +5,7 @@ Chuẩn nội dung là [bản thiết kế người dùng](guardian-arsenal-user
 | Linh thú | Kỹ năng | Cơ chế chính |
 |---|---:|---|
 | Cửu Viêm Hồ | 9 | Nhóm đuôi, dấu chân nổ, hỏa cầu chờ lướt, tường lửa, phân thân, hút lửa và chín mặt trời |
-| Thủy Long | 8 | Trạng thái chiến đấu, xoáy hút đạn, khe sóng, Thủy Lao tự phá được, lặn, áp suất và đại dương trên trời |
+| Thủy Long | 8 | Xoáy xuất hiện sau vòng báo tại vị trí cố định, Hải Triều liền mạch, Thủy Lao bắn cầu có báo trước và giam 1,5 giây, lặn, áp suất và đại dương trên trời |
 | Lôi Thần Lang | 10 | Mở, truy kích, kết thúc; dư ảnh, hoán vị, lưới điện, phản kích phá được từ phía sau |
 | Phong Ưng | 8 | Động lượng, cắt cánh khi lao, mắt bão an toàn, bổ nhào nhiều lượt |
 | Sơn Quy | 8 | Độ bền từng chân, đầu và mai; hai chân cùng phía bị phá làm lật, cột đá có HP |
@@ -20,7 +20,7 @@ Tổng cộng 80 kỹ năng có tên, mô tả, vai trò, giai đoạn mở khó
 
 Đi bộ luôn bị chặn theo phần sân nhà ghi lúc vào trận, tính cả kích thước linh thú. Boss chỉ vượt rào bằng đợt kỹ năng tấn công có chuyển động lao/nhảy. Vị trí xuất phát được lưu trước đợt đánh; sau kết thúc chuỗi, đánh hụt cần hồi phục hoặc bị ngắt, boss quay về điểm đó. AI không mở đợt đánh mới khi đang quay về. Boss không ở lại đi bộ bên sân người chơi.
 
-Sóng thần dùng hai mảng hình ảnh và hai phần va chạm cùng chừa khe rộng 4,6 m, bề ngang mặc định 18 m. Khe gần người chơi và có báo trước; xoáy nguy hiểm trong hành lang được dọn. Các kỹ năng lớn chia thành nhiều đợt có cảnh báo và chừa lối di chuyển.
+Hải Triều Xung Kích giữ bề ngang 18 m và báo trước, nhưng dùng một dải hình ảnh/va chạm liền, không có khe hoặc dấu hành lang an toàn. Đợt sóng cuối của Hải Thiên Nghịch Chuyển vẫn giữ cơ chế riêng. Thủy Lao Giam Cầm gồng 0,9 giây kèm đường cảnh báo, sau đó bắn một quả cầu không tự đuổi từ miệng; chỉ trúng mới giam 1,5 giây. Quả cầu giam tự tan, không có HP và không thể phá bằng sát thương.
 
 ## AI và nhịp đánh
 
@@ -31,6 +31,8 @@ Các giai đoạn mở khóa ở 100–70%, 70–35% và dưới 35% máu của 
 Tham khảo nguyên tắc mỗi đòn buộc người chơi phản ứng có chủ đích và mọi đòn đều có cách xử lý trong [phân tích Valkyrie của Denny Yeh, Santa Monica Studio](https://blog.playstation.com/archive/2019/02/01/how-god-of-wars-nine-epic-valkyrie-boss-battles-were-created). Chuyển động tiến vào không gian chiến đấu được đối chiếu với [Evolving Combat in God of War, GDC 2019](https://media.gdcvault.com/gdc2019/presentations/Sheth_Mihir_EvolvingCombat.pdf). Đây là nguyên tắc tham khảo, không phải tuyên bố game đạt chất lượng sản xuất AAA.
 
 ## Kiểm tra
+
+Quy tắc cảnh báo và kết quả rà soát nằm trong [cảnh báo kỹ năng linh thú](guardian-telegraph-audit.md).
 
 `npm run test:guardian-bosses` kiểm tra 80 kỹ năng, luật về sân, điểm yếu, phản kích, tài nguyên, WebGL, bản VI/EN và luồng phiêu lưu. `npm run test:guardian-mobile` kiểm tra giao diện cảm ứng. Giao chiến ninja và di chuyển người chơi được kiểm tra riêng để phát hiện ảnh hưởng ngoài phạm vi.
 

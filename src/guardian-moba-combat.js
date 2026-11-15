@@ -24,12 +24,12 @@ export function createGuardianBossCombat(scene,extension={}){
  const geo={orb:new T.IcosahedronGeometry(1,1),ring:new T.RingGeometry(.93,1,48),disk:new T.CircleGeometry(1,48),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,7),crystal:new T.OctahedronGeometry(1),arc:new T.TorusGeometry(1,.08,5,24,Math.PI*1.4),pillar:new T.CylinderGeometry(.7,1,1,8)};
  const vfx=createGuardianVfx();
  const designBank=extension.designs||GUARDIAN_BOSS_DESIGNS,updateSkill=extension.updateSkill||updateGuardianSkill,director=extension.createDirector?.();
- let memory={},combatStage=1,home=null,excursion=null,returning=null,blockedTime=0,castHits=new Map();
+ let memory={},combatStage=1,home=null,excursion=null,returning=null,blockedTime=0,castHits=new Map(),currentWarning=null;
  let id=null,design=null,passive={},phase=2,clock=0,serial=0,castSerial=0,ctx=null,action=null,entities=[],history=[],wait=.75,attacks=0,ongoing=[],moveSpeed=0;
  let body=null,origin=null,pose={},previousBody=null,stationary=0,armor=0,armorLevels=0,armorShell=null,tailCount=0,energy=0,energyTravel=0,speedStacks=0,rage=0,stagger=0,lastCombat=0,ambushReady=false;
  let seed=1,passiveAt=0,comboCursor=0,comboRepeats=0,comboSerial=0,previousCombo='',combo=[],cooldowns={},stats=new Map(),previousTargets=new Map(),safeX=0,enraged=false,movement=0,revealUntil=0;
  const alive=e=>!e.dead;
- const all=tag=>entities.filter(e=>alive(e)&&(e.tag===tag||e.kind===tag));
+ const all=tag=>entities.filter(e=>alive(e)&&!e.activationDelay&&(e.tag===tag||e.kind===tag));
  const random=()=>{if(ctx?.random)return clamp(ctx.random(),0,.999999999);seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  const bounds=()=>ctx?.bounds||{minX:-6,maxX:6,minZ:-25,maxZ:12};
  const attackBounds=()=>ctx?.attackBounds||{minX:bounds().minX,maxX:bounds().maxX,minZ:Math.min(...targets().map(t=>t.pos[2]))-5,maxZ:Math.max(...targets().map(t=>t.pos[2]))+3};
@@ -108,24 +108,28 @@ export function createGuardianBossCombat(scene,extension={}){
   if(result.damage>0){castHits.set(src.castId,(castHits.get(src.castId)||0)+1);lastCombat=clock;if(extra.passive!==false){if(bonus){s.stacks=0;s.stackTime=0;}if(ambush)ambushReady=false;applyPassive(t,src);}if(extra.slow)applySlow(t,extra.slow,extra.slowTime||1);if(extra.root)control(t,'root',extra.root);if(extra.air)control(t,'air',extra.air);}
   return result;
  }
- function area(p,r,damage,extra={},src){let hits=0;for(const t of targets())if(distance(t.pos,p)<=r+(t.hitboxScale||1)*.45&&(!extra.ground||t.pos[1]<3.5)){if(emit(damage,t,extra,src).damage>0)hits++;}flash(p,r);return hits;}
+ const insideWarning=(p,r)=>!!currentWarning&&distance(currentWarning.p,p)+r<=currentWarning.r+.001;
+ function area(p,r,damage,extra={},src){if(extension.requireTelegraphs&&!insideWarning(p,r)&&!extra.telegraphed){const point=[...p];warning(point,r,.55,()=>area(point,r,damage,{...extra,telegraphed:true},src),'none');return 0;}let hits=0;for(const t of targets())if(distance(t.pos,p)<=r+(t.hitboxScale||1)*.45&&(!extra.ground||t.pos[1]<3.5)){if(emit(damage,t,extra,src).damage>0)hits++;}flash(p,r);return hits;}
  function attackLine(a,b,r,damage,extra={},src){let hits=0;for(const t of targets())if(along(t.pos,a,b)<=r+(t.hitboxScale||1)*.45&&(!extra.ground||t.pos[1]<3.5)){if(emit(damage,t,extra,src).damage>0)hits++;}return hits;}
  function cone(p,d,r,arc,damage,extra={},src){
   for(const t of targets()){const delta=flat(sub(t.pos,p));if(length(delta)<=r+.5&&unit(delta).reduce((n,v,i)=>n+v*d[i],0)>=Math.cos(arc/2))emit(damage,t,extra,src);}
-  for(let i=0;i<7;i++){const theta=Math.atan2(d[0],d[2])-arc/2+arc*i/6;telegraphLine(p,add(p,[Math.sin(theta)*r,0,Math.cos(theta)*r]),.18,.4);}
+  if(!extension.requireTelegraphs)for(let i=0;i<7;i++){const theta=Math.atan2(d[0],d[2])-arc/2+arc*i/6;telegraphLine(p,add(p,[Math.sin(theta)*r,0,Math.cos(theta)*r]),.18,.4);}
  }
- function telegraphLine(a,b,width=.18,life=.7,color='#ff657a'){const e=entity('line',[0,0,0],{life});line([a[0],.12,a[2]],[b[0],.12,b[2]],width,color,e.root);return e;}
+ function telegraphCone(p,d,r,arc,life){const key='sector:'+arc;if(!geo[key])geo[key]=new T.CircleGeometry(1,24,-Math.PI/2-arc/2,arc);const e=entity('cone-warning',flat(p),{life}),m=mesh(key,[0,.075,0],[r,r,r],'#ff6477',.2,e.root);m.rotation.x=-Math.PI/2;e.root.rotation.y=Math.atan2(d[0],d[2]);ctx?.traceGuardianWarning?.({kind:'cone',at:clock,position:[...p],direction:[...d],radius:r,arc,lead:life});return e;}
+ function telegraphLine(a,b,width=.18,life=.7,color='#ff657a'){const e=entity('line',[0,0,0],{life,warningFrom:[...a],warningTo:[...b],warningWidth:width});line([a[0],.12,a[2]],[b[0],.12,b[2]],width,color,e.root);ctx?.traceGuardianWarning?.({kind:'line',at:clock,from:[...a],to:[...b],radius:width/2,lead:life});return e;}
  function warning(p,r,delay,fn,shape='pillar',damage=0,src=source(action)){
-  const e=entity('hazard',[p[0],.02,p[2]],{r,delay,life:delay+.5,fn,shape,damage,src});circle([0,0,0],r,'#ff6477',true,e.root);circle([0,0,0],r,'#ffb3a6',false,e.root);return e;
+  const e=entity('hazard',[p[0],.02,p[2]],{r,delay,life:delay+.5,fn,shape,damage,src});circle([0,0,0],r,'#ff6477',true,e.root);circle([0,0,0],r,'#ffb3a6',false,e.root);ctx?.traceGuardianWarning?.({kind:'area',at:clock,position:[...p],radius:r,lead:delay});return e;
  }
  function eruption(e){
+  if(e.shape==='none')return;
   if(e.shape==='bolt'){let last=[0,9,0];for(let i=1;i<=7;i++){const p=[i===7?0:(i%2?-.25:.25),9-i*1.26,0];line(last,p,.15,'#eee5ff',e.root);last=p;}}
   else if(e.shape==='flame'){for(let i=0;i<3;i++)skin(mesh('cone',[(i-1)*e.r*.25,1.4+i*.3,0],[e.r*(1-i*.22),3.4-i*.4,e.r*(1-i*.22)],design.color,.85,e.root),.9);vfx.part(e.root,vfx.geo.orb,vfx.glow(.5),[0,.5,0],[e.r*.65,1.2,e.r*.65]);}
   else if(e.shape==='claw')for(let i=-1;i<=1;i++){const slash=vfx.part(e.root,vfx.geo.slash,vfx.glow(.7),[i*.35,.25,0],[e.r*.6,e.r,e.r]);slash.rotation.set(Math.PI/3,0,-.5+i*.15);}
   else skin(mesh(e.shape==='vine'?'cone':e.shape==='ice'?'crystal':'pillar',[0,1.5,0],[e.r,3,e.r],design.color,.9,e.root),.9);
  }
- function zone(tag,p,r,life,props={}){const e=entity('zone',[p[0],.03,p[2]],{tag,r,life,tick:0,...props});circle([0,0,0],r,tag==='fire'?'#f56b25':tag==='puddle'?'#4b9edf':tag==='electric'?'#c19aff':tag==='ice'?'#abe8ff':design.color,true,e.root);circle([0,0,0],r,design.color,false,e.root);vfx.zone(e);return e;}
- function trail(tag,a,b,width,life,props={}){const e=zone(tag,add(a,mul(sub(b,a),.5)),width,life,{a:[...a],b:[...b],...props});remove(e.root);e.root=new T.Group();root.add(e.root);line([a[0],.08,a[2]],[b[0],.08,b[2]],width*2,design.color,e.root);return e;}
+ function announceEntity(e){if(!extension.requireTelegraphs||(!e.a&&insideWarning(e.p,e.r))||e.kind==='prison'||e.kind==='feather')return e;const lead=.6;e.activationDelay=lead;e.life+=lead;e.root.visible=false;if(e.a)telegraphLine(e.a,e.b,e.r*2,lead);else warning(e.p,e.r,lead,()=>{},'none');return e;}
+ function zone(tag,p,r,life,props={}){const e=entity('zone',[p[0],.03,p[2]],{tag,r,life,tick:0,...props});circle([0,0,0],r,tag==='fire'?'#f56b25':tag==='puddle'?'#4b9edf':tag==='electric'?'#c19aff':tag==='ice'?'#abe8ff':design.color,true,e.root);circle([0,0,0],r,design.color,false,e.root);vfx.zone(e);return announceEntity(e);}
+ function trail(tag,a,b,width,life,props={}){const e=zone(tag,add(a,mul(sub(b,a),.5)),width,life,{a:[...a],b:[...b],...props});remove(e.root);e.root=new T.Group();e.root.visible=!e.activationDelay;root.add(e.root);line([a[0],.08,a[2]],[b[0],.08,b[2]],width*2,design.color,e.root);return e;}
  function object(kind,p,hp,r,life,props={}){
   const e=entity(kind,[p[0],0,p[2]],{hp,maxHp:hp,r,life,...props});circle([0,0,0],r,design.color,false,e.root);
   if(kind==='tree'||kind==='treant'){mesh('pillar',[0,1.6,0],[.5,3.2,.5],'#7e6540',1,e.root);for(const side of [-1,1]){line([0,2,0],[side*1.4,3.8,0],.23,'#7e6540',e.root);mesh('orb',[side*.8,3.7,0],[1.7,1,1.4],'#71ae62',.9,e.root);}}
@@ -138,12 +142,13 @@ export function createGuardianBossCombat(scene,extension={}){
    skin(mesh('orb',[0,.6,0],[.45,.5,.9],design.color,.7,e.root),.7);skin(mesh('cone',[0,.9,.65],[.3,.6,.3],design.color,.9,e.root),.9);for(const side of [-1,1]){skin(mesh('cone',[side*.2,1.3,.65],[.12,.35,.12],design.color,.8,e.root),.8);for(const z of [-.5,.45])skin(mesh('cone',[side*.3,.22,z],[.12,.5,.15],design.color,.8,e.root),.8);}for(const s of [-1,1])mesh('orb',[s*.15,1.06,.9],[.055,.055,.07],'#fff6e0',1,e.root);
   }else skin(mesh(kind==='ice-spike'?'crystal':'pillar',[0,1.3,0],[r,2.6,r],design.color,1,e.root));
   if(hp>0){mesh('box',[0,kind==='tree'?5:2.8,0],[1.6,.09,.08],'#243c35',1,e.root);e.healthBar=mesh('box',[0,kind==='tree'?5:2.8,.045],[1.6,.075,.08],'#b4e28b',1,e.root);}
-  return e;
+  return announceEntity(e);
  }
  function projectile(p,d,props={}){
   const e=entity('projectile',[...p],{v:unit(d),speed:10,r:.35,life:4,damage:10,src:source(action),...props});
   const m=mesh(e.style==='windblade'?'arc':e.style==='feather'||e.style==='seed'?'cone':'orb',[0,0,0],e.style==='feather'?[.1,.8,.16]:[e.r,e.r,e.r],design.color,.9,e.root);e.model=m;
   vfx.projectile(e,ctx?.quality===2);
+  if(extension.requireTelegraphs){const lead=Math.max(.45,e.delay||0);telegraphLine(p,add(p,mul(e.v,Math.min(e.range||32,32))),e.r*2,lead);e.life+=Math.max(0,lead-(e.delay||0));e.delay=lead;e.root.visible=false;}
   return e;
  }
  function radial(p,count,damage,speed=9,props={}){for(let i=0;i<count;i++){const a=i*Math.PI*2/count;projectile([p[0],1.1,p[2]],[Math.sin(a),0,Math.cos(a)],{damage,speed,life:2.5,...props});}}
@@ -152,19 +157,20 @@ export function createGuardianBossCombat(scene,extension={}){
  function wave(p,d,props){
   const e=entity('wave',flat(p),{v:unit(flat(d)),progress:0,life:5,r:1,width:36,gap:3,gapOffset:0,damage:30,src:source(action),...props});
   const gapLeft=clamp(e.gapOffset-e.gap/2,-e.width/2,e.width/2),gapRight=clamp(e.gapOffset+e.gap/2,-e.width/2,e.width/2);
-  for(const [left,right] of [[-e.width/2,gapLeft],[gapRight,e.width/2]])if(right-left>.01){skin(mesh('box',[(left+right)/2,.7,0],[right-left,1.4,e.r*2],design.color,.45,e.root),.75);for(let i=0;i<3;i++)mesh('box',[(left+right)/2,.5+i*.28,-e.r*.25],[right-left,.09,.15],'#d5f4ff',.75,e.root);}
-  e.safe=mesh('box',[e.gapOffset,.08,0],[e.gap,.045,e.r*2+.4],'#87e5b3',.4,e.root);e.root.rotation.y=Math.atan2(e.v[0],e.v[2]);return e;
+  for(const [left,right] of e.gap>0?[[-e.width/2,gapLeft],[gapRight,e.width/2]]:[[-e.width/2,e.width/2]])if(right-left>.01){skin(mesh('box',[(left+right)/2,.7,0],[right-left,1.4,e.r*2],design.color,.45,e.root),.75);for(let i=0;i<3;i++)mesh('box',[(left+right)/2,.5+i*.28,-e.r*.25],[right-left,.09,.15],'#d5f4ff',.75,e.root);}
+  if(e.gap>0)e.safe=mesh('box',[e.gapOffset,.08,0],[e.gap,.045,e.r*2+.4],'#87e5b3',.4,e.root);e.root.rotation.y=Math.atan2(e.v[0],e.v[2]);return e;
  }
  function prepareWave(a,t,index){
   const plan=planGuardianWave(t.pos,attackBounds(),index,a),side=[1,0,0];
-  for(const e of entities)if(alive(e)&&['vortex','hazard'].includes(e.kind)&&Math.abs(e.p[0]-plan.safeX)<plan.gap/2+(e.r||0)+1.5)destroy(e);
-  const corridor=entity('wave-corridor',[plan.safeX,.055,(plan.start[2]+plan.endZ)/2],{life:plan.warning+plan.travelTime});mesh('box',[0,0,0],[plan.gap,.035,plan.endZ-plan.start[2]],'#87e5b3',.16,corridor.root);
+  if(plan.gap>0){for(const e of entities)if(alive(e)&&['vortex','hazard'].includes(e.kind)&&Math.abs(e.p[0]-plan.safeX)<plan.gap/2+(e.r||0)+1.5)destroy(e);
+  const corridor=entity('wave-corridor',[plan.safeX,.055,(plan.start[2]+plan.endZ)/2],{life:plan.warning+plan.travelTime});mesh('box',[0,0,0],[plan.gap,.035,plan.endZ-plan.start[2]],'#87e5b3',.16,corridor.root);}
   const left=add(plan.start,mul(side,-plan.width/2)),right=add(plan.start,mul(side,plan.width/2));telegraphLine(left,right,.15,plan.warning,'#60bce3');
+  if(extension.requireTelegraphs){const lanes=plan.gap>0?[[-plan.width/2,plan.gapOffset-plan.gap/2],[plan.gapOffset+plan.gap/2,plan.width/2]]:[[-plan.width/2,plan.width/2]];for(const [x1,x2]of lanes)if(x2>x1)telegraphLine([plan.start[0]+(x1+x2)/2,0,plan.start[2]],[plan.start[0]+(x1+x2)/2,0,plan.endZ],x2-x1,plan.warning);}
   const e=entity('wave-launch',plan.start,{life:plan.warning+.1});e.update=()=>{if(e.age<plan.warning)return;wave(plan.start,plan.direction,{damage:a.damage,speed:a.speed,life:plan.travelTime+.05,width:plan.width,r:Math.min(.55,a.radius),gap:plan.gap,gapOffset:plan.gapOffset,endZ:plan.endZ,src:source(a)});destroy(e);};
  }
  function overlaps(e,p,extra=0){return e.a?along(p,e.a,e.b)<=e.r+extra:distance(e.p,p)<=e.r+extra;}
  function constrain(from,to,padding=.5){
-  let goal=[...to];for(const e of entities)if(alive(e)&&e.solid&&e.hp>0){
+  let goal=[...to];for(const e of entities)if(alive(e)&&!e.activationDelay&&e.solid&&e.hp>0){
    const r=e.r+padding,offset=flat(sub(from,e.p)),d=flat(sub(goal,from)),aa=length(d)**2;
    if(!aa)continue;
    if(length(offset)<r-.001){if(distance(goal,e.p)<=length(offset)){const n=unit(flat(sub(goal,e.p)));goal=[e.p[0]+n[0]*r,goal[1],e.p[2]+n[2]*r];}continue;}
@@ -180,7 +186,7 @@ export function createGuardianBossCombat(scene,extension={}){
  function teleport(p){body=fitBody(p,'land');flash(body,1.2);}
  function dash(a,key,destination,at,duration,r,damage,extra={}){
   if(!a.dashes)a.dashes={};let d=a.dashes[key];
-  if(!d&&a.age>=at-.4){d=a.dashes[key]={from:null,to:fitBody(destination,'land'),hit:new Set()};telegraphLine(body,d.to,Math.max(.12,r*.18),Math.max(.15,at-a.age),id==='dark'?'#b78ae8':'#d7bbff');}
+  if(!d&&a.age>=at-.4){d=a.dashes[key]={from:null,to:fitBody(destination,'land'),hit:new Set()};const lead=Math.max(.15,at-a.age);telegraphLine(body,d.to,extension.requireTelegraphs?r*2:Math.max(.12,r*.18),lead,id==='dark'?'#b78ae8':'#d7bbff');if(extension.requireTelegraphs)warning(d.to,extra.air?Math.max(2.2,r):r,lead,()=>{},'none');}
   if(!d||a.age<at||d.done)return null;
   d.from??=[...body];const old=[...body],q=clamp((a.age-at)/duration,0,1);body=fitBody(add(d.from,mul(sub(d.to,d.from),q)));pose.y=Math.sin(q*Math.PI)*(id==='dark'?.6:1.8);
   for(const t of targets())if(!d.hit.has(t.id)&&along(t.pos,old,body)<r+.45){d.hit.add(t.id);const marked=status(t.id).markTime>0;const result=emit(damage,t,extra,source(a));if(result.damage>0&&marked&&a.cooldownReduction&&!a.markCooldownReduced){a.markCooldownReduced=true;a.recoveryScale=a.cooldownReduction;cooldowns[a.index]=Math.max(clock+Math.max(0,a.duration-a.age),clock+Math.max(0,(cooldowns[a.index]||clock)-clock)*a.cooldownReduction);}}
@@ -197,6 +203,7 @@ export function createGuardianBossCombat(scene,extension={}){
   const skill=design.skills[index],values=guardianSkillStats(skill.type),chosen=director?.target(body)||choose(true)||{id:'player',pos:player};
   const power=id==='wood'?1+rage*passive.ragePerSpirit:1;if(id==='wood')rage=0;
   action={...values,...skill,index,age:0,castId:++castSerial,targetId:chosen.id,target:[...chosen.pos],origin:[...body],events:new Set(),visuals:[],power,automatic};
+  if(extension.requireTelegraphs)warning(body,2,Math.max(.4,values.windup||.6),()=>{},'none',0,source(action));
   action.commitment=automatic&&!design.arsenal?guardianCommitment(action):action.duration;
   if(design.arsenal&&!excursion)excursion=[...body];
   if(id==='dark'){if(design.arsenal&&['pursuit','melee'].includes(action.role))memory.trueTellUntil=clock+(values.windup||.6)+.1;if(hidden())ambushReady=true;revealUntil=clock+(values.windup||.6)+.4;}
@@ -259,17 +266,17 @@ export function createGuardianBossCombat(scene,extension={}){
   if(e.style==='seed')for(const spirit of all('spirit'))if(distance(spirit.p,e.p)<spirit.r+e.r){spirit.hp=Math.min(spirit.maxHp,spirit.hp+spirit.maxHp*e.healFraction);area(spirit.p,e.thornRadius,e.thornDamage,{passive:false},e.src);destroy(e);return;}
  }
  function updateProjectile(e,dt){
-  if(e.age<(e.delay||0))return;
+  if(e.age<(e.delay||0))return;e.root.visible=true;
   const t=target(e.targetId);if(t&&e.homing&&e.age<e.homingTime){const desired=unit(sub(t.pos,e.p));e.v=unit(add(mul(e.v,Math.max(0,1-dt*e.homing)),mul(desired,Math.min(1,dt*e.homing))));}
   const old=[...e.p];e.p=add(e.p,mul(e.v,e.speed*dt));e.travel=(e.travel||0)+e.speed*dt;projectileInteraction(e);if(e.dead)return;
   if(e.style==='goldarc')for(const f of [...all('feather')])if(along(f.p,old,e.p)<f.r+e.r){projectile([f.p[0],1.1,f.p[2]],e.v,{style:'feather',damage:e.damage*.5,speed:e.speed,life:3,armorPiercing:true,src:e.src,featherLife:passive.featherLife});destroy(f);}
   const shot={owner:'enemy',element:id,style:'guardian-'+e.src.type,damage:e.damage*e.src.power*(phase===3?.6:1),old,p:[...e.p],size:e.r,v:e.v};
   if(ctx.interceptProjectile?.(shot)){if(e.style==='feather')feather(e.p,e.featherLife);flash(e.p,e.r);destroy(e);return;}
   e.damage=shot.damage/(e.src.power*(phase===3?.6:1)||1);
-  for(const obstacle of entities)if(alive(obstacle)&&obstacle.solid&&obstacle.id!==e.ignoreObject&&obstacle.hp>0&&along(obstacle.p,old,e.p)<obstacle.r+e.r){const spent=Math.min(e.damage,obstacle.hp);obstacle.hp-=spent;e.damage-=spent;if(obstacle.hp<=0)destroy(obstacle,true);if(e.damage<=0){if(e.style==='feather')feather(e.p,e.featherLife);destroy(e);return;}}
+  for(const obstacle of entities)if(alive(obstacle)&&!obstacle.activationDelay&&obstacle.solid&&obstacle.id!==e.ignoreObject&&obstacle.hp>0&&along(obstacle.p,old,e.p)<obstacle.r+e.r){const spent=Math.min(e.damage,obstacle.hp);obstacle.hp-=spent;e.damage-=spent;if(obstacle.hp<=0)destroy(obstacle,true);if(e.damage<=0){if(e.style==='feather')feather(e.p,e.featherLife);destroy(e);return;}}
   for(const victim of targets())if(!e.hit.has(victim.id)&&guardianSegmentDistance(victim.pos,old,e.p)<e.r+.5*(victim.hitboxScale||1)){
    e.hit.add(victim.id);
-   if(e.blastRadius)area(e.p,e.blastRadius,e.damage,{},e.src);else emit(e.damage,victim,{armorPiercing:!!e.armorPiercing,slow:e.slow,slowTime:e.slowTime},e.src);
+   if(e.blastRadius)area(e.p,e.blastRadius,e.damage,{},e.src);else{const result=emit(e.damage,victim,{armorPiercing:!!e.armorPiercing,slow:e.slow,slowTime:e.slowTime},e.src);e.onHit?.(victim,result);}
    if(e.arcGroup){const s=status(victim.id);s.arcHits??=new Map();const hits=(s.arcHits.get(e.arcGroup)||0)+1;s.arcHits.set(e.arcGroup,hits);if(s.arcHits.size>8)s.arcHits.delete(s.arcHits.keys().next().value);if(hits>=2)applySlow(victim,e.arcSlow,e.slowTime);}
    if(!e.piercing){destroy(e);return;}
   }
@@ -300,7 +307,7 @@ export function createGuardianBossCombat(scene,extension={}){
    if(distance(e.p,body)<.5){destroy(e.link);destroy(e);return;}e.root.position.fromArray(e.p);return;
   }
   if(e.family==='shadow'&&e.age>=e.attackAt){
-   if(!e.warned){e.warned=true;e.attackFrom=[...e.p];e.attackTo=e.real?[...t.pos]:randomPoint({near:t.pos});telegraphLine(e.attackFrom,e.attackTo,.18,e.warning,'#b78ae8');}
+   if(!e.warned){e.warned=true;e.attackFrom=[...e.p];e.attackTo=e.real?[...t.pos]:randomPoint({near:t.pos});telegraphLine(e.attackFrom,e.attackTo,extension.requireTelegraphs?e.r*2:.18,e.warning,'#b78ae8');}
    if(e.age<e.attackAt+e.warning)return;
    if(e.real){const old=[...e.p],d=flat(sub(e.attackTo,e.p));e.p=add(e.p,mul(unit(d),Math.min(length(d),22*dt)));if(along(t.pos,old,e.p)<e.r+.5){emit(e.damage,t,{},e.src);destroy(e);}else if(distance(e.p,e.attackTo)<.2)destroy(e);}
    else{area(e.p,1.5,e.explosionDamage,{},e.src);destroy(e);}e.root.position.fromArray(e.p);return;
@@ -315,17 +322,17 @@ export function createGuardianBossCombat(scene,extension={}){
   const side=[e.v[2],0,-e.v[0]],span=e.speed*dt;
   for(const t of targets()){
    if(e.hit.has(t.id))continue;const delta=flat(sub(t.pos,old)),forward=delta.reduce((n,v,i)=>n+v*e.v[i],0),across=delta.reduce((n,v,i)=>n+v*side[i],0),padding=.5*(t.hitboxScale||1);
-   if(forward>=-e.r-padding&&forward<=span+e.r+padding&&Math.abs(across)<e.width/2&&Math.abs(across-e.gapOffset)>e.gap/2-padding){e.hit.add(t.id);emit(e.damage,t,{},e.src);}
+   if(forward>=-e.r-padding&&forward<=span+e.r+padding&&Math.abs(across)<e.width/2&&(e.gap<=0||Math.abs(across-e.gapOffset)>e.gap/2-padding)){e.hit.add(t.id);emit(e.damage,t,{},e.src);}
   }
   for(const vortex of all('vortex')){const delta=flat(sub(vortex.p,old)),forward=delta.reduce((n,v,i)=>n+v*e.v[i],0),across=delta.reduce((n,v,i)=>n+v*side[i],0);if(forward>=-e.r-vortex.r&&forward<=span+e.r+vortex.r&&Math.abs(across)<e.width/2){area(vortex.p,vortex.r+1,e.damage,{},e.src);destroy(vortex);}}
   if(e.endZ!=null&&e.p[2]>e.endZ)destroy(e);
  }
  function updateEntities(dt){
   for(const e of [...entities]){
-   if(e.dead)continue;e.age+=dt;
+   if(e.dead)continue;e.age+=dt;if(e.activationDelay){if(e.age<e.activationDelay)continue;e.root.visible=true;e.activationDelay=0;}
    if(e.healthBar)e.healthBar.scale.x=1.6*clamp(e.hp/e.maxHp,0,1);
    if(e.kind==='hazard'){
-    if(e.age>=e.delay&&!e.fired){e.fired=true;eruption(e);if(e.damage)area(e.p,e.r,e.damage,{},e.src);e.fn?.(e);}
+    if(e.age>=e.delay&&!e.fired){e.fired=true;eruption(e);const previous=currentWarning;currentWarning=e;try{if(e.damage)area(e.p,e.r,e.damage,{},e.src);e.fn?.(e);}finally{currentWarning=previous;}if(e.shape==='none')destroy(e);}
     if(!e.fired)e.root.children[0].material.opacity=.15+.15*(1+Math.sin(e.age*13));
    }else if(e.kind==='zone')updateZones(e,dt);
    else if(e.kind==='projectile')updateProjectile(e,dt);
@@ -349,6 +356,8 @@ export function createGuardianBossCombat(scene,extension={}){
   if(entities.length>320)for(const e of entities.slice(0,entities.length-320))destroy(e);
  }
  const skillContext={
+  telegraphCone,get hasWarningTrace(){return !!ctx?.traceGuardianWarning;},traceWarning:w=>ctx?.traceGuardianWarning?.(w),
+  launchWaterPrison(from,direction,a){if(!ctx?.launchWaterPrison)return false;ctx.launchWaterPrison(from,direction,{damage:a.damage*source(a).power*(phase===3?.6:1),speed:a.speed,radius:a.radius,range:a.range,controlDuration:a.controlDuration});return true;},
   get mouthPosition(){return ctx?.mouthPosition?.(pose)||[body[0],1.6,body[2]];},
   interrupt(seconds=0){cancel(false);stagger=Math.max(stagger,seconds);memory.exposedUntil=Math.max(memory.exposedUntil||0,clock+seconds);if(excursion){returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}},
   forceSkill(type,targetId){const i=design.skills.findIndex(s=>s.type===type);if(i<0)return false;const result=begin(i,ctx.player,ctx.boss,ctx.fighter,true);if(result&&targetId)action.targetId=targetId;return result;},
@@ -400,7 +409,7 @@ export function createGuardianBossCombat(scene,extension={}){
   onDamage(amount,shot,p){extension.onDamage?.(skillContext,amount,shot,p);if(amount>0){lastCombat=clock;ambushReady=false;}},
   slowAt(p,direction=null,targetId='player'){
    if(!ctx)return 1;const s=status(targetId);if(s.rootTime>0)return 0;let slow=Math.max(s.slowTime>0?s.slow:0,id==='ice'?s.stacks*passive.slowPerStack:0);
-   for(const e of entities)if(alive(e)&&e.kind==='zone'&&overlaps(e,p,.3)){
+   for(const e of entities)if(alive(e)&&!e.activationDelay&&e.kind==='zone'&&overlaps(e,p,.3)){
     if(e.tag==='ice'||e.tag==='dark')slow=Math.max(slow,e.slow||0);
     if(e.tag==='wind'&&direction&&direction.reduce((n,v,i)=>n+v*e.v[i],0)<-.05)slow=Math.max(slow,passive.slow);
    }return 1-clamp(slow,0,.8);
@@ -422,8 +431,8 @@ export function createGuardianBossCombat(scene,extension={}){
    vfx:vfx.state(),signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor,armorLevels,stationary,tailCount,energy,speedStacks,rage,enraged,recovery:wait,skillCooldowns:design?.skills.map((s,i)=>Math.max(0,(cooldowns[i]||0)-clock))||[],combo:[...combo],comboCursor,comboSerial,
    arsenal:!!design?.arsenal,combatStage,mechanics:{...memory.summary},director:director?.state()||null,homePosition:home?[...home]:null,returning:returning?{destination:[...returning.to],age:returning.age}:null,aiOwnedMovement:!!design,bossPosition:body?[...body]:null,moving:movement>.002,moveSpeed,moveVelocity:body&&previousBody?[(body[0]-previousBody[0])/(movement||1)*moveSpeed,0,(body[2]-previousBody[2])/(movement||1)*moveSpeed]:[0,0,0],ongoing:ongoing.map(a=>({type:a.type,age:a.age,duration:a.duration})),difficulty:design?.difficulty||0,title:design?.title||'',role:design?.role||'',passive:design?.passive||'',counter:design?.counter||'',skills:design?.skills.map(s=>s.name)||[],passiveParameters:{...passive},
    statuses:[...stats].map(([key,s])=>({id:key,stacks:s.stacks,stackTime:s.stackTime,markTime:s.markTime,slow:s.slow,slowTime:s.slowTime,rootTime:s.rootTime,freezeImmune:s.freezeImmune})),
-   exposed:Math.max(0,(memory.exposedUntil||0)-clock),stagger,hidden:hidden(),lockable:api.lockable(),night:all('dark').some(e=>targets().some(t=>t.id==='player'&&overlaps(e,t.pos))),prison:memory.prison&&!memory.prison.dead?{hp:memory.prison.hp,remaining:memory.prison.life-memory.prison.age}:null,shelters:[],lamps:[],
-   entities:entities.filter(alive).map(e=>({id:e.id,kind:e.kind,tag:e.tag||e.style||null,position:[...e.p],radius:e.r,hp:e.hp,maxHp:e.maxHp,age:e.age,life:e.life,delay:e.delay,solid:!!e.solid,targetId:e.targetId,real:e.real,returning:e.family==='lightning'&&e.age>=e.returnAt,gapWidth:e.gap,damage:e.damage,enlarged:!!e.enlarged,boosted:!!e.boosted,recycled:!!e.recycled,stored:e.stored,source:e.src?.type})),
+   exposed:Math.max(0,(memory.exposedUntil||0)-clock),stagger,hidden:hidden(),lockable:api.lockable(),night:all('dark').some(e=>targets().some(t=>t.id==='player'&&overlaps(e,t.pos))),prison:memory.prison&&!memory.prison.dead?{hp:memory.prison.hp,breakable:memory.prison.breakable!==false,remaining:memory.prison.life-memory.prison.age}:null,shelters:[],lamps:[],
+   entities:entities.filter(alive).map(e=>({id:e.id,kind:e.kind,active:e.root.visible,activationDelay:e.activationDelay||0,tag:e.tag||e.style||null,position:[...e.p],radius:e.r,hp:e.hp,maxHp:e.maxHp,age:e.age,life:e.life,delay:e.delay,solid:!!e.solid,targetId:e.targetId,real:e.real,returning:e.family==='lightning'&&e.age>=e.returnAt,gapWidth:e.gap,damage:e.damage,enlarged:!!e.enlarged,boosted:!!e.boosted,recycled:!!e.recycled,stored:e.stored,source:e.src?.type})),
    hazards:all('hazard').map(e=>({position:[...e.p],radius:e.r,remaining:Math.max(0,e.delay-e.age),hit:!!e.fired})),offset:api.offset
   };},
   dispose(){clear();vfx.dispose();for(const g of Object.values(geo))g.dispose();}

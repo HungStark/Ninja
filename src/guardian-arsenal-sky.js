@@ -12,7 +12,7 @@ export function updateSkySkill(a,c,dt){
  case 'eagle-turn':
   {const goal=c.fitBody(c.add(c.home,[Math.sin(c.clock)*4,0,0]),'walk'),d=c.dash(a,'turn',goal,a.windup,.3,.5,0);if(d?.done&&!d.wind){d.wind=true;ring(c.body,12,9);c.memory.momentum=Math.max(0,(c.memory.momentum||0)-1);}}break;
  case 'eagle-eye':
-  at('eye',a.windup,()=>{const p=predict(t,.35),e=c.entity('storm-eye',p,{r:5,life:4,tick:0});c.circle([0,0,0],5,c.designColor,false,e.root);c.circle([0,0,0],1.6,'#8cf4bd',false,e.root);e.update=step=>{e.root.rotation.y+=step*2;e.tick+=step;if(e.tick>.4){e.tick=0;for(const victim of c.targets){const d=c.distance(victim.pos,e.p);if(d>1.6&&d<5)c.emit(a.damage*.45,victim,{slow:.15,slowTime:.5},src);}}};});break;
+  at('eye',0,()=>{const p=c.flat(t.pos);mark(p,5,Math.max(.7,a.windup),()=>{const e=c.entity('storm-eye',p,{r:5,life:4,tick:0});c.circle([0,0,0],5,c.designColor,false,e.root);c.circle([0,0,0],1.6,'#8cf4bd',false,e.root);e.update=step=>{e.root.rotation.y+=step*2;e.tick+=step;if(e.tick>.4){e.tick=0;for(const victim of c.targets){const d=c.distance(victim.pos,e.p);if(d>1.6&&d<5)c.emit(a.damage*.45,victim,{slow:.15,slowTime:.5},src);}}};},'none');});break;
  case 'eagle-eight':
   for(let i=0;i<2;i++){const d=rush(i,a.windup+i*.95,a.damage);if(d?.done&&!d.slash){d.slash=true;fan(3,1.3,null,{style:'windblade',speed:13});}}break;
  case 'eagle-triple':
@@ -23,7 +23,7 @@ export function updateSkySkill(a,c,dt){
   for(let i=0;i<4;i++)rush(i,a.windup+i*1.1,a.damage*.7);
   at('landing-warning',a.duration-1,()=>{a.land=predict(t,.3);mark(a.land,2.5,.75,()=>{hurt(a.land,2.5,a.damage);ring(a.land,a.damage*.5,10);});});break;
  case 'turtle-stomp':
-  at('tell',0,()=>c.circle([c.body[0],0,c.body[2]],2,'#ff8166',false));at('stomp',a.windup,()=>ring(c.body,a.damage,10));break;
+  at('tell',0,()=>mark(c.body,2,a.windup,()=>{},'none'));at('stomp',a.windup,()=>ring(c.body,a.damage,10));break;
  case 'turtle-headbutt':
   {const d=rush('headbutt',a.windup,a.damage);if(d?.done&&!d.rocks){d.rocks=true;for(let i=1;i<=3;i++){const p=c.add(d.from,c.mul(c.sub(d.to,d.from),i/3));mark(p,1,.5,()=>c.object('rock',p,35,.8,5,{solid:true,src}));}}}break;
  case 'turtle-spin':
@@ -31,7 +31,7 @@ export function updateSkySkill(a,c,dt){
  case 'turtle-rockfall':
   at('tell',0,()=>{channel('head',.08);for(const p of aimPoints(6))mark(p,1.2,a.windup+.35,()=>{if(c.memory.channel?.broken)return;hurt(p,1.2,a.damage);c.object('rock',p,20,.7,4,{solid:true,src});});});break;
  case 'turtle-fissure':
-  at('tell',0,()=>{a.from=[...c.body];a.to=predict(t,.35);c.telegraphLine(a.from,a.to,.2,a.windup);});
+  at('tell',0,()=>{a.from=[...c.body];a.to=predict(t,.35);c.telegraphLine(a.from,a.to,1.8,a.windup);});
   at('crack',a.windup,()=>{c.attackLine(a.from,a.to,.9,a.damage,{ground:true},src);for(let i=0;i<4;i++){const p=c.add(a.from,c.mul(c.sub(a.to,a.from),(i+1)/4));later(i*.12,()=>c.flash(p,1));}});break;
  case 'turtle-fortify':
   at('rocks',0,()=>{channel('shell',.12);a.rocks=[];for(const side of [-1,1])for(const z of [-1,1])a.rocks.push(c.object('rock',c.add(c.body,[side*2,0,z*2]),24,.6,3,{src,formingArmor:true}));});
@@ -41,7 +41,7 @@ export function updateSkySkill(a,c,dt){
   at('collapse',a.windup+.3,()=>{ring(c.body,a.damage*.8,11);if((c.memory.brokenLegs||0)>0){c.memory.exposedUntil=c.clock+1.8;c.memory.toppledUntil=c.clock+1.8;c.stun(1.8);}});break;
  case 'turtle-labyrinth':
   at('pillars',a.windup,()=>{a.pillars=[];const safe=t.pos[0];for(const p of aimPoints(7)){if(Math.abs(p[0]-safe)<1.8)p[0]+=p[0]<safe?-2.5:2.5;mark(p,1,.85,()=>a.pillars.push(c.object('rock',p,40,.85,7,{solid:true,src})));}});
-  at('fall-warning',a.duration-1.6,()=>{for(const e of a.pillars||[]){if(e.dead)continue;const end=c.add(e.p,c.mul(direction(e.p,predict(t,.3)),5));c.telegraphLine(e.p,end,.2,.9);later(.9,()=>{if(e.dead)return;c.attackLine(e.p,end,.7,a.damage,{},src);c.destroy(e);});}});break;
+  at('fall-warning',a.duration-1.6,()=>{for(const e of a.pillars||[]){if(e.dead)continue;const end=c.add(e.p,c.mul(direction(e.p,predict(t,.3)),5));c.telegraphLine(e.p,end,1.4,.9);later(.9,()=>{if(e.dead)return;c.attackLine(e.p,end,.7,a.damage,{},src);c.destroy(e);});}});break;
  case 'gold-double':
   swipe(0,a.windup,5,Math.PI*.8);swipe(1,a.windup+.45,5,Math.PI*.9);at('edge',a.windup+.45,()=>fan(1,.1,null,{style:'goldarc',piercing:true}));break;
  case 'gold-fan':
@@ -49,7 +49,7 @@ export function updateSkySkill(a,c,dt){
  case 'gold-hunt':
   at('homing',a.windup,()=>{for(let i=0;i<4;i++)fire([c.body[0]+(i-1.5)*.3,1.5,c.body[2]],c.sub(predict(t,.25),c.body),{style:'feather',homing:2.3,homingTime:.9,targetId:t.id,featherLife:8});});break;
  case 'gold-reflect':
-  at('shield',0,()=>{c.memory.counter={kind:'gold',until:c.clock+a.duration,used:false};const m=c.circle([c.body[0],0,c.body[2]],2,c.designColor,false);m.rotation.x=0;});break;
+  at('tell',0,()=>mark(c.body,2,a.windup,()=>{},'none'));at('shield',a.windup,()=>{c.memory.counter={kind:'gold',until:c.clock+a.duration-a.windup,used:false};const e=c.entity('guard-stance',[...c.body],{life:a.duration-a.windup});e.root.position.y=1.4;const m=c.circle([0,0,0],2,c.designColor,false,e.root);m.rotation.x=0;});break;
  case 'gold-recall':
   at('recall-warning',0,()=>{a.feathers=[...resources().feathers];for(const e of a.feathers)c.telegraphLine(e.p,c.body,.12,a.windup);});
   at('recall',a.windup,()=>{for(const e of a.feathers||[]){if(e.dead)continue;fire([e.p[0],1.5,e.p[2]],c.sub([c.body[0],1.5,c.body[2]],e.p),{style:'feather',damage:a.damage,homing:0,piercing:true,life:c.distance(e.p,c.body)/14+.1,featherLife:0});c.destroy(e);}});break;
@@ -61,7 +61,7 @@ export function updateSkySkill(a,c,dt){
   rush('pierce',a.windup,a.damage,{armorPiercing:true,armorReduction:.25});break;
  case 'gold-greatsword':
   at('gather',0,()=>{a.countFeathers=resources().feathers.length;for(const e of resources().feathers)c.destroy(e);a.sword=c.entity('greatsword',[c.body[0],5,c.body[2]],{life:a.duration});c.mesh('cone',[0,0,0],[.45,8,.5],c.designColor,.9,a.sword.root);});
-  for(let i=0;i<3;i++)at('cut'+i,a.windup+i*1.1,()=>{const from=[...c.body],to=predict(t,.3);c.telegraphLine(from,to,.25,.65);later(.65,()=>c.attackLine(from,to,1,a.damage,{},src));});
+  for(let i=0;i<3;i++)at('cut'+i,a.windup+i*1.1,()=>{const from=[...c.body],to=predict(t,.3);c.telegraphLine(from,to,2,.65);later(.65,()=>c.attackLine(from,to,1,a.damage,{},src));});
   at('rain',a.duration-1.15,()=>{for(const p of aimPoints(Math.min(12,6+Math.floor((a.countFeathers||0)/3))))mark(p,.9,.75,()=>hurt(p,.9,a.damage*.45),'ice');});break;
  default:return false;
  }

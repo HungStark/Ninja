@@ -13,7 +13,6 @@ function tick(c,dt){
  const m=c.memory,r=arsenalResources(c);m.replays=(m.replays||[]).filter(e=>c.clock-e.at<7).slice(-6);
  for(const e of [...c.all('vortex'),...c.all('prison')])if(e.updateArsenal&&!e.dead)e.updateArsenal(dt);
  if(m.prison?.dead)m.prison=null;
- if(m.prison)for(const vortex of c.all('vortex'))if(c.distance(vortex.p,m.prison.p)<vortex.r){const e=m.prison,t=c.target(e.victim);e.p=c.add(vortex.p,[Math.sin(c.clock*3)*vortex.r,1.5,Math.cos(c.clock*3)*vortex.r]);e.root.position.fromArray(e.p);if(t)c.moveTarget(t,e.p);}
  for(const e of r.plants){const maturity=e.age>2?1:0;if(maturity&&!e.growth){e.growth=1;e.root.scale.multiplyScalar(1.2);e.damage=(e.damage||0)*1.2;}}
  if(c.id==='wind')m.momentum=Math.min(5,(m.momentum||0)+dt*(c.action?.role==='pursuit'?1:.15));
  if(c.id==='ice'){
@@ -48,4 +47,4 @@ function intercept(c,shot){
  for(const e of c.all('vortex'))if(e.movingVortex&&e.stored.length<8&&c.along(e.p,shot.old,shot.p)<e.r+(shot.size||.1)){e.stored.push({damage:shot.damage});c.flash(e.p,.4);return true;}
  return false;
 }
-export function createGuardianArsenalCombat(scene){return createGuardianBossCombat(scene,{designs:GUARDIAN_ARSENAL_DESIGNS,createDirector:createGuardianCombatDirector,updateSkill,tick,defense,onDamage,intercept,hidden:c=>(c.memory.hiddenUntil||0)>c.clock,breakPrison(c,damage){const e=c.memory.prison;if(!e||e.dead)return false;e.hp-=damage;c.flash(e.p,.3);if(e.hp<=0){c.destroy(e);c.memory.prison=null;}return true;}});}
+export function createGuardianArsenalCombat(scene){return createGuardianBossCombat(scene,{requireTelegraphs:true,designs:GUARDIAN_ARSENAL_DESIGNS,createDirector:createGuardianCombatDirector,updateSkill,tick,defense,onDamage,intercept,hidden:c=>(c.memory.hiddenUntil||0)>c.clock,breakPrison:()=>false});}

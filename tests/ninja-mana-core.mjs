@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import '../game-core.js';
+const expected={
+  "fire-volley": 15,
+  "fire-lance": 45,
+  "fire-meteor": 60,
+  "fire-barrier": 20,
+  "fire-reflect": 20,
+  "water-lance": 20,
+  "water-volley": 45,
+  "water-tsunami": 60,
+  "water-barrier": 16,
+  "water-reflect": 20,
+  "lightning-lance": 15,
+  "lightning-volley": 45,
+  "lightning-thunder": 60,
+  "lightning-barrier": 20,
+  "lightning-reflect": 20,
+  "wind-orb": 15,
+  "wind-volley": 30,
+  "wind-lance": 35,
+  "wind-barrier": 20,
+  "wind-reflect": 55,
+  "earth-orb": 15,
+  "earth-lance": 25,
+  "earth-volley": 45,
+  "earth-barrier": 21,
+  "earth-reflect": 60,
+  "light-orb": 15,
+  "light-barrier": 20,
+  "light-lance": 50,
+  "light-reflect": 20,
+  "light-volley": 60,
+  "dark-orb": 20,
+  "dark-lance": 23,
+  "dark-volley": 47,
+  "dark-domain": 65,
+  "dark-reflect": 21,
+  "wood-orb": 17,
+  "wood-lance": 20,
+  "wood-volley": 50,
+  "wood-barrier": 20,
+  "wood-reflect": 50,
+  "ice-orb": 51,
+  "ice-lance": 20,
+  "ice-volley": 20,
+  "ice-barrier": 40,
+  "ice-reflect": 45
+};
+const {spells,GameRules}=SealGameCore;
+assert.equal(spells.length,45);assert.equal(new Set(spells.map(s=>s.element)).size,9);
+for(const spell of spells){assert.equal(spell.cost,expected[spell.id],spell.id+' mana');const rules=new GameRules([spell.id,spells.find(s=>s.kind==='attack'&&s.element!==spell.element).id]);rules.chakra=100;spell.sequence.forEach(k=>rules.seal(k));const result=rules.cast({burnStacks:1,staticStacks:1,snowFull:true,snowActive:true,snowAmount:90,woodGarden:true,darkDomain:true,shadowClones:1,windAirborne:true,earthCrater:true});assert.equal(result.ok,true,spell.id);assert.equal(rules.chakra,100-spell.cost,spell.id+' actual debit');}
+console.log('PASS: all 45 ninja spells across nine elements use the reduced mana costs and charge the catalog amount on cast.');

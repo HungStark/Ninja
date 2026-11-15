@@ -37,17 +37,24 @@ export function createGuardianVfx(){
    e.model.material.dispose();e.model.material=surface(.95);
    const core=!low&&e.r>=.3?part(e.root,geo.orb,glow(.65),[0,0,0],[e.r*.48,e.r*.48,e.r*.48]):null;
    const trail=part(e.root,geo.trail,glow(.35),[0,-e.r*1.5,0],[e.r*.6,e.r*3.2,e.r*.6]);trail.rotation.z=Math.PI;e.vfx={core,trail};
+   if(e.src?.type==='dragon-prison'){
+    e.model.geometry=geo.orb;e.root.name='guardian-water-prison-projectile';
+    const rings=[];for(let i=0;i<3;i++){const ring=part(e.root,geo.ring,glow(.8),[0,0,0],[e.r*.95,e.r*.95,e.r*.95]);ring.rotation.set(i*.9,0,i*.7);rings.push(ring);}
+    for(let i=0;i<4;i++)part(e.root,geo.orb,glow(.65),[Math.sin(i*2)*e.r*.4,-e.r*(1.5+i*.7),Math.cos(i*2)*e.r*.4],[e.r*.16,e.r*.3,e.r*.16]);e.vfx.prisonRings=rings;
+   }
   },
-  vortex(e){const water=e.kind==='vortex',ribbon=part(e.root,geo.spiral,surface(water?.4:.65),[0,water?1.35:0,0],[e.r,water?.45:.9,e.r]);ribbon.rotation.z=water?Math.PI:0;e.vfx={ribbon};},
+  vortex(e){const water=e.kind==='vortex',ribbon=part(e.root,geo.spiral,surface(.65),[0,0,0],[e.r,water?1.05:.9,e.r]);if(water){part(e.root,geo.beam,surface(.22),[0,1.5,0],[e.r*.6,3,e.r*.6]);const base=part(e.root,geo.ring,glow(.7),[0,.12,0],[e.r,e.r,e.r]);base.rotation.x=Math.PI/2;}e.vfx={ribbon};},
   zone(e){if(['fire','dark','blizzard','puddle'].includes(e.tag)){const ring=part(e.root,geo.ring,glow(.3),[0,.09,0],[e.r*.85,e.r*.85,e.r*.85]);ring.rotation.x=Math.PI/2;e.vfx={ring};}},
   beam(parent,a,b,r){const from=new T.Vector3(...a),to=new T.Vector3(...b),delta=to.sub(from),length=delta.length(),g=new T.Group();g.position.copy(from).addScaledVector(delta,.5);g.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize());parent.add(g);part(g,geo.beam,surface(.8),[0,0,0],[r,length,r]);part(g,geo.beam,glow(.45),[0,0,0],[r*.32,length,r*.32]);return g;},
   update(dt,clock,entities,body,action){
    time=clock;for(const m of materials)if(m.uniforms)m.uniforms.uTime.value=time;
    if(chargeElement!==element){charge.clear();part(charge,geo.orb,glow(.4));for(let i=0;i<2;i++){const ring=part(charge,geo.ring,glow(.4));ring.rotation.x=i?Math.PI/2:0;}chargeElement=element;}
    const windup=action?.windup||action?.warning||.6,charging=action&&action.age<windup;charge.visible=!!charging;
-   if(charging){const k=Math.min(1,action.age/windup);charge.position.set(body[0],1.9,body[2]);charge.scale.setScalar(.2+k*.5);charge.rotation.set(time*.8,time*2,time*.3);}
+   if(charging){const k=Math.min(1,action.age/windup);if(action.type==='dragon-prison'&&action.prisonFrom)charge.position.fromArray(action.prisonFrom);else charge.position.set(body[0],1.9,body[2]);charge.scale.setScalar(.2+k*.5);charge.rotation.set(time*.8,time*2,time*.3);}
    for(const e of entities)if(!e.dead){
+    if(e.activationDelay||!e.root.visible)continue;
     if(e.kind==='projectile'&&clock-(e.sparkAt||0)>.09){e.sparkAt=clock;spawn(e.p,[-e.v[0]*.5,.25,-e.v[2]*.5],.22,e.r*.16);}
+   if(e.vfx?.prisonRings)for(const ring of e.vfx.prisonRings)ring.rotation.y+=dt*3;
     if(e.kind==='wave'&&clock-(e.sparkAt||0)>.1){e.sparkAt=clock;for(const side of [-1,1]){const x=side<0?(-e.width/2+e.gapOffset-e.gap/2)/2:(e.width/2+e.gapOffset+e.gap/2)/2;spawn([e.p[0]+x,.9,e.p[2]],[0,1,.2],.3,.07);}}
     if(e.vfx?.ribbon)e.vfx.ribbon.rotation.y+=dt*(e.kind==='vortex'?-4:3);
     if(e.vfx?.ring){e.vfx.ring.rotation.z+=dt;if(clock-(e.sparkAt||0)>.16){e.sparkAt=clock;const theta=clock*3;spawn([e.p[0]+Math.sin(theta)*e.r,.2,e.p[2]+Math.cos(theta)*e.r],[0,e.tag==='blizzard'?.15:.6,0],.45,.07);}}

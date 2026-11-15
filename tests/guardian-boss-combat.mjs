@@ -31,8 +31,8 @@ g.trigger(1,center,boss,f);step(.1);assert.equal(g.state().entities.filter(e=>e.
 const decoy=g.state().entities.find(e=>e.kind==='decoy');assert.ok(strike(decoy));assert.equal(g.state().entities.filter(e=>e.kind==='decoy').length,1,'false image can be identified and destroyed');
 reset('fire');g.trigger(2,center,boss,f);step(.1);assert.equal(g.state().hazards.length,9);hits=[];step(1.1);assert.equal(hits.length,0,'pillar warnings precede all damage');
 
-reset('water');g.trigger(1,center,boss,f);step(1.4);assert.ok(g.state().prison);assert.equal(g.slowAt(center),0);assert.ok(g.breakPrison(50));assert.equal(g.state().prison,null);assert.ok(g.slowAt(center)>0);
-reset('water');g.trigger(1,center,boss,f);step(1.4,[4,1.72,7]);assert.equal(g.state().prison,null,'bubble capture can be dodged');
+reset('water');g.trigger(1,center,boss,f);step(.5);assert.equal(g.state().prison,null);step(2.5);assert.ok(g.state().prison);assert.equal(g.slowAt(center),0);assert.equal(g.breakPrison(50),false);step(1.6);assert.equal(g.state().prison,null);assert.ok(g.slowAt(center)>0);
+reset('water');g.trigger(1,center,boss,f);step(4,[4,1.72,7]);assert.equal(g.state().prison,null,'the launched sphere can be dodged');
 reset('water');const low=g.slowAt(center);step(2);assert.notEqual(g.slowAt(center),low,'tide changes traversal over time');assert.equal(g.state().highGround,undefined,'no raised terrain');
 reset('water');g.trigger(2,center,boss,f);step(.1);const wave=g.state().entities.find(e=>e.kind==='wave');assert.ok(wave.gapWidth>2);step(6,[wave.gap,1.72,7]);assert.equal(hits.length,0,'sideways movement into the warned lane avoids the tsunami');
 reset('water');g.trigger(2,center,boss,f);step(6);assert.ok(hits.some(h=>h.shot.damage===42),'outside the safe lane the same tsunami hits');
@@ -46,7 +46,7 @@ reset('wind');g.trigger(0,center,boss,f);step(.5);assert.equal(g.damageMultiplie
 reset('earth');assert.ok(Math.abs(g.defense({guardianPart:'mountain-shell'},boss).multiplier-.3)<1e-9);assert.equal(g.defense({guardianPart:'tortoise-leg'},boss).multiplier,1);
 g.onDamage(f.maxHp*.05,{guardianPart:'tortoise-leg'},boss);assert.ok(g.state().stagger>0);assert.equal(g.damageMultiplier(),1.8,'leg hits topple the turtle');
 step(2);assert.equal(g.state().action,null,'toppled turtle cannot begin its next attack');
-reset('earth');g.trigger(1,center,boss,f);step(.1);assert.equal(g.defense().reflect,.35);
+reset('earth');g.trigger(1,center,boss,f);step(.1);assert.equal(g.defense().reflect,0);step(.55);assert.equal(g.defense().reflect,.35);
 reset('light');assert.equal(g.defense().reflect,.18);g.trigger(1,center,boss,f);step(2,[5,1.72,7]);assert.equal(g.defense().reflect,0);assert.ok(g.defense().multiplier>1);
 reset('light');g.trigger(2,center,boss,f);step(4,[-2.5,1.72,7]);assert.ok(hits.some(h=>h.shot.ignoreShield&&h.shot.armorPiercing),'golden blades pierce defenses');
 reset('light');g.trigger(2,center,boss,f);step(4);assert.equal(hits.length,0,'the gap between golden blades can be dodged into');
@@ -63,4 +63,4 @@ reset('ice');g.trigger(2,center,boss,f);step(7,[5,1.72,7]);assert.equal(hits.len
 reset('ice');g.trigger(0,center,boss,f);step(4);assert.ok(controls.some(c=>c.kind==='ice'),'three claw hits freeze');
 reset('ice');g.trigger(2,center,boss,f);step(1);f.hp=0;assert.equal(g.beginTransition(f),false);g.reset();assert.equal(scene.getObjectByName('guardian-distinct-combat'),undefined);
 g.dispose();assert.equal(scene.children.length,0);
-console.log('PASS: 27 unique arts, exact three-skill AI, passives, dodge windows, breakable prison, tide and flat-arena safe lanes, lightning/frost stacks, turtle weak spots, metallic reflection, shadow lamps, destructible healing, crystal shelters, pause/control/reset cleanup.');
+console.log('PASS: 27 unique arts, exact three-skill AI, passives, dodge windows, timed projectile prison, tide and flat-arena safe lanes, lightning/frost stacks, turtle weak spots, metallic reflection, shadow lamps, destructible healing, crystal shelters, pause/control/reset cleanup.');

@@ -82,14 +82,14 @@
       {
         "type": "dragon-roaming-vortex",
         "name": "Thủy Long Quyển",
-        "description": "Tạo một cột nước xoáy di chuyển trên bản đồ. Cột nước có thể hút các đạn kỹ năng thông thường vào trong, rồi bắn chúng ra khi tan biến.",
+        "description": "Đánh dấu vòng cảnh báo dưới chân mục tiêu trong 1,1 giây, sau đó dựng xoáy nước ở đúng vị trí đã báo trong 1,5 giây. Xoáy không bám theo mục tiêu; người chơi có thể chạy khỏi vùng báo trước khi xoáy xuất hiện.",
         "role": "control",
         "unlock": 1
       },
       {
         "type": "dragon-wave",
         "name": "Hải Triều Xung Kích",
-        "description": "Triệu hồi một con sóng lớn quét ngang đấu trường. Người chơi có thể né bằng cách đi vào các khoảng trống hoặc đứng sau vật cản.",
+        "description": "Triệu hồi một dải sóng liền quét ngang đấu trường, không chừa khoảng trống giữa sóng. Có vệt báo trước hướng quét.",
         "role": "ranged",
         "unlock": 1
       },
@@ -103,7 +103,7 @@
       {
         "type": "dragon-prison",
         "name": "Thủy Lao Giam Cầm",
-        "description": "Tạo bong bóng nước bao quanh một mục tiêu. Đồng đội có thể đánh vỡ bong bóng để giải cứu, hoặc mục tiêu tự phá bằng cách gây đủ sát thương.",
+        "description": "Boss gồng và hiện đường cảnh báo trước khi chưởng một quả cầu nước theo hướng đã khóa. Quả cầu trúng mới giam mục tiêu trong 1,5 giây; tự tan, không thể phá bằng sát thương.",
         "role": "control",
         "unlock": 2
       },
@@ -130,7 +130,7 @@
       }
     ],
     "passive": "Tam Thủy Cảnh",
-    "counter": "Phá Thủy Lao bằng đòn tấn công; tìm khe sóng xanh và đánh ngực khi boss tích áp suất."
+    "counter": "Tránh đường quét đã báo trước của Hải Triều và đánh ngực khi boss tích áp suất."
   },
   "lightning": {
     "title": "Lôi Đình Thiên Lang",

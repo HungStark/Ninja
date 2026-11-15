@@ -1,13 +1,13 @@
-// The nine village beasts each have exactly three active arts. Nameless keeps
+// Legacy first-person guardian loadouts. Nameless keeps
 // its original ally and opponent choreography in guardian-phases.js.
 export const GUARDIAN_BOSS_DESIGNS={
   fire:{difficulty:4,color:'#ff793f',passive:'Cửu Mệnh',counter:'Đuôi bản thể sáng vàng · né vào khe giữa các cột lửa.',skills:[
     {name:'Hồ Hỏa Truy Hồn',type:'fox-homing',duration:5.8},
     {name:'Huyễn Hồ Phân Thân',type:'fox-illusions',duration:7},
     {name:'Cửu Viêm Diệt Thế',type:'fox-nine-pillars',duration:6.8}]},
-  water:{difficulty:3,color:'#50baff',passive:'Thủy Triều',counter:'Né ngang vào hành lang xanh để tránh sóng · tấn công để phá Thủy Lao.',skills:[
+  water:{difficulty:3,color:'#50baff',passive:'Thủy Triều',counter:'Né ngang vào hành lang xanh để tránh sóng.',skills:[
     {name:'Long Thủy Pháo',type:'dragon-pressure',duration:4.5},
-    {name:'Thủy Lao',type:'dragon-prison',duration:6},
+    {name:'Thủy Lao',type:'dragon-prison',duration:1.5},
     {name:'Hải Khiếu Long Vương',type:'dragon-tsunami',duration:6}]},
   lightning:{difficulty:5,color:'#c4a0ff',passive:'Lôi Tích',counter:'Né vệt báo ziczac và dấu sét để tránh tích điện gây tê liệt.',skills:[
     {name:'Lôi Ảnh Xung Kích',type:'wolf-zigzag',duration:3.6},
