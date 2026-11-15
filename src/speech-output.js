@@ -1,7 +1,7 @@
 import {gameLanguage} from './language.js';
 import {createBundledSpeech} from './bundled-speech.js';
 let speechInstance=0;
-export function createSpeechOutput({environment=globalThis,onStart=()=>{},onEnd=()=>{},onError=()=>{},onStatus=()=>{},getOutput,bundledFactory,useSystemVoice=false}={}){
+export function createSpeechOutput({environment=globalThis,onStart=()=>{},onEnd=()=>{},onError=()=>{},onStatus=()=>{},getOutput,bundledFactory,useSystemVoice=true}={}){
  const env=environment,prefix='anhoa-'+(++speechInstance)+'-',native=()=>useSystemVoice?env.AnHoaSpeech:null,synth=()=>useSystemVoice?env.speechSynthesis:null;
  let active=null,serial=0,timer=null,closed=false,waitExpired=false,lastError='',nativeFailed=false,bundledError='';
  const clearTimer=()=>{clearTimeout(timer);timer=null;};
