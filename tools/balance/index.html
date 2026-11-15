@@ -6,7 +6,7 @@
 </head><body><main>
 <header><div class="brand">九印 <span>CỬU ẤN / CÔNG CỤ PHÁT TRIỂN</span></div>
 <nav class="internal-tabs" aria-label="Bảng nội bộ"><a href="/balance" aria-current="page">45 chiêu thức</a><a href="/guardians">Kỹ năng linh thú</a><a href="/opponents">Sức mạnh đối thủ</a></nav>
-<div class="heading"><div><h1>Cân bằng chiêu thức</h1><p>Chỉnh số trong bảng. Lưu vào dự án. Tải lại game để thử.</p></div><span class="game-link">Web nội bộ riêng</span></div>
+<div class="heading"><div><h1>Cân bằng chiêu thức</h1><p>Chỉnh chỉ số và chuỗi kết ấn trong bảng. Lưu vào dự án. Tải lại game để thử.</p></div><span class="game-link">Web nội bộ riêng</span></div>
 <div class="overview"><span><strong>45</strong> chiêu thức</span><span><strong>9</strong> hệ</span><span id="changeCount">Chưa có thay đổi</span></div></header>
 <section class="controls" aria-label="Điều khiển bảng"><div class="filters">
 <label>Tìm chiêu<input id="search" type="search" placeholder="Tên chiêu hoặc mã chiêu…"></label>
@@ -15,9 +15,9 @@
 <div class="actions"><button id="discard">Bỏ bản nháp</button><button id="reset">Khôi phục chỉ số gốc</button><button id="save" class="primary" disabled>Lưu vào dự án</button></div></section>
 <p id="status" role="status" aria-live="polite">Đang đọc dữ liệu game…</p>
 <div class="table-wrap" tabindex="0" aria-label="Bảng chiêu thức, cuộn ngang để xem đủ cột"><table><thead><tr>
-<th scope="col">Hệ / Chiêu thức</th><th scope="col">Hồi chiêu <small>giây</small></th><th scope="col">Mana</th><th scope="col">Khống chế <small>giây</small></th><th scope="col">Sát thương <small>giá trị gốc</small></th><th scope="col">Chống chịu <small>độ bền khiên / tường</small></th><th scope="col">Hiệu lực <small>giây</small></th><th scope="col">Cơ chế / Chi tiết</th>
+<th scope="col">Hệ / Chiêu thức</th><th scope="col">Chuỗi kết ấn <small>khóa 2 ấn đầu</small></th><th scope="col">Hồi chiêu <small>giây</small></th><th scope="col">Mana</th><th scope="col">Khống chế <small>giây</small></th><th scope="col">Sát thương <small>giá trị gốc</small></th><th scope="col">Chống chịu <small>độ bền khiên / tường</small></th><th scope="col">Hiệu lực <small>giây</small></th><th scope="col">Cơ chế / Chi tiết</th>
 </tr></thead><tbody id="rows"></tbody></table><p id="empty" hidden>Không có chiêu phù hợp bộ lọc.</p></div>
-<footer><p><b>—</b> = chiêu không dùng chỉ số đó. Sát thương là giá trị trước hệ số nhân vật, trang bị và kháng. Chiêu Mộc còn tăng theo cây; khống chế và hiệu lực là hai cột riêng.</p>
+<footer><p>Chuỗi kết ấn: hai ấn đầu cố định theo hệ. Nhập phần còn lại bằng các phím Q W E R A S D F Z X C V; để trống nếu chỉ dùng hai ấn. Mỗi chiêu cần một chuỗi riêng.</p><p><b>—</b> = chiêu không dùng chỉ số đó. Sát thương là giá trị trước hệ số nhân vật, trang bị và kháng. Chiêu Mộc còn tăng theo cây; khống chế và hiệu lực là hai cột riêng.</p>
 <div class="file-actions"><button id="export">Xuất JSON</button><label class="button">Nhập JSON<input id="import" type="file" accept="application/json,.json" hidden></label><span id="visibleCount"></span></div>
 <p>Dữ liệu lưu trong <code>game-core.js</code>, đồng bộ bản tiếng Anh và được đưa vào các bản build tiếp theo. Bản web đã triển khai và APK đã cài cần được build / phát hành lại.</p></footer>
 </main><dialog id="confirm"><form method="dialog"><h2>Khôi phục chỉ số gốc?</h2><p>Đưa cả 45 chiêu về chỉ số gốc trong bảng. Bấm “Lưu vào dự án” sau đó mới áp dụng vào game.</p><div class="actions"><button value="cancel">Hủy</button><button class="primary" value="restore">Khôi phục 45 chiêu</button></div></form></dialog></body></html>

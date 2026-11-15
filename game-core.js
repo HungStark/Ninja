@@ -130,11 +130,26 @@
   },
   "fire-lance": {
     "cost": 45,
-    "damage": 80
+    "damage": 80,
+    "sequence": [
+      "q",
+      "w",
+      "d",
+      "f",
+      "a"
+    ]
   },
   "fire-meteor": {
     "cost": 60,
-    "damage": 120
+    "damage": 120,
+    "sequence": [
+      "q",
+      "w",
+      "e",
+      "r",
+      "d",
+      "f"
+    ]
   },
   "water-barrier": {
     "damage": 7,
@@ -148,13 +163,27 @@
   },
   "water-tsunami": {
     "cost": 60,
-    "damage": 75
+    "damage": 75,
+    "sequence": [
+      "w",
+      "e",
+      "a",
+      "f",
+      "v"
+    ]
   },
   "water-volley": {
     "cost": 45,
     "cooldown": 21,
     "damage": 80,
-    "controlDuration": 0.5
+    "controlDuration": 0.5,
+    "sequence": [
+      "w",
+      "e",
+      "a",
+      "d",
+      "f"
+    ]
   },
   "fire-volley": {
     "damage": 8
@@ -180,6 +209,11 @@
       21,
       32,
       40
+    ],
+    "sequence": [
+      "q",
+      "w",
+      "v"
     ]
   },
   "lightning-reflect": {
@@ -205,16 +239,36 @@
   },
   "lightning-volley": {
     "damage": 80,
-    "cost": 45
+    "cost": 45,
+    "sequence": [
+      "e",
+      "r",
+      "z",
+      "x",
+      "v"
+    ]
   },
   "lightning-thunder": {
     "cost": 60,
-    "damage": 120
+    "damage": 120,
+    "sequence": [
+      "e",
+      "r",
+      "s",
+      "d",
+      "f"
+    ]
   },
   "wind-volley": {
     "cost": 30,
     "damage": 60,
-    "cooldown": 15
+    "cooldown": 15,
+    "sequence": [
+      "r",
+      "a",
+      "x",
+      "v"
+    ]
   },
   "wind-lance": {
     "cost": 35,
@@ -225,11 +279,23 @@
     "cooldown": 12,
     "duration": 8,
     "shield": 70,
-    "cost": 20
+    "cost": 20,
+    "sequence": [
+      "r",
+      "a",
+      "v"
+    ]
   },
   "wind-reflect": {
     "duration": 7,
-    "cost": 55
+    "cost": 55,
+    "sequence": [
+      "r",
+      "a",
+      "s",
+      "d",
+      "f"
+    ]
   },
   "wood-orb": {
     "cooldown": 5,
@@ -238,7 +304,13 @@
   "wood-volley": {
     "damage": 45,
     "cooldown": 22,
-    "cost": 50
+    "cost": 50,
+    "sequence": [
+      "f",
+      "z",
+      "w",
+      "e"
+    ]
   },
   "wood-lance": {
     "cost": 20
@@ -246,23 +318,55 @@
   "wood-barrier": {
     "cooldown": 12,
     "shield": 40,
-    "cost": 20
+    "cost": 20,
+    "sequence": [
+      "f",
+      "z",
+      "s"
+    ]
   },
   "ice-lance": {
     "cost": 20,
-    "controlDuration": 2
+    "controlDuration": 2,
+    "sequence": [
+      "z",
+      "x",
+      "d"
+    ]
   },
   "ice-reflect": {
-    "cooldown": 1
+    "cooldown": 1,
+    "sequence": [
+      "z",
+      "x",
+      "d",
+      "f",
+      "e",
+      "r"
+    ]
   },
   "wood-reflect": {
     "cooldown": 1,
-    "cost": 50
+    "cost": 50,
+    "sequence": [
+      "f",
+      "z",
+      "s",
+      "d",
+      "w",
+      "e"
+    ]
   },
   "ice-volley": {
     "cooldown": 12,
     "duration": 6,
-    "cost": 20
+    "cost": 20,
+    "sequence": [
+      "z",
+      "x",
+      "c",
+      "f"
+    ]
   },
   "ice-barrier": {
     "cost": 40,
@@ -280,15 +384,37 @@
   },
   "light-barrier": {
     "cost": 20,
-    "amplification": 1.6
+    "amplification": 1.6,
+    "sequence": [
+      "s",
+      "d",
+      "q",
+      "r"
+    ]
   },
   "light-lance": {
     "cooldown": 35,
-    "cost": 50
+    "cost": 50,
+    "sequence": [
+      "s",
+      "d",
+      "a",
+      "f",
+      "x",
+      "c"
+    ]
   },
   "light-volley": {
     "cost": 60,
-    "damage": 120
+    "damage": 120,
+    "sequence": [
+      "s",
+      "d",
+      "v",
+      "a",
+      "r",
+      "e"
+    ]
   },
   "earth-orb": {
     "damage": 24,
@@ -304,18 +430,37 @@
     "cooldown": 35,
     "fallDamage": 45,
     "captureDamage": 45,
-    "holdTime": 2
+    "holdTime": 2,
+    "sequence": [
+      "a",
+      "s",
+      "c",
+      "v",
+      "w",
+      "e"
+    ]
   },
   "earth-volley": {
     "cost": 45,
     "cooldown": 20,
-    "damage": 18
+    "damage": 18,
+    "sequence": [
+      "a",
+      "s",
+      "d",
+      "v"
+    ]
   },
   "earth-barrier": {
     "shield": 80,
     "cost": 21,
     "duration": 8,
-    "cooldown": 13
+    "cooldown": 13,
+    "sequence": [
+      "a",
+      "s",
+      "c"
+    ]
   },
   "ice-orb": {
     "cost": 51,
@@ -324,6 +469,16 @@
   },
   "wind-orb": {
     "cost": 15
+  },
+  "dark-domain": {
+    "sequence": [
+      "d",
+      "f",
+      "x",
+      "a",
+      "s",
+      "e"
+    ]
   }
 }/* spell-balance:end */;
   for(const spell of spells){

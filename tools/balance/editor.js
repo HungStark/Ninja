@@ -6,12 +6,25 @@ function status(message,error=false){$('status').textContent=message;$('status')
 function effective(row,overrides){return {...row.defaults,...overrides[row.id]};}
 function changed(row){return !equal(effective(row,values),effective(row,saved));}
 function storeDraft(){try{localStorage.setItem(DRAFT_KEY,JSON.stringify({revision:data.revision,overrides:values}));}catch{status('Không lưu được bản nháp trên trình duyệt. Bạn vẫn có thể lưu vào dự án hoặc xuất JSON.',true);}}
+function sequenceError(row,sequence){
+  if(!Array.isArray(sequence)||sequence.length<2||sequence.some(k=>!data.sealKeys.includes(k))||sequence.slice(0,2).join('')!==row.defaults.sequence.slice(0,2).join(''))return 'Chỉ dùng các phím '+data.sealKeys.join(' ').toUpperCase()+'. Hai ấn đầu được khóa.';
+  return '';
+}
+function validateSequences(){
+  for(const input of document.querySelectorAll('.sequence-suffix')){
+    const row=data.rows.find(r=>r.id===input.dataset.spell),sequence=[...row.defaults.sequence.slice(0,2),...input.value.toLowerCase()];
+    const duplicate=data.rows.find(r=>r.id!==row.id&&equal(effective(r,values).sequence,sequence));
+    const error=sequenceError(row,sequence)||(duplicate?'Chuỗi kết ấn trùng với '+duplicate.name+'.':'');
+    input.setCustomValidity(error);input.title=error||'Nhập các kết ấn từ vị trí thứ ba; có thể để trống.';
+  }
+}
 function update(){
+  validateSequences();
   const count=data.rows.filter(changed).length;
   $('changeCount').textContent=count?count+' / '+data.rows.length+' '+UNIT+' chưa lưu':'Đã đồng bộ với dự án';
-  $('save').disabled=busy||!count||!!document.querySelector('input.numeric:invalid');
+  $('save').disabled=busy||!count||!!document.querySelector('input.numeric:invalid,.sequence-suffix:invalid');
   $('discard').disabled=busy||!count;$('reset').disabled=busy;
-  for(const control of document.querySelectorAll('.numeric,.row-reset,#import'))control.disabled=busy;
+  for(const control of document.querySelectorAll('.numeric,.sequence-suffix,.row-reset,#import'))control.disabled=busy;
   for(const tr of $('rows').children)tr.classList.toggle('modified',changed(data.rows.find(r=>r.id===tr.dataset.id)));
   filter();
 }
@@ -50,6 +63,25 @@ function makeField(row,field){
   }
   wrap.append(inputs);return wrap;
 }
+function makeSequence(row){
+  const td=document.createElement('td');td.className='sequence-cell';
+  const controls=document.createElement('div');controls.className='sequence-controls';
+  for(const [index,key]of row.defaults.sequence.slice(0,2).entries()){
+    const seal=document.createElement('kbd');seal.className='locked-seal';seal.textContent=key.toUpperCase();seal.title='Ấn '+(index+1)+' cố định';controls.append(seal);
+  }
+  const input=document.createElement('input');input.type='text';input.className='sequence-suffix';input.dataset.spell=row.id;
+  input.value=effective(row,values).sequence.slice(2).join('').toUpperCase();input.placeholder='Thêm ấn…';input.autocomplete='off';input.spellcheck=false;
+  input.setAttribute('aria-label',row.name+' — Kết ấn từ vị trí thứ ba');
+  const hint=document.createElement('small');hint.textContent='2 ấn đầu cố định · sửa phần sau';
+  const mark=()=>input.classList.toggle('changed',!equal([...row.defaults.sequence.slice(0,2),...input.value.toLowerCase()],row.defaults.sequence));mark();
+  input.addEventListener('input',()=>{
+    const sequence=[...row.defaults.sequence.slice(0,2),...input.value.toLowerCase()];
+    if(!sequenceError(row,sequence)){setValue(row,'sequence',sequence);storeDraft();}
+    mark();update();
+    status(input.validationMessage||'Bản nháp đã giữ trên trình duyệt. Bấm “Lưu vào dự án” để áp dụng.',!input.validity.valid);
+  });
+  controls.append(input);td.append(controls,hint);return td;
+}
 function render(){
   $('rows').replaceChildren();
   for(const row of data.rows){
@@ -59,6 +91,7 @@ function render(){
     const element=document.createElement('span');element.className='element';element.style.setProperty('--element',row.color);element.textContent=row.elementName;
     const rank=document.createElement('span');rank.className='rank';rank.textContent=row.rank;
     const id=document.createElement('span');id.textContent=row.id;meta.append(element,rank,id);name.append(title,meta);tr.append(name);
+    if(row.defaults.sequence)tr.append(makeSequence(row));
     for(const fields of Object.values(row.columns)){
       const td=document.createElement('td');
       if(fields.length)for(const field of fields)td.append(makeField(row,field));
@@ -78,23 +111,32 @@ async function load(){
   const response=await fetch(API);if(!response.ok)throw Error('Không đọc được dữ liệu dự án.');data=await response.json();saved=copy(data.overrides);values=copy(saved);
   for(const el of data.elements){const option=document.createElement('option');option.value=el.id;option.textContent=el.name;$('element').append(option);}
   let draft;try{draft=JSON.parse(localStorage.getItem(DRAFT_KEY));}catch{}
-  if(draft?.revision===data.revision&&draft.overrides){validateImport(draft.overrides);values=draft.overrides;status('Đã khôi phục bản nháp trên trình duyệt. Chưa lưu thay đổi vào dự án.');}
+  if(draft?.revision===data.revision&&draft.overrides){validateImport(draft.overrides,true);values=draft.overrides;status('Đã khôi phục bản nháp trên trình duyệt. Chưa lưu thay đổi vào dự án.');}
   else status(draft?'Dự án đã thay đổi; bảng đang dùng dữ liệu mới nhất. Bản nháp cũ chưa được áp dụng.':'Đã nạp đủ '+data.rows.length+' '+UNIT+'. Sửa các ô số để bắt đầu.');
   render();
 }
-function validateImport(overrides){
+function validateImport(overrides,allowDuplicateSequences=false){
   if(!overrides||typeof overrides!=='object'||Array.isArray(overrides))throw Error('File JSON không đúng định dạng.');
   for(const [id,entry]of Object.entries(overrides)){
     const row=data.rows.find(r=>r.id===id);if(!row||!entry||typeof entry!=='object'||Array.isArray(entry))throw Error('Mã chiêu không hợp lệ: '+id);
     const fields=[...Object.values(row.columns).flat(),...row.extra];
     for(const [key,value]of Object.entries(entry)){
+      if(key==='sequence'&&row.defaults.sequence){const error=sequenceError(row,value);if(error)throw Error(row.name+': '+error);continue;}
       const field=fields.find(f=>f.key===key),baseline=row.defaults[key];
       if(!field||Array.isArray(value)!==Array.isArray(baseline)||(Array.isArray(value)&&value.length!==baseline.length)||(Array.isArray(value)?value:[value]).some(n=>typeof n!=='number'||!Number.isFinite(n)||n<field.min||n>field.max||(field.step===1&&!Number.isInteger(n))))throw Error('Chỉ số không hợp lệ: '+id+'.'+key);
     }
   }
+  if(allowDuplicateSequences)return;
+  const sequences=new Map();
+  for(const row of data.rows){
+    if(!row.defaults.sequence)continue;
+    const sequence=effective(row,overrides).sequence.join('');
+    if(sequences.has(sequence))throw Error('Chuỗi kết ấn trùng nhau: '+sequences.get(sequence)+' / '+row.name);
+    sequences.set(sequence,row.name);
+  }
 }
 $('save').onclick=async()=>{
-  if(document.querySelector('input.numeric:invalid'))return;busy=true;update();$('save').textContent='Đang lưu…';status('Đang lưu và đồng bộ bản tiếng Việt / tiếng Anh…');
+  if(document.querySelector('input.numeric:invalid,.sequence-suffix:invalid'))return;busy=true;update();$('save').textContent='Đang lưu…';status('Đang lưu và đồng bộ bản tiếng Việt / tiếng Anh…');
   try{const response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:data.revision,overrides:values})});const result=await response.json();if(!response.ok)throw Error(result.error);data=result;saved=copy(data.overrides);values=copy(saved);localStorage.removeItem(DRAFT_KEY);render();status('Đã lưu vào dự án. Tải lại tab game để thử; bản build tiếp theo sẽ dùng các chỉ số này.');}
   catch(error){status(error.message,true);}finally{busy=false;$('save').textContent='Lưu vào dự án';update();}
 };

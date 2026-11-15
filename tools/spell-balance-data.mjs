@@ -62,12 +62,13 @@ export function describeSpell(spell,elements){
 
 export function balanceDocument(source){
   const core=readCore(source);
-  return {revision:revisionOf(source),elements:core.elements,overrides:core.spellBalanceOverrides,
+  return {revision:revisionOf(source),elements:core.elements,sealKeys:core.keys,overrides:core.spellBalanceOverrides,
     rows:core.spells.map((spell,i)=>{
       const row=describeSpell(spell,core.elements),baseline=describeSpell(core.balanceDefaults[i],core.elements);
       // Which cells can be edited always follows the original mechanics, even at zero.
       for(const column of Object.keys(baseline.columns))row.columns[column]=baseline.columns[column].map(f=>({...f,value:spell[f.key]}));
       row.extra=baseline.extra.map(f=>({...f,value:spell[f.key]}));row.defaults=Object.fromEntries([...Object.values(baseline.columns).flat(),...baseline.extra].map(f=>[f.key,f.value]));row.description=core.balanceDefaults[i].subtitle;
+      row.defaults.sequence=[...core.balanceDefaults[i].sequence];
       return row;
     })};
 }
@@ -79,12 +80,23 @@ export function updatedSource(source,overrides){
     const row=allowed.get(id);if(!row||!values||typeof values!=='object'||Array.isArray(values))throw Error('Chiêu không hợp lệ: '+id);
     const fields=new Map([...Object.values(row.columns).flat(),...row.extra].map(f=>[f.key,f])),result={};
     for(const [key,value]of Object.entries(values)){
+      if(key==='sequence'){
+        if(!Array.isArray(value)||value.length<2||value.some(k=>!document.sealKeys.includes(k))||value.slice(0,2).join('')!==row.defaults.sequence.slice(0,2).join(''))throw Error('Chuỗi kết ấn không hợp lệ hoặc đã đổi hai ấn đầu: '+row.name);
+        if(JSON.stringify(value)!==JSON.stringify(row.defaults.sequence))result[key]=[...value];
+        continue;
+      }
       const f=fields.get(key);if(!f)throw Error('Chỉ số không được phép: '+id+'.'+key);
       const expected=row.defaults[key],numbers=Array.isArray(value)?value:[value];
       if(Array.isArray(expected)!==Array.isArray(value)||(Array.isArray(expected)&&expected.length!==value.length)||numbers.some(n=>typeof n!=='number'||!Number.isFinite(n)||n<f.min||n>f.max))throw Error('Giá trị không hợp lệ: '+row.name+' / '+f.label);
       if(JSON.stringify(value)!==JSON.stringify(expected))result[key]=value;
     }
     if(Object.keys(result).length)clean[id]=result;
+  }
+  const sequences=new Map();
+  for(const row of document.rows){
+    const sequence=(clean[row.id]?.sequence||row.defaults.sequence).join('');
+    if(sequences.has(sequence))throw Error('Chuỗi kết ấn trùng nhau: '+sequences.get(sequence)+' / '+row.name);
+    sequences.set(sequence,row.name);
   }
   const start=source.indexOf(START),end=source.indexOf(END);
   if(start<0||end<start)throw Error('Không tìm thấy vùng dữ liệu cân bằng trong game-core.js.');

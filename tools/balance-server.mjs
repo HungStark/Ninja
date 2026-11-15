@@ -8,7 +8,7 @@ import {createGuardianBalanceHandler} from './guardian-balance-server.mjs';
 
 export function balanceServerRevision(){
   const hash=createHash('sha256');
-  for(const name of ['tools/balance-server.mjs','tools/opponent-balance-data.mjs','tools/opponent-balance-server.mjs','src/opponent-balance.js','src/village-events.js','src/progression.js','src/locales/campaign.vi.json','game-core.js'])hash.update(fs.readFileSync(new URL('../'+name,import.meta.url)));
+  for(const name of ['tools/balance-server.mjs','tools/spell-balance-data.mjs','tools/spell-balance-server.mjs','tools/balance/editor.js','tools/balance/index.html','tools/balance/editor.css','tools/opponent-balance-data.mjs','tools/opponent-balance-server.mjs','src/opponent-balance.js','src/village-events.js','src/progression.js','src/locales/campaign.vi.json','game-core.js'])hash.update(fs.readFileSync(new URL('../'+name,import.meta.url)));
   return hash.digest('hex');
 }
 
