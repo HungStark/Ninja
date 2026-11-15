@@ -386,7 +386,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "baseDamagePercent": 116
   },
   "ninja:arena:earth": {
-    "sealDelay": 0.65,
+    "sealDelay": 0.5,
     "hp": 300,
     "baseDamagePercent": 106,
     "spellIds": [
@@ -461,7 +461,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:arena:wood": {
     "hp": 360,
-    "sealDelay": 0.6,
+    "sealDelay": 0.5,
     "baseDamagePercent": 110,
     "spellIds": [
       "wood-reflect",
@@ -482,8 +482,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "spellIds": [
       "ice-reflect",
       "ice-lance",
-      "ice-barrier",
-      "ice-orb"
+      "ice-orb",
+      "ice-volley"
     ]
   },
   "ninja:quest:ice": {
@@ -492,9 +492,9 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "baseDamagePercent": 110,
     "spellIds": [
       "ice-reflect",
-      "ice-barrier",
       "ice-orb",
-      "ice-volley"
+      "ice-volley",
+      "ice-lance"
     ]
   },
   "ninja:sidequest:ice": {
@@ -504,8 +504,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "spellIds": [
       "ice-reflect",
       "ice-lance",
-      "ice-barrier",
-      "ice-orb"
+      "ice-orb",
+      "ice-volley"
     ]
   },
   "ninja:village-guard:ice": {
@@ -516,7 +516,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "ice-reflect",
       "ice-orb",
       "ice-barrier",
-      "water-lance"
+      "ice-volley"
     ]
   },
   "ninja:guardian-guard:ice": {
@@ -527,12 +527,11 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:arena:ice": {
     "hp": 360,
-    "sealDelay": 0.6,
+    "sealDelay": 0.5,
     "baseDamagePercent": 110,
     "spellIds": [
       "ice-reflect",
       "ice-lance",
-      "ice-barrier",
       "ice-orb",
       "ice-volley"
     ]
@@ -589,7 +588,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "light-lance",
       "light-barrier",
       "light-reflect"
-    ]
+    ],
+    "sealDelay": 0.5
   },
   "ninja:guardian-guard:light": {
     "hp": 520,
@@ -607,7 +607,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:arena:light": {
     "hp": 390,
     "baseDamagePercent": 115,
-    "sealDelay": 0.55,
+    "sealDelay": 0.5,
     "spellIds": [
       "light-orb",
       "light-barrier",
@@ -682,9 +682,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "baseDamagePercent": 130
   },
   "ninja:village-event:dark": {
-    "hp": 600,
+    "hp": 500,
     "mana": 160,
-    "sealDelay": 0.35,
     "baseDamagePercent": 130,
     "spellIds": [
       "dark-orb",
@@ -777,8 +776,151 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "event:wind-courier:0": {
-    "hp": 300,
     "baseDamagePercent": 107
+  },
+  "ninja:village-event:earth": {
+    "hp": 300,
+    "baseDamagePercent": 111
+  },
+  "event:earth-base:0": {
+    "spellIds": [
+      "earth-orb",
+      "earth-barrier",
+      "earth-volley",
+      "earth-lance",
+      "earth-reflect"
+    ],
+    "hp": 360,
+    "sealDelay": 0.6,
+    "baseDamagePercent": 111
+  },
+  "event:earth-base:1": {
+    "baseDamagePercent": 111,
+    "hp": 350,
+    "sealDelay": 0.6,
+    "spellIds": [
+      "earth-orb",
+      "earth-volley",
+      "earth-barrier",
+      "dark-orb",
+      "dark-lance"
+    ]
+  },
+  "ninja:village-event:wood": {
+    "hp": 360,
+    "baseDamagePercent": 110,
+    "sealDelay": 0.6
+  },
+  "ninja:village-event:ice": {
+    "hp": 400,
+    "baseDamagePercent": 110,
+    "spellIds": [
+      "ice-reflect",
+      "ice-lance",
+      "ice-barrier",
+      "ice-orb"
+    ]
+  },
+  "event:ice-coast:0": {
+    "spellIds": [
+      "dark-orb",
+      "dark-lance",
+      "dark-volley",
+      "dark-domain",
+      "dark-reflect"
+    ],
+    "hp": 500,
+    "baseDamagePercent": 115
+  },
+  "event:ice-coast:1": {
+    "hp": 500,
+    "baseDamagePercent": 115,
+    "spellIds": [
+      "ice-reflect",
+      "ice-lance",
+      "ice-orb",
+      "ice-barrier",
+      "ice-volley"
+    ]
+  },
+  "ninja:village-event:light": {
+    "hp": 400,
+    "baseDamagePercent": 120,
+    "spellIds": [
+      "light-orb",
+      "light-barrier",
+      "light-reflect",
+      "light-lance"
+    ]
+  },
+  "event:light-battalion:0": {
+    "spellIds": [
+      "light-orb",
+      "light-lance",
+      "light-reflect",
+      "light-barrier"
+    ],
+    "baseDamagePercent": 120,
+    "hp": 450,
+    "sealDelay": 0.5
+  },
+  "event:light-battalion:1": {
+    "baseDamagePercent": 120,
+    "sealDelay": 0.5,
+    "hp": 450,
+    "spellIds": [
+      "light-lance",
+      "light-reflect",
+      "light-barrier",
+      "light-orb"
+    ]
+  },
+  "event:dark-battalion:2": {
+    "spellIds": [
+      "dark-lance",
+      "dark-volley",
+      "dark-reflect",
+      "dark-domain",
+      "dark-orb"
+    ],
+    "hp": 500,
+    "baseDamagePercent": 115
+  },
+  "event:dark-battalion:0": {
+    "spellIds": [
+      "dark-orb",
+      "dark-lance",
+      "dark-volley",
+      "dark-reflect",
+      "dark-domain"
+    ],
+    "hp": 500,
+    "baseDamagePercent": 115
+  },
+  "event:dark-battalion:1": {
+    "spellIds": [
+      "dark-reflect",
+      "dark-lance",
+      "dark-volley",
+      "dark-domain",
+      "dark-orb"
+    ],
+    "hp": 500,
+    "baseDamagePercent": 115
+  },
+  "story:crescent-wood:1": {
+    "baseDamagePercent": 125,
+    "hp": 500
+  },
+  "story:crescent-wood:2": {
+    "baseDamagePercent": 125
+  },
+  "story:crescent-ice:1": {
+    "baseDamagePercent": 125,
+    "hp": 500
+  },
+  "story:crescent-ice:2": {
+    "baseDamagePercent": 122
   }
 }/* opponent-balance:end */;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
