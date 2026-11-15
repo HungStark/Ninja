@@ -1,6 +1,6 @@
 import {GUARDIAN_ARSENAL_STATS} from './guardian-arsenal-data.js';
 // Every combat value is shared with the local guardian balance editor.
-export const GUARDIAN_AI_DEFAULTS={enrageThreshold:.3,enrageCooldown:.82,comboChance:.9,maxRepeatedCombos:2};
+export const GUARDIAN_AI_DEFAULTS={enrageThreshold:.3,enrageCooldown:.65,comboChance:.9,maxRepeatedCombos:2};
 export const GUARDIAN_SKILL_DEFAULTS={
  'fox-pillars':{duration:1.8,cooldown:2,damage:28,count:3,maxCount:5,warning:.9,radius:1.15,zoneLife:3,zoneDps:7},
  'fox-homing':{duration:1.5,cooldown:2,damage:24,count:3,windup:.6,interval:.1,speed:12,homing:3,homingTime:1.8,life:4.5,radius:.4,blastRadius:1.2,growth:1.4},

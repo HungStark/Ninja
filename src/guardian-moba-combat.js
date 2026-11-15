@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {guardianRest,guardianRecovery} from './guardian-rhythm.js';
 import {ENEMY_MOVE_MULTIPLIER} from './game-pace.js';
 import {GUARDIAN_BOSS_DESIGNS} from './guardian-moba-designs.js';
 import {guardianSkillStats,guardianPassiveStats,GUARDIAN_AI_DEFAULTS as AI} from './guardian-balance.js';
@@ -24,7 +25,7 @@ export function createGuardianBossCombat(scene,extension={}){
  const geo={orb:new T.IcosahedronGeometry(1,1),ring:new T.RingGeometry(.93,1,48),disk:new T.CircleGeometry(1,48),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,7),crystal:new T.OctahedronGeometry(1),arc:new T.TorusGeometry(1,.08,5,24,Math.PI*1.4),pillar:new T.CylinderGeometry(.7,1,1,8)};
  const vfx=createGuardianVfx();
  const designBank=extension.designs||GUARDIAN_BOSS_DESIGNS,updateSkill=extension.updateSkill||updateGuardianSkill,director=extension.createDirector?.();
- let memory={},combatStage=1,home=null,excursion=null,returning=null,blockedTime=0,castHits=new Map(),currentWarning=null;
+ let memory={},combatStage=1,home=null,excursion=null,returning=null,blockedTime=0,castHits=new Map(),currentWarning=null,queuedSkill=null,recoveryEnd=true,patrolDirection=1;
  let id=null,design=null,passive={},phase=2,clock=0,serial=0,castSerial=0,ctx=null,action=null,entities=[],history=[],wait=.75,attacks=0,ongoing=[],moveSpeed=0;
  let body=null,origin=null,pose={},previousBody=null,stationary=0,armor=0,armorLevels=0,armorShell=null,tailCount=0,energy=0,energyTravel=0,speedStacks=0,rage=0,stagger=0,lastCombat=0,ambushReady=false;
  let seed=1,passiveAt=0,comboCursor=0,comboRepeats=0,comboSerial=0,previousCombo='',combo=[],cooldowns={},stats=new Map(),previousTargets=new Map(),safeX=0,enraged=false,movement=0,revealUntil=0;
@@ -194,7 +195,7 @@ export function createGuardianBossCombat(scene,extension={}){
  }
  function gainArmor(amount){armor+=amount;flash(body,2,'#d3be8d');if(!armorShell||armorShell.dead){armorShell=entity('armor-visual',[...body],{life:1e6});mesh('orb',[0,1.8,0],[2.6,2,3.1],'#c8ba91',.2,armorShell.root);}}
  function cancel(recovery=true){
-  if(action){for(const e of action.visuals||[])destroy(e);wait=recovery?(action.cooldown||0)*(enraged?AI.enrageCooldown:1)*(action.recoveryScale||1):1;}
+  if(action){for(const e of action.visuals||[])destroy(e);recoveryEnd=true;wait=guardianRest(enraged);}
   action=null;pose={};
  }
  function begin(index,player,boss,fighter,automatic=false){
@@ -203,6 +204,7 @@ export function createGuardianBossCombat(scene,extension={}){
   const skill=design.skills[index],values=guardianSkillStats(skill.type),chosen=director?.target(body)||choose(true)||{id:'player',pos:player};
   const power=id==='wood'?1+rage*passive.ragePerSpirit:1;if(id==='wood')rage=0;
   action={...values,...skill,index,age:0,castId:++castSerial,targetId:chosen.id,target:[...chosen.pos],origin:[...body],events:new Set(),visuals:[],power,automatic};
+  queuedSkill=null;
   if(extension.requireTelegraphs)warning(body,2,Math.max(.4,values.windup||.6),()=>{},'none',0,source(action));
   action.commitment=automatic&&!design.arsenal?guardianCommitment(action):action.duration;
   if(design.arsenal&&!excursion)excursion=[...body];
@@ -242,6 +244,12 @@ export function createGuardianBossCombat(scene,extension={}){
  function steer(dt){
   if(!body||stagger>0||returning||design.arsenal&&excursion&&Math.abs(body[2]-home[2])>6||action?.stationary||design.arsenal&&action?.role==='pursuit'||action?.dashing||['wolf-dashes','shadow-dashes','tiger-claws','turtle-ram','eagle-dive','shadow-domain','dragon-pressure'].includes(action?.type))return;
   if(design.arsenal&&!action&&ctx?.aiEnabled===false)return;const t=choose(true);if(!t)return;
+  if(design.arsenal&&!action&&recoveryEnd&&wait>0){
+   const b=bounds(),left=Math.max(b.minX+3,home[0]-4),right=Math.min(b.maxX-3,home[0]+4),destination=[patrolDirection>0?right:left,0,home[2]];
+   if(distance(body,destination)<.3){patrolDirection*=-1;destination[0]=patrolDirection>0?right:left;}
+   const speed=Math.max(2,Math.min(4,(passive.moveSpeed||2)*ENEMY_MOVE_MULTIPLIER)),moved=moveBody(destination,speed,dt);
+   if(moved<speed*dt*.15)patrolDirection*=-1;blockedTime=0;return;
+  }
   const d=distance(body,t.pos),range=passive.engageRange||8,melee=['lightning','dark','ice','earth'].includes(id),casting=!!action;
   let destination=[...body];
   if(d>range+1.4)destination=[...t.pos];else if(!melee&&d<range*.65)destination=add(body,mul(unit(flat(sub(body,t.pos))),4));
@@ -359,8 +367,8 @@ export function createGuardianBossCombat(scene,extension={}){
   telegraphCone,get hasWarningTrace(){return !!ctx?.traceGuardianWarning;},traceWarning:w=>ctx?.traceGuardianWarning?.(w),
   launchWaterPrison(from,direction,a){if(!ctx?.launchWaterPrison)return false;ctx.launchWaterPrison(from,direction,{damage:a.damage*source(a).power*(phase===3?.6:1),speed:a.speed,radius:a.radius,range:a.range,controlDuration:a.controlDuration});return true;},
   get mouthPosition(){return ctx?.mouthPosition?.(pose)||[body[0],1.6,body[2]];},
-  interrupt(seconds=0){cancel(false);stagger=Math.max(stagger,seconds);memory.exposedUntil=Math.max(memory.exposedUntil||0,clock+seconds);if(excursion){returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}},
-  forceSkill(type,targetId){const i=design.skills.findIndex(s=>s.type===type);if(i<0)return false;const result=begin(i,ctx.player,ctx.boss,ctx.fighter,true);if(result&&targetId)action.targetId=targetId;return result;},
+  interrupt(seconds=0){queuedSkill=null;cancel(false);director?.endCombo();comboSerial++;recoveryEnd=true;wait=guardianRest(enraged);stagger=Math.max(stagger,seconds);memory.exposedUntil=Math.max(memory.exposedUntil||0,clock+seconds);if(excursion){returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}},
+  forceSkill(type,targetId){const index=design.skills.findIndex(s=>s.type===type);if(index<0)return false;const result=action&&director?director.finish(action,true,enraged):{end:false};cancel(false);recoveryEnd=result.end;wait=guardianRecovery(enraged,recoveryEnd);if(result.end){comboSerial++;if(excursion&&distance(body,excursion)>.15)returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}queuedSkill={index,targetId};return true;},
   get id(){return id;},get memory(){return memory;},get fighter(){return ctx?.fighter;},get action(){return action;},get stage(){return combatStage;},get home(){return home;},get incomingShots(){return ctx?.incomingShots||[];},get exposed(){return (memory.exposedUntil||0)>clock;},returnHome(){if(excursion&&distance(body,excursion)>.1)returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;},get body(){return body;},get targets(){return targets();},get aimTargets(){return targets().filter(t=>!t.untargetable);},get passive(){return passive;},get tails(){return tailCount;},get pose(){return pose;},get clock(){return clock;},
   target,choose,predict,random,randomPoint,bounds,attackBounds,fit,fitBody,source,once,all,warning,zone,trail,object,projectile,radial,wave,prepareWave,feather,flash,telegraphLine,beam,area,attackLine,cone,emit,control,applySlow,moveTarget,moveBody,teleport,dash,gainArmor,destroy,explodeObject,overlaps,status,
   parameters:a=>guardianSkillStats(a.type),get maxHp(){return ctx?.fighter.maxHp||1000;},get designColor(){return design.color;},
@@ -368,34 +376,34 @@ export function createGuardianBossCombat(scene,extension={}){
   wallContact(a,b,padding){return ctx?.walls?.find(w=>w.hp>0&&w.life>0&&ctx.intersectWall?.([a[0],1.5,a[2]],[b[0],1.5,b[2]],w,padding))||null;},
   add,sub,mul,unit,flat,length,distance,angle,clamp,along,mesh,circle,line,entity,
   setAirborne(value){pose.y=value;},stun(seconds){stagger=Math.max(stagger,seconds);},setDirection(direction){pose.yaw=Math.atan2(direction[0],direction[2]);},
-  takeRecovery(a){wait=Math.max(.18,Math.min(.45,(a.cooldown||0)*.2))*(enraged?AI.enrageCooldown:1)*(a.recoveryScale||1);}
+  takeRecovery(){recoveryEnd=true;wait=guardianRest(enraged);}
  };
  function hidden(){if(extension.hidden?.(skillContext))return true;return !!ctx&&id==='dark'&&clock-lastCombat>=passive.hideAfter&&clock>=revealUntil&&stagger<=0;}
- function clear(){for(const e of entities)destroy(e);for(const child of [...root.children])remove(child);root.removeFromParent();memory={};combatStage=1;home=excursion=returning=null;blockedTime=0;castHits.clear();director?.reset();entities=[];ongoing=[];history=[];action=null;ctx=null;body=origin=previousBody=null;armorShell=null;pose={};stats.clear();previousTargets.clear();armor=armorLevels=tailCount=energy=energyTravel=speedStacks=rage=stagger=stationary=lastCombat=movement=moveSpeed=revealUntil=0;}
+ function clear(){queuedSkill=null;for(const e of entities)destroy(e);for(const child of [...root.children])remove(child);root.removeFromParent();memory={};combatStage=1;home=excursion=returning=null;blockedTime=0;castHits.clear();director?.reset();entities=[];ongoing=[];history=[];action=null;ctx=null;body=origin=previousBody=null;armorShell=null;pose={};stats.clear();previousTargets.clear();armor=armorLevels=tailCount=energy=energyTravel=speedStacks=rage=stagger=stationary=lastCombat=movement=moveSpeed=revealUntil=0;}
  const api={
-  reset(nextId,nextPhase=2){clear();id=nextId;design=designBank[id]||null;passive=guardianPassiveStats(id);phase=nextPhase;clock=serial=castSerial=attacks=0;wait=.75;seed=Array.from(id||'').reduce((n,c)=>n+c.charCodeAt(0),123);comboCursor=comboRepeats=comboSerial=0;combo=[];previousCombo='';cooldowns={};enraged=ambushReady=false;passiveAt=passive.puddleInterval||passive.windInterval||passive.spiritInterval||Infinity;if(design){scene.add(root);vfx.attach(root,id);}},
+  reset(nextId,nextPhase=2){clear();recoveryEnd=true;patrolDirection=1;id=nextId;design=designBank[id]||null;passive=guardianPassiveStats(id);phase=nextPhase;clock=serial=castSerial=attacks=0;wait=.75;seed=Array.from(id||'').reduce((n,c)=>n+c.charCodeAt(0),123);comboCursor=comboRepeats=comboSerial=0;combo=[];previousCombo='';cooldowns={};enraged=ambushReady=false;passiveAt=passive.puddleInterval||passive.windInterval||passive.spiritInterval||Infinity;if(design){scene.add(root);vfx.attach(root,id);}},
   clear,trigger:begin,
   update(dt,fighter,player,boss,impact,options={}){
-   if(!design||options.enabled===false||fighter.hp<=0||dt<=0)return;
+   if(!design||options.enabled===false||fighter.hp<=0||dt<=1e-8)return;
    if(!body){body=flat(boss);origin=[...boss];home=[...body];safeX=(options.bounds?.minX??-6)+((options.bounds?.maxX??6)-(options.bounds?.minX??-6))*(.2+random()*.6);}
    const targetList=(options.targets||[{id:'player',pos:player,hitboxScale:options.playerHitboxScale||1}]).map(t=>{
     const last=previousTargets.get(t.id),raw=last?mul(sub(t.pos,last),1/dt):[0,0,0];return {...t,pos:[...t.pos],velocity:t.velocity||mul(raw,Math.min(1,8/(length(raw)||1)))};
    });
    ctx={...options,fighter,player:[...player],boss:[...boss],impact,targets:targetList};clock+=dt;stagger=Math.max(0,stagger-dt);const wasEnraged=enraged;enraged=fighter.hp/fighter.maxHp<AI.enrageThreshold;
-   if(enraged&&!wasEnraged){wait*=AI.enrageCooldown;for(const key of Object.keys(cooldowns))if(cooldowns[key]>clock)cooldowns[key]=clock+(cooldowns[key]-clock)*AI.enrageCooldown;}
+   if(enraged!==wasEnraged)wait*=guardianRecovery(enraged,recoveryEnd)/guardianRecovery(wasEnraged,recoveryEnd);if(enraged&&!wasEnraged)for(const key of Object.keys(cooldowns))if(cooldowns[key]>clock)cooldowns[key]=clock+(cooldowns[key]-clock)*AI.enrageCooldown;
    combatStage=fighter.hp/fighter.maxHp>.7?1:fighter.hp/fighter.maxHp>.35?2:3;director?.observe(clock,targetList);tickPassives(dt);previousBody=[...body];extension.tick?.(skillContext,dt);
    for(const cast of [...ongoing]){
      const foregroundPose=pose;pose={};cast.age+=dt;updateSkill(cast,skillContext,dt);pose=foregroundPose;
      if(cast.age+1e-7>=cast.duration){for(const e of cast.visuals)destroy(e);ongoing.splice(ongoing.indexOf(cast),1);}
    }
-   if(options.controlled&&phase===2){cancel(false);if(excursion&&!returning){returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}}
+   if(options.controlled&&phase===2){if(action||queuedSkill){queuedSkill=null;director?.endCombo();comboSerial++;}cancel(false);recoveryEnd=true;wait=guardianRest(enraged);if(excursion&&!returning){returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}}
    else if(stagger<=0){
     steer(dt);
-    if(!action&&!returning&&options.aiEnabled!==false){wait-=dt;if(wait<=0){const next=chooseSkill();if(next!==null)begin(next,player,boss,fighter,true);}}
+    if(!action&&!returning&&(queuedSkill||options.aiEnabled!==false)){wait-=dt;if(wait<=0){const queued=queuedSkill,next=queued?.index??chooseSkill();if(next!==null){begin(next,player,boss,fighter,true);if(queued?.targetId)action.targetId=queued.targetId;}}}
     if(action){const current=action;action.age+=dt;updateSkill(action,skillContext,dt);if(action===current&&action.age+1e-7>=action.commitment){
      if(current.automatic&&GUARDIAN_BACKGROUND_SKILLS.has(current.type)&&current.age<current.duration){ongoing.push(current);action=null;pose={};}else cancel(true);
-     if(director){const result=director.finish(current,castHits.get(current.castId)>0);if(!current.automatic||options.aiEnabled===false)result.end=true;wait=result.recovery;if(result.end&&excursion){if(distance(body,excursion)>.15)returning={from:[...body],to:[...excursion],age:0,duration:Math.max(.45,Math.min(1,distance(body,excursion)/28))};excursion=null;}if(result.end)comboSerial++;}
-     else wait=(comboCursor<combo.length?.28:.95)*(enraged?AI.enrageCooldown:1)*(current.recoveryScale||1);
+     if(director){const result=director.finish(current,castHits.get(current.castId)>0,enraged);if(!current.automatic||options.aiEnabled===false){result.end=true;director.endCombo();}recoveryEnd=result.end;wait=guardianRecovery(enraged,recoveryEnd);if(result.end&&excursion){if(distance(body,excursion)>.15)returning={from:[...body],to:[...excursion],age:0,duration:Math.max(.45,Math.min(1,distance(body,excursion)/28))};excursion=null;}if(result.end)comboSerial++;}
+     else{recoveryEnd=!current.automatic||comboCursor>=combo.length;wait=guardianRecovery(enraged,recoveryEnd);}
     }}
    }
    if(returning&&!options.controlled&&stagger<=0){returning.age+=dt;const q=clamp(returning.age/returning.duration,0,1);body=fitBody(add(returning.from,mul(sub(returning.to,returning.from),q)));pose.y=Math.sin(q*Math.PI)*2;pose.yaw=angle(returning.from,returning.to);if(q>=1){body=[...returning.to];returning=null;pose={};}}
@@ -428,7 +436,7 @@ export function createGuardianBossCombat(scene,extension={}){
   get offset(){return {x:body&&origin?body[0]-origin[0]:0,y:0,z:body&&origin?body[2]-origin[2]:0,lean:stagger>0?.5:0,...pose};},
   state(){return {
    action:action?{index:action.index,role:action.role,targetId:action.targetId,type:action.type,name:action.name,age:action.age,stage:action.age<(action.windup||action.warning||.6)?'warning':'active',parameters:guardianSkillStats(action.type),commitment:action.commitment}:null,
-   vfx:vfx.state(),signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor,armorLevels,stationary,tailCount,energy,speedStacks,rage,enraged,recovery:wait,skillCooldowns:design?.skills.map((s,i)=>Math.max(0,(cooldowns[i]||0)-clock))||[],combo:[...combo],comboCursor,comboSerial,
+   vfx:vfx.state(),signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor,armorLevels,stationary,tailCount,energy,speedStacks,rage,enraged,recovery:wait,recoveryKind:recoveryEnd?'rest':'combo-gap',queuedSkill:queuedSkill?design.skills[queuedSkill.index].type:null,skillCooldowns:design?.skills.map((s,i)=>Math.max(0,(cooldowns[i]||0)-clock))||[],combo:[...combo],comboCursor,comboSerial,
    arsenal:!!design?.arsenal,combatStage,mechanics:{...memory.summary},director:director?.state()||null,homePosition:home?[...home]:null,returning:returning?{destination:[...returning.to],age:returning.age}:null,aiOwnedMovement:!!design,bossPosition:body?[...body]:null,moving:movement>.002,moveSpeed,moveVelocity:body&&previousBody?[(body[0]-previousBody[0])/(movement||1)*moveSpeed,0,(body[2]-previousBody[2])/(movement||1)*moveSpeed]:[0,0,0],ongoing:ongoing.map(a=>({type:a.type,age:a.age,duration:a.duration})),difficulty:design?.difficulty||0,title:design?.title||'',role:design?.role||'',passive:design?.passive||'',counter:design?.counter||'',skills:design?.skills.map(s=>s.name)||[],passiveParameters:{...passive},
    statuses:[...stats].map(([key,s])=>({id:key,stacks:s.stacks,stackTime:s.stackTime,markTime:s.markTime,slow:s.slow,slowTime:s.slowTime,rootTime:s.rootTime,freezeImmune:s.freezeImmune})),
    exposed:Math.max(0,(memory.exposedUntil||0)-clock),stagger,hidden:hidden(),lockable:api.lockable(),night:all('dark').some(e=>targets().some(t=>t.id==='player'&&overlaps(e,t.pos))),prison:memory.prison&&!memory.prison.dead?{hp:memory.prison.hp,breakable:memory.prison.breakable!==false,remaining:memory.prison.life-memory.prison.age}:null,shelters:[],lamps:[],

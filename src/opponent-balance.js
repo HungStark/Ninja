@@ -38,7 +38,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "guardian:nameless:2": {
-    "hp": 300,
+    "hp": 400,
     "baseDamagePercent": 100
   },
   "intro:fire": {
@@ -116,7 +116,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "mana": 150
   },
   "guardian:water:2": {
-    "hp": 300,
+    "hp": 480,
     "baseDamagePercent": 100
   },
   "ninja:random:fire": {
@@ -182,7 +182,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "mana": 150
   },
   "guardian:fire:2": {
-    "hp": 350,
+    "hp": 560,
     "baseDamagePercent": 104
   },
   "event:fire:0": {
@@ -267,7 +267,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "guardian:lightning:2": {
     "baseDamagePercent": 108,
-    "hp": 400
+    "hp": 640
   },
   "ninja:practice": {
     "hp": 300,
@@ -342,7 +342,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "guardian:wind:2": {
     "baseDamagePercent": 112,
-    "hp": 450
+    "hp": 720
   },
   "ninja:random:earth": {
     "sealDelay": 0.65,
@@ -405,7 +405,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "baseDamagePercent": 116
   },
   "guardian:earth:2": {
-    "hp": 500,
+    "hp": 800,
     "baseDamagePercent": 116
   },
   "ninja:random:wood": {
@@ -472,7 +472,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "guardian:wood:2": {
-    "hp": 600,
+    "hp": 960,
     "baseDamagePercent": 120
   },
   "ninja:random:ice": {
@@ -544,7 +544,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "baseDamagePercent": 120
   },
   "guardian:ice:2": {
-    "hp": 600,
+    "hp": 960,
     "baseDamagePercent": 120
   },
   "ninja:random:light": {
@@ -617,7 +617,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "guardian:light:2": {
-    "hp": 650,
+    "hp": 1040,
     "baseDamagePercent": 125
   },
   "ninja:random:dark": {
@@ -678,7 +678,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "baseDamagePercent": 130
   },
   "guardian:dark:2": {
-    "hp": 700,
+    "hp": 1120,
     "baseDamagePercent": 130
   },
   "ninja:village-event:dark": {
@@ -913,14 +913,22 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "hp": 500
   },
   "story:crescent-wood:2": {
-    "baseDamagePercent": 125
+    "baseDamagePercent": 125,
+    "hp": 1000
   },
   "story:crescent-ice:1": {
     "baseDamagePercent": 125,
     "hp": 500
   },
   "story:crescent-ice:2": {
-    "baseDamagePercent": 122
+    "baseDamagePercent": 122,
+    "hp": 1000
+  },
+  "story:crescent-light:2": {
+    "hp": 1040
+  },
+  "story:crescent-gatekeeper:2": {
+    "hp": 1120
   }
 }/* opponent-balance:end */;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -933,8 +941,8 @@ export function opponentBalanceId(profile,phase=1){
   return 'ninja:'+profile.kind+':'+(profile.village||profile.element);
 }
 function stageSettings(profile,phase,overrides){
-  const id=opponentBalanceId(profile,phase),legacy=profile.storyBoss?'guardian:'+(profile.guardianVillage||profile.village)+':'+phase:profile.legacyBalanceId||(profile.storyBattle?'ninja:village-event:'+profile.village:id);
-  const value={...overrides[legacy],...overrides[id]},beast=profile.kind==='boss'&&phase===2;
+  const id=opponentBalanceId(profile,phase),legacy=profile.storyBoss||profile.storyBeast?'guardian:'+(profile.guardianVillage||profile.village)+':'+phase:profile.legacyBalanceId||(profile.storyBattle?'ninja:village-event:'+profile.village:id);
+  const value={...overrides[legacy],...(profile.storyBeast&&phase!==2?{}:overrides[id])},beast=profile.kind==='boss'&&phase===2;
   return {id,...(value.baseDamagePercent!==undefined?{baseDamagePercent:value.baseDamagePercent}:{}),
     mana:value.mana??100,infiniteMana:value.infiniteMana??profile.kind==='boss',
     sealDelay:value.sealDelay??profile.sealDelay??.42,
@@ -948,8 +956,7 @@ export function configureOpponent(profile,overrides=opponentBalanceOverrides){
   result.balanceStages=Array.from({length:count},(_,i)=>stageSettings(profile,i+1,overrides));
   result.sealDelay=result.balanceStages[0].sealDelay;
   if(profile.kind==='boss'){
-    const original=guardianPhaseHealth(profile.hp,profile.village);
-    result.phaseHealth=original.map((hp,i)=>result.balanceStages[i].hp??hp);
+    result.phaseHealth=guardianPhaseHealth(profile.hp,profile.village,result.balanceStages,profile.phaseHealth);
     result.hp=result.phaseHealth.reduce((a,b)=>a+b,0);
   }else result.hp=result.balanceStages[0].hp??profile.hp;
   if(result.balanceStages[0].spellIds)result.spellIds=[...result.balanceStages[0].spellIds];

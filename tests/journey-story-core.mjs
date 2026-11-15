@@ -39,7 +39,7 @@ for(const id of Object.keys(REGIONS)){
  }
  for(const g of villageGuards(id)){const encounter={kind:'village-guard',village:id,guardId:g.id,element:id};const before=s.progression.xp[id]||0;resolveBattle(s,encounter,true);assert.ok(s.progression.xp[id]>before||s.progression.xp[id]===2100);const cash=s.gold;resolveBattle(s,encounter,true);assert.equal(s.gold,cash);}
  world.load(id,s);assert.equal(world.guardsState().length,0);assert.deepEqual(read(s).story,s.story);
- const profile=encounterProfile(s,'boss',id);assert.ok(profile.hp>=360);assert.equal(profile.phases,id==='dark'?3:2);assert.equal(guardianPhaseHealth(profile.hp,id).reduce((a,b)=>a+b),profile.hp);
+ const profile=encounterProfile(s,'boss',id);assert.ok(profile.hp>=360);assert.equal(profile.phases,id==='dark'?3:2);const phases=guardianPhaseHealth(profile.hp,id);assert.equal(phases.length,profile.phases);assert.equal(phases[1],phases[0]*2);
  assert.equal(GUARDIAN_ARTS[id].specials.length,2);
 }
 assert.ok(questCount>=100);console.log('PASS: all starter choices, opening order, simultaneous trio profiles, guardian/report, negotiated seals, treaty and dark gate, legacy saves, '+questCount+' NPC quests, persistent sentries, reachable new world interactions and 2/3 guardian phases.');

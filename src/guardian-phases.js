@@ -1,14 +1,15 @@
-﻿import * as T from 'three';
+import * as T from 'three';
 import {GUARDIAN_ARTS,guardianPhaseHealth,guardianLeap,guardianBreath,GUARDIAN_BASIC_TIMING as BASIC} from './guardian-arts.js';
 import {guardianElementMultipliers} from './guardian-element-balance.js';
 import {gameAudio} from './game-audio.js';
 import {createGuardianBossCombat} from './guardian-boss-combat.js';
+import {guardianRecovery,guardianIsEnraged} from './guardian-rhythm.js';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 export function createGuardianPhases(scene){
   const distinct=createGuardianBossCombat(scene);
   const root=new T.Group();root.name='guardian-beast-arts';scene.add(root);
   const sphere=new T.SphereGeometry(1,16,12),ring=new T.RingGeometry(.86,1,40),disk=new T.CircleGeometry(1,40),cylinder=new T.CylinderGeometry(1,1,1,12,1,true),box=new T.BoxGeometry(1,1,1),crystal=new T.OctahedronGeometry(1),leaf=new T.ConeGeometry(.45,1,4);
-  let config=null,phase=1,health=[],transition=null,clock=0,wait=2,cycle=0,action=null,armor=0,attacks=0,pose={x:0,y:0,z:0,lean:0},totalDamage=0;
+  let config=null,phase=1,health=[],transition=null,clock=0,wait=2,cycle=0,action=null,armor=0,attacks=0,pose={x:0,y:0,z:0,lean:0},totalDamage=0,enraged=false,comboCount=0,recoveryEnd=true;
   const hazards=[],history=[],scars=[];
   const usesDistinct=()=>!!config&&config.village!=='nameless'&&phase>1;
   const color=()=>GUARDIAN_ARTS[config?.village]?.color||'#dfc58c';
@@ -24,10 +25,10 @@ export function createGuardianPhases(scene){
   }
   function mark(p,r=1.3,warning=1.3,damage=24){const m=mesh(ring,[p[0],.09,p[2]],[r,r,r]);m.rotation.x=-Math.PI/2;hazards.push({p:[...p],r,warning,damage,age:0,m,hit:false,column:null});}
   function hit(impact,p,damage,style='guardian-area',extra={}){impact({owner:'enemy',element:config.element,style,damage:damage*(phase===3?.6:1),unreflectable:true,v:[0,-1,0],color:color(),...extra},p);}
-  function makeAction(index,player,boss,fighter){
+  function makeAction(index,player,boss,fighter,automatic=false){
     const school=GUARDIAN_ARTS[config.village]||GUARDIAN_ARTS.nameless,special=index===1?school.specials[0]:school.specials[1];
     const type=index===0?'slam':index===2?'breath':index===3?'armor':special.type,name=index===0?'Thiên giáng chấn địa':index===2?school.beam:index===3?'Giáp hộ vệ':special.name;
-    action={type,name,age:0,target:[...player],origin:[...boss],damage:special.damage||24,definition:special,index,hits:0,lastTick:0,marks:0,damageAtStart:totalDamage};attacks++;history.push({type,name,phase,at:clock});if(history.length>30)history.shift();
+    action={type,name,age:0,target:[...player],origin:[...boss],damage:special.damage||24,definition:special,index,hits:0,lastTick:0,marks:0,damageAtStart:totalDamage,automatic};attacks++;history.push({type,name,phase,at:clock});if(history.length>30)history.shift();
     gameAudio.cast({element:config.element,rank:'S',style:'guardian-'+type});
     if(type==='slam'){action.marker=mesh(disk,[player[0],.1,player[2]],[3.5,3.5,3.5],.4);action.marker.material.color.set('#ff2626');action.marker.rotation.x=-Math.PI/2;}
     if(type==='breath'){action.orb=mesh(sphere,[boss[0],2.5,boss[2]+1.5],[.05,.05,.05],.95);action.orb.material.blending=T.NormalBlending;action.beam=mesh(cylinder,[0,0,0],[0,0,0],.65);action.angle=Math.atan2(player[0]-boss[0],player[2]-boss[2]);action.motes=Array.from({length:16},()=>mesh(['earth','ice'].includes(config.element)?crystal:config.element==='wood'?leaf:sphere,[...boss],[.13,.13,.3],.7));}
@@ -39,7 +40,7 @@ export function createGuardianPhases(scene){
     if(type==='sweep'){action.line=mesh(box,[-6,1.5,player[2]],[.16,3,.6],.3);}
     return name;
   }
-  function removeAction(){if(!action)return;for(const key of ['marker','orb','beam','shell','area','eye','line'])dispose(action[key]);for(const m of [...action.waves||[],...action.motes||[],...action.vines||[]])dispose(m);action=null;pose={x:0,y:0,z:0,lean:0};wait=phase===3?2.6:1.5;}
+  function removeAction(completed=true){if(!action)return;const automatic=action.automatic;for(const key of ['marker','orb','beam','shell','area','eye','line'])dispose(action[key]);for(const m of [...action.waves||[],...action.motes||[],...action.vines||[]])dispose(m);recoveryEnd=!completed||!automatic||++comboCount>=3;if(recoveryEnd)comboCount=0;action=null;pose={x:0,y:0,z:0,lean:0};wait=guardianRecovery(enraged,recoveryEnd);}
   function updateArmor(boss,dt){
     let shell=root.getObjectByName('guardian-armor');
     if(armor<=0){if(shell)dispose(shell);return;}
@@ -47,7 +48,7 @@ export function createGuardianPhases(scene){
     shell.position.set(boss[0]+pose.x,boss[1]+pose.y,boss[2]+pose.z);shell.rotation.y+=dt*.6;
   }
   const api={
-    reset(next=null,fighter=null){clear();config=next;phase=next?.basicOnly||next?.beastOnly?2:1;health=next?[...(next.phaseHealth||guardianPhaseHealth(next.hp,next.village))]:[];transition=null;clock=cycle=attacks=totalDamage=armor=0;wait=next?.basicOnly?1.5:2;history.length=0;if(usesDistinct())distinct.reset(next.village,phase,!!next.thirdPerson);if(fighter)fighter.incomingElementMultipliers=phase===2&&next?guardianElementMultipliers(next.village):{};if(next&&fighter){fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;}},
+    reset(next=null,fighter=null){clear();config=next;phase=next?.basicOnly||next?.beastOnly?2:1;health=next?[...(next.phaseHealth||guardianPhaseHealth(next.hp,next.village))]:[];transition=null;clock=cycle=attacks=totalDamage=armor=0;enraged=false;comboCount=0;recoveryEnd=true;wait=next?.basicOnly?1.5:2;history.length=0;if(usesDistinct())distinct.reset(next.village,phase,!!next.thirdPerson);if(fighter)fighter.incomingElementMultipliers=phase===2&&next?guardianElementMultipliers(next.village):{};if(next&&fighter){fighter.maxHp=health[phase-1];fighter.hp=fighter.maxHp;}},
     beginTransition(fighter,position=[0,0,-13]){if(!config||config.beastOnly||transition||phase>=health.length||fighter.hp>0)return false;clear();armor=0;transition={age:0,from:phase,to:phase+1,switched:false,position:[...position]};return true;},
     advanceTransition(dt,fighter,onPhase){if(!transition)return;transition.age+=dt;const t=transition.age;
       if(!transition.rings){transition.rings=Array.from({length:3},(_,i)=>{const m=mesh(ring,[0,0,0],[1,1,1],.6);m.rotation.x=-Math.PI/2+i*.6;return m;});transition.shell=mesh(sphere,[0,0,0],[1,1,1],.2);}
@@ -69,11 +70,11 @@ export function createGuardianPhases(scene){
     update(dt,fighter,player,boss,impact,{enabled=true,controlled=false,mouthPosition=null,control=null,playerHitboxScale=1,interceptProjectile=null,...tacticalOptions}={}){
       if(!config||phase===1||transition||fighter.hp<=0||!enabled)return;
       if(usesDistinct()){distinct.update(dt,fighter,player,boss,impact,{enabled,controlled,mouthPosition,control,playerHitboxScale,interceptProjectile,...tacticalOptions});return;}
-      clock+=dt;armor=Math.max(0,armor-dt);
+      const wasEnraged=enraged;enraged=guardianIsEnraged(fighter);if(enraged!==wasEnraged)wait*=guardianRecovery(enraged,recoveryEnd)/guardianRecovery(wasEnraged,recoveryEnd);clock+=dt;armor=Math.max(0,armor-dt);
       for(const s of [...scars]){s.age+=dt;s.m.material.opacity=.72*Math.min(1,(7-s.age)/2);if(s.age>=7){dispose(s.m);scars.splice(scars.indexOf(s),1);}}
       // Monster attacks stop under control; aura attacks are independent of the human.
-      if(controlled&&phase===2){removeAction();updateArmor(boss,dt);return;}
-      if(!action){wait-=dt;if(wait<=0){const sequence=config.basicOnly?[2,0]:config.village==='nameless'?[0,1,2,4]:[0,1,2,3,4];makeAction(sequence[cycle++%sequence.length],player,boss,fighter);} }
+      if(controlled&&phase===2){removeAction(false);updateArmor(boss,dt);return;}
+      if(!action){wait-=dt;if(wait<=0){const sequence=config.basicOnly?[2,0]:config.village==='nameless'?[0,1,2,4]:[0,1,2,3,4];makeAction(sequence[cycle++%sequence.length],player,boss,fighter,true);} }
       const a=action;if(a){a.age+=dt;const t=a.age;
         if(a.type==='slam'){
           const landing=BASIC.slamWindup+BASIC.slamFlight;
@@ -109,9 +110,9 @@ export function createGuardianPhases(scene){
         if(h.hit){h.column.scale.y=Math.max(.01,5*(1-(h.age-h.warning)/.6));if(h.age>h.warning+.6){dispose(h.m);dispose(h.column);hazards.splice(hazards.indexOf(h),1);}}}
       updateArmor(boss,dt);
     },
-    trigger(index,player,boss,fighter){if(!config||phase===1||transition)return false;if(usesDistinct())return distinct.trigger(index,player,boss,fighter);if(!Number.isInteger(index)||index<0||index>4||(config.village==='nameless'&&index===3))return false;removeAction();return makeAction(index,player,boss,fighter);},
+    trigger(index,player,boss,fighter){if(!config||phase===1||transition)return false;if(usesDistinct())return distinct.trigger(index,player,boss,fighter);if(!Number.isInteger(index)||index<0||index>4||(config.village==='nameless'&&index===3))return false;removeAction(false);return makeAction(index,player,boss,fighter);},
     dispose(){clear();distinct.dispose();for(const geometry of [sphere,ring,disk,cylinder,box,crystal,leaf])geometry.dispose();root.removeFromParent();},
     get transitioning(){return !!transition;},get phase(){return phase;},get active(){return !!config;},get form(){return phase===1?'human':phase===2?'beast':'avatar';},get offset(){return usesDistinct()?distinct.offset:{...pose};},
-    state:()=>({phase,maxPhase:health.length||1,form:phase===1?'human':phase===2?'beast':'avatar',phaseHealth:[...health],transition:transition?{age:transition.age,from:transition.from,to:transition.to,switched:transition.switched}:null,signature:action?.name||'',action:action?{type:action.type,name:action.name,age:action.age,stage:action.stage||action.type,orbScale:action.orb?.scale.x||0}:null,armor,attacks,cracks:scars.map(s=>({position:s.m.position.toArray(),age:s.age})),history:history.map(h=>({...h})),hazards:hazards.map(h=>({position:[...h.p],remaining:Math.max(0,h.warning-h.age),radius:h.r,hit:h.hit})),...(usesDistinct()?distinct.state():{}),offset:usesDistinct()?distinct.offset:{...pose}})
+    state:()=>({enraged,recovery:wait,recoveryKind:recoveryEnd?'rest':'combo-gap',comboCount,phase,maxPhase:health.length||1,form:phase===1?'human':phase===2?'beast':'avatar',phaseHealth:[...health],transition:transition?{age:transition.age,from:transition.from,to:transition.to,switched:transition.switched}:null,signature:action?.name||'',action:action?{type:action.type,name:action.name,age:action.age,stage:action.stage||action.type,orbScale:action.orb?.scale.x||0}:null,armor,attacks,cracks:scars.map(s=>({position:s.m.position.toArray(),age:s.age})),history:history.map(h=>({...h})),hazards:hazards.map(h=>({position:[...h.p],remaining:Math.max(0,h.warning-h.age),radius:h.r,hit:h.hit})),...(usesDistinct()?distinct.state():{}),offset:usesDistinct()?distinct.offset:{...pose}})
   };return api;
 }

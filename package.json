@@ -137,6 +137,7 @@
     "test:opening": "node tools/build-vercel.mjs && node tests/opening-cinematic-browser.cjs",
     "test:guardian-bosses": "node tests/guardian-arsenal-core.mjs && node tests/guardian-vfx-core.mjs && node tools/build-android.mjs && node tests/guardian-arsenal-browser.cjs && node tests/guardian-arsenal-integration.cjs && node tests/guardian-arsenal-integration.cjs --adventure",
     "test:guardian-pressure": "node tests/guardian-arsenal-core.mjs && node tests/guardian-telegraphs-core.mjs && node tests/water-guardian-revision-core.mjs && node tests/guardian-balance-core.mjs && node tests/guardian-vfx-core.mjs && node tests/guardian-dragon-motion-core.mjs",
+    "test:guardian-rhythm": "node tests/guardian-rhythm-core.mjs && node tests/opponent-balance-core.mjs && node tools/build.mjs && node tests/wind-eagle-rescue-browser.cjs",
     "test:guardian-warnings": "node tests/guardian-telegraphs-core.mjs && node tests/water-guardian-revision-core.mjs && node tools/build.mjs && node tests/guardian-local-file-browser.cjs",
     "test:mana-dash": "node tests/ninja-mana-core.mjs && node tests/dash-boost.mjs && node tests/mana-dash-revision-browser.cjs",
     "test:guardian-mobile": "node tools/build-android.mjs && node tests/guardian-arsenal-integration.cjs --mobile",

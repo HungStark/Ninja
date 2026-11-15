@@ -17,7 +17,7 @@ export function opponentDocument(source,coreSource){
   const add=(id,name,village,category,profile,phase=1)=>{
     if(rows.some(row=>row.id===id))return;
     const guardian=category==='guardian'||!!profile.storyBoss||!!profile.storyBeast,beast=guardian&&phase===2,family=profile.guardianVillage||village;
-    const hp=guardian?guardianPhaseHealth(profile.hp,family)[phase-1]:profile.hp;
+    const hp=guardian?(profile.phaseHealth||guardianPhaseHealth(profile.hp,family))[phase-1]:profile.hp;
     const baseDamagePercent=Number((opponentBaseDamageMultiplier({...profile,kind:guardian?'boss':profile.kind},phase)*100).toFixed(6));
     const defaults={hp,mana:100,infiniteMana:guardian,sealDelay:profile.sealDelay??.42,baseDamagePercent,spellIds:[...(guardian&&phase>1?profile.phaseSpellIds:profile.spellIds)]};
     const inherited=profile.storyBoss?overrides['guardian:'+family+':'+phase]:profile.legacyBalanceId?overrides[profile.legacyBalanceId]:null;

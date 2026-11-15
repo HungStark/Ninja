@@ -17,7 +17,12 @@ export function guardianBreath(age){
 export const GUARDIAN_ARTS={...GUARDIAN_BOSS_DESIGNS,
   nameless:{color:'#dfc58c',beam:'Cổ thạch tức',specials:[{name:'Cổ thạch trồi dậy',type:'columns',count:3,delay:.3,damage:24},{name:'Thạch trận khe hở',type:'lanes',damage:28}]}
 };
-export function guardianPhaseHealth(total,village){const weights=village==='dark'?[.3,.35,.35]:[.45,.55],parts=weights.map(w=>Math.round(total/BOT_HEALTH_SCALE*w)*BOT_HEALTH_SCALE);parts[parts.length-1]+=total-parts.reduce((a,b)=>a+b,0);return parts;}
+export function guardianPhaseHealth(total,village,stages=[],existing=null){
+  const weights=village==='dark'?[.3,.35,.35]:[.45,.55],parts=existing?[...existing]:weights.map(w=>Math.round(total/BOT_HEALTH_SCALE*w)*BOT_HEALTH_SCALE);
+  if(!existing)parts[parts.length-1]+=total-parts.reduce((a,b)=>a+b,0);
+  parts[0]=stages[0]?.hp??parts[0];parts[1]=stages[1]?.hp??parts[0]*2;
+  if(parts.length>2)parts[2]=stages[2]?.hp??parts[2];return parts;
+}
 export function empowerDarkGuardian(spell){
   if(spell.element!=='dark')return spell;
   return {...spell,cost:0,cooldown:Math.max(1,spell.cooldown*.6),damage:spell.style==='shadowclone'?30:spell.damage*1.5,...(spell.style==='shadowclone'?{upgradeDamage:45}:{}),maxClones:4,cloneCount:2,duration:spell.style==='shadowdive'?4.5:spell.duration,fallTime:spell.style==='shadowbind'?.5:spell.fallTime};

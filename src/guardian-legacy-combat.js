@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {guardianRecovery,guardianIsEnraged} from './guardian-rhythm.js';
 import {GUARDIAN_BOSS_DESIGNS} from './guardian-legacy-designs.js';
 import {createEncounterCreature} from './encounter-appearance.js';
 import {gameAudio} from './game-audio.js';
@@ -22,7 +23,7 @@ export function createGuardianBossCombat(scene){
   const geometry={orb:new T.IcosahedronGeometry(1,1),ring:new T.RingGeometry(.91,1,48),disk:new T.CircleGeometry(1,48),
     box:new T.BoxGeometry(1,1,1),pillar:new T.CylinderGeometry(.65,1,1,7),cone:new T.ConeGeometry(1,1,7),
     crystal:new T.OctahedronGeometry(1),arc:new T.TorusGeometry(1,.09,5,18,Math.PI*1.35)};
-  let village=null,design=null,passive=null,phase=2,clock=0,cycle=0,wait=1.8,action=null,serial=0,ctx=null,attacks=0;
+  let village=null,design=null,passive=null,phase=2,clock=0,cycle=0,wait=1.8,action=null,serial=0,ctx=null,attacks=0,enraged=false,comboCount=0,recoveryEnd=true;
   let pose={},exposed=0,stagger=0,legDamage=0,tailCount=0,stack=0,stackLife=0,night=0,waterLevel=0,prison=null;
   let history=[],entities=[],shelters=[],lamps=[],passiveVisuals=[],environmentReady=false;
   const playerPadding=()=>.54*((ctx?.playerHitboxScale??1)-1);
@@ -111,18 +112,18 @@ export function createGuardianBossCombat(scene){
     }
     if(village==='wood')for(const x of [-3,0,3])object('grass',[x,.1,boss[2]+3],passive.hp,passive.life,{healRate:passive.healRate});
   }
-  function begin(index,player,boss,fighter){
+  function begin(index,player,boss,fighter,automatic=false){
     if(!design||!Number.isInteger(index)||index<0||index>=design.skills.length)return false;
-    cancelAction();
+    if(action)cancelAction();
     const skill=design.skills[index];
-    action={...skill,...guardianSkillStats(skill.type),index,age:0,target:[...player],origin:[...boss],events:new Set(),visuals:[],hit:false};
+    action={...skill,...guardianSkillStats(skill.type),index,age:0,target:[...player],origin:[...boss],events:new Set(),visuals:[],hit:false,automatic};
     action.visuals.push(circle([boss[0],0,boss[2]],2,'#ff728b'));
     attacks++;
     history.push({type:skill.type,name:skill.name,phase,at:clock});if(history.length>30)history.shift();
     gameAudio.cast({element:village,rank:index===2?'SS':'S',style:skill.type});
     return skill.name;
   }
-  function cancelAction(){const cooldown=action?.cooldown??1.7;if(action)for(const m of action.visuals)remove(m);action=null;pose={};wait=cooldown;}
+  function cancelAction(completed=false){const automatic=action?.automatic;if(action)for(const m of action.visuals)remove(m);recoveryEnd=!completed||!automatic||++comboCount>=3;if(recoveryEnd)comboCount=0;action=null;pose={};wait=guardianRecovery(enraged,recoveryEnd);}
   function once(key,at,fn){if(action.age>=at&&!action.events.has(key)){action.events.add(key);fn();}}
   function warning(p,r=1.6){const m=circle(p,r,'#ff5555',true);action.visuals.push(m);return m;}
   function targetPoint(player){return [clamp(player[0],-5,5),.1,player[2]];}
@@ -315,7 +316,7 @@ export function createGuardianBossCombat(scene){
         if(t>=a.windup){a.tick=(a.tick||0)+dt;if(a.tick>=a.tickInterval){a.tick=0;emitWhere(a.damage,p=>!safeFromIce(p));}}
         once('freeze',a.freezeAt,()=>{if(!safeFromIce(player))control('ice',a.controlDuration);});break;
     }
-    if(a.age>=a.duration)cancelAction();
+    if(a.age>=a.duration)cancelAction(true);
   }
   function safeFromIce(p){return shelters.some(s=>s.life>0&&distance(s.p,p)<s.r);}
   function illuminated(p){return lamps.some(l=>distance(l.p,p)<=l.r);}
@@ -405,12 +406,12 @@ export function createGuardianBossCombat(scene){
   }
   function damageObject(e,damage){e.hp=Math.max(0,e.hp-damage);if(e.hp<=0)destroy(e,true);}
   const api={
-    reset(id,nextPhase=2){clear();village=id;design=GUARDIAN_BOSS_DESIGNS[id]||null;passive=guardianPassiveStats(id);phase=nextPhase;clock=cycle=serial=attacks=0;wait=1.8;if(design)scene.add(root);},
+    reset(id,nextPhase=2){clear();village=id;design=GUARDIAN_BOSS_DESIGNS[id]||null;passive=guardianPassiveStats(id);phase=nextPhase;clock=cycle=serial=attacks=comboCount=0;recoveryEnd=true;enraged=false;wait=1.8;if(design)scene.add(root);},
     clear,trigger:begin,
     update(dt,fighter,player,boss,impact,options={}){
       if(!design||options.enabled===false||fighter.hp<=0)return;
       ctx={fighter,player:[...player],boss:[...boss],impact,mouthPosition:options.mouthPosition,launchWaterPrison:options.launchWaterPrison,interceptProjectile:options.interceptProjectile,control:options.control,playerHitboxScale:options.playerHitboxScale??1,targets:options.targets};
-      clock+=dt;exposed=Math.max(0,exposed-dt);stagger=Math.max(0,stagger-dt);night=Math.max(0,night-dt);
+      const wasEnraged=enraged;enraged=guardianIsEnraged(fighter);if(enraged!==wasEnraged)wait*=guardianRecovery(enraged,recoveryEnd)/guardianRecovery(wasEnraged,recoveryEnd);clock+=dt;exposed=Math.max(0,exposed-dt);stagger=Math.max(0,stagger-dt);night=Math.max(0,night-dt);
       stackLife=Math.max(0,stackLife-dt);if(!stackLife)stack=0;
       if(!environmentReady){environmentReady=true;addEnvironment(player,boss);}
       if(village==='fire')tailCount=Math.max(tailCount,Math.min(passive.tailCap,Math.floor((1-fighter.hp/fighter.maxHp)/passive.healthThreshold)));
@@ -418,7 +419,7 @@ export function createGuardianBossCombat(scene){
       if(village==='dark')for(const m of passiveVisuals)if(m.geometry===geometry.disk)m.material.opacity=illuminated(player)?.55:.25;
       if(options.controlled&&phase===2){cancelAction();for(const e of entities)if(['projectile','hazard','wolf','wave','blade','shockwave','tornado','decoy','prison'].includes(e.kind))destroy(e);pose={};}
       else{
-        if(!action&&stagger<=0){wait-=dt;if(wait<=0){begin(cycle%design.skills.length,player,boss,fighter);cycle++;}}
+        if(!action&&stagger<=0){wait-=dt;if(wait<=0){begin(cycle%design.skills.length,player,boss,fighter,true);cycle++;}}
         updateAction(dt,player,boss);
       }
       updateEntities(dt,player,boss);
@@ -441,7 +442,7 @@ export function createGuardianBossCombat(scene){
     },
     areaDamage(shot,p,r,scale=1){if(!active()||shot.owner!=='player')return;for(const e of entities)if(!e.dead&&e.hp>0&&distance(e.p,p)<=r)damageObject(e,shot.damage*scale);},
     get offset(){return {x:0,y:0,z:0,lean:stagger>0?.6:0,...pose};},
-    state(){return {action:action?{type:action.type,name:action.name,age:action.age,stage:action.age<1.2?'warning':'active',parameters:guardianSkillStats(action.type)}:null,passiveParameters:{...passive},
+    state(){return {enraged,recovery:wait,recoveryKind:recoveryEnd?'rest':'combo-gap',comboCount,action:action?{type:action.type,name:action.name,age:action.age,stage:action.age<1.2?'warning':'active',parameters:guardianSkillStats(action.type)}:null,passiveParameters:{...passive},
       signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor:0,
       difficulty:design?.difficulty||0,passive:design?.passive||'',counter:design?.counter||'',skills:design?.skills.map(s=>s.name)||[],
       exposed,stagger,tailCount,stacks:stack,stackLife,waterLevel,hidden:hidden(),lockable:!hidden(),night:night>0,
