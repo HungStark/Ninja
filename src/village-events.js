@@ -70,7 +70,12 @@ export function villageEventEncounter(id,step=1,save){
   else if(event.battle==='ice-coast')squad=[profile('Đội bắt linh thú Trăng Khuyết','dark',180),profile('Thuật sư phong ấn ven biển','ice',160)];
   else if(event.battle==='light-battalion')squad=[profile('Quân chiếm đóng Trăng Khuyết','light',220),profile('Cận vệ Trăng Khuyết','dark',200)];
   else if(event.battle==='dark-battalion')squad=[profile('Tinh binh Trăng Khuyết','dark',260),profile('Tinh binh khóa phong ấn','light',240),profile('Tinh binh giữ nhà ngục','ice',220)];
-  else if(event.battle==='wind-eagle')return {...profile(event.enemy,'wind',260),name:event.enemy,guardianForm:'beast',storyBeast:true,eventStep:step,storyBattle:event.battle};
+  else if(event.battle==='wind-eagle'){
+    // Keep the rescue quest identity while combat uses the guardian's beast phase.
+    const base=encounterProfile(save||{story:{villageOrder:[]},visited:[]},'boss','wind');
+    const beast=configureOpponent({...base,kind:'boss',village:'wind',element:'wind',name:event.enemy,guardianVillage:'wind',guardianForm:'beast',storyBeast:true,beastOnly:true,storyBattle:event.battle,legacyBalanceId:'guardian:wind:2'});
+    return {...beast,kind:'village-event',village:id,guardianName:REGIONS.wind.boss.guardian,eventStep:step};
+  }
   else if(event.battle==='invasion-vanguard')squad=[{...profile('Chỉ huy tiên phong ngoại giới','dark',450),spellIds:['dark-orb','dark-lance','dark-domain','light-orb','fire-lance'],damageMultiplier:.85},profile('Đội tiên phong ngoại giới','light',200)];
   else squad=[profile(event.enemy,id,150)];
   if(['water-base','fire-jail','fire-general','earth-base','ice-coast','light-battalion','dark-battalion'].includes(event.battle))squad=squad.map(member=>({...member,faction:'crescent'}));

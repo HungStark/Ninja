@@ -140,6 +140,7 @@
     "test:guardian-warnings": "node tests/guardian-telegraphs-core.mjs && node tests/water-guardian-revision-core.mjs && node tools/build.mjs && node tests/guardian-local-file-browser.cjs",
     "test:mana-dash": "node tests/ninja-mana-core.mjs && node tests/dash-boost.mjs && node tests/mana-dash-revision-browser.cjs",
     "test:guardian-mobile": "node tools/build-android.mjs && node tests/guardian-arsenal-integration.cjs --mobile",
+    "test:wind-eagle-rescue": "node tests/wind-eagle-rescue-core.mjs && node tools/build.mjs && node tests/wind-eagle-rescue-browser.cjs",
     "test:guardian-balance": "node tests/guardian-balance-core.mjs && node tests/guardian-moba-core.mjs && node tools/build-android.mjs && node tests/guardian-arsenal-editor.mjs",
     "test:clinic-revision": "node tests/character-damage-feedback-core.mjs && node tests/village-civic-core.mjs && node tests/clinic-revision-browser.cjs",
     "test:water-network": "node tests/water-network-core.mjs && node tests/water-network-browser.cjs",

@@ -7,7 +7,7 @@ export const beastRescued=(save,id)=>({light:(save.story?.villageEvents?.light||
 export const beastCaptured=(save,id)=>['wood','ice','light','dark'].includes(id)&&((save.story?.villageEvents?.ice||0)>=7||['light','dark'].includes(id))&&!beastRescued(save,id);
 export const legionGuardId=id=>'crescent-'+id;
 export function legionGuard(entry,id){return {...entry,id:legionGuardId(entry.id),occupation:true,elite:id==='dark',disguise:null,element:entry.guardRole==='guardian'?id:'dark',name:id==='dark'?'Tinh binh Trăng Khuyết':'Binh đoàn Trăng Khuyết',label:id==='dark'?'Tinh binh Trăng Khuyết':'Binh đoàn Trăng Khuyết'};}
-export const storyBossProfile=encounter=>encounter?.storyBoss?{...encounter,kind:'boss',village:encounter.guardianVillage}:encounter;
+export const storyBossProfile=encounter=>encounter?.storyBoss||encounter?.storyBeast?{...encounter,kind:'boss',village:encounter.guardianVillage||encounter.element||encounter.village,...(encounter.storyBeast?{beastOnly:true,guardianForm:'beast'}:{})}:encounter;
 export function crescentEmblem(root){
   root.userData.faction='crescent';
   // Loaded ninja uniforms already have animated chest/back patches.

@@ -164,7 +164,7 @@ async function main() {
   let enemyPose = -1, enemyHit = 0, aiTimer = 2.2, aiSpell = null, aiStep = 0, aiCycle = 0, aiCasts = 0, aiCastAge = 99, battleTime = 0;
   try { const saved = JSON.parse(localStorage.getItem('anhoa-loadout-v3'));const replacements={'dark-barrier':'dark-orb','fire-orb':'fire-volley','water-orb':'water-lance','lightning-orb':'lightning-lance'};const migrated=Array.isArray(saved)?[...new Set(saved.map(id=>replacements[id]||id))]:saved;if (validateLoadout(migrated).ok) loadout = migrated; } catch {}
   duelLoadout=[...loadout];
-  const activeBoss=()=>adventure?.inBattle?(adventure.encounter?.kind==='boss'||adventure.encounter?.storyBoss?storyBossProfile(adventure.encounter):null):practiceEncounter?.kind==='boss'?practiceEncounter:null;
+  const activeBoss=()=>adventure?.inBattle?(adventure.encounter?.kind==='boss'||adventure.encounter?.storyBoss||adventure.encounter?.storyBeast?storyBossProfile(adventure.encounter):null):practiceEncounter?.kind==='boss'?practiceEncounter:null;
   const bossDamageMultiplier=()=>opponentDamageMultiplier(battleOpponent,activeBoss()?guardianPhases.state().phase:1);
   const baseEnemyDamageMultiplier=()=>opponentBaseDamageMultiplier(battleOpponent,activeBoss()?guardianPhases.state().phase:1);
   const tournamentBattle=()=>!!adventure?.encounter?.tournamentStats;

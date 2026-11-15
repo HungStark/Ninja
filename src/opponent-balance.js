@@ -3,15 +3,24 @@ import {guardianPhaseHealth} from './guardian-arts.js';
 export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:random:nameless": {
     "hp": 150,
-    "baseDamagePercent": 90
+    "baseDamagePercent": 90,
+    "spellIds": [
+      "water-barrier"
+    ]
   },
   "ninja:quest:nameless": {
     "hp": 150,
-    "baseDamagePercent": 90
+    "baseDamagePercent": 90,
+    "spellIds": [
+      "fire-volley"
+    ]
   },
   "ninja:sidequest:nameless": {
     "hp": 150,
-    "baseDamagePercent": 90
+    "baseDamagePercent": 90,
+    "spellIds": [
+      "lightning-lance"
+    ]
   },
   "ninja:arena:nameless": {
     "hp": 150,
@@ -90,7 +99,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:arena:water": {
     "hp": 180,
     "baseDamagePercent": 90,
-    "sealDelay": 0.8,
+    "sealDelay": 0.5,
     "spellIds": [
       "water-barrier",
       "water-reflect",
@@ -150,7 +159,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:arena:fire": {
     "hp": 210,
     "baseDamagePercent": 94,
-    "sealDelay": 0.8,
+    "sealDelay": 0.5,
     "spellIds": [
       "fire-volley",
       "fire-barrier",
@@ -192,9 +201,10 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "sealDelay": 0.7,
     "baseDamagePercent": 99,
     "spellIds": [
-      "lightning-lance",
-      "lightning-volley",
-      "lightning-reflect"
+      "fire-volley",
+      "fire-barrier",
+      "fire-lance",
+      "fire-reflect"
     ],
     "mana": 120
   },
@@ -217,7 +227,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "hp": 270
   },
   "ninja:arena:lightning": {
-    "sealDelay": 0.75,
+    "sealDelay": 0.5,
     "baseDamagePercent": 98,
     "hp": 240,
     "spellIds": [
@@ -313,7 +323,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:arena:wind": {
     "baseDamagePercent": 102,
-    "sealDelay": 0.7,
+    "sealDelay": 0.5,
     "hp": 270,
     "spellIds": [
       "wind-orb",
@@ -685,7 +695,90 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-event:fire": {
-    "baseDamagePercent": 99
+    "baseDamagePercent": 99,
+    "hp": 240,
+    "sealDelay": 0.75
+  },
+  "ninja:village-event:nameless": {
+    "hp": 150,
+    "baseDamagePercent": 90,
+    "spellIds": [
+      "lightning-lance",
+      "water-barrier",
+      "fire-volley"
+    ]
+  },
+  "ninja:village-event:water": {
+    "hp": 210,
+    "baseDamagePercent": 95,
+    "sealDelay": 0.8,
+    "spellIds": [
+      "water-barrier",
+      "water-lance",
+      "water-reflect"
+    ]
+  },
+  "event:water-base:0": {
+    "baseDamagePercent": 95,
+    "hp": 210,
+    "sealDelay": 0.8,
+    "spellIds": [
+      "water-barrier",
+      "water-lance",
+      "lightning-lance",
+      "fire-volley"
+    ]
+  },
+  "event:water-base:1": {
+    "baseDamagePercent": 95,
+    "hp": 210,
+    "sealDelay": 0.8,
+    "spellIds": [
+      "lightning-lance",
+      "water-reflect",
+      "water-barrier",
+      "water-lance"
+    ]
+  },
+  "event:fire-general:1": {
+    "spellIds": [
+      "fire-reflect",
+      "fire-barrier",
+      "fire-volley",
+      "fire-lance"
+    ]
+  },
+  "event:fire-general:0": {
+    "spellIds": [
+      "fire-volley",
+      "fire-barrier",
+      "fire-lance",
+      "fire-reflect",
+      "fire-meteor"
+    ],
+    "hp": 280
+  },
+  "ninja:village-event:lightning": {
+    "baseDamagePercent": 98,
+    "hp": 240,
+    "spellIds": [
+      "lightning-lance",
+      "lightning-barrier",
+      "lightning-volley"
+    ]
+  },
+  "ninja:village-event:wind": {
+    "hp": 300,
+    "baseDamagePercent": 102,
+    "spellIds": [
+      "wind-orb",
+      "wind-volley",
+      "wind-lance"
+    ]
+  },
+  "event:wind-courier:0": {
+    "hp": 300,
+    "baseDamagePercent": 107
   }
 }/* opponent-balance:end */;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));

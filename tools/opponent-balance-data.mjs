@@ -16,7 +16,7 @@ export function opponentDocument(source,coreSource){
   const save=newJourney();save.story.stage='infiltrate';save.story.villageOrder=['water','fire','lightning','earth','wind','light','ice','wood','dark'];
   const add=(id,name,village,category,profile,phase=1)=>{
     if(rows.some(row=>row.id===id))return;
-    const guardian=category==='guardian'||!!profile.storyBoss,beast=guardian&&phase===2,family=profile.guardianVillage||village;
+    const guardian=category==='guardian'||!!profile.storyBoss||!!profile.storyBeast,beast=guardian&&phase===2,family=profile.guardianVillage||village;
     const hp=guardian?guardianPhaseHealth(profile.hp,family)[phase-1]:profile.hp;
     const baseDamagePercent=Number((opponentBaseDamageMultiplier({...profile,kind:guardian?'boss':profile.kind},phase)*100).toFixed(6));
     const defaults={hp,mana:100,infiniteMana:guardian,sealDelay:profile.sealDelay??.42,baseDamagePercent,spellIds:[...(guardian&&phase>1?profile.phaseSpellIds:profile.spellIds)]};
@@ -42,6 +42,7 @@ export function opponentDocument(source,coreSource){
       return;
     }
     const authored=villageEventEncounter(village,step,save);if(!authored)return;
+    if(authored.storyBeast){add('event:'+event.battle+':0',event.enemy,village,'event',authored,2);return;}
     const base=encounterProfile(save,'village-event',village),scale=1+Math.max(0,base.rank-1)*.08;
     const members=authored.squad||[authored];
     members.forEach((member,i)=>{
