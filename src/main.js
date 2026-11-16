@@ -1,3 +1,6 @@
+import {createNinjaTelegraphs} from './ninja-telegraphs.js';
+import {readCombatControls,setupCombatControls,arrowMovement,cursorMovement} from './combat-controls.js';
+import {impactArea,impactWave} from './combat-targets.js';
 import {setupCheckpointSettings} from './checkpoint-settings.js';
 import {storyBossProfile} from './island-occupation.js';
 import {createCampaignAlly} from './campaign-ally.js';
@@ -60,7 +63,7 @@ import {setupAndroidControls,androidInterface} from './android-controls.js';
 import {spellImage} from './spell-art.js';
 import {carriedSpellMarkup,updateSpellAvailability,renderEnemySeals} from './battle-scroll.js';
 import {battleOpportunities,introductoryCooldowns,BALANCE_VERSION} from './battle-coaching.js';
-import {createBattleMetrics,battleMetricsMarkup} from './battle-metrics.js';
+import {createBattleMetrics} from './battle-metrics.js';
 import {createContactShadows} from './adventure-presentation.js';
 async function main() {
   let potionButton=null;
@@ -75,10 +78,6 @@ async function main() {
   let adventure=null, adventureVictory=false,touchControls=null;
   const adminExitButtons=[];
   const battleMetrics=createBattleMetrics();let opportunities=[],lastPlayerSpell=null;
-  for(const [parent,id] of [['pauseScreen','pauseBattleStats'],['winScreen','resultBattleStats']]){
-    const details=document.createElement('details');details.id=id;details.className='battle-statistics';document.querySelector('#'+parent+' .pause-card').append(details);
-  }
-  function showBattleStatistics(){const report=battleMetrics.snapshot();for(const id of ['pauseBattleStats','resultBattleStats'])$(id).innerHTML=battleMetricsMarkup(report);}
   function saveBattleStatistics(outcome){if(adventure?.adminEnabled)return battleMetrics.finish(outcome);try{return battleMetrics.finish(outcome,localStorage);}catch{return battleMetrics.finish(outcome);}}
   window.addEventListener('pagehide',()=>saveBattleStatistics('left'));
   const enemyNameplates=createEnemyNameplates($('hud'),document.querySelector('.enemy-status'));
@@ -98,10 +97,14 @@ async function main() {
   const practiceOverhead=createPracticeOverhead(scene,{actorScale:PRACTICE_CHARACTER_SCALE,environment:world.environment});
   let practiceView='overhead',choosingPracticeView=false,practiceOpponentConfirmed=false,practiceEncounter=null;
   let mobileTargetId='primary',mobileMoveVector=[0,0],mobileManualAim=null,mobileAimHold=0;
+  let combatOptions=readCombatControls(),mouseMoveVector=[0,0];const combatHeld=new Set();
   const practiceOpponentPicker=createPracticeOpponentPicker({spells,elements,defaultLoadout,getThirdPerson:()=>practiceView==='overhead',getLearnedSpells:()=>learnedSpells,renderSpell:(s,i,ids)=>spellMarkup(s,i,true,ids,true),onConfirm:event=>{practiceOpponentConfirmed=true;start(event);},onBack:()=>{practiceOpponentConfirmed=false;$('startButton').focus();}});
   const boundedCombat=()=>!journeyLearning||!!adventure?.encounter;
   const overheadPractice=()=>practiceView==='overhead'||!!adventure?.encounter;
-  const mobileTactical=()=>androidInterface()&&overheadPractice()&&(!adventure||['duel','combat'].includes(adventure.phase));
+  const freeCombatMovement=()=>!adventure?.activeView;
+  const combatMovementMode=()=>overheadPractice()?'mouse':'arrows';
+  const assistAim=()=>combatOptions.aimAssist;
+  const mobileTactical=()=>androidInterface()&&(!adventure||['duel','combat'].includes(adventure.phase));
   function closePracticeView(){choosingPracticeView=false;$('practiceViewScreen').classList.add('hidden');$('startScreen').inert=false;}
   $('practiceViewBack').onclick=()=>{closePracticeView();practiceOpponentConfirmed=false;};
   $('practiceViewConfirm').onclick=event=>{if(!choosingPracticeView||started)return;practiceView=document.querySelector('input[name="practiceView"]:checked').value;closePracticeView();startBattle(event);};
@@ -119,6 +122,7 @@ async function main() {
   const baseFov = 68;
   const camera3d = new T.PerspectiveCamera(baseFov, innerWidth / innerHeight, 0.05, 220), handCamera = new T.PerspectiveCamera(baseFov, innerWidth / innerHeight, 0.02, 10);
   camera3d.rotation.order = "YXZ";
+  let enemyCastPoint=null;const ninjaWarnings=createNinjaTelegraphs(scene,{heightAt:(x,z)=>earthArts.heightAt(x,z)});
   const effects = new FireEffects(scene), shots = [], particles = [], salvos = [], walls = [], fields = [];
   const cameraImpacts = new CameraImpacts();
   let cameraReaction = cameraImpacts.sample();
@@ -144,6 +148,8 @@ async function main() {
   let activePose = -1, poseAge = 99, animationTime = 0, started = false, paused = false, won = false, round = 1, selected = 0, score = 0;
   let camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }, lastTime = 0, recoil = 0, hitTimer = 0, flashTimer = 0, messageTime = 0;
   let moveDirection = 0, moveTargetX = 0, touchPoint = null;
+  // Casting keeps the chosen combat camera and the player's aiming direction.
+  const spellCameraEnabled=false;
   const heldStepSources=new Map();
   const heldStepDirection=()=>[...heldStepSources.values()].at(-1)||0;
   const sidestepDistance = STEP_DISTANCE, sidestepDuration = STEP_DURATION;
@@ -173,7 +179,7 @@ async function main() {
   const phaseTitle=document.createElement('div');phaseTitle.id='guardianPhaseTitle';phaseTitle.hidden=true;document.body.append(phaseTitle);
   const cinematicActive=()=>battleIntro.active||guardianPhases.transitioning;
   let guardianAnchor=null;
-  function guardianPhaseChanged(phase){
+  function guardianPhaseChanged(phase){ninjaWarnings.clear();
     const boss=activeBoss();if(!boss)return;bossEnraged=phase>1;aiRules=createOpponentRules(GameRules,boss,phase);aiRules.spells=aiRules.spells.map(s=>phase===3?{...empowerDarkGuardian(s),cost:opponentStage(boss,phase).infiniteMana?0:s.cost}:s);aiSpell=null;aiStep=0;enemyPose=-1;aiTimer=2;
     opponent.group.position.copy(world.opponentSpawn);guardianAnchor=opponent.group.position.clone();opponent.setAppearance({...boss,guardianForm:guardianPhases.form});
     for(const a of [...windArts.airborne])if(a.victim==='enemy')windArts.release(a,false);
@@ -183,7 +189,7 @@ async function main() {
   function checkGuardianDefeat(){
     reviveByPhoenix();
     if(!activeBoss()||enemy.hp>0||!guardianPhases.beginTransition(enemy,opponent.group.position.toArray()))return false;
-    shots.length=salvos.length=0;heldStepSources.clear();dashBoost.cancelDash();moveTargetX=camera.p[0];moveDirection=0;aiSpell=null;aiRules.clear();enemyPose=-1;stopSpellVoice();clearDragonView();clearMeteorView();clearWindView();clearEarthView();clearWaveView();
+    ninjaWarnings.clear();shots.length=salvos.length=0;heldStepSources.clear();dashBoost.cancelDash();moveTargetX=camera.p[0];moveDirection=0;aiSpell=null;aiRules.clear();enemyPose=-1;stopSpellVoice();clearDragonView();clearMeteorView();clearWindView();clearEarthView();clearWaveView();
     // The new phase starts with a clean arena; player HP, mana, seals and cooldowns survive.
     earthArts.reset(walls);windArts.reset();lightArts.reset();natureArts.resetForPhase(walls);waterBubbles.reset();darkDomain.reset();effects.reset();walls.length=fields.length=particles.length=0;
     for(const fighter of [player,enemy]){fighter.snowBuried=false;for(const key of ['waterControlTime','darkControlTime','windControlTime','earthControlTime','iceControlTime','woodControlTime','lightningControlTime','boatControlTime'])fighter[key]=0;}
@@ -213,7 +219,8 @@ async function main() {
 
   const squad=createEncounterSquad(scene,{GameRules,Fighter,keys,random:rand,getPlayer:playerPos,getShots:()=>shots,dashBlocked:p=>lightArts.blocksDash('enemy',p),
     constrainMovement:(old,goal)=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old),movementSlow:p=>earthArts.slowAt(p[0],p[2])*lightArts.slowAt('enemy',p)*natureArts.slowAt('enemy'),
-    launch:(member,spell,pos,dir)=>{const before=shots.length,cloneSerial=darkDomain.serial;launch(spell,'enemy',pos,dir,member.profile);for(const shot of shots.slice(before))shot.sourceId=member.id;for(const clone of darkDomain.clones)if(clone.id>cloneSerial)clone.summonerFighter=member.fighter;},
+    isCasting:id=>ninjaWarnings.pending(id),
+    launch:(member,spell,pos,dir)=>launch(spell,'enemy',pos,dir,{...member.profile,actorId:member.id,fighter:member.fighter}),
     throwWeapon:(member,weapon,pos,dir)=>{const before=shots.length;launchShuriken('enemy',weapon,pos,dir,member.profile);for(const shot of shots.slice(before))shot.sourceId=member.id;}
   });
   const campaignAlly=createCampaignAlly(scene),campaignAllyHud=document.createElement('div');campaignAllyHud.id='campaignAllyHud';campaignAllyHud.hidden=true;document.body.append(campaignAllyHud);let campaignAllyHudValue='';
@@ -225,11 +232,11 @@ async function main() {
   function damageActors(){const ally=campaignAlly.actor();return [...windActors(),...(ally?[ally]:[])];}
   function allEnemiesDefeated(){return combatEnemies().every(a=>a.fighter.hp<=0);}
   function mobileEnemy(){const actors=combatEnemies().filter(a=>a.fighter.hp>0),target=actors.find(a=>a.id===mobileTargetId)||actors[0]||combatEnemies()[0];mobileTargetId=target.id;return target;}
-  function aimedEnemy(){if(mobileTactical())return mobileEnemy();const origin=playerPos(),direction=aim();return combatEnemies().filter(a=>a.fighter.hp>0).map(a=>({a,score:dot(vnorm(vsub(a.pos,origin)),direction)})).sort((a,b)=>b.score-a.score)[0]?.a||combatEnemies()[0];}
+  function aimedEnemy(){if(assistAim())return mobileEnemy();const origin=playerPos(),direction=aim();return combatEnemies().filter(a=>a.fighter.hp>0).map(a=>({a,score:dot(vnorm(vsub(a.pos,origin)),direction)})).sort((a,b)=>b.score-a.score)[0]?.a||combatEnemies()[0];}
   function mobileWorldVector(vector){const right=new T.Vector3(1,0,0).applyQuaternion(camera3d.quaternion),forward=new T.Vector3(0,0,-1).applyQuaternion(camera3d.quaternion);right.y=forward.y=0;right.normalize();forward.normalize();return [right.x*vector[0]-forward.x*vector[1],0,right.z*vector[0]-forward.z*vector[1]];}
   function mobileAim(vector){if(!vector){mobileManualAim=null;mobileAimHold=0;return;}const world=mobileWorldVector(vector),strength=Math.min(1,Math.hypot(...vector));mobileManualAim=vnorm(world);mobileAimHold=Infinity;const p=playerPos();practiceOverhead.aimAt(vadd(p,vmul(mobileManualAim,6+25*strength)));updateUI();}
   function mobileCast(){if(mobileManualAim)mobileAimHold=.4;cast();}
-  function pickMobileTarget(x,y){const r=canvas.getBoundingClientRect();let best=null;for(const actor of combatEnemies().filter(a=>a.fighter.hp>0)){const p=new T.Vector3(...actor.pos).project(camera3d),dx=r.left+(p.x+1)*r.width/2-x,dy=r.top+(1-p.y)*r.height/2-y,dist=Math.hypot(dx,dy);if(p.z<1&&dist<38&&(!best||dist<best.dist))best={actor,dist};}if(best){mobileTargetId=best.actor.id;mobileAim(null);updateUI();}}
+  function pickMobileTarget(x,y){const r=canvas.getBoundingClientRect();let best=null;for(const actor of combatEnemies().filter(a=>a.fighter.hp>0)){const p=new T.Vector3(...actor.pos).project(camera3d),dx=r.left+(p.x+1)*r.width/2-x,dy=r.top+(1-p.y)*r.height/2-y,dist=Math.hypot(dx,dy);if(p.z<1&&dist<38&&(!best||dist<best.dist))best={actor,dist};}if(best){mobileTargetId=best.actor.id;mobileAim(null);if(!overheadPractice()){const d=vsub(best.actor.pos,playerPos());camera.yaw=Math.atan2(-d[0],-d[2]);camera.pitch=Math.atan2(d[1],Math.hypot(d[0],d[2]));}updateUI();}}
   function updateSquadHud(){const profiles=adventure?.inBattle?adventure.encounter.squad:null;squadHud.hidden=!profiles||!started||won;document.body.classList.toggle('squad-battle',!!profiles&&started);$('totalTargets').textContent=profiles?String(profiles.length).padStart(2,'0'):'01';
     if(!profiles)return;const fighters=[{hp:enemy.hp,maxHp:enemy.maxHp},...squad.state()];score=fighters.filter(f=>f.hp<=0).length;$('score').textContent=String(score).padStart(2,'0');
     if(squadHud.children.length!==profiles.length)squadHud.innerHTML=profiles.map((p,i)=>'<div data-member="'+i+'"><strong>'+p.name+'</strong><span></span><progress max="1" value="1"></progress><div class="enemy-seals"></div></div>').join('');
@@ -404,6 +411,7 @@ async function main() {
   }
   let comboMarkup='';
   function updateUI() {
+    document.body.classList.toggle('first-person-combat',started&&!overheadPractice());
     $('practiceHandInset').hidden=!overheadPractice()||!started||paused||won;
     for(const b of adminExitButtons||[])b.hidden=!adventure?.adminEnabled;
     const supply=$('carriedAmmo');supply.hidden=!adventure?.inBattle;$('cycleAmmo').hidden=supply.hidden;if(!supply.hidden){const e=adventure.equipment;supply.textContent=e.shuriken.name+' · '+e.available+' còn lại · '+e.shuriken.damage+' ST';}
@@ -425,8 +433,8 @@ async function main() {
     if($('androidAttack')){$('androidAttack').disabled=$('castButton').disabled;$('androidCastStatus').textContent=attackStatus;}
     // Hand readiness effects follow exactly the same gate as the Space button.
     hands.setReady($('castButton').disabled ? null : ready?.element);
-    if(mobileTactical()&&!mobileManualAim){const target=mobileEnemy().pos;practiceOverhead.aimAt([target[0],0,target[2]]);}
-    practiceOverhead.update({showFences:boundedCombat(),enabled:overheadPractice()&&started,active:overheadPractice()&&started&&!paused&&!won,spell:ready,available:!$('castButton').disabled,position:playerPos(),target:practiceSpellTarget(ready),heightAt:(x,z)=>earthFloor('player',x,z)});
+    if(assistAim()&&!mobileManualAim){const target=mobileEnemy().pos;practiceOverhead.aimAt([target[0],0,target[2]]);}
+    practiceOverhead.update({showFences:boundedCombat(),fencesEnabled:freeCombatMovement()&&started,enabled:overheadPractice()&&started,active:overheadPractice()&&started&&!paused&&!won,spell:ready,available:!$('castButton').disabled,position:playerPos(),target:practiceSpellTarget(ready),heightAt:(x,z)=>earthFloor('player',x,z)});
     updateOpportunities();
     document.querySelectorAll('.seal').forEach(el => { el.classList.toggle('active', el.dataset.key === keys[activePose]); el.classList.toggle('pending', seq.includes(el.dataset.key)); });
     const availabilityContext=playerCastContext();
@@ -462,15 +470,15 @@ async function main() {
     camera.yaw=Math.atan2(-d[0],-d[2]);camera.pitch=Math.atan2(d[1],Math.hypot(d[0],d[2]));
   }
   function practiceAimHeight(point){const target=enemyPos();return activeBoss()&&guardianPhases.phase===2&&Math.hypot(point[0]-target[0],point[2]-target[2])<2.5?target[1]:playerPos()[1];}
-  function practiceAimPoint(){const p=practiceOverhead.point();return [p[0],practiceAimHeight(p),p[2]];}
-  function aim() { if(mobileTactical())return mobileManualAim||vnorm(vsub(mobileEnemy().pos,playerPos()));if(overheadPractice()){const p=practiceOverhead.point(),dx=p[0]-camera.p[0],dz=p[2]-camera.p[2],dy=practiceAimHeight(p)-playerPos()[1],length=Math.hypot(dx,dy,dz);return length>.001?[dx/length,dy/length,dz/length]:[0,0,-1];}const cp = Math.cos(camera.pitch); return [-Math.sin(camera.yaw) * cp, Math.sin(camera.pitch), -Math.cos(camera.yaw) * cp]; }
+  function practiceAimPoint(){if(assistAim()&&!mobileManualAim)return [...mobileEnemy().pos];const p=practiceOverhead.point();return [p[0],practiceAimHeight(p),p[2]];}
+  function aim() { if(mobileManualAim)return mobileManualAim;if(assistAim())return vnorm(vsub(mobileEnemy().pos,playerPos()));if(overheadPractice()){const p=practiceOverhead.point(),dx=p[0]-camera.p[0],dz=p[2]-camera.p[2],dy=practiceAimHeight(p)-playerPos()[1],length=Math.hypot(dx,dy,dz);return length>.001?[dx/length,dy/length,dz/length]:[0,0,-1];}const cp = Math.cos(camera.pitch); return [-Math.sin(camera.yaw) * cp, Math.sin(camera.pitch), -Math.cos(camera.yaw) * cp]; }
   function earthFloor(owner,x,z){return earthArts.floor(owner,x,z)+(earthArts.captured(owner)?0:windArts.height(owner));}
   function enemyPos() { const p=opponent.group.position;return [p.x,activeBoss()&&guardianPhases.phase===2?p.y+(opponent.group.userData.height||4)*.55:1.72+earthFloor('enemy',p.x,p.z),p.z]; }
   function playerPos(){return [camera.p[0],camera.p[1]+earthFloor('player',camera.p[0],camera.p[2]),camera.p[2]];}
   function characterScale(){return overheadPractice()?PRACTICE_CHARACTER_SCALE:1;}
   function movementClearance(owner){return (owner==='enemy'&&activeBoss()?3:.65)*characterScale();}
   function combatMovementBounds(owner,from){const c=movementClearance(owner);return boundedCombat()?practiceMovementBounds(owner,c,from):{minX:PRACTICE_ARENA.minX+c,maxX:PRACTICE_ARENA.maxX-c,minZ:PRACTICE_ARENA.minZ+c,maxZ:PRACTICE_ARENA.maxZ-c};}
-  function practiceActorPoint(owner,p,from=owner==='player'?camera.p:opponent.group.position.toArray()){if(!overheadPractice())return p;if(owner==='player')p=guardianPhases.constrainMovement(from,p,movementClearance(owner));const b=combatMovementBounds(owner,from);return [clamp(p[0],b.minX,b.maxX),p[1],clamp(p[2],b.minZ,b.maxZ)];}
+  function practiceActorPoint(owner,p,from=owner==='player'?camera.p:opponent.group.position.toArray()){if(!freeCombatMovement())return p;if(owner==='player')p=guardianPhases.constrainMovement(from,p,movementClearance(owner));const b=combatMovementBounds(owner,from);return [clamp(p[0],b.minX,b.maxX),p[1],clamp(p[2],b.minZ,b.maxZ)];}
 
   function windActors(){return [{id:'player',owner:'player',pos:playerPos(),height:playerAvatar.group.userData.height*characterScale(),hitboxScale:characterScale(),dir:aim(),fighter:player},...combatEnemies().map(a=>({...a,dir:vnorm(vsub(playerPos(),a.pos))}))];}
   function reflectWind(shot){
@@ -479,18 +487,34 @@ async function main() {
     if(shot.owner==='player'){announce('Phong Linh Triệu Hoán đã thổi chiêu ngược lại!');cameraImpacts.trigger('reflect',.65);}
     return true;
   }
-  function launch(spell, owner, pos, dir, sourceProfile=null) {
+  function launch(spell,owner,pos,dir,sourceProfile=null){
+    if(owner!=='enemy'||spell.element==='weapon'||spell.style==='shuriken')return launchImmediate(spell,owner,pos,dir,sourceProfile);
+    const sourceId=sourceProfile?.actorId||'primary',fighter=sourceProfile?.fighter||enemy,target=[...playerPos()],origin=[...pos],direction=[...dir];
+    const execute=point=>{const oldPoint=enemyCastPoint,before=shots.length,cloneSerial=darkDomain.serial;enemyCastPoint=point;
+      let result;try{result=launchImmediate(spell,owner,origin,direction,sourceProfile);}finally{
+        for(const shot of shots.slice(before)){shot.sourceId=sourceId;if(point&&shot.style==='volley'&&shot.element==='fire'){shot.aimedTargetId=null;shot.target=[...point];}}
+        for(const clone of darkDomain.clones)if(clone.id>cloneSerial)clone.summonerFighter=fighter;enemyCastPoint=oldPoint;
+      }
+      const spawned=shots.slice(before);
+      return {result,released:()=>!spawned.length||spawned.some(shot=>!shots.includes(shot)||!['staged','forming','emerging','gathering','blooming'].includes(shot.phase))};
+    };
+    if(spell.id?.startsWith('guardian-')||sourceId==='primary'&&activeBoss()&&guardianPhases.phase>1)return execute(null).result;
+    const garden=natureArts.wood.garden('enemy'),extra={direction,bamboo:garden?.plants.filter(p=>p.kind==='bamboo').map(p=>p.p),bounds:combatMovementBounds('player',target),crater:earthArts.crater('enemy')?.center,flowers:garden?.plants.filter(p=>p.kind==='flower').map(p=>p.p),clones:darkDomain.clones.filter(c=>c.owner==='enemy').map(c=>c.p),airborne:windArts.airborne.filter(a=>a.owner==='enemy').map(()=>target)};
+    return ninjaWarnings.queue({spell:natureArts.empower('enemy',spell),sourceId,origin,target,extra,valid:()=>fighter.hp>0&&fighter.controlTime<=0&&!won,execute});
+  }
+  function launchImmediate(spell, owner, pos, dir, sourceProfile=null) {
     spell={...spell,speed:(spell.speed||0)*PROJECTILE_SPEED_MULTIPLIER};
     if(owner==='enemy')spell=scaleEnemySpell(spell,((sourceProfile?opponentDamageMultiplier(sourceProfile):bossDamageMultiplier())+(tournamentBattle()?battleOpponent.tournamentStats.elementBonuses?.[spell.element]||0:0))/baseEnemyDamageMultiplier());
     gameAudio.cast(spell,owner!=='player');
     if(!natureArts.canCast(owner,spell))return false;
     spell=natureArts.empower(owner,spell);if(owner==='player')playerAvatar.cast(spell);
     if(spell.style==='waterbubbles'){
-      waterBubbles.cast(owner,spell,owner==='player'&&mobileTactical()?(mobileManualAim?practiceAimPoint():mobileEnemy().pos):owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:owner!=='player'?playerPos():natureArts.perceivedPosition(owner,windActors()));
+      waterBubbles.cast(owner,spell,owner==='enemy'&&enemyCastPoint?[...enemyCastPoint]:owner==='player'&&assistAim()?(mobileManualAim?practiceAimPoint():mobileEnemy().pos):owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:owner!=='player'?playerPos():natureArts.perceivedPosition(owner,windActors()));
       if(owner==='player')announce('Thủy Bộc Phá Không · 4 bong bóng nổ lần lượt ở giây 0,25; 0,5; 0,75; 1.');
       return true;
     }
     if(['ignite','discharge'].includes(spell.style)){
+      if(owner==='enemy'&&enemyCastPoint&&Math.hypot(playerPos()[0]-enemyCastPoint[0],playerPos()[2]-enemyCastPoint[2])>1.7+.54*(characterScale()-1))return false;
       const actor=owner==='player'?aimedEnemy():null,victim=actor?.fighter||player,target=actor?.pos||playerPos();
       if(spell.style==='ignite'){
         const ignition=victim.ignite();if(!ignition)return false;
@@ -504,12 +528,13 @@ async function main() {
       return true;
     }
     if(['wood','ice'].includes(spell.element)){
-      const art=natureArts.cast(owner,spell,pos,dir,windActors(),walls,shots,['bamboostab','icebind'].includes(spell.style)?owner!=='player'&&spell.style==='bamboostab'?playerPos():volleyTarget(owner,pos,dir):undefined,spell.style==='snowball'?(owner==='player'?aimedEnemy()?.id:'player'):undefined);
+      const castActors=windActors().map(a=>owner==='enemy'&&enemyCastPoint&&a.owner==='player'?{...a,pos:[...enemyCastPoint]}:a);if(owner==='player'&&assistAim())castActors.sort((a,b)=>Number(b.id===mobileTargetId)-Number(a.id===mobileTargetId));
+      const art=natureArts.cast(owner,spell,pos,dir,castActors,walls,shots,['bamboostab','icebind','vinebind'].includes(spell.style)?volleyTarget(owner,pos,dir):undefined,spell.style==='snowball'?(owner==='player'?aimedEnemy()?.id:'player'):undefined);
       if(art!==null)return art;
     }
     if(owner==='player')clearEarthView();
     if(spell.element==='earth'){
-      const art=earthArts.cast(owner,spell,pos,dir,windActors(),walls,owner!=='player'?playerPos():overheadPractice()?practiceOverhead.point():undefined);if(!art)return false;
+      const art=earthArts.cast(owner,spell,pos,dir,windActors(),walls,owner!=='player'?(enemyCastPoint||playerPos()):(overheadPractice()||assistAim())?practiceSpellTarget(spell):undefined);if(!art)return false;
       if(owner==='player'){
         clearWindView();clearDragonView();clearMeteorView();clearWaveView();cameraImpacts.trigger('defense',.6);
         if(spell.style==='earthgravity')beginEarthView(art);
@@ -518,7 +543,7 @@ async function main() {
     }
     if(spell.element==='light'&&spell.style!=='jacob'){
       if(owner==='player'){clearWindView();clearDragonView();clearMeteorView();clearWaveView();cameraImpacts.reset();}
-      if(['lightsphere','lightdome','lightmirror'].includes(spell.style))lightArts.place(owner,spell,pos,dir,windActors(),owner!=='player'?playerPos():overheadPractice()?practiceOverhead.point():undefined);
+      if(['lightsphere','lightdome','lightmirror'].includes(spell.style))lightArts.place(owner,spell,pos,dir,windActors(),owner!=='player'?(enemyCastPoint||playerPos()):(overheadPractice()||assistAim())?practiceSpellTarget(spell):undefined);
       else{
         const origin=vadd(vadd(pos,vmul(dir,.6)),vmul(vnorm([-dir[2],0,dir[0]]),.24));origin[1]-=.16;
         lightArts.fire(owner,spell,origin,vnorm(vsub(volleyTarget(owner,pos,dir),origin)));
@@ -533,8 +558,8 @@ async function main() {
     if(spell.element==='dark'){
       // The falling elephant applies its hit inside DarkDomain, outside impact().
       if(spell.style==='shadowbind')spell={...spell,damage:spell.damage*(owner==='player'?damageMultiplierFor(battlePlayerStats,spell.element)*(activeBoss()?guardianPhases.damageMultiplier():1):baseEnemyDamageMultiplier())};
-      const victim=spell.style==='shadowcommand'?(owner==='player'?aimedEnemy():{id:'player',owner:'player',pos:playerPos(),fighter:player}):{owner:owner==='player'?'enemy':'player',pos:owner==='player'?enemyPos():camera.p,fighter:owner==='player'?enemy:player};
-      const result=darkDomain.cast(spell,owner,pos,dir,owner!=='player'&&spell.style==='shadowbind'?playerPos():owner==='player'&&overheadPractice()&&spell.style==='shadowbind'?practiceAimPoint():volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
+      const victim=owner==='player'?aimedEnemy():{id:'player',owner:'player',pos:[...(enemyCastPoint||playerPos())],fighter:player};
+      const result=darkDomain.cast(spell,owner,pos,dir,owner!=='player'&&spell.style==='shadowbind'?(enemyCastPoint||playerPos()):owner==='player'&&(overheadPractice()||assistAim())&&spell.style==='shadowbind'?practiceAimPoint():volleyTarget(owner,pos,dir),owner==='player'?player:enemy,victim);
       if(result&&spell.style==='shadowdive'&&owner==='player'){
         if(!usesWindCamera())clearWindView();
         clearDragonView();clearMeteorView();clearWaveView();setWorldFov(baseFov);cameraImpacts.reset();
@@ -544,7 +569,7 @@ async function main() {
     if(spell.style==='aircombo')return windArts.combo(owner,spell);
     if(spell.style==='windspirit'){
       const spirit=windArts.summon(owner,spell,pos,dir);
-      if(owner==='player'&&windCameraEnabled&&!overheadPractice()){
+      if(owner==='player'&&spellCameraEnabled&&windCameraEnabled&&!overheadPractice()){
         clearWindView();clearDragonView();clearMeteorView();clearWaveView();cameraImpacts.reset();setWorldFov(baseFov);
         windView={spirit,from:camera3d.quaternion.clone(),fromPosition:camera3d.position.clone(),phase:'summoning'};handsPass.enabled=false;document.body.classList.add('wind-camera');
       }
@@ -554,7 +579,7 @@ async function main() {
       if (owner === 'player') cameraImpacts.trigger('defense');
       if(spell.style==='stormfield') {
         for(let i=fields.length-1;i>=0;i--)if(fields[i].owner===owner)fields.splice(i,1);
-        const normal=vnorm([dir[0],0,dir[2]]),p=owner!=='player'?playerPos():vadd(pos,vmul(normal,4));p[1]=.08;
+        const normal=vnorm([dir[0],0,dir[2]]),p=owner!=='player'?[...(enemyCastPoint||playerPos())]:vadd(pos,vmul(normal,4));p[1]=.08;
         fields.push({owner,p,radius:spell.fieldRadius,height:spell.fieldHeight,slowFactor:spell.slowFactor,life:spell.duration,age:0});
         return;
       }
@@ -584,13 +609,13 @@ async function main() {
       const shot = { p, old: [...p], origin: [...p], v: vmul(normal, spell.speed), normal, width: spell.waveWidth, height: spell.waveHeight, depth: 7,
         phase: 'gathering', introStage: 'pool', growthTime: waveGrowthTime, growth: 0, flightAge: 0,
         size: spell.size, damage: spell.damage, style: spell.style, element: spell.element, color: spell.color,
-        owner, unreflectable: true, reflected: false, life: 5, trail: 0, age: 0, carried: [] };
+        owner, unreflectable: true, reflected: false, life: 5, trail: 0, age: 0, carried: [],targetMode:'all-opponents',hitOwner:owner,hitActors:new Set() };
       shots.push(shot);
       if (owner === 'player') beginWaveView(shot);
       return;
     }
     if(['thunder','jacob'].includes(spell.style)) {
-      const target=owner!=='player'?playerPos():overheadPractice()?practiceOverhead.point():spell.style==='jacob'?volleyTarget(owner,pos,dir):meteorTarget(pos,dir);target[1]=earthArts.heightAt(target[0],target[2])+.08;
+      const target=owner!=='player'?[...(enemyCastPoint||playerPos())]:(overheadPractice()||assistAim())?practiceAimPoint():spell.style==='jacob'?volleyTarget(owner,pos,dir):meteorTarget(pos,dir);target[1]=earthArts.heightAt(target[0],target[2])+.08;
       const cloudPoint=[target[0],44,target[2]],chargeTime=.45,returnTime=.2,impactTime=1;
       const strikeTime=spell.style==='jacob'?.65:impactTime;
       const shot={p:[...cloudPoint],old:[...cloudPoint],v:[0,0,0],target,cloudPoint,
@@ -600,7 +625,7 @@ async function main() {
       shots.push(shot);if(owner==='player')beginMeteorView(shot);tone(65,.45,'sawtooth',.05);return;
     }
     if (spell.style === 'meteor') {
-      const target = owner!=='player'?playerPos():overheadPractice()?practiceOverhead.point():meteorTarget(pos, dir);target[1]=earthArts.heightAt(target[0],target[2])+.08;
+      const target = owner!=='player'?[...(enemyCastPoint||playerPos())]:(overheadPractice()||assistAim())?practiceAimPoint():meteorTarget(pos, dir);target[1]=earthArts.heightAt(target[0],target[2])+.08;
       const skyStart = [target[0] + 38, 65, target[2] + 7];
       const totalTime = 1;
       const velocity = vmul(vsub(target, skyStart), 1 / totalTime);
@@ -629,7 +654,7 @@ async function main() {
       return;
     }
     if (spell.element === 'fire' && spell.style === 'volley') {
-      const {target,aimedTargetId}=captureVolleyAim(pos,dir,volleyTarget(owner,pos,dir),volleyAimActors(owner));
+      const {target,aimedTargetId}=captureVolleyAim(pos,dir,volleyTarget(owner,pos,dir),owner==='player'&&assistAim()&&!mobileManualAim?volleyAimActors(owner).filter(a=>a.id===mobileTargetId):volleyAimActors(owner));
       for (let i = 0; i < spell.count; i++) {
         const shot = { p: [...pos], old: [...pos], v: [0, 0, 0], target: [...target], aimedTargetId, rowIndex: i,
           castDirection: [...dir], phase: 'staged', holdTime: spell.holdTime,
@@ -660,14 +685,15 @@ async function main() {
   function launchShuriken(owner,weapon,pos,dir,sourceProfile=null){
     if(owner==='enemy')weapon={...weapon,damage:weapon.damage*(sourceProfile?opponentDamageMultiplier(sourceProfile):bossDamageMultiplier())/baseEnemyDamageMultiplier()};
     gameAudio.shuriken(owner!=='player');if(owner==='player')playerAvatar.throwWeapon();else if(!sourceProfile)opponent.throwWeapon();
-    const infused=weapon,point=owner==='player'&&overheadPractice()?practiceOverhead.point():volleyTarget(owner,pos,dir),designatedId=owner==='player'&&mobileTactical()&&!mobileManualAim?mobileTargetId:null;
+    const infused=weapon,point=owner==='player'&&assistAim()?practiceAimPoint():owner==='player'&&overheadPractice()?practiceOverhead.point():volleyTarget(owner,pos,dir),designatedId=owner==='player'&&assistAim()&&!mobileManualAim?mobileTargetId:null;
     const locked=selectShurikenTarget(pos,dir,point,volleyAimActors(owner),{pointAim:owner==='player'&&overheadPractice(),designatedId}),target=locked?[...locked.pos]:point,side=vnorm([-dir[2],0,dir[0]]),p=vadd(vadd(pos,vmul(dir,.7)),vmul(side,.15));p[1]-=.12;
     shots.push({owner,element:'weapon',shurikenType:weapon.shurikenType||'iron',energy:true,waterInfused:!!infused.waterInfused,style:'shuriken',phase:'flying',aimedTargetId:locked?.id??null,homingTargetId:locked?.id??null,homingOwner:owner,p,old:[...p],v:vmul(vnorm(vsub(target,p)),infused.speed),size:infused.size,damage:infused.damage,color:weapon.color||'#707983',life:4,age:0,flightAge:0,trail:0,reflected:false});
     return infused;
   }
   function volleyAimActors(owner){return windActors().filter(a=>a.owner!==owner&&a.fighter.hp>0&&(a.id!=='primary'||owner!=='player'||guardianPhases.lockable())).map(a=>({...a,pos:natureArts.perceivedPosition(owner,[a])}));}
   function volleyTarget(owner, pos, dir) {
-    if(owner==='player'&&mobileTactical()&&mobileManualAim)return practiceAimPoint();
+    if(owner==='enemy'&&enemyCastPoint)return [...enemyCastPoint];
+    if(owner==='player'&&assistAim())return mobileManualAim?practiceAimPoint():mobileEnemy().pos;
     const opponentPosition = owner==='player'&&adventure?.encounter?.squad?aimedEnemy().pos:natureArts.perceivedPosition(owner,windActors());
     const delta = vsub(opponentPosition, pos), along = dot(delta, dir);
     if ((owner!=='player'||guardianPhases.lockable())&&along > 0 && vlen(vsub(delta, vmul(dir, along))) < .65*characterScale()) return vadd(pos, vmul(dir, along));
@@ -675,11 +701,11 @@ async function main() {
     return vadd(pos, vmul(dir, distance));
   }
   function practiceSpellTarget(spell){
-    if(mobileTactical()&&spell?.style==='waterbubbles')return mobileManualAim?practiceAimPoint():mobileEnemy().pos;
+    if(assistAim()&&spell?.style==='waterbubbles')return mobileManualAim?practiceAimPoint():mobileEnemy().pos;
     if(['snowball','shadowcommand'].includes(spell?.style))return aimedEnemy()?.pos||enemyPos();
-    if(spell&&['waterbubbles','ignite','discharge','woodseed','aircombo'].includes(spell.style))return enemyPos();
+    if(spell&&['waterbubbles','ignite','discharge','woodseed','aircombo'].includes(spell.style))return aimedEnemy().pos;
     if(spell?.style==='earthcraterspikes')return earthArts.crater('player')?.center||practiceOverhead.point();
-    return practiceOverhead.point();
+    return assistAim()&&!mobileManualAim?mobileEnemy().pos:practiceOverhead.point();
   }
   function positionVolley(shot) {
     const x = (shot.rowIndex - 1) * .28;
@@ -733,10 +759,10 @@ async function main() {
     player.hp=player.maxHp*.5;player.controlTime=0;player.invulnerableTime=3;player.burns=[];player.poisons=[];
     campaignAlly.sacrifice();allyHud.hidden=true;announce('Hạ Ly đã đổi mạng để hồi sinh bạn · Tiếp tục chiến đấu');messageTime=6;return true;
   }
-  function finish(victory) {
+  function finish(victory) {ninjaWarnings.clear();
     hands.clearEffects();
     if (won) return;
-    battleMetrics.observeWalls(walls);saveBattleStatistics(victory?'victory':'defeat');showBattleStatistics();
+    battleMetrics.observeWalls(walls);saveBattleStatistics(victory?'victory':'defeat');
     squadHud.hidden=true;guardianPhases.reset();
     enemyMoving=false;enemyMovement.reset(opponent.group.position.x);
     darkDomain.reset();clearDarkArts();
@@ -811,7 +837,7 @@ async function main() {
     if (result.reflected) {
       if (shot.owner === 'enemy') cameraImpacts.trigger('reflect');
       shot.owner = shot.owner === 'enemy' ? 'player' : 'enemy'; shot.reflected = true;
-      const destination = shot.owner === 'enemy' ? playerPos() : enemyPos(), d = vnorm(vsub(destination, pos));
+      const destination = shot.owner === 'enemy' ? playerPos() : aimedEnemy().pos, d = vnorm(vsub(destination, pos));
       if (cleanVolleyHit) shot.target = [...destination];
       shot.v = vmul(d, vlen(shot.v)); shot.p = vadd(pos, vmul(d, .9)); shot.old = [...shot.p]; shot.life = 4;
       announce('Phản đòn!'); return false;
@@ -836,7 +862,7 @@ async function main() {
       else{aiRules.clear();aiSpell=null;aiStep=0;enemyPose=-1;}
     }
     if(shot.style==='tornado'&&result.damage>0){
-      const victim={owner:shot.owner==='player'?'enemy':'player',fighter};windArts.lift(shot.owner,victim,shot.controlDuration||2);
+      const victim={id:shot.owner==='player'?(shot.victimId||aimedEnemy().id):'player',owner:shot.owner==='player'?'enemy':'player',fighter};windArts.lift(shot.owner,victim,shot.controlDuration||2);
       if(victim.owner==='player'){
         activePose=-1;hands.clearEffects();moveTargetX=camera.p[0];moveDirection=0;if(!usesWindCamera())clearWindView();clearDragonView();clearMeteorView();
         if(aiRules.spells.some(s=>s.style==='aircombo')){aiRules.clear();aiSpell=null;aiStep=0;aiTimer=.12;}
@@ -885,8 +911,7 @@ async function main() {
     recoil = Math.max(recoil, .65); tone(48, .55, 'sawtooth', .09);
     cameraImpacts.trigger('meteorHit', clamp(1 - vlen(vsub(pos, camera.p)) / 65, .15, 1));
     for (const wall of walls) if (Math.hypot(pos[0] - wall.p[0], pos[2] - wall.p[2]) <= shot.blastRadius) wall.hp = Math.max(0, wall.hp - shot.damage);
-    const target = shot.owner === 'enemy' ? playerPos() : enemyPos();
-    if (Math.hypot(target[0] - pos[0], target[2] - pos[2]) <= shot.blastRadius+.54*(characterScale()-1)) impact(shot, pos);
+    impactArea(shot,pos,shot.blastRadius,damageActors(),impact);
   }
   function thunderImpact(shot) {
     const pos=shot.target;
@@ -896,8 +921,7 @@ async function main() {
     else effects.lightningArts.blast(pos,shot.blastRadius);
     cameraImpacts.trigger('thunderHit',clamp(1-vlen(vsub(pos,camera.p))/65,.2,1));tone(45,.45,'sawtooth',.085);
     for(const wall of walls)if(Math.hypot(pos[0]-wall.p[0],pos[2]-wall.p[2])<=shot.blastRadius)wall.hp=Math.max(0,wall.hp-shot.damage);
-    const target=shot.owner==='enemy'?playerPos():enemyPos();
-    if(Math.hypot(target[0]-pos[0],target[2]-pos[2])<=shot.blastRadius+.54*(characterScale()-1))impact(shot,pos);
+    impactArea(shot,pos,shot.blastRadius,damageActors(),impact);
   }
   function commitMotion(shot,step,dt,motionStart=shot.p,motionVelocity=shot.v){
     const before=shot.motionDistance||0;
@@ -994,10 +1018,7 @@ async function main() {
         shot.p = vadd(shot.p, vmul(shot.v, travelDt)); shot.age += flightDt; shot.life -= flightDt; shot.flightAge += travelDt;
         if(snowBlocks(shot)){shots.splice(i,1);continue;}
         sweepTsunami(shot,shot.old,shot.p,{actors:windActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,intersectsWave});
-        const target = shot.owner === 'enemy' ? playerPos() : enemyPos();
-        if (!shot.hitTarget && intersectsWave(target, target, shot.old, shot.p, shot.normal, shot.width, shot.height, .54*characterScale(), shot.depth)) {
-          shot.hitTarget = true; impact(shot, target);
-        }
+        impactWave(shot,shot.old,shot.p,damageActors(),intersectsWave,impact);
         if (shot.life <= 0 || Math.abs(shot.p[0]) > 65 || Math.abs(shot.p[2]) > 65) shots.splice(i, 1);
         if (won) break;
         continue;
@@ -1019,9 +1040,7 @@ async function main() {
         if(crossWalls(shot,walls,intersectFireWall,(w,p,r)=>wallImpact(w,p,r,shot))){gameAudio.boatImpact(shot,false);shots.splice(i,1);continue;}
         if (shot.flightAge + 1e-6 >= shot.travelTime) {
           burst(shot.target, 36, 3, shot.color);
-          const target = shot.owner === 'enemy' ? playerPos() : enemyPos();
-          const hitTarget=vlen(vsub(target,shot.target))<=shot.blastRadius+.54*(characterScale()-1);gameAudio.boatImpact(shot,hitTarget);
-          if(hitTarget)impact({...shot,victimId:shot.owner==='enemy'?'player':'primary'},shot.target);const ally=campaignAlly.actor();if(shot.owner==='enemy'&&ally&&vlen(vsub(ally.pos,shot.target))<=shot.blastRadius)impact({...shot,victimId:'ha-ly'},shot.target);
+          const hits=impactArea(shot,shot.target,shot.blastRadius,damageActors(),impact,false);gameAudio.boatImpact(shot,hits>0);
           shots.splice(i, 1);
         }
         if (won) break;
@@ -1103,16 +1122,16 @@ async function main() {
   function updateAI(dt) {
     enemyMoving=false;
     if(testAIDisabled)return;
-    const freeMovement=overheadPractice(),beast=!!activeBoss()&&guardianPhases.phase===2;
+    const freeMovement=freeCombatMovement(),beast=!!activeBoss()&&guardianPhases.phase===2;
     if(freeMovement&&beast&&guardianPhases.state().aiOwnedMovement){enemyMoving=guardianPhases.state().moving;return;}
     if(freeMovement&&beast&&guardianPhases.state().action){enemyMovement.update(0,{position:enemyPos(),blocked:true});return;}
     const rendered=enemyPos(),old=freeMovement&&beast&&guardianAnchor?[guardianAnchor.x,rendered[1],guardianAnchor.z]:rendered;
-    const next=enemyMovement.update(dt,{position:old,dashBlocked:lightArts.blocksDash('enemy',old),bounds:freeMovement?combatMovementBounds('enemy',old):null,moveSpeed:tournamentBattle()?PRACTICE_MOVE_SPEED:freeMovement?PRACTICE_BOT_MOVE_SPEED:undefined,moveMultiplier:tournamentBattle()?1:undefined,shots,walls,optics:lightArts.optics,attacker:playerPos(),frontGuard:windArts.spirits.some(s=>s.owner==='enemy'&&s.life>0),beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(activeBoss().village),casting:!!aiSpell,blocked:enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2])*lightArts.slowAt('enemy',old)*natureArts.slowAt('enemy'),constrain:goal=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old)});
+    const next=enemyMovement.update(dt,{position:old,dashBlocked:lightArts.blocksDash('enemy',old),bounds:freeMovement?combatMovementBounds('enemy',old):null,moveSpeed:tournamentBattle()?PRACTICE_MOVE_SPEED:freeMovement?PRACTICE_BOT_MOVE_SPEED:undefined,moveMultiplier:tournamentBattle()?1:undefined,shots,walls,optics:lightArts.optics,attacker:playerPos(),frontGuard:windArts.spirits.some(s=>s.owner==='enemy'&&s.life>0),beginner:!!adventure?.inBattle&&adventure.encounter.hp<=100,heavy:!!activeBoss()&&['earth','wood','nameless','dark'].includes(activeBoss().village),casting:!!aiSpell,blocked:ninjaWarnings.pending('primary')||enemy.hp<=0||enemy.controlTime>0||natureArts.buried('enemy')||windArts.airborne.some(a=>a.victim==='enemy')||darkDomain.depth('enemy')<-.1,slow:earthArts.slowAt(old[0],old[2])*lightArts.slowAt('enemy',old)*natureArts.slowAt('enemy'),constrain:goal=>practiceActorPoint('enemy',lightArts.constrainMovement('enemy',old,earthArts.move(old,goal)),old)});
     opponent.group.position.x=next[0];opponent.group.position.z=next[2];enemyMoving=Math.hypot(next[0]-old[0],next[2]-old[2])>.0001;
     if(beast){if(guardianAnchor){guardianAnchor.x=next[0]-guardianPhases.offset.x;if(freeMovement)guardianAnchor.z=next[2];}return;}
     aiRules.tick(dt); aiCastAge += dt;aiWeaponTimer=Math.max(0,aiWeaponTimer-dt);
     const boss=activeBoss();
-    if(enemy.hp<=0)return;
+    if(enemy.hp<=0||ninjaWarnings.pending('primary'))return;
     if(boss&&currentEnemySettings().infiniteMana)aiRules.chakra=Math.min(aiRules.maxChakra,aiRules.chakra+dt*(bossEnraged?4:2));
     if (enemy.controlTime > 0) { $('enemyAction').textContent = enemy.controlSource+' · ' + enemy.controlTime.toFixed(1) + 's'; return; }
     if(adventure?.inBattle&&!aiSpell&&aiWeaponTimer<=0){const thrown=aiRules.throwShuriken();if(thrown.ok){launchShuriken('enemy',thrown.weapon,enemyPos(),enemyCastDirection());opponent.rig.cast();aiWeaponTimer=adventure?.inBattle?adventure.encounter.weaponInterval:SealGameCore.shuriken.interval;}}
@@ -1177,6 +1196,7 @@ async function main() {
     const running = started && !paused && !won;
     if (!paused) animationTime += dt;
     if (running) {
+      if(!overheadPractice()&&assistAim()){const d=vsub(mobileEnemy().pos,playerPos());camera.yaw=Math.atan2(-d[0],-d[2]);camera.pitch=Math.atan2(d[1],Math.hypot(d[0],d[2]));}
       if(mobileAimHold!==Infinity){mobileAimHold=Math.max(0,mobileAimHold-dt);if(!mobileAimHold)mobileManualAim=null;}
       battleTime += dt;
       const wasDark=darkDomain.active;darkDomain.advance(dt,animationTime);
@@ -1192,15 +1212,15 @@ async function main() {
       natureArts.advance(dt,damageActors(),(owner,p)=>{if(owner==='player'){if(overheadPractice()){practiceOverhead.stop();dashBoost.cancelDash();}camera.p[0]=p[0];camera.p[2]=p[2];moveTargetX=p[0];}else{opponent.group.position.x=p[0];opponent.group.position.z=p[2];}},walls,impact,wallImpact,guardianObjectBlocks,attack=>sweepSnowball(attack,{actors:damageActors(),walls,fields,dark:darkDomain,wind:windArts,light:lightArts,earth:earthArts,nature:natureArts,shots,damageScale:clashDamageScale}));
       if(!wasSnowReady&&natureArts.snowReady('player'))announce('Đã tích đủ 35 tuyết · Z X rồi SPACE để dùng Tuyết táng!');
 
-      if(overheadPractice()){
+      if(freeCombatMovement()){
         if(lightArts.blocksDash('player',playerPos()))dashBoost.cancelDash();
-        const dash=dashBoost.state(),isDashing=dash.dashing>0,stick=mobileTactical()&&Math.hypot(...mobileMoveVector)>.01?mobileWorldVector(mobileMoveVector):null,target=practiceOverhead.target(),blocked=player.controlTime>0||natureArts.buried('player')||earthArts.captured('player')||guardianPhases.slowAt(playerPos())===0;
+        const dash=dashBoost.state(),isDashing=dash.dashing>0,rawMove=mobileTactical()?mobileMoveVector:combatMovementMode()==='arrows'?arrowMovement(combatHeld):!overheadPractice()?mouseMoveVector:null,stick=rawMove&&Math.hypot(...rawMove)>.01?mobileWorldVector(rawMove):null,target=practiceOverhead.target(),blocked=player.controlTime>0||natureArts.buried('player')||earthArts.captured('player')||guardianPhases.slowAt(playerPos())===0;
         moveDirection=0;
         if(blocked){practiceOverhead.stop();dashBoost.cancelDash();}
         else if(stick&&!isDashing){
           const old=playerPos(),distance=PRACTICE_MOVE_SPEED*dt*earthArts.slowAt(old[0],old[2])*lightArts.slowAt('player',old)*natureArts.slowAt('player')*guardianPhases.slowAt(old,stick),goal=vadd(old,vmul(stick,distance)),next=practiceActorPoint('player',lightArts.constrainMovement('player',old,earthArts.move(old,goal)),old);
           camera.p[0]=next[0];camera.p[2]=next[2];moveTargetX=next[0];moveDirection=Math.hypot(next[0]-old[0],next[2]-old[2])>1e-6?1:0;
-        }else if(target){
+        }else if(target&&(!stick||isDashing)){
           const distance=(isDashing?(DASH_DISTANCE/DASH_DURATION)*Math.min(dt,dash.dashing):PRACTICE_MOVE_SPEED*dt*earthArts.slowAt(camera.p[0],camera.p[2])*lightArts.slowAt('player',playerPos()))*natureArts.slowAt('player')*guardianPhases.slowAt(playerPos(),vnorm(vsub(target,playerPos())));
           const old=playerPos(),delta=vsub(target,old),goal=boundedCombat()?stepPracticePoint(old,target,distance,movementClearance('player')):vadd(old,vmul(delta,Math.min(1,distance/(Math.hypot(delta[0],delta[2])||1)))),next=practiceActorPoint('player',lightArts.constrainMovement('player',old,earthArts.move(old,goal)));
           camera.p[0]=next[0];camera.p[2]=next[2];moveTargetX=next[0];moveDirection=Math.hypot(next[0]-old[0],next[2]-old[2])>1e-6?1:0;
@@ -1227,7 +1247,7 @@ async function main() {
       if(checkGuardianDefeat()){updateUI();return;}
       const guardianBase=guardianAnchor?[guardianAnchor.x,guardianAnchor.y+(opponent.group.userData.height||4)*characterScale()*.55,guardianAnchor.z]:enemyPos();
       guardianPhases.update(dt,enemy,playerPos(),guardianBase,guardianImpact,{enabled:!testAIDisabled,controlled:enemy.controlTime>0,mouthPosition:p=>opponent.guardianMouth(p),launchWaterPrison:launchGuardianWaterPrison,control:guardianControl,targets:alliedTargets(),playerHitboxScale:characterScale(),interceptProjectile:guardianIntercept,...(overheadPractice()?{targets:alliedTargets(),bounds:{minX:PRACTICE_ARENA.minX+1,maxX:PRACTICE_ARENA.maxX-1,minZ:PRACTICE_ARENA.minZ+1,maxZ:PRACTICE_ARENA.maxZ-1},attackBounds:combatMovementBounds('player',playerPos()),quality,incomingShots:shots,constrainBossMovement:(from,to,mode)=>clampGuardianMovement(mode==='walk'?guardianBase:from,to,mode,movementClearance('enemy'),boundedCombat()),setTargetPosition:(id,p)=>{if(id==='player')setEarthActorPosition('player',practiceActorPoint('player',p));},walls,intersectWall:intersectFireWall,random:rand}:{} )});
-      updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);guardianAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),(actor,amount)=>{const r=actor.fighter.receive(amount,true,false,'wind');if(r.damage>0){enemyHit=.25;hitTimer=.1;if(overheadPractice())damageFeedback.trigger(actor.id,actor.pos);}return r.damage;},!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);battleMetrics.observeWalls(walls);
+      ninjaWarnings.advance(dt);updateAI(dt);squad.update(dt,animationTime,!testAIDisabled,reducedMotion);guardianAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),(actor,amount)=>{const r=actor.fighter.receive(amount,true,false,'wind');if(r.damage>0){enemyHit=.25;hitTimer=.1;if(overheadPractice())damageFeedback.trigger(actor.id,actor.pos);}return r.damage;},!testAIDisabled,reducedMotion);battleMetrics.observeWalls(walls);updateShots(dt);ninjaWarnings.sync();battleMetrics.observeWalls(walls);
       campaignAlly.update(dt,animationTime,combatEnemies(),player,playerPos(),undefined,!testAIDisabled);
       enemyDashAura.update(dt,[opponent.group.position.x,earthFloor('enemy',opponent.group.position.x,opponent.group.position.z),opponent.group.position.z],enemy.hp>0&&enemyMovement.state().dashBoost.dashing>0,reducedMotion);
       if(!won)darkDomain.updateClones(dt,animationTime,damageActors(),
@@ -1280,16 +1300,17 @@ async function main() {
     if(activeBoss()&&guardianInfo.armor>0)$('enemyShield').textContent+=guardianInfo.thirdPerson?' · Giáp đá '+Math.ceil(guardianInfo.armor)+' HP':' · Giáp hộ vệ −35% sát thương · '+guardianInfo.armor.toFixed(1)+'s';
     if(guardianInfo.thirdPerson){const s=guardianInfo.statuses?.find(s=>s.id==='player'),labels={fire:'Hỏa Ấn',water:'Ướt',light:'Kim Ấn',ice:'Hàn Khí'};if(s?.stacks)$('shieldStatus').textContent+=' · '+labels[activeBoss()?.village]+' '+s.stacks;if(s?.markTime>0)$('shieldStatus').textContent+=' · '+(activeBoss()?.village==='dark'?'U Minh Ấn':'Lôi Ấn');if(s?.slowTime>0)$('shieldStatus').textContent+=' · Chậm '+Math.round(s.slow*100)+'%';if(s?.rootTime>0)$('shieldStatus').textContent+=' · Trói chân '+s.rootTime.toFixed(1)+'s';if(s?.freezeImmune>0)$('shieldStatus').textContent+=' · Kháng đóng băng '+s.freezeImmune.toFixed(1)+'s';if(guardianInfo.enraged)$('enemyAction').textContent+=' · Cuồng nộ';}
     const boost=dashBoost.state();
-    $('moveHint').textContent = overheadPractice()?'CHUỘT PHẢI: DI CHUYỂN · G: LƯỚT THEO CON TRỎ · SPACE: THI TRIỂN':boost.ready>0?'TĂNG LỰC '+boost.ready.toFixed(1)+'s · CLICK TRÁI / PHẢI ĐỂ LƯỚT 5 M':moveDirection ? (moveDirection < 0 ? '← ĐANG NÉ TRÁI' : 'ĐANG NÉ PHẢI →') : 'GIỮ TRÁI / PHẢI ĐỂ DI CHUYỂN LIÊN TỤC';
+    $('moveHint').textContent=mobileTactical()?'CẦN DI CHUYỂN · LƯỚT · KẾT ẤN VÀ THI TRIỂN':combatMovementMode()==='arrows'?'MŨI TÊN: DI CHUYỂN · G: LƯỚT · SPACE: THI TRIỂN':'CHUỘT PHẢI: DI CHUYỂN · G: LƯỚT · SPACE: THI TRIỂN';
     $('dashBoostButton').disabled=cinematicActive()||!started||paused||won||player.controlTime>0||natureArts.buried('player')||lightArts.blocksDash('player',playerPos())||boost.ready>0||boost.dashing>0||boost.cooldown>0||rules.chakra+1e-8<DASH_MANA_COST;
-    $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':rules.chakra+1e-8<DASH_MANA_COST?'Thiếu mana · cần 5':overheadPractice()?'Lướt · 5 mana':'Tăng lực · 5 mana';
-    $('dashBoostButton').title=overheadPractice()?'G: lướt ngay 5 m theo con trỏ, tốn 5 mana, hồi 0,5 giây':'G: tốn 5 mana để tăng lực trong 3 giây; click trái/phải lướt 5 m, hồi 0,5 giây';
+    $('dashBoostStatus').textContent=boost.cooldown>0?'Lướt · '+boost.cooldown.toFixed(1)+'s':boost.ready>0?'Đã tăng lực · '+boost.ready.toFixed(1)+'s':rules.chakra+1e-8<DASH_MANA_COST?'Thiếu mana · cần 5':'Lướt · 5 mana';
+    $('dashBoostButton').title=overheadPractice()&&!mobileTactical()?'G: lướt ngay 5 m theo con trỏ chuột, tốn 5 mana, hồi 0,5 giây':'G: lướt ngay 5 m theo hướng di chuyển, tốn 5 mana, hồi 0,5 giây';
     $('flash').style.opacity = 0; $('hitMarker').style.opacity = !overheadPractice()&&hitTimer > 0 ? 1 : 0;
     const targetEntity=aimedEnemy(),delta = vsub(adventure?.encounter?.squad?targetEntity.pos:natureArts.perceivedPosition('player',windActors()), playerPos()), d = aim(), onTarget = guardianPhases.lockable()&&vlen(vsub(delta, vmul(d, dot(delta, d)))) < .7*characterScale();
     $('reticle').classList.toggle('on-target', onTarget && targetEntity.fighter.hp > 0 && !waveView);
     $('targetInfo').style.opacity = onTarget && running && !waveView ? 1 : 0; $('targetName').textContent = adventure?.inBattle?(adventure.encounter.squad?[adventure.encounter.squad[0],...squad.state()].find((a,i)=>combatEnemies()[i]?.id===aimedEnemy().id)?.name||adventure.encounter.name:adventure.encounter.name):'ĐỐI THỦ'; $('targetHP').style.width = aimedEnemy().fighter.hp / aimedEnemy().fighter.maxHp * 100 + '%';
     playerShield.visible = !['fire', 'water', 'lightning', 'dark','wood','ice'].includes(player.defenseElement) && player.shieldTime > 0 && (player.shield > 0 || player.reflect > 0); playerShield.scale.set(1.05*characterScale(),1.5*characterScale(),1.05*characterScale()); playerShield.position.set(camera.p[0], 1.45*characterScale()+earthFloor('player',camera.p[0],camera.p[2]), camera.p[2]); playerShield.material.color.set(player.color); playerShield.rotation.y = animationTime * .4;
     document.body.classList.toggle('dragon-active', started && !won && (!!dragonView || shots.some(s => s.owner === 'player' && s.phase === 'forming')));
+    if(!overheadPractice()&&assistAim()&&started&&!won){const d=vsub(mobileEnemy().pos,playerPos());camera.yaw=Math.atan2(-d[0],-d[2]);camera.pitch=Math.atan2(d[1],Math.hypot(d[0],d[2]));}
     camera3d.position.fromArray(playerPos()); camera3d.rotation.set(camera.pitch, camera.yaw, 0, 'YXZ');
     const diveDepth=darkDomain.viewDepth('player');
     if(diveDepth<0){
@@ -1393,7 +1414,7 @@ async function main() {
   }
   function clearEarthView(){earthView=null;handsPass.enabled=!dragonView&&!meteorView&&!windView;}
   function beginEarthView(art){
-    if(overheadPractice())return;
+    if(!spellCameraEnabled||overheadPractice())return;
     if(usesWindCamera()||player.invulnerableTime>0||darkDomain.viewDepth('player')<0)return;
     earthView={art,phase:'sky',from:camera3d.quaternion.clone()};handsPass.enabled=false;
   }
@@ -1412,7 +1433,7 @@ async function main() {
     }else{view.phase='returning';const t=reducedMotion?1:easeWind((e.age-e.pullEnd)/.45);camera3d.quaternion.copy(view.lastSky||view.from).slerp(base,t);camera3d.position.copy(view.lastSkyPosition||basePosition).lerp(basePosition,t);}
     view.renderedRotation=camera3d.quaternion.clone();view.renderedPosition=camera3d.position.clone();
   }
-  function usesWindCamera(){return windCameraEnabled&&windArts.spirits.some(s=>s.owner==='player');}
+  function usesWindCamera(){return spellCameraEnabled&&windCameraEnabled&&windArts.spirits.some(s=>s.owner==='player');}
   function clearWindView(){
     windView=null;handsPass.enabled=!dragonView&&!meteorView&&!earthView;
     playerAvatar.group.visible=false;windAim.visible=false;
@@ -1451,7 +1472,7 @@ async function main() {
     document.body.classList.remove('dragon-camera', 'dragon-active');
   }
   function beginDragonView(shot) {
-    if(overheadPractice())return;
+    if(!spellCameraEnabled||overheadPractice())return;
     if(usesWindCamera()||player.invulnerableTime>0||darkDomain.viewDepth('player')<0)return;
     clearWindView();
     clearWaveView();
@@ -1467,7 +1488,7 @@ async function main() {
     document.body.classList.remove('meteor-camera');
   }
   function beginMeteorView(shot) {
-    if(overheadPractice())return;
+    if(!spellCameraEnabled||overheadPractice())return;
     if(usesWindCamera()||player.invulnerableTime>0||darkDomain.viewDepth('player')<0)return;
     clearWindView();
     clearDragonView();
@@ -1482,7 +1503,7 @@ async function main() {
   }
   function clearWaveView() { waveView = null; }
   function beginWaveView(shot) {
-    if(overheadPractice())return;
+    if(!spellCameraEnabled||overheadPractice())return;
     if(usesWindCamera()||player.invulnerableTime>0||darkDomain.viewDepth('player')<0)return;
     clearWindView();
     clearDragonView(); clearMeteorView(); cameraImpacts.reset();
@@ -1566,12 +1587,12 @@ async function main() {
   }
   function frame(now) { const dt = Math.min((now - lastTime) / 1000 || .016, .1); lastTime = now; if (!testMode) tick(dt); render(); requestAnimationFrame(frame); }
   function requestAimLock(event) {
-    if(overheadPractice())return;
+    if(overheadPractice()||assistAim()||combatMovementMode()==='mouse')return;
     if (androidInterface()||!event?.isTrusted || document.pointerLockElement === canvas) return;
     try { canvas.requestPointerLock?.()?.catch?.(() => {}); } catch {}
   }
   function releaseAimLock() {
-    heldStepSources.clear();
+    heldStepSources.clear();combatHeld.clear();mouseMoveVector=[0,0];
     touchPoint = null;
     document.body.classList.remove('aim-locked');
     if (document.pointerLockElement === canvas) document.exitPointerLock?.();
@@ -1590,8 +1611,8 @@ async function main() {
   function releaseStep(source){heldStepSources.delete(source);}
   function armDash(){if(cinematicActive())return;
     if(!started||paused||won||rules.chakra+1e-8<DASH_MANA_COST)return;
-    if(overheadPractice()){
-      const pos=playerPos(),point=mobileTactical()?vadd(pos,vmul(Math.hypot(...mobileMoveVector)>.01?mobileWorldVector(mobileMoveVector):aim(),10)):practiceOverhead.point(),length=Math.hypot(point[0]-pos[0],point[2]-pos[2]);
+    if(freeCombatMovement()){
+      const pos=playerPos(),rawMove=mobileTactical()?mobileMoveVector:combatMovementMode()==='arrows'?arrowMovement(combatHeld):!overheadPractice()?mouseMoveVector:null,point=overheadPractice()&&!mobileTactical()?practiceOverhead.movementPoint():rawMove&&Math.hypot(...rawMove)>.01?vadd(pos,vmul(mobileWorldVector(rawMove),10)):vadd(pos,vmul(aim(),10)),length=Math.hypot(point[0]-pos[0],point[2]-pos[2]);
       if(length<.01)return;
       const target=practiceActorPoint('player',[pos[0]+(point[0]-pos[0])/length*DASH_DISTANCE,0,pos[2]+(point[2]-pos[2])/length*DASH_DISTANCE],pos);
       if(Math.hypot(target[0]-pos[0],target[2]-pos[2])<.01)return;
@@ -1629,7 +1650,7 @@ async function main() {
       const initialize=async()=>{if(!battleIntro.active)return;await battleIntro.preparePortraits();if(!battleIntro.active)return;startBattle(event);battleIntro.ready();};if(testMode)initialize();else requestAnimationFrame(()=>setTimeout(initialize,0));
     }else startBattle(event);
   }
-  function startBattle(event) {
+  function startBattle(event) {ninjaWarnings.clear();combatHeld.clear();mouseMoveVector=[0,0];
     damageFeedback.reset();playerAvatar.resetMotion();mobileMoveVector=[0,0];mobileManualAim=null;mobileAimHold=0;mobileTargetId='primary';
     if (started) return;
     practiceEncounter=!adventure?.inBattle&&!journeyLearning?practiceOpponentEncounter(practiceOpponentPicker.value(),spells):null;
@@ -1682,9 +1703,9 @@ async function main() {
     ['startScreen', 'pauseScreen', 'winScreen'].forEach(id => $(id).classList.add('hidden'));
     gameAudio.unlock(); renderGuide(); announce(overheadPractice()?'Chuột phải để di chuyển · G lướt theo con trỏ · kết đủ ấn để xem hướng chiêu.':androidInterface()?'Kéo giữa màn hình để ngắm. Ghim và tấn công ngắm đối thủ gần nhất; Tấn công đánh theo tâm hiện tại.':'Lia chuột để ngắm. Giữ chuột trái hoặc phải để di chuyển liên tục.'); updateUI(); tick(0); syncCombatView(); requestAimLock(event);
   }
-  function pause() { if (battleIntro.active || !started || won) return;showBattleStatistics();$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;practiceOverhead.stop();dashBoost.cancelDash(); gameAudio.pauseVoice(true); moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
+  function pause() { if (battleIntro.active || !started || won) return;$('changeLoadout').hidden=!!adventure?.retreatLocked;$('changeLoadout').disabled=!!adventure?.retreatLocked;$('changeLoadout').style.display=adventure?.retreatLocked?'none':''; paused = true;practiceOverhead.stop();dashBoost.cancelDash(); gameAudio.pauseVoice(true); moveTargetX = camera.p[0]; moveDirection = 0; releaseAimLock(); document.body.classList.add('paused'); $('pauseScreen').classList.remove('hidden'); updateUI(); }
   function resume(event) { paused = false; gameAudio.pauseVoice(false); moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
-  function prepare(next = false) {
+  function prepare(next = false) {ninjaWarnings.clear();
     practiceView='overhead';
     practiceOpponentPicker.close();practiceOpponentConfirmed=false;practiceEncounter=null;
     practiceOverhead.reset();closePracticeView();$('practiceHandInset').hidden=true;document.body.classList.remove('practice-overhead');playerAvatar.group.visible=false;
@@ -1735,6 +1756,7 @@ async function main() {
     if(keys.includes(key)||['h','m','1','2','3','4','5'].includes(key))e.preventDefault();
     if (e.target instanceof HTMLButtonElement && (!started || paused || won) && key === ' ') return;
     if ([' ', 'backspace', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) e.preventDefault();
+    if(['arrowup','arrowdown','arrowleft','arrowright'].includes(key)&&started&&!paused&&!won&&combatMovementMode()==='arrows'){combatHeld.add(key);practiceOverhead.stop();return;}
     if (e.repeat) return;
     if (key === 'escape'&&adventure?.phase==='loadout'){e.stopImmediatePropagation();if(adventure.retreatLocked){announce('Cảnh vệ đã áp sát · Phải giao chiến.',true);return;}adventure.cancelBattle();return;}
     if (key === 'enter') { e.preventDefault(); if (won) nextBattle(); else if (!started) start(e); else if (paused) resume(e); return; }
@@ -1748,24 +1770,26 @@ async function main() {
     if(key==='tab'&&adventure?.inBattle){e.preventDefault();adventure.cycleShuriken();updateUI();return;}
     if (keys.includes(key)) seal(key); else if (key === ' ') cast(); else if (key === 'backspace') { rules.clear();battleMetrics.clear(); hands.clearEffects(); activePose = -1; announce('Đã xóa chuỗi ấn.'); updateUI(); } else if (['1', '2', '3', '4', '5'].includes(key)) selectSpell(Number(key) - 1);
   });
+  window.addEventListener('keyup',e=>{combatHeld.delete(physicalKey(e));});
+  canvas.addEventListener('mouseleave',()=>{mouseMoveVector=[0,0];});
   window.addEventListener('blur', () => { if (started && !paused && !won) pause(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && started && !paused && !won) pause(); });
   window.addEventListener('contextmenu', e => { if (started && !paused && !won) e.preventDefault(); });
   canvas.addEventListener('mousedown', e => {
     if (touchControls?.enabled||!started || paused || won || ![0, 2].includes(e.button)) return;
     if(overheadPractice()){
+      if(e.button===0&&assistAim())pickMobileTarget(e.clientX,e.clientY);
       e.preventDefault();practiceOverhead.pointer(e.clientX,e.clientY,camera3d,canvas);
-      if(e.button===2&&player.controlTime<=0&&!natureArts.buried('player')&&!earthArts.captured('player')&&dashBoost.state().dashing<=0)practiceOverhead.move(playerPos());
+      if(e.button===2&&combatMovementMode()==='mouse'&&player.controlTime<=0&&!natureArts.buried('player')&&!earthArts.captured('player')&&dashBoost.state().dashing<=0)practiceOverhead.move(playerPos());
       canvas.focus({preventScroll:true});return;
     }
-    e.preventDefault();const direction=e.button===0?-1:1;
-    if(e.buttons&(e.button===0?1:2))holdStep(direction,'mouse-'+e.button);else sidestep(direction);
-    requestAimLock(e);
+    e.preventDefault();if(e.button===0)pickMobileTarget(e.clientX,e.clientY);if(combatMovementMode()==='mouse')mouseMoveVector=cursorMovement(e.clientX,e.clientY,innerWidth,innerHeight);canvas.focus({preventScroll:true});requestAimLock(e);
   });
   window.addEventListener('mouseup',e=>releaseStep('mouse-'+e.button));
   window.addEventListener('pointercancel',e=>{if(e.pointerType==='mouse'){releaseStep('mouse-0');releaseStep('mouse-2');}});
   window.addEventListener('mousemove', e => {
     if(overheadPractice()&&started&&!paused&&!won){if(!mobileTactical())practiceOverhead.pointer(e.clientX,e.clientY,camera3d,canvas);return;}
+    if(!overheadPractice()&&started&&!paused&&!won&&assistAim()&&!androidInterface()){if(combatMovementMode()==='mouse'&&e.target===canvas)mouseMoveVector=cursorMovement(e.clientX,e.clientY,innerWidth,innerHeight);return;}
     if (touchControls?.enabled||!started || paused || won || (document.pointerLockElement !== canvas && e.target !== canvas)) return;
     look(e.movementX, e.movementY);
   });
@@ -1780,7 +1804,7 @@ async function main() {
   canvas.addEventListener('touchend', () => { touchPoint = null; });
   canvas.addEventListener('touchcancel', () => { touchPoint = null; });
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); pause(); $('errorScreen').classList.remove('hidden'); $('errorScreen').textContent = 'Kết nối đồ họa bị gián đoạn. Tải lại trang để tiếp tục.'; });
-  const state = () => ({graphics:{renderPath:adventure?.activeView?'direct':'postprocessing',pixelRatio:renderer.getPixelRatio(),bufferWidth:canvas.width,bufferHeight:canvas.height,postprocessWidth:composer.renderTarget1.width,postprocessHeight:composer.renderTarget1.height,antialias:renderer.getContext().getContextAttributes().antialias,shadowMap:renderer.shadowMap.enabled,circularShadows:battleShadows.mesh.visible?battleShadows.mesh.count:0,groundCoverMeshes:world.terrain.instances.length,particleLimit:quality===2?180:650,particles:particles.length,renderedParticles:effects.sparks.geometry.drawRange.count,smoke:effects.smoke.length,drawCalls:renderer.info.render.calls},mobileTactical:touchControls?.tacticalState?.()||null,damageFeedback:damageFeedback.state(),combatSize:{scale:characterScale(),hitRadius:.54*characterScale(),playerScale:playerAvatar.group.scale.toArray(),enemyScale:opponent.group.scale.toArray()},practiceView:overheadPractice()?'overhead':'first-person',choosingPracticeView,practiceOverhead:practiceOverhead.state(),enemyAI:{timer:aiTimer,sealDelay:currentEnemySettings().sealDelay,mana:aiRules.maxChakra,infiniteMana:currentEnemySettings().infiniteMana,baseDamagePercent:bossDamageMultiplier()*100,profileId:currentEnemySettings().id},campaignAlly:campaignAlly.state(),guardianAlly:guardianAlly.state(),flask:adventure?.flask||null,arenaEnvironment:world.arenaActive, guardianModel:{hands:opponent.rig.root.visible,aura:!!opponent.guardianAura,auraOpacity:opponent.guardianAura?.userData.opacity??null},enemySpells:aiRules.spells.map(s=>({id:s.id,cost:s.cost,damage:s.damage,cooldown:s.cooldown,maxClones:s.maxClones,cloneCount:s.cloneCount})),battleIntro:battleIntro.state(),balanceVersion:BALANCE_VERSION,combatMetrics:battleMetrics.snapshot(),opportunities:opportunities.map(o=>({...o})),spellCooldowns:Object.fromEntries(rules.spells.map(s=>[s.id,s.cooldown])),enemyLabels:enemyNameplates.state(),squad:[{id:'primary',hp:enemy.hp,maxHp:enemy.maxHp,element:adventure?.encounter?.element,spellIds:[...aiRules.loadout],position:enemyPos()},...squad.state()],guardianPhases:guardianPhases.state(),guardianAnimation:opponent.guardianAnimation,waterBubbles:waterBubbles.state(),dashBoost:{...dashBoost.state(),aura:dashAura.state()},enemyAppearance:{...opponent.group.userData.appearance},enemyMovement:{...enemyMovement.state(),moving:enemyMoving},playerResistance:{...player.resistances},playerElementBonuses:{...battlePlayerStats.elementBonuses},handArmguard:hands.armguardState(),avatarArmguard:playerAvatar.rig.armguardState(),playerEquipment:adventure?.equipment||null,playerMaxHealth:player.maxHp,maxChakra:rules.maxChakra,playerDamageMultiplier:battlePlayerStats.damageMultiplier,journeyLearning,boss:activeBoss()?{name:activeBoss().name,phase:bossEnraged?'enraged':'guarding',phaseNumber:guardianPhases.state().phase,maxPhase:activeBoss().phases,damageMultiplier:bossDamageMultiplier()}:null,enemyMaxHealth:enemy.maxHp,enemyLoadout:[...aiRules.loadout], learnedSpells:[...learnedSpells], elemental:{player:player.elementalState(),enemy:enemy.elementalState(),visuals:effects.elemental.state()}, flightBurst:effects.flightBursts.state(), natureArt:natureArts.state(),usedOnce:[...rules.usedOnce],enemyVisible:opponent.group.visible,enemyPerceivedPosition:natureArts.perceivedPosition('player',windActors()),aiPerceivedTarget:natureArts.perceivedPosition('enemy',windActors()),earthArt:{...earthArts.state(),terrainVertices:world.terrain.changedVertices,playerHeight:earthFloor('player',camera.p[0],camera.p[2]),enemyHeight:earthFloor('enemy',opponent.group.position.x,opponent.group.position.z)},playerPosition:playerPos(),lightArt:lightArts.state(),playerAvatar:{...playerAvatar.animationState(),visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,cooldowns:{...rules.cooldowns},enemyCooldowns:{...aiRules.cooldowns},chakraRegen:rules.chakraRegen,shurikenCooldown:rules.shurikenCooldown,shurikenThrows:rules.shurikenThrows,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: overheadPractice()?'practice-overhead':guardianPhases.transitioning?'guardian-transform':natureArts.buried('player')?'snow-burial':earthView?'earth-'+earthView.phase:windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':meteorView.shot.style==='jacob'?'jacob-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light','Earth','Wood','Ice'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,stones:r.stones.visible,stoneCount:r.stones.children.length,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.opponentSpawn.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX,heldStepDirection:heldStepDirection(), aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, waterInfused:!!s.waterInfused,shurikenType:s.shurikenType||null,energy:!!s.energy, style: s.style, introStage: s.introStage || null, visual: s.element==='weapon'?effects.shurikens.visualState(s):s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget, phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], motionTime:s.motionTime||0, motionDistance:s.motionDistance||0, speedRatio:s.flightSpeedRatio??(s.element==='weapon'?1:FLIGHT_PROFILE.launchSpeedRatio), actualSpeed:s.motionSpeed||0, size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, aimedTargetId:s.aimedTargetId??null,homingTargetId:s.homingTargetId??null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
+  const state = () => ({ninjaWarnings:ninjaWarnings.state(),combatControls:{...combatOptions,speed:PRACTICE_MOVE_SPEED,effectiveMovement:combatMovementMode(),targetId:assistAim()?mobileEnemy().id:null,held:[...combatHeld]},graphics:{renderPath:adventure?.activeView?'direct':'postprocessing',pixelRatio:renderer.getPixelRatio(),bufferWidth:canvas.width,bufferHeight:canvas.height,postprocessWidth:composer.renderTarget1.width,postprocessHeight:composer.renderTarget1.height,antialias:renderer.getContext().getContextAttributes().antialias,shadowMap:renderer.shadowMap.enabled,circularShadows:battleShadows.mesh.visible?battleShadows.mesh.count:0,groundCoverMeshes:world.terrain.instances.length,particleLimit:quality===2?180:650,particles:particles.length,renderedParticles:effects.sparks.geometry.drawRange.count,smoke:effects.smoke.length,drawCalls:renderer.info.render.calls},mobileTactical:touchControls?.tacticalState?.()||null,damageFeedback:damageFeedback.state(),combatSize:{scale:characterScale(),hitRadius:.54*characterScale(),playerScale:playerAvatar.group.scale.toArray(),enemyScale:opponent.group.scale.toArray()},practiceView:overheadPractice()?'overhead':'first-person',choosingPracticeView,practiceOverhead:practiceOverhead.state(),enemyAI:{timer:aiTimer,sealDelay:currentEnemySettings().sealDelay,mana:aiRules.maxChakra,infiniteMana:currentEnemySettings().infiniteMana,baseDamagePercent:bossDamageMultiplier()*100,profileId:currentEnemySettings().id},campaignAlly:campaignAlly.state(),guardianAlly:guardianAlly.state(),flask:adventure?.flask||null,arenaEnvironment:world.arenaActive, guardianModel:{hands:opponent.rig.root.visible,aura:!!opponent.guardianAura,auraOpacity:opponent.guardianAura?.userData.opacity??null},enemySpells:aiRules.spells.map(s=>({id:s.id,cost:s.cost,damage:s.damage,cooldown:s.cooldown,maxClones:s.maxClones,cloneCount:s.cloneCount})),battleIntro:battleIntro.state(),balanceVersion:BALANCE_VERSION,combatMetrics:battleMetrics.snapshot(),opportunities:opportunities.map(o=>({...o})),spellCooldowns:Object.fromEntries(rules.spells.map(s=>[s.id,s.cooldown])),enemyLabels:enemyNameplates.state(),squad:[{id:'primary',hp:enemy.hp,maxHp:enemy.maxHp,element:adventure?.encounter?.element,spellIds:[...aiRules.loadout],position:enemyPos()},...squad.state()],guardianPhases:guardianPhases.state(),guardianAnimation:opponent.guardianAnimation,waterBubbles:waterBubbles.state(),dashBoost:{...dashBoost.state(),aura:dashAura.state()},enemyAppearance:{...opponent.group.userData.appearance},enemyMovement:{...enemyMovement.state(),moving:enemyMoving},playerResistance:{...player.resistances},playerElementBonuses:{...battlePlayerStats.elementBonuses},handArmguard:hands.armguardState(),avatarArmguard:playerAvatar.rig.armguardState(),playerEquipment:adventure?.equipment||null,playerMaxHealth:player.maxHp,maxChakra:rules.maxChakra,playerDamageMultiplier:battlePlayerStats.damageMultiplier,journeyLearning,boss:activeBoss()?{name:activeBoss().name,phase:bossEnraged?'enraged':'guarding',phaseNumber:guardianPhases.state().phase,maxPhase:activeBoss().phases,damageMultiplier:bossDamageMultiplier()}:null,enemyMaxHealth:enemy.maxHp,enemyLoadout:[...aiRules.loadout], learnedSpells:[...learnedSpells], elemental:{player:player.elementalState(),enemy:enemy.elementalState(),visuals:effects.elemental.state()}, flightBurst:effects.flightBursts.state(), natureArt:natureArts.state(),usedOnce:[...rules.usedOnce],enemyVisible:opponent.group.visible,enemyPerceivedPosition:natureArts.perceivedPosition('player',windActors()),aiPerceivedTarget:natureArts.perceivedPosition('enemy',windActors()),earthArt:{...earthArts.state(),terrainVertices:world.terrain.changedVertices,playerHeight:earthFloor('player',camera.p[0],camera.p[2]),enemyHeight:earthFloor('enemy',opponent.group.position.x,opponent.group.position.z)},playerPosition:playerPos(),lightArt:lightArts.state(),playerAvatar:{...playerAvatar.animationState(),visible:playerAvatar.group.visible,position:playerAvatar.group.position.toArray(),yaw:playerAvatar.group.rotation.y,pose:activePose,handPose:playerAvatar.rig.hands[0].wrapper.quaternion.toArray(),legs:playerAvatar.legs.map(l=>l.pivot.rotation.x),aimVisible:windAim.visible},windArt:windArts.state(), cooldown:rules.cooldown,cooldowns:{...rules.cooldowns},enemyCooldowns:{...aiRules.cooldowns},chakraRegen:rules.chakraRegen,shurikenCooldown:rules.shurikenCooldown,shurikenThrows:rules.shurikenThrows,invulnerableTime:player.invulnerableTime,enemyInvulnerableTime:enemy.invulnerableTime,enemyRenderPosition:opponent.group.position.toArray(),darkDomain: darkDomain.state(), lightningArt: { projectiles: effects.lightningArts.shots.size, fields: fields.map(f=>({owner:f.owner,position:[...f.p],radius:f.radius,height:f.height,life:f.life,slowFactor:f.slowFactor})), shields: [...effects.lightningArts.shields.values()].filter(g=>g.visible).length, bolts: [...effects.lightningArts.shots.values()].filter(g=>g.userData.bolt?.visible).length, clouds: [...effects.lightningArts.shots.values()].filter(g=>g.userData.cloud).length, bursts: effects.lightningArts.bursts.length }, cameraView: overheadPractice()?'practice-overhead':guardianPhases.transitioning?'guardian-transform':natureArts.buried('player')?'snow-burial':earthView?'earth-'+earthView.phase:windView?'wind-'+windView.phase:waveView ? 'wave-' + waveView.phase : meteorView ? (meteorView.shot.style==='thunder'?'thunder-':meteorView.shot.style==='jacob'?'jacob-':'meteor-') + meteorView.phase : dragonView ? (dragonView.shot.style === 'boat' ? 'boat-' : dragonView.shot.style === 'bird' ? 'bird-' : '') + dragonView.phase : 'first-person', viewFov: camera3d.fov, cameraReaction: { ...cameraReaction, pulses: cameraImpacts.pulses.length }, viewPosition: camera3d.position.toArray(), viewRotation: camera3d.quaternion.toArray(), handsVisible: handsPass.enabled, sealShadow: hands.shadow.state(), handWind:hands.handWind.mesh.visible,handDark:hands.handDark.mesh.visible,handLight:hands.handLight.mesh.visible,handElementRings:Object.fromEntries(['Wind','Dark','Light','Earth','Wood','Ice'].map(name=>{const r=hands['hand'+name];return [name.toLowerCase(),{visible:r.mesh.visible,motes:r.motes.visible,stones:r.stones.visible,stoneCount:r.stones.children.length,position:r.mesh.position.toArray(),time:r.mesh.material.uniforms.uTime.value,reducedMotion:r.mesh.material.uniforms.uReducedMotion.value}];})), handLightning: hands.handLightning.mesh.visible, handLightningPosition: hands.handLightning.mesh.position.toArray(), handLightningTime: hands.handLightning.mesh.material.uniforms.uTime.value, handWater: hands.handWater.mesh.visible, handWaterPosition: hands.handWater.mesh.position.toArray(), handFlames: hands.handFire.mesh.visible, handFlamePosition: hands.handFire.mesh.position.toArray(), ready: true, time: animationTime, handPose: hands.hands[0].wrapper.quaternion.toArray(), fingerPose: hands.hands[0].joints.index_0.quaternion.toArray(), score, round, casting: null, castElapsed: 0, casts: rules.casts, chakra: rules.chakra, sequence: [...rules.sequence], paused, won, victory: won && player.hp > 0, started, activePose, position: [...camera.p], yaw: camera.yaw, pitch: camera.pitch, quality: qualities[quality].name, bones: Object.keys(hands.hands[0].joints).length, triangles: renderer.info.render.triangles, shots: shots.length, smoke: effects.smoke.length, light: effects.lights.reduce((n, l) => n + l.intensity, 0), loadout: [...loadout], equipped: [...rules.loadout], controlTime: player.controlTime, enemyControlTime: enemy.controlTime, waterArt: { projectiles: effects.waterArts.shots.size, walls: effects.waterArts.walls.size, shields: [...effects.waterArts.shields.values()].filter(g => g.visible).length, prisons: [...effects.waterArts.prisons.values()].filter(g => g.visible).length }, health: player.hp, shield: player.shield, shieldTime: player.shieldTime, reflect: player.reflect, enemyHealth: enemy.hp, enemyPosition: enemyPos(), gatePosition: world.opponentSpawn.toArray(), enemyShield: enemy.shield, enemyChakra: aiRules.chakra, enemyPose, aiCasts, battleTime, moveDirection, moveTargetX,heldStepDirection:heldStepDirection(), aimLocked: document.pointerLockElement === canvas, enemySequence: [...aiRules.sequence], salvos: salvos.length, walls: walls.map(w => ({ owner: w.owner, element: w.element, radius: w.radius || 0, hp: w.hp, life: w.life, position: [...w.p] })), fireArt: { projectiles: effects.arts.shots.size, walls: effects.arts.walls.size, shields: [...effects.arts.shields.values()].filter(g => g.visible).length, bursts: effects.arts.bursts.length, meteorImpacts: effects.arts.bursts.filter(b => b.meteor).map(b => ({ age: b.age, rocks: b.debris.filter(d => d.mesh.visible).map(d => d.mesh.position.toArray()), dust: b.dust.filter(d => d.mesh.visible).length })), clouds: [...effects.arts.shots.values()].filter(a => a.cloud?.g.visible).length }, projectiles: shots.map(s => ({ owner: s.owner, element: s.element, waterInfused:!!s.waterInfused,shurikenType:s.shurikenType||null,energy:!!s.energy, style: s.style, introStage: s.introStage || null, visual: s.element==='weapon'?effects.shurikens.visualState(s):s.element==='wind'?{style:s.style,volume:s.style==='tornado'?'3d-spiral':'3d-crescent'}:s.element==='lightning'?effects.lightningArts.visualState(s):effects.waterArts.visualState(s), growth: s.growth ?? null, depth: s.depth || 0, riseTime: s.riseTime || 0, growthTime: s.growthTime || 0, carried: s.carried ? s.carried.map(c => ({ ...c })) : [], hitTarget: !!s.hitTarget,targetMode:s.targetMode||null,hitTargetIds:s.hitActors?[...s.hitActors].filter(id=>typeof id==='string'):[], phase: s.phase || 'flying', age: s.age, flightAge: s.flightAge || 0, fallAge: s.fallAge || 0, preludeAge: s.preludeAge || 0, slowFactor: s.slowFactor ?? 1, color: s.color, reflected: s.reflected, position: [...s.p], velocity: [...s.v], motionTime:s.motionTime||0, motionDistance:s.motionDistance||0, speedRatio:s.flightSpeedRatio??(s.element==='weapon'?1:FLIGHT_PROFILE.launchSpeedRatio), actualSpeed:s.motionSpeed||0, size: s.size, damage:s.damage, lightBends:s.lightBends||0,rowIndex: s.rowIndex ?? null, aimedTargetId:s.aimedTargetId??null,homingTargetId:s.homingTargetId??null, holdTime: s.holdTime || 0, target: s.target ? [...s.target] : null })) });
   window.__AN_HOA__ = { state, flightProfile:{...FLIGHT_PROFILE} };
   adventure=createAdventure({canvas,onAdminChange:enabled=>{if(enabled)adminLoadoutSnapshot={loadout:[...loadout],duelLoadout:[...duelLoadout],filterElement,filterLearning};else if(adminLoadoutSnapshot){({loadout,duelLoadout,filterElement,filterLearning}=adminLoadoutSnapshot);adminLoadoutSnapshot=null;}},onLoadJourney:loadJourneySpells,onLearn:id=>{if(spells.some(s=>s.id===id)){learnedSpells.add(id);renderLoadout();}},onBattle:encounter=>{prepare();adventure.showLoadout();$('startButton').innerHTML='GIAO CHIẾN <span>→</span>';$('changeLoadout').textContent=isEarthDepartureTrial(encounter)?'Dừng thử thách · trở lại phòng họp':'Rút lui · hồi sinh tại điểm lưu';},onDuel:()=>{restoreDuelSpells();prepare();$('startButton').innerHTML='VÀO TRẬN <span>→</span>';$('changeLoadout').textContent='Về quyển trục chọn chiêu';},onReturn:()=>{if(adventure?.inBattle){adventure.recordHealth(player.hp,player.maxHp);campaignAlly.record();adventure.recordCompanionHealth(campaignAlly.state().hp);}prepare();}});
   touchControls=setupAndroidControls({canvas,getState:mobileControlState,seal,sealSpell:sealCarriedSpell,cast,tacticalMove:v=>{mobileMoveVector=v;if(Math.hypot(...v)>.01&&dashBoost.state().dashing<=0)practiceOverhead.stop();},tacticalAim:mobileAim,tacticalCast:mobileCast,selectTarget:pickMobileTarget,heal:healWithFlask,resume,pinAndCast:()=>cast(true),holdStep,releaseStep,boost:armDash,look,pause,toggleGuide,sprint:(running,locked)=>adventure.setMobileSprint(running,locked),selectAmmo:id=>{if(adventure.inBattle&&adventure.selectShuriken(id))updateUI();}});
@@ -1793,12 +1817,20 @@ async function main() {
   if(viewParams.get('mode')==='duel'||(testMode&&viewParams.get('adventure')!=='1'))document.getElementById('duelMode').click();
   if(testMode)window.__AN_HOA__.setWindCameraEnabled=enabled=>{windCameraEnabled=!!enabled;if(!enabled)clearWindView();};
   if(testMode)window.__AN_HOA__.setAIEnabled=enabled=>{testAIDisabled=!enabled;};
+  if(testMode)window.__AN_HOA__.combatTest={
+    launch(id,owner='player'){const spell=spells.find(s=>s.id===id);if(!spell)throw Error('Unknown spell');const pos=owner==='player'?playerPos():enemyPos();return launch(spell,owner,pos,owner==='player'?aim():vnorm(vsub(playerPos(),pos)));},
+    position(id,p){if(id==='player'){camera.p=[p[0],1.72,p[2]];practiceOverhead.stop();}else{const root=id==='primary'?opponent.group:squad.root(id);if(root)root.position.set(p[0],0,p[2]);}},
+    opponents(count=2){const profile={kind:'intro-trio',name:'Ninja',element:'fire',village:'fire',hp:10000,spellIds:['fire-volley'],sealDelay:1,initialDelay:100,restTime:100,weaponInterval:100};squad.start(Array.from({length:count},()=>profile),world.opponentSpawn);for(const actor of squad.actors())squad.root(actor.id).scale.setScalar(characterScale());enemy.autoRestore=false;},
+    resetArts(){ninjaWarnings.clear();clearDragonView();clearMeteorView();clearWaveView();clearWindView();clearEarthView();shots.length=salvos.length=fields.length=particles.length=0;darkDomain.reset();earthArts.reset(walls);natureArts.reset(walls);lightArts.reset();windArts.reset();waterBubbles.reset();effects.reset();walls.length=0;},
+    prepare(id,owner='enemy'){const spell=spells.find(s=>s.id===id),pos=owner==='player'?playerPos():enemyPos(),dir=owner==='player'?aim():vnorm(vsub(playerPos(),pos));if(spell.requiresGarden&&!natureArts.wood.ready(owner)){natureArts.cast(owner,spells.find(s=>s.style==='woodseed'),pos,dir,windActors(),walls,shots);natureArts.advance(60,damageActors(),undefined,walls,impact);}if(spell.requiresSnow||spell.snowCost){if(!natureArts.weather(owner))natureArts.cast(owner,spells.find(s=>s.style==='snowstorm'),pos,dir,windActors(),walls,shots);natureArts.weather(owner).amount=90;}if(spell.requiresCrater){const crater=earthArts.cast(owner,spells.find(s=>s.style==='earthgravity'),pos,dir,windActors(),walls,owner==='enemy'?playerPos():aimedEnemy().pos);crater.age=crater.spell.chargeTime+crater.spell.pullTime+1;}if(spell.requiresDomain){darkDomain.active=true;darkDomain.life=100;}if(spell.requiresClones&&!darkDomain.cloneCount(owner))darkDomain.cast(spells.find(s=>s.style==='shadowclone'),owner,pos,dir,owner==='enemy'?playerPos():aimedEnemy().pos,owner==='enemy'?enemy:player,owner==='enemy'?{id:'player',owner:'player',pos:playerPos(),fighter:player}:aimedEnemy());if(spell.requiresAirborne)windArts.lift(owner,owner==='enemy'?{id:'player',owner:'player',pos:playerPos(),fighter:player}:aimedEnemy(),10);}
+  };
   if (testMode) window.__AN_HOA__.launchEnemy = (id, pos = enemyPos(), dir = vnorm(vsub(playerPos(), pos))) => {
     if (!started || paused || won) return;
     const spell = spells.find(s => s.id === id); if (!spell) throw new Error('Unknown spell');
     launch(spell, 'enemy', pos, dir);
   };
   if (testMode) window.__AN_HOA__.advance = seconds => { for (let t = 0; t < seconds; t += 1 / 60) tick(Math.min(1 / 60, seconds - t)); render(); };
+  setupCombatControls(combatOptions,value=>{combatOptions=value;if(value.aimAssist&&document.pointerLockElement===canvas){document.body.classList.remove('aim-locked');document.exitPointerLock?.();}updateUI();});
   setupAudioSettings(gameAudio,{onOpen:()=>{const running=started&&!paused&&!won&&!adventure.activeView;if(running)pause();return running;},onClose:wasRunning=>{if(wasRunning)resume();}});
   if(testMode){window.__AN_HOA__.audio=gameAudio;window.__AN_HOA__.guardianArt=index=>guardianPhases.trigger(index,playerPos(),enemyPos(),enemy);}
   setupCheckpointSettings({info:()=>adventure.checkpointInfo(),restore:()=>adventure.restoreLastCheckpoint(),onOpen:()=>{const running=started&&!paused&&!won&&!adventure.activeView;if(running)pause();return running;},onClose:wasRunning=>{if(wasRunning)resume();}});

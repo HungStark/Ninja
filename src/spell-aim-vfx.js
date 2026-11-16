@@ -12,11 +12,11 @@ function stroke(vertices,points,width){
 const circle=(radius,segments=128)=>Array.from({length:segments+1},(_,i)=>{const a=i/segments*Math.PI*2;return [Math.cos(a)*radius,Math.sin(a)*radius];});
 const rotate=(points,angle)=>points.map(([x,z])=>[x*Math.cos(angle)+z*Math.sin(angle),-x*Math.sin(angle)+z*Math.cos(angle)]);
 
-export function createSpellAimGuide(scene){
+export function createSpellAimGuide(scene,{danger=false}={}){
   const root=new T.Group();root.name='spell-aim-guide';scene.add(root);
   const direction=new T.Group(),area=new T.Group();root.add(direction,area);
   const materials=[
-    new T.MeshBasicMaterial({color:'#073f43',transparent:true,opacity:.9}),
+    new T.MeshBasicMaterial({color:danger?'#4b111b':'#073f43',transparent:true,opacity:.9}),
     new T.MeshBasicMaterial({color:'#24ffdc',transparent:true,opacity:.2,blending:T.AdditiveBlending}),
     new T.MeshBasicMaterial({color:'#60ffe4',transparent:true,opacity:.96})
   ];
@@ -47,15 +47,22 @@ export function createSpellAimGuide(scene){
   }
   for(const radius of [.057,.027])runePaths.push({points:[[0,-radius],[radius,0],[0,radius],[-radius,0],[0,-radius]],width:.006});
   let lastShape='',lastRingWeight=0;
-  return {root,
-    update({kind,position,center,direction:axis,width,radius,heightAt,available}){
+  return {root,materials,
+    dispose(){root.removeFromParent();for(const m of [...lines,...rings])m.geometry.dispose();for(const m of materials)m.dispose();},
+    update({kind,position,center,direction:axis,width,radius,heightAt,available,arc=Math.PI}){
       const circular=kind==='area',wall=kind==='wall';area.visible=circular;direction.visible=!circular;
       const weight=Math.max(2.5,Math.min(5,2400/(globalThis.innerHeight||800)));
-      materials[1].color.set(available?'#24ffdc':'#ff6e56');materials[2].color.set(available?'#60ffe4':'#ffb29b');
+      materials[1].color.set(danger?'#ff283e':available?'#24ffdc':'#ff6e56');materials[2].color.set(danger?'#ff4254':available?'#60ffe4':'#ffb29b');
       if(circular){
         const ringWeight=weight*Math.max(1,2/radius);
         if(lastRingWeight!==ringWeight){for(const [i,multiplier] of [2.2,4.5,1].entries())geometry(rings[i],runePaths,multiplier*ringWeight);lastRingWeight=ringWeight;}
         area.position.set(center[0],heightAt(center[0],center[2])+.2,center[2]);area.scale.setScalar(radius);return;
+      }
+      if(kind==='sector'){
+        direction.position.set(position[0],heightAt(position[0],position[2])+.2,position[2]);direction.rotation.y=Math.atan2(axis[0],axis[2]);
+        const key=['sector',radius,arc,weight].join(':');if(key===lastShape)return;lastShape=key;
+        const edge=Array.from({length:49},(_,i)=>{const a=-arc/2+arc*i/48;return [Math.sin(a)*radius,Math.cos(a)*radius];}),paths=[{points:[[0,0],...edge,[0,0]],width:.025},{points:edge.map(p=>p.map(x=>x*.94)),width:.018},{points:[[0,radius*.15],[0,radius*.85]],width:.035},{points:[[-radius*.09,radius*.72],[0,radius*.86],[radius*.09,radius*.72]],width:.025}];
+        for(const [i,multiplier]of [2.2,4.5,1].entries())geometry(lines[i],paths,multiplier*weight);return;
       }
       const length=wall?width:Math.hypot(center[0]-position[0],center[2]-position[2]),span=wall?.28:Math.max(.22,width);
       direction.position.set(wall?center[0]:position[0],heightAt(wall?center[0]:position[0],wall?center[2]:position[2])+.2,wall?center[2]:position[2]);

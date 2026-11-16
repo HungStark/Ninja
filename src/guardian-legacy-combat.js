@@ -1,3 +1,4 @@
+import {createCombatWarningVfx} from './combat-warning-vfx.js';
 import * as T from 'three';
 import {guardianRecovery,guardianIsEnraged} from './guardian-rhythm.js';
 import {GUARDIAN_BOSS_DESIGNS} from './guardian-legacy-designs.js';
@@ -19,7 +20,7 @@ const segmentDistance=(p,a,b)=>{
 // Combat-owned visuals and actors: no timers outside the simulation, no changes
 // to the player's spells, and all phase state is removed together on reset.
 export function createGuardianBossCombat(scene){
-  const root=new T.Group();root.name='guardian-distinct-combat';
+  const root=new T.Group();root.name='guardian-distinct-combat';const warningVfx=createCombatWarningVfx(root);
   const geometry={orb:new T.IcosahedronGeometry(1,1),ring:new T.RingGeometry(.91,1,48),disk:new T.CircleGeometry(1,48),
     box:new T.BoxGeometry(1,1,1),pillar:new T.CylinderGeometry(.65,1,1,7),cone:new T.ConeGeometry(1,1,7),
     crystal:new T.OctahedronGeometry(1),arc:new T.TorusGeometry(1,.09,5,18,Math.PI*1.35)};
@@ -32,9 +33,10 @@ export function createGuardianBossCombat(scene){
     const m=new T.Mesh(geometry[kind],new T.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false,side:T.DoubleSide}));
     m.position.fromArray(p);m.scale.fromArray(scale);root.add(m);return m;
   }
-  function remove(m){if(!m)return;m.removeFromParent();m.material?.dispose();}
-  function circle(p,r,color=design.color,filled=false){const m=mesh(filled?'disk':'ring',[p[0],.08,p[2]],[r,r,r],color,.5);m.rotation.x=-Math.PI/2;return m;}
+  function remove(m){if(!m)return;warningVfx.release(m);m.removeFromParent();m.material?.dispose();}
+  function circle(p,r,color=design.color,filled=false){if(['#ff5757','#ff728b','#ff5555'].includes(color))return warningVfx.area(p,r);const m=mesh(filled?'disk':'ring',[p[0],.08,p[2]],[r,r,r],color,.5);m.rotation.x=-Math.PI/2;return m;}
   function line(a,b,width=.15,color=design.color){
+    if(['#ff728b','#ff5757','#ff5555','#ff8d64','#ff7777','#dc9eff'].includes(color))return warningVfx.lane(a,b,width);
     const d=new T.Vector3(...b).sub(new T.Vector3(...a)),m=mesh('box',lerp(a,b,.5),[width,width,d.length()],color,.5);
     m.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),d.normalize());return m;
   }
@@ -335,7 +337,7 @@ export function createGuardianBossCombat(scene){
           emitWhere(e.damage,p=>distance(p,e.p)<e.r+.25+playerPadding(),{bind:e.bind,ignoreShield:e.ignoreShield,armorPiercing:e.armorPiercing});
           gameAudio.impact(village,e.damage);
         }
-        if(!e.fired)e.visuals[0].material.opacity=.22+(Math.sin(e.age*12)+1)*.16;
+        if(!e.fired)e.visuals[0].userData.warningOpacity?.(.75+.25*Math.sin(e.age*12));
       }else if(e.kind==='projectile'){
         if(e.age>=e.delay){
           e.visuals[0].visible=true;if(e.tell)e.tell.visible=false;
@@ -450,6 +452,6 @@ export function createGuardianBossCombat(scene){
       entities:entities.filter(e=>!e.dead).map(e=>({id:e.id,kind:e.kind,position:[...e.p],hp:e.hp,maxHp:e.maxHp,age:e.age,delay:e.delay,r:e.r,gap:e.gap,gapWidth:e.gapWidth})),
       hazards:entities.filter(e=>!e.dead&&e.kind==='hazard').map(e=>({position:[...e.p],radius:e.r,remaining:Math.max(0,e.delay-e.age),hit:!!e.fired})),
       shelters:shelters.map(({p,r,life})=>({position:[...p],radius:r,remaining:life})),lamps:lamps.map(({p,r})=>({position:[...p],radius:r}))};},
-    dispose(){clear();for(const g of Object.values(geometry))g.dispose();}
+    dispose(){clear();warningVfx.dispose();for(const g of Object.values(geometry))g.dispose();}
   };return api;
 }

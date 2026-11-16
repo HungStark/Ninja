@@ -7,7 +7,7 @@ const descriptions={
   firewall:'Dựng tường lửa trước mặt để chặn đạn của đối thủ.',
   prison:'Phóng cầu nước giam đối thủ, khóa di chuyển và thi triển khi trúng.',
   boat:'Triệu hồi thuyền lao tới điểm ngắm, gây sát thương và choáng khi trúng.',
-  tsunami:'Tạo sóng lớn cuốn chiêu thức và đẩy phân thân về phía sau đối thủ.',
+  tsunami:'Tạo sóng lớn gây sát thương lên mọi đối thủ bị quét qua, mỗi đối thủ một lần trong mỗi đợt sóng. Sóng tiếp tục sau khi trúng mục tiêu, cuốn chiêu thức và đẩy phân thân về phía sau đối thủ.',
   waterbubbles:'Tạo các bong bóng quanh điểm ngắm, lần lượt phát nổ và gây sát thương trong vùng.',
   waterwall:'Tạo khiên nước tròn trước mặt, chặn chiêu bay qua mặt chắn.',
   lance:'Phóng thương sét nhanh theo hướng ngắm.',

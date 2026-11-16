@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import '../game-core.js';
+import {impactWave} from '../src/combat-targets.js';
+const {Fighter,intersectsWave}=SealGameCore,make=(id,x,z,hp=500)=>{const fighter=new Fighter(hp);fighter.autoRestore=false;return {id,owner:'enemy',fighter,pos:[x,1.72,z]};};
+const front=make('primary',0,-5,50),back=make('squad-1',0,-17),side=make('squad-2',4,-17),outside=make('outside',9,-17),actors=[front,back,side,outside],hits=[];
+const wave={owner:'player',damage:75,normal:[0,0,-1],width:12,height:8,depth:7,life:5},hit=shot=>{const target=actors.find(a=>a.id===shot.victimId);hits.push({id:target.id,damage:shot.damage});target.fighter.receive(shot.damage,true);};
+assert.equal(impactWave(wave,[0,0,0],[0,0,-7],actors,intersectsWave,hit),1);assert.equal(front.fighter.hp,0);
+assert.equal(impactWave(wave,[0,0,-7],[0,0,-20],actors,intersectsWave,hit),2);assert.equal(back.fighter.hp,425);assert.equal(side.fighter.hp,425);assert.equal(outside.fighter.hp,500);assert.equal(wave.damage,75);assert.equal(wave.life,5);
+assert.equal(impactWave(wave,[0,0,-7],[0,0,-20],actors,intersectsWave,hit),0);assert.deepEqual(hits,[{id:'primary',damage:75},{id:'squad-1',damage:75},{id:'squad-2',damage:75}]);
+const one=make(undefined,-2,-10),two=make(undefined,2,-10),anonymous={...wave,hitOwner:null,hitActors:new Set()};assert.equal(impactWave(anonymous,[0,0,-5],[0,0,-12],[one,two],intersectsWave,()=>{}),2,'separate actors never share a one-target flag');assert.equal(impactWave(anonymous,[0,0,-5],[0,0,-12],[one,two],intersectsWave,()=>{}),0);
+const airborne=make('air',0,-10);airborne.pos[1]=15;assert.equal(impactWave({...wave,hitOwner:null},[0,0,-5],[0,0,-12],[airborne],intersectsWave,()=>assert.fail('outside wave height')),0);
+console.log('PASS: one tsunami hits front, rear and side opponents at full damage, continues after a kill, ignores outside targets, never repeats a hit and handles actors without IDs independently.');

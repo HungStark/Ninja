@@ -5,7 +5,7 @@ import {createEnemyMovement} from './enemy-movement.js';
 import {createDashAura} from './dash-aura.js';
 import {createOpponentRules} from './opponent-balance.js';
 
-export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwWeapon,getPlayer,getShots,random,constrainMovement=(a,b)=>b,movementSlow=()=>1,dashBlocked=()=>false}){
+export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwWeapon,getPlayer,getShots,random,constrainMovement=(a,b)=>b,movementSlow=()=>1,dashBlocked=()=>false,isCasting=()=>false}){
   const members=[];
   function reset(){for(const m of members){m.rig.root.removeFromParent();m.rig.dispose();m.aura.dispose();}members.length=0;}
   const pos=m=>[m.rig.root.position.x,m.rig.root.position.y+1.72,m.rig.root.position.z];
@@ -26,8 +26,8 @@ export function createEncounterSquad(scene,{GameRules,Fighter,keys,launch,throwW
         if(!alive){m.spell=null;m.pose=-1;m.moving=false;m.trace=[];m.traceCast=false;}
         if(enabled&&alive){
           m.fighter.tick(dt);m.rules.tick(dt);m.weaponTimer-=dt;
-          const old=pos(m),next=m.movement.update(dt,{position:old,shots:getShots(),beginner:true,casting:!!m.spell,blocked:m.fighter.controlTime>0,dashBlocked:dashBlocked(old),slow:movementSlow(old),constrain:goal=>constrainMovement(old,goal)});m.rig.root.position.x=next[0];m.moving=Math.abs(next[0]-old[0])>.0001;
-          if(m.fighter.controlTime<=0){
+          const old=pos(m),next=m.movement.update(dt,{position:old,shots:getShots(),beginner:true,casting:!!m.spell,blocked:isCasting(m.id)||m.fighter.controlTime>0,dashBlocked:dashBlocked(old),slow:movementSlow(old),constrain:goal=>constrainMovement(old,goal)});m.rig.root.position.x=next[0];m.moving=Math.abs(next[0]-old[0])>.0001;
+          if(m.fighter.controlTime<=0&&!isCasting(m.id)){
             if(m.weaponTimer<=0&&!m.spell){const result=m.rules.throwShuriken();if(result.ok)throwWeapon(m,result.weapon,pos(m),direction(pos(m),getPlayer()));m.weaponTimer=m.profile.weaponInterval;}
             m.timer-=dt;
             if(m.timer<=0){

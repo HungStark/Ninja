@@ -412,3 +412,5 @@ header>#helpButton{margin-left:auto}
 @media(max-height:800px){.desktop-battle-stack{--battle-stack-top:82px}}
 @media(max-width:1100px){.desktop-battle-stack{left:20px;width:270px}}
 @media(max-width:760px){.desktop-battle-stack{left:12px;width:230px}.desktop-battle-stack>.center-status{padding:14px}}
+
+.combat-aim-toggle{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:40px;cursor:pointer;user-select:none;white-space:nowrap;touch-action:manipulation}.combat-aim-toggle input{width:17px;height:17px;margin:0;flex:none;accent-color:var(--orange);cursor:pointer}.combat-aim-toggle span{margin:0;font-size:inherit}.combat-aim-toggle:focus-within{outline:2px solid var(--orange);outline-offset:3px}.pause-card>.combat-aim-toggle{display:flex;width:100%;margin-top:16px;padding:14px;font-size:16px}.android-pause-settings>.combat-aim-toggle{flex:1 0 100%;min-height:44px}.pause-card{max-height:90dvh;overflow-y:auto}

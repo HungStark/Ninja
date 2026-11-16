@@ -38,7 +38,7 @@ export class NatureArts {
   empower(owner,spell){return this.wood.empower(owner,spell);}
   hidden(owner){return this.fogs.some(f=>f.owner===owner)||!!this.buried(owner);}
   buried(){return null;}
-  perceivedPosition(observer,actors){const victim=actors.find(a=>a.owner!==observer),fog=victim&&this.fogs.find(f=>f.owner===victim.owner);return fog?[fog.p[0],fog.p[1]+1.72,fog.p[2]]:victim?.pos;}
+  perceivedPosition(observer,actors){const victim=actors.find(a=>a.owner!==observer&&a.fighter.hp>0)||actors.find(a=>a.owner!==observer),fog=victim&&this.fogs.find(f=>f.owner===victim.owner);return fog?[fog.p[0],fog.p[1]+1.72,fog.p[2]]:victim?.pos;}
   cast(owner,spell,pos,dir,actors,walls=[],shots=[],aimPoint,targetId){
     if(!this.canCast(owner,spell))return false;
     if(spell.element==='wood')return this.wood.cast(owner,spell,pos,dir,actors,walls,shots,aimPoint);

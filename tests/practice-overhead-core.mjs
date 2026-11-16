@@ -29,11 +29,12 @@ for(const aspect of [9/16,1,1.5,16/9,21/9]){
 }
 camera.aspect=1.5;
 view.camera(camera,canvas);const target=new T.Vector3(7,0,-9).project(camera);view.pointer((target.x+1)*720,(1-target.y)*480,camera,canvas);const cursor=view.point();assert.ok(Math.hypot(cursor[0]-7,cursor[2]+9)<1e-6);
+view.aimAt([0,0,-24]);assert.deepEqual(view.movementPoint(),cursor,'target lock preserves the movement cursor');assert.deepEqual(view.point(),[0,0,-24]);view.aimAt(cursor);
 view.move();assert.equal(view.target()[2],practiceMovementBounds('player').minZ);assert.deepEqual(view.point(),cursor,'movement bounds do not restrict aiming into the opponent section');view.stop();assert.equal(view.target(),null);
 const dividers=scene.children.flatMap(o=>o.children.filter(c=>c.name==='practice-divider'));assert.equal(dividers.length,2);assert.deepEqual(dividers.map(o=>o.position.z),PRACTICE_DIVIDERS);
 const config={enabled:true,active:true,available:true,position:[0,1.72,7],target:cursor,heightAt:()=>0};view.update({...config,spell:{id:'fire-meteor',style:'meteor',blastRadius:5.5}});assert.equal(view.state().preview.kind,'area');assert.equal(view.state().preview.radius,5.5);assert.deepEqual(view.state().preview.target,cursor);
 view.update({...config,spell:{id:'fire-volley',style:'volley',size:.075}});const preview=view.state().preview;assert.equal(preview.kind,'direction');assert.ok(Math.hypot(preview.target[0]-config.position[0],preview.target[2]-config.position[2])>Math.hypot(cursor[0]-config.position[0],cursor[2]-config.position[2]),'direction preview continues past the cursor');assert.ok(Math.abs(preview.direction[0]*(cursor[2]-config.position[2])-preview.direction[2]*(cursor[0]-config.position[0]))<1e-6,'extended preview keeps the aimed direction');view.update({...config,spell:null});assert.equal(view.state().preview,null);
-const earth=new EarthArts(scene),spell=id=>SealGameCore.spells.find(s=>s.id===id),actors=[{owner:'player',pos:[0,1.72,7]},{owner:'enemy',pos:[0,1.72,-24]}],cursorPoint=[6,0,-10];
+const earth=new EarthArts(scene),spell=id=>SealGameCore.spells.find(s=>s.id===id),actors=[{owner:'player',pos:[0,1.72,7],fighter:{hp:100}},{owner:'enemy',pos:[0,1.72,-24],fighter:{hp:100}}],cursorPoint=[6,0,-10];
 view.update({...config,spell:{style:'boat'}});assert.equal(view.state().preview.kind,'direction');assert.deepEqual(view.state().preview.target,preview.target,'boat preview shares the extended projectile direction');
 assert.deepEqual(earth.cast('player',spell('earth-volley'),actors[0].pos,[0,0,-1],actors,[],cursorPoint).center,cursorPoint);
 const light=new LightArts(scene);assert.deepEqual(light.place('player',spell('light-lance'),actors[0].pos,[0,0,-1],actors,cursorPoint).center,[6,.03,-10]);

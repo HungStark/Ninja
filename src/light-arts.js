@@ -76,7 +76,7 @@ export class LightArts {
   placement(owner,kind,pos,dir,actors=[]){
     const normal=unit(dir);let center,radius;
     if(kind==='dome'){
-      const victim=actors.find(a=>a.owner!==owner),delta=victim&&sub(victim.pos,pos),along=delta&&dot(delta,normal);
+      const victim=actors.find(a=>a.owner!==owner&&a.fighter.hp>0),delta=victim&&sub(victim.pos,pos),along=delta&&dot(delta,normal);
       const aimed=victim&&along>0&&dist(add(pos,mul(normal,along)),victim.pos)<2.5;
       center=aimed?[victim.pos[0],.03,victim.pos[2]]:add(pos,mul(normal,dir[1]<-.025?Math.min(55,Math.max(6,-pos[1]/dir[1])):31));center[1]=.03;radius=6.2;
     }else{center=add(pos,mul(normal,kind==='sphere'?3:2.4));radius=kind==='sphere'?.8:1.4;}

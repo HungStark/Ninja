@@ -18,10 +18,10 @@ export function setupMobileLayout({getState,pause,release}){
     ['story','explore','.journey-quest','Tuyến truyện chính','▤'],['map','explore','.journey-minimap','Bản đồ khu vực','◎'],
     ['journal','explore','#openJournal','Nhật ký','▤'],['atlas','explore','#openAtlas','Bản đồ thế giới','◎'],['menu','explore','#journeyMenu','Tạm dừng','Ⅱ'],
     ['location','explore','.journey-location','Tên vùng đất','◇'],['messages','explore','.android-explore-messages','Thông báo khám phá','!'],['nearby','explore','#nearbyAction','Gợi ý tương tác','E'],
-    ['health','combat','#hud>.status','Máu và mana','♥'],['guide','combat','#guide','Quyển trục mang theo','▤'],['combo','combat','.center-status','Chuỗi kết ấn','印'],
-    ['cast','combat','#castButton','Ghim và tấn công','⌖'],['attack','combat','#androidAttack','Tấn công theo tâm hiện tại','✦'],['boost','combat','#dashBoostButton','Tăng lực','G'],
-    ['dodge-left','combat','#androidStepLeft','Né trái','‹'],['dodge-right','combat','#androidStepRight','Né phải','›'],
-    ['ammo','combat','#androidAmmo','Chọn phi tiêu','✦'],['settings','combat','#androidSettings','Tạm dừng / Cài đặt','⚙']
+    ['health','combat','#tacticalVitals','Máu và mana','♥'],['enemy','combat','#tacticalEnemy','Mục tiêu đang ghim','⌖'],['combo','combat','.center-status','Chuỗi kết ấn','印'],
+    ['cast','combat','#tacticalCast','Thi triển / Tấn công','✦'],['boost','combat','#tacticalDash','Lướt','G'],
+    ['battle-joystick','combat','#tacticalJoystick','Cần di chuyển chiến đấu','◎'],['spells','combat','#tacticalSpells','Các nút kết ấn','印'],
+    ['ammo','combat','#tacticalAmmo','Chọn phi tiêu','✦'],['settings','combat','#tacticalSettings','Cài đặt chiến đấu','⚙'],['hands','combat','#practiceHandInset','Khung kết ấn','▤']
   ].map(([id,mode,selector,label,glyph])=>({id,mode,selector,label,glyph,el:document.querySelector(selector)})).filter(s=>s.el);
   const ids=specs.map(s=>s.id);let saved={};try{saved=readMobileLayout(JSON.parse(localStorage.getItem(MOBILE_LAYOUT_KEY)),ids);}catch{}
   let draft={},mode='explore',selected='',drag=null,open=false,scheduled=0,boardScale=1,bases=new Map();

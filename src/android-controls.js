@@ -109,8 +109,8 @@ export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAnd
   window.addEventListener('blur',release);document.addEventListener('visibilitychange',()=>{if(document.hidden)release();});
   window.addEventListener('resize',release);
   document.querySelector('.center-status').append(root.querySelector('#androidClearSeals'));
-  const mobileLayout=setupMobileLayout({getState,pause,release});
   const tactical=setupMobileTacticalControls({canvas,getState,move:tacticalMove,aim:tacticalAim,cast:tacticalCast,dash:boost,selectTarget,heal,selectAmmo,sealSpell,pause,resume});
+  const mobileLayout=setupMobileLayout({getState,pause,release:()=>{release();tactical.release();}});
   return {enabled:true,get aiming(){return tactical.aiming||drag!==null;},tacticalState:()=>tactical.state(),update(){const s=getState();if(phase!==s.phase){release();phase=s.phase;hudSampleAt=-Infinity;}if(!live()&&(stepPointers.size||actionPointers.size||drag))release();combat.hidden=!s.started||s.won||s.paused||s.phase==='explore'||s.tactical;explore.hidden=s.phase!=='explore';if(s.phase==='explore')clearCoveredLabels();
     root.querySelectorAll('[data-touch-ammo]').forEach(b=>{const n=s.equipment?.ammo[b.dataset.touchAmmo]??(b.dataset.touchAmmo==='iron'?Infinity:0);b.disabled=n<=0;b.querySelector('small').textContent=n===Infinity?'∞':n;b.classList.toggle('selected',s.equipment?s.equipment.shuriken.id===b.dataset.touchAmmo:b.dataset.touchAmmo==='iron');});
     root.querySelector('#androidAmmoCurrent').textContent=s.equipment?s.equipment.shuriken.name.replace('Phi tiêu ',''):'sắt';

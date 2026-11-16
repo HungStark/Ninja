@@ -31,13 +31,13 @@ export function setupMobileTacticalControls({canvas,getState,move=()=>{},aim=()=
   document.body.append(menu);
   const get=id=>document.getElementById(id),pad=get('tacticalJoystick'),knob=pad.querySelector('i'),attack=get('tacticalCast'),aimPad=get('tacticalAimPad'),spells=get('tacticalSpells');
   const guide=get('guide'),guideHome=guide.parentElement,pauseCard=document.querySelector('#pauseScreen .pause-card'),pauseHome=pauseCard.parentElement;
-  const info=get('tacticalSpellInfo'),spellPointers=new Map();let infoPointer=null;
+  const info=get('tacticalSpellInfo'),spellPointers=new Map(),tapPointers=new Map();let infoPointer=null;
   let enabled=false,menuOpen=false,wasExpanded=false,spellKey='',movePointer=null,attackPointer=null,worldPointer=null,ammoOpen=false,lastState=null;
   const live=()=>{const s=getState();return s.tactical&&s.started&&!s.paused&&!s.won;};
-  function tap(button,callback){button.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;e.preventDefault();e.stopPropagation();if(!button.disabled&&live())callback(e);});button.addEventListener('click',e=>{if(e.detail===0&&!button.disabled&&live())callback(e);});}
+  function tap(button,callback){button.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;e.preventDefault();e.stopPropagation();if(!button.disabled&&live()&&!tapPointers.has(e.pointerId)){tapPointers.set(e.pointerId,button);try{button.setPointerCapture(e.pointerId);}catch{}callback(e);}});button.addEventListener('click',e=>{if(e.detail===0&&!button.disabled&&live())callback(e);});}
   function hideSpellInfo(){info.hidden=true;infoPointer=null;spells.querySelectorAll('[aria-describedby]').forEach(b=>b.removeAttribute('aria-describedby'));}
   function clearSpellPointers(){for(const p of spellPointers.values()){clearTimeout(p.timer);p.button.classList.remove('pressed');}spellPointers.clear();hideSpellInfo();}
-  function release(){clearSpellPointers();movePointer=attackPointer=worldPointer=null;move([0,0]);aim(null);knob.style.transform='';aimPad.hidden=true;attack.classList.remove('pressed');}
+  function release(){tapPointers.clear();clearSpellPointers();movePointer=attackPointer=worldPointer=null;move([0,0]);aim(null);knob.style.transform='';aimPad.hidden=true;attack.classList.remove('pressed');}
   function showSpellInfo(p,id){
     if(!live()||p.cancelled)return;p.held=true;infoPointer=id;
     const spell=lastState.spells[p.index].spell;info.querySelector('.tactical-info-art').innerHTML=spellImage(spell);info.querySelector('strong').textContent=spell.name;info.querySelector('header small').textContent=spell.cost+' MANA · '+spell.cooldown+'s';
@@ -47,7 +47,7 @@ export function setupMobileTacticalControls({canvas,getState,move=()=>{},aim=()=
   function spellPress(button,index){
     // Resolve the gesture on release so holding for information never adds a seal.
     button.addEventListener('contextmenu',e=>e.preventDefault());
-    button.addEventListener('pointerdown',e=>{if((e.pointerType==='mouse'&&e.button!==0)||!live()||spellPointers.has(e.pointerId))return;e.preventDefault();e.stopPropagation();const p={button,index,x:e.clientX,y:e.clientY,held:false,cancelled:false};spellPointers.set(e.pointerId,p);button.setPointerCapture(e.pointerId);button.classList.add('pressed');p.timer=setTimeout(()=>{if(spellPointers.get(e.pointerId)===p)showSpellInfo(p,e.pointerId);},450);});
+    button.addEventListener('pointerdown',e=>{if((e.pointerType==='mouse'&&e.button!==0)||!live()||spellPointers.has(e.pointerId))return;e.preventDefault();e.stopPropagation();const p={button,index,x:e.clientX,y:e.clientY,held:false,cancelled:false,committed:[...tapPointers.values()].some(b=>b.id==='tacticalDash')};spellPointers.set(e.pointerId,p);button.setPointerCapture(e.pointerId);button.classList.add('pressed');if(p.committed)sealSpell(index);else p.timer=setTimeout(()=>{if(spellPointers.get(e.pointerId)===p)showSpellInfo(p,e.pointerId);},450);});
     button.addEventListener('pointermove',e=>{const p=spellPointers.get(e.pointerId);if(p&&!p.held&&Math.hypot(e.clientX-p.x,e.clientY-p.y)>12){p.cancelled=true;clearTimeout(p.timer);}});
     button.addEventListener('click',e=>{e.preventDefault();if(e.detail===0&&live())sealSpell(index);});
   }
@@ -68,7 +68,8 @@ export function setupMobileTacticalControls({canvas,getState,move=()=>{},aim=()=
   attack.addEventListener('pointermove',e=>{if(attackPointer?.id!==e.pointerId||!live())return;e.preventDefault();const dx=e.clientX-attackPointer.x,dy=e.clientY-attackPointer.y,length=Math.hypot(dx,dy);if(length<8&&!attackPointer.manual)return;attackPointer.manual=true;const scale=Math.min(1,55/(length||1));aimPad.querySelector('i').style.transform=`translate(${dx*scale}px,${dy*scale}px)`;aim([dx/55,dy/55]);});
   attack.addEventListener('click',e=>{if(e.detail===0&&live()&&!attack.disabled)cast();});
   function end(e){
-    const spellPointer=spellPointers.get(e.pointerId);if(spellPointer){clearTimeout(spellPointer.timer);spellPointers.delete(e.pointerId);spellPointer.button.classList.remove('pressed');if(infoPointer===e.pointerId)hideSpellInfo();if(e.type==='pointerup'&&!spellPointer.held&&!spellPointer.cancelled&&live())sealSpell(spellPointer.index);}
+    tapPointers.delete(e.pointerId);
+    const spellPointer=spellPointers.get(e.pointerId);if(spellPointer){clearTimeout(spellPointer.timer);spellPointers.delete(e.pointerId);spellPointer.button.classList.remove('pressed');if(infoPointer===e.pointerId)hideSpellInfo();if(e.type==='pointerup'&&!spellPointer.committed&&!spellPointer.held&&!spellPointer.cancelled&&live())sealSpell(spellPointer.index);}
     if(e.pointerId===movePointer){movePointer=null;move([0,0]);knob.style.transform='';}
     if(attackPointer?.id===e.pointerId){const cancel=e.type!=='pointerup';attackPointer=null;aimPad.hidden=true;attack.classList.remove('pressed');if(!cancel&&live()&&!attack.disabled)cast();else aim(null);}
     if(worldPointer?.id===e.pointerId){const p=worldPointer;worldPointer=null;if(e.type==='pointerup'&&live()&&Math.hypot(e.clientX-p.x,e.clientY-p.y)<10)selectTarget(e.clientX,e.clientY);}

@@ -214,7 +214,7 @@ export class DarkDomain {
       const pool=this.mesh(root,'pool',this.faceMaterial,[0,.105,0],[1.8,1.8,1]);pool.rotation.x=-Math.PI/2;
       this.mesh(root,'ring',this.ringMaterial,[0,.13,0],[1.65,1.65,1.65]).rotation.x=-Math.PI/2;
       const elephant=this.makeElephant(root);elephant.position.y=13;elephant.scale.setScalar(1.12);
-      this.bindings.push({owner,targetOwner:victim.owner,victim:null,p,root,elephant,phase:'falling',age:0,life:spell.fallTime+spell.duration,fallTime:spell.fallTime,duration:spell.duration,damage:spell.damage,impactDone:false,sink:0});this.splash(p);
+      this.bindings.push({owner,targetOwner:victim.owner,targetId:victim.id??victim.owner,victim:null,p,root,elephant,phase:'falling',age:0,life:spell.fallTime+spell.duration,fallTime:spell.fallTime,duration:spell.duration,damage:spell.damage,impactDone:false,sink:0});this.splash(p);
     }else if(spell.style==='shadowdive'){
       for(const d of [...this.dives])if(d.owner===owner)this.removeDive(d);
       const root=new T.Group();this.cloneGroup.add(root);
@@ -303,12 +303,9 @@ export class DarkDomain {
       b.age+=dt;b.life=Math.max(0,b.fallTime+b.duration-b.age);
       const fall=clamp(b.age/b.fallTime);
       if(!b.impactDone&&b.age+1e-6>=b.fallTime){
-        b.impactDone=true;const live=fighters.find(f=>f.owner===b.targetOwner);
-        if(live&&distance(b.p,live.pos)<1.5+actorHitPadding(live)&&live.fighter.invulnerableTime<=0){
-          if(this.usable){b.victim=live;live.fighter.darkControlTime=b.duration;}
-          const result=live.fighter.receive(b.damage,true,true,'dark');crush?.(b,live,result);
-        }
-        for(const ally of fighters.filter(f=>f.untargetable&&f.owner!==b.owner&&f.fighter.hp>0))if(distance(b.p,ally.pos)<1.5+actorHitPadding(ally)&&ally.fighter.invulnerableTime<=0){const result=ally.fighter.receive(b.damage,true,true,'dark');crush?.({...b,victim:null},ally,result);}
+        b.impactDone=true;const victims=fighters.filter(f=>f.owner===b.targetOwner&&f.fighter.hp>0&&distance(b.p,f.pos)<1.5+actorHitPadding(f)&&f.fighter.invulnerableTime<=0),live=victims.find(f=>(f.id??f.owner)===b.targetId)||victims[0];
+        if(live&&this.usable){b.victim=live;live.fighter.darkControlTime=b.duration;}
+        for(const actor of victims){const result=actor.fighter.receive(b.damage,true,true,'dark');crush?.(actor===b.victim?b:{...b,victim:null},actor,result);}
         b.phase=b.victim?'pressing':'missed';this.splash(b.p);
       }
       if(!b.impactDone){b.elephant.position.y=13-11.3*fall*fall;b.elephant.scale.setScalar(1.6*(.7+.3*ease(b.age/.2)));}

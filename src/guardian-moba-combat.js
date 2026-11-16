@@ -1,3 +1,4 @@
+import {createCombatWarningVfx} from './combat-warning-vfx.js';
 import * as T from 'three';
 import {guardianRest,guardianRecovery} from './guardian-rhythm.js';
 import {ENEMY_MOVE_MULTIPLIER} from './game-pace.js';
@@ -21,7 +22,7 @@ const angle=(a,b)=>Math.atan2(b[0]-a[0],b[2]-a[2]);
 // The simulation owns every timer, target identity and spawned object. No
 // rendering callback advances combat, and resetting an encounter removes it all.
 export function createGuardianBossCombat(scene,extension={}){
- const root=new T.Group();root.name='guardian-distinct-combat';
+ const root=new T.Group();root.name='guardian-distinct-combat';const warningVfx=createCombatWarningVfx(root);
  const geo={orb:new T.IcosahedronGeometry(1,1),ring:new T.RingGeometry(.93,1,48),disk:new T.CircleGeometry(1,48),box:new T.BoxGeometry(1,1,1),cone:new T.ConeGeometry(1,1,7),crystal:new T.OctahedronGeometry(1),arc:new T.TorusGeometry(1,.08,5,24,Math.PI*1.4),pillar:new T.CylinderGeometry(.7,1,1,8)};
  const vfx=createGuardianVfx();
  const designBank=extension.designs||GUARDIAN_BOSS_DESIGNS,updateSkill=extension.updateSkill||updateGuardianSkill,director=extension.createDirector?.();
@@ -47,9 +48,9 @@ export function createGuardianBossCombat(scene,extension={}){
  function mesh(kind,p,s,color=design?.color||'#ffffff',opacity=.65,parent=root){
   const m=new T.Mesh(geo[kind],new T.MeshBasicMaterial({color,transparent:opacity<1,opacity,depthWrite:opacity===1,side:T.DoubleSide}));m.position.fromArray(p);m.scale.fromArray(s);parent.add(m);return m;
  }
- function circle(p,r,color=design?.color,filled=false,parent=root){const m=mesh(filled?'disk':'ring',[p[0],.065,p[2]],[r,r,r],color,filled?.18:.7,parent);m.rotation.x=-Math.PI/2;return m;}
+ function circle(p,r,color=design?.color,filled=false,parent=root){if(['#ff6477','#ffb3a6','#ff657a'].includes(color))return warningVfx.area(p,r,parent);const m=mesh(filled?'disk':'ring',[p[0],.065,p[2]],[r,r,r],color,filled?.18:.7,parent);m.rotation.x=-Math.PI/2;return m;}
  function line(a,b,w=.12,color=design?.color,parent=root){const d=sub(b,a),m=mesh('box',add(a,mul(d,.5)),[w,w,Math.max(.001,length(d))],color,.65,parent);m.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),new T.Vector3(...unit(d)));return m;}
- function remove(node){if(!node)return;const materials=new Set();node.traverse(m=>{if(m.material)for(const mat of Array.isArray(m.material)?m.material:[m.material])materials.add(mat);});node.removeFromParent();for(const mat of materials)if(!mat.userData.guardianShared)mat.dispose();}
+ function remove(node){if(!node)return;warningVfx.release(node);const materials=new Set();node.traverse(m=>{if(m.material)for(const mat of Array.isArray(m.material)?m.material:[m.material])materials.add(mat);});node.removeFromParent();for(const mat of materials)if(!mat.userData.guardianShared)mat.dispose();}
  function entity(kind,p,properties={}){const group=new T.Group();group.position.fromArray(p);root.add(group);const e={id:++serial,kind,p:[...p],root:group,age:0,life:1,hit:new Set(),...properties};if(['vortex','tornado'].includes(kind))vfx.vortex(e);entities.push(e);return e;}
  function flash(p,r=1,color=design?.color){vfx.burst([p[0],p[1]+.2,p[2]],r);const e=entity('flash',[p[0],.12,p[2]],{r,life:.45});circle([0,0,0],r,color,false,e.root);return e;}
  function skin(m,opacity=1){m.material.dispose();m.material=vfx.surface(opacity);return m;}
@@ -116,10 +117,10 @@ export function createGuardianBossCombat(scene,extension={}){
   for(const t of targets()){const delta=flat(sub(t.pos,p));if(length(delta)<=r+.5&&unit(delta).reduce((n,v,i)=>n+v*d[i],0)>=Math.cos(arc/2))emit(damage,t,extra,src);}
   if(!extension.requireTelegraphs)for(let i=0;i<7;i++){const theta=Math.atan2(d[0],d[2])-arc/2+arc*i/6;telegraphLine(p,add(p,[Math.sin(theta)*r,0,Math.cos(theta)*r]),.18,.4);}
  }
- function telegraphCone(p,d,r,arc,life){const key='sector:'+arc;if(!geo[key])geo[key]=new T.CircleGeometry(1,24,-Math.PI/2-arc/2,arc);const e=entity('cone-warning',flat(p),{life}),m=mesh(key,[0,.075,0],[r,r,r],'#ff6477',.2,e.root);m.rotation.x=-Math.PI/2;e.root.rotation.y=Math.atan2(d[0],d[2]);ctx?.traceGuardianWarning?.({kind:'cone',at:clock,position:[...p],direction:[...d],radius:r,arc,lead:life});return e;}
- function telegraphLine(a,b,width=.18,life=.7,color='#ff657a'){const e=entity('line',[0,0,0],{life,warningFrom:[...a],warningTo:[...b],warningWidth:width});line([a[0],.12,a[2]],[b[0],.12,b[2]],width,color,e.root);ctx?.traceGuardianWarning?.({kind:'line',at:clock,from:[...a],to:[...b],radius:width/2,lead:life});return e;}
+ function telegraphCone(p,d,r,arc,life){const e=entity('cone-warning',flat(p),{life});warningVfx.show({kind:'sector',position:[0,0,0],direction:d,radius:r,arc},e.root);ctx?.traceGuardianWarning?.({kind:'cone',at:clock,position:[...p],direction:[...d],radius:r,arc,lead:life});return e;}
+ function telegraphLine(a,b,width=.18,life=.7,color='#ff657a'){const e=entity('line',[0,0,0],{life,warningFrom:[...a],warningTo:[...b],warningWidth:width});warningVfx.lane(a,b,width,e.root);ctx?.traceGuardianWarning?.({kind:'line',at:clock,from:[...a],to:[...b],radius:width/2,lead:life});return e;}
  function warning(p,r,delay,fn,shape='pillar',damage=0,src=source(action)){
-  const e=entity('hazard',[p[0],.02,p[2]],{r,delay,life:delay+.5,fn,shape,damage,src});circle([0,0,0],r,'#ff6477',true,e.root);circle([0,0,0],r,'#ffb3a6',false,e.root);ctx?.traceGuardianWarning?.({kind:'area',at:clock,position:[...p],radius:r,lead:delay});return e;
+  const e=entity('hazard',[p[0],.02,p[2]],{r,delay,life:delay+.5,fn,shape,damage,src});warningVfx.area([0,0,0],r,e.root);ctx?.traceGuardianWarning?.({kind:'area',at:clock,position:[...p],radius:r,lead:delay});return e;
  }
  function eruption(e){
   if(e.shape==='none')return;
@@ -341,7 +342,7 @@ export function createGuardianBossCombat(scene,extension={}){
    if(e.healthBar)e.healthBar.scale.x=1.6*clamp(e.hp/e.maxHp,0,1);
    if(e.kind==='hazard'){
     if(e.age>=e.delay&&!e.fired){e.fired=true;eruption(e);const previous=currentWarning;currentWarning=e;try{if(e.damage)area(e.p,e.r,e.damage,{},e.src);e.fn?.(e);}finally{currentWarning=previous;}if(e.shape==='none')destroy(e);}
-    if(!e.fired)e.root.children[0].material.opacity=.15+.15*(1+Math.sin(e.age*13));
+    if(!e.fired)e.root.children[0]?.userData.warningOpacity?.(.75+.25*Math.sin(e.age*13));
    }else if(e.kind==='zone')updateZones(e,dt);
    else if(e.kind==='projectile')updateProjectile(e,dt);
    else if(e.kind==='vortex')updateVortex(e,dt);
@@ -443,6 +444,6 @@ export function createGuardianBossCombat(scene,extension={}){
    entities:entities.filter(alive).map(e=>({id:e.id,kind:e.kind,active:e.root.visible,activationDelay:e.activationDelay||0,tag:e.tag||e.style||null,position:[...e.p],radius:e.r,hp:e.hp,maxHp:e.maxHp,age:e.age,life:e.life,delay:e.delay,solid:!!e.solid,targetId:e.targetId,real:e.real,returning:e.family==='lightning'&&e.age>=e.returnAt,gapWidth:e.gap,damage:e.damage,enlarged:!!e.enlarged,boosted:!!e.boosted,recycled:!!e.recycled,stored:e.stored,source:e.src?.type})),
    hazards:all('hazard').map(e=>({position:[...e.p],radius:e.r,remaining:Math.max(0,e.delay-e.age),hit:!!e.fired})),offset:api.offset
   };},
-  dispose(){clear();vfx.dispose();for(const g of Object.values(geo))g.dispose();}
+  dispose(){clear();warningVfx.dispose();vfx.dispose();for(const g of Object.values(geo))g.dispose();}
  };return api;
 }

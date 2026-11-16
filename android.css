@@ -315,6 +315,22 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 .android-ui #practiceViewScreen .pause-card{max-height:calc(100dvh - 20px);overflow:auto;padding:14px 20px;width:min(480px,90vw)}.android-ui #practiceViewScreen h2{font-size:20px;margin:8px 0}.android-ui #practiceViewScreen p{font-size:11px;margin:5px 0}.android-ui #practiceViewScreen .practice-view-option{padding:8px;min-height:49px}.android-ui #practiceViewScreen .primary,.android-ui #practiceViewScreen .outline{min-height:34px;padding:8px 14px;margin-top:7px}
 .tactical-spell-icon{position:absolute;inset:2px;border-radius:50%;overflow:hidden;pointer-events:none}.tactical-spell-icon img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}.tactical-spell.unavailable img{filter:saturate(.4);opacity:.65}.tactical-cost{position:absolute;right:-2px;bottom:-3px;min-width:18px;height:14px;display:grid;place-items:center;padding:0 2px;border:1px solid #75b4e888;border-radius:3px;background:#081d29ed;color:#b9e4ff;font:700 10px 'Segoe UI';line-height:12px;pointer-events:none}
 #tacticalSpellInfo{position:absolute;z-index:5;width:min(330px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:13px 15px;background:#102a33f5;border:1px solid #cbb787aa;border-radius:8px;box-shadow:0 5px 24px #0007;pointer-events:none}#tacticalSpellInfo header{position:static;display:flex;align-items:center;gap:10px;margin:0 0 10px}#tacticalSpellInfo header>div{min-width:0}#tacticalSpellInfo strong{display:block;font-size:14px;line-height:1.3}#tacticalSpellInfo header small{display:block;margin-top:4px;font-size:10px;color:#aed8e8}.tactical-info-art{width:43px;height:43px;flex:none}.tactical-info-art img{width:100%;height:100%;border-radius:50%}.tactical-info-seals{display:flex;flex-wrap:wrap;gap:4px}.tactical-info-seals kbd{display:grid;place-items:center;min-width:23px;height:24px;border:1px solid #b1c3b377;border-radius:3px;background:#1e3c46;font-size:11px}#tacticalSpellInfo p{margin:10px 0 0;font-size:12px;line-height:1.6;color:#e2dfd2;overflow-wrap:anywhere}
-#tacticalSettingsMenu #guide .unavailable-cover{display:none!important}#tacticalSettingsMenu #androidLayoutSettings{display:none!important}
+#tacticalSettingsMenu #guide .unavailable-cover{display:none!important}
 .tactical-info-stats{display:block;margin-top:8px;font-size:10px;line-height:1.5;color:#a6c5d2}.tactical-info-stats:empty{display:none}
 @media(max-height:350px){#tacticalEnemy{height:68px;padding:5px 7px}.android-ui.mobile-tactical #practiceHandInset{top:calc(var(--safe-top) + 87px)!important;height:62px!important}.android-ui.mobile-tactical .center-status{top:calc(var(--safe-top) + 86px)!important}.tactical-panel{width:155px}#tacticalVitals{height:75px;top:calc(var(--safe-top) + 49px);padding:5px 7px}}
+
+/* Both combat cameras share the tactical HUD and its layout editor. */
+#mobileTacticalHUD{touch-action:none}
+#tacticalSpells{position:absolute;right:calc(var(--safe-right) + var(--cast-center) - var(--spell-size)/2 - 24px);bottom:calc(var(--safe-bottom) + var(--cast-center) - var(--spell-size)/2 - 24px);width:calc(var(--arc) + var(--spell-size) + 24px);height:calc(var(--arc) + var(--spell-size) + 24px);pointer-events:none}
+#tacticalSpells .tactical-spell{right:calc(24px - var(--dx)*var(--arc));bottom:calc(24px - var(--dy)*var(--arc))}
+.android-ui.mobile-tactical [data-mobile-widget="combo"]{translate:var(--mobile-layout-x,0px) var(--mobile-layout-y,0px)!important;scale:var(--mobile-layout-scale,1)!important;opacity:var(--mobile-layout-opacity,1)}
+.android-ui.mobile-tactical [data-mobile-widget="hands"]{translate:var(--mobile-layout-x,0px) var(--mobile-layout-y,0px)!important;scale:var(--mobile-layout-scale,1)!important;opacity:var(--mobile-layout-opacity,1)}
+
+.android-ui.mobile-tactical.first-person-combat #practiceHandInset{display:none!important}
+
+#mobileLayoutEditor{z-index:240}
+.mobile-layout-editing #tacticalSettingsMenu{visibility:hidden;pointer-events:none}
+
+/* Fire/lightning stacks stay above each compact enemy health bar. */
+.mobile-tactical #enemyNameplates .enemy-afflictions.compact-afflictions:not([hidden]){display:flex!important;gap:4px;pointer-events:none;z-index:1}
+.mobile-tactical #enemyNameplates .compact-afflictions span{font-size:11px;line-height:14px;padding:2px 5px}

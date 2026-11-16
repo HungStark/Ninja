@@ -35,7 +35,7 @@ export class WindArts {
   lift(owner,victim,duration=2){
     for(const a of [...this.airborne])if(a.victim===victim.owner)this.release(a,false);
     this.recoveries=this.recoveries.filter(r=>r.owner!==victim.owner);
-    const a={owner,victim:victim.owner,fighter:victim.fighter,life:duration,age:0,height:0,extended:false,combo:null};
+    const a={owner,victim:victim.owner,victimId:victim.id??victim.owner,fighter:victim.fighter,life:duration,age:0,height:0,extended:false,combo:null};
     this.airborne.push(a);victim.fighter.windControlTime=duration;return a;
   }
   canCombo(owner){return this.airborne.some(a=>a.owner===owner&&a.life>1e-6&&!a.extended&&a.fighter.invulnerableTime<=0);}
@@ -65,8 +65,8 @@ export class WindArts {
       a.age+=dt;a.life=Math.max(0,a.life-dt);a.height=3.1*ease(a.age/.28);
       if(a.combo){
         const c=a.combo;c.age=Math.min(c.duration,c.age+dt);const total=Math.min(c.count,Math.floor((c.age+1e-6)/(c.duration/c.count)));
-        const victim=actors.find(f=>f.owner===a.victim);
-        while(c.ticks<total){c.ticks++;if(victim){this.cut(victim.pos,c.ticks);this.onSlash(a.owner);damage({owner:a.owner,damage:c.damage/c.count,element:'wind',color:'#9fe9ce',style:'aircut',v:[0,0,1],unreflectable:true},victim.pos);}}
+        const victim=actors.find(f=>(f.id??f.owner)===a.victimId&&f.fighter.hp>0);
+        while(c.ticks<total){c.ticks++;if(victim){this.cut(victim.pos,c.ticks);this.onSlash(a.owner);damage({owner:a.owner,damage:c.damage/c.count,element:'wind',color:'#9fe9ce',style:'aircut',victimId:victim.id,v:[0,0,1],unreflectable:true},victim.pos);}}
       }
       if(a.life<=1e-6)this.release(a);
     }
@@ -87,7 +87,7 @@ export class WindArts {
       const a=local(shot.old),b=local(shot.p),low=[-s.width/2-shot.size,-shot.size,1],high=[s.width/2+shot.size,s.height+shot.size,s.range];let enter=0,leave=1;
       for(let i=0;i<3;i++){const d=b[i]-a[i];if(Math.abs(d)<1e-8){if(a[i]<low[i]||a[i]>high[i]){enter=2;break;}}else{const x=(low[i]-a[i])/d,y=(high[i]-a[i])/d;enter=Math.max(enter,Math.min(x,y));leave=Math.min(leave,Math.max(x,y));}}
       if(enter>leave)continue;
-      const point=shot.old.map((v,i)=>v+(shot.p[i]-v)*enter),targetActor=actors.find(f=>f.owner!==s.owner);if(!targetActor)continue;
+      const point=shot.old.map((v,i)=>v+(shot.p[i]-v)*enter),targetActor=actors.find(f=>f.owner!==s.owner&&f.fighter.hp>0);if(!targetActor)continue;
       const target=[...targetActor.pos],speed=Math.hypot(...shot.v);
       if(shot.style==='meteor')target[1]=0;
       if(shot.style==='tsunami')target[1]=point[1];

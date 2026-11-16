@@ -11,7 +11,7 @@ export function sweepTsunami(wave,start,end,{actors,walls,fields,dark,wind,light
     const p=wall.p.map((v,i)=>v-across[i]*r),q=wall.p.map((v,i)=>v+across[i]*r);
     if(touches(p,0,q)){wall.hp=0;carry(wall.element,'wall',wall.owner,'#b2d8df');}
   }
-  const opponent=actors.find(a=>a.owner!==wave.owner);
+  const opponent=actors.find(a=>a.owner!==wave.owner&&a.fighter.hp>0);
   if(opponent){
     wave.sweptClones??=new Set();
     for(const c of dark.clones)if(c.mode!=='respawning'&&!wave.sweptClones.has(c.id)&&touches([c.p[0],c.hitHeight,c.p[2]],c.hitRadius)){

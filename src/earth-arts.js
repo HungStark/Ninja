@@ -56,7 +56,7 @@ export class EarthArts {
     return add(mul(this.corePosition(e),1-down),mul(ground,down));
   }
   target(owner,pos,dir,actors){
-    const victim=actors.find(a=>a.owner!==owner),axis=unit(dir);
+    const victim=actors.find(a=>a.owner!==owner&&a.fighter.hp>0),axis=unit(dir);
     if(victim){const delta=sub(victim.pos,pos),along=delta.reduce((sum,v,i)=>sum+v*axis[i],0),off=Math.hypot(...sub(delta,mul(axis,along)));if(along>0&&along<55&&off<1.2+actorHitPadding(victim))return [victim.pos[0],this.heightAt(victim.pos[0],victim.pos[2]),victim.pos[2]];}
     const reach=axis[1]<-.025?clamp(-pos[1]/axis[1],6,55):31,p=add(pos,mul(axis,reach));p[1]=this.heightAt(p[0],p[2]);return p;
   }

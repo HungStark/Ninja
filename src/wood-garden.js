@@ -81,7 +81,7 @@ export class WoodGarden {
     return {root,parts,height:height*normalize};
   }
   sow(owner,spell,pos,actors){
-    const victim=actors.find(a=>a.owner!==owner),zones=this.gardenBounds(owner),axis=zones?[0,0,owner==='player'?-1:1]:unit([victim.pos[0]-pos[0],0,victim.pos[2]-pos[2]]),side=[-axis[2],0,axis[0]],root=this.group();
+    const victim=actors.find(a=>a.owner!==owner&&a.fighter.hp>0)||actors.find(a=>a.owner!==owner),zones=this.gardenBounds(owner),axis=zones?[0,0,owner==='player'?-1:1]:unit([victim.pos[0]-pos[0],0,victim.pos[2]-pos[2]]),side=[-axis[2],0,axis[0]],root=this.group();
     const plants=[],walnutPosition=add(add(pos,mul(axis,5.5)),mul(side,3.1));
     // Scatter around the opponent. Keep the foreground plants below waist
     // height so the forest does not obscure the opponent from the caster.
@@ -156,7 +156,7 @@ export class WoodGarden {
   }
   cast(owner,spell,pos,dir,actors,walls=[],shots=[],aimPoint){
     if(!this.canCast(owner,spell))return false;if(spell.style==='woodseed')return this.sow(owner,spell,pos,actors);
-    const g=this.garden(owner),victim=actors.find(a=>a.owner!==owner),target=[...victim.pos],growth=this.growth(owner),scale=this.scale(owner),id=++this.serial;
+    const g=this.garden(owner),victim=actors.find(a=>a.owner!==owner&&a.fighter.hp>0)||actors.find(a=>a.owner!==owner),target=aimPoint?[...aimPoint]:[...victim.pos],growth=this.growth(owner),scale=this.scale(owner),id=++this.serial;
     if(spell.style==='flowerpoison'){
       for(const c of [...this.clouds])if(c.owner===owner){this.dispose(c.root);this.clouds.splice(this.clouds.indexOf(c),1);}
       for(const flower of g.plants.filter(p=>p.kind==='flower'))this.emitCloud(owner,spell,flower);
@@ -194,7 +194,7 @@ export class WoodGarden {
   bind(actor,duration){actor.fighter.woodControlTime=Math.max(actor.fighter.woodControlTime||0,duration);this.bindings.push({fighter:actor.fighter,owner:actor.owner});}
   hit(shot,p,actors,impact){
     if(impact){impact(shot,p);return shot.hitResult;}
-    const victim=actors.find(a=>a.owner!==shot.owner),result=victim.fighter.receive(shot.damage,false,shot.ignoreShield,'wood');shot.hitResult=result;
+    const victim=actors.find(a=>a.owner!==shot.owner&&a.fighter.hp>0&&(shot.victimId===undefined||a.id===shot.victimId));if(!victim)return {damage:0,immune:true};const result=victim.fighter.receive(shot.damage,false,shot.ignoreShield,'wood');shot.hitResult=result;
     if(shot.style==='vinehit'&&!result.immune)this.bind(victim,shot.controlDuration);return result;
   }
   advance(dt,actors,walls=[],impact){
@@ -205,7 +205,8 @@ export class WoodGarden {
       if(w.added&&(!walls.includes(w.wall)||w.wall.life<=0||w.wall.hp<=0))this.removeWalnut(w,walls);
     }
     for(const e of [...this.attacks]){
-      e.age+=dt;const victim=actors.find(a=>a.owner!==e.owner);
+      e.age+=dt;const victim=actors.find(a=>a.owner!==e.owner&&a.fighter.hp>0);
+      if(!victim)continue;
       if(e.kind==='vinebind'&&!e.hit[0]&&e.age>=.85){
         e.hit[0]=true;e.connected=distance(victim.pos,e.target)<1.65+.3*e.growth+actorHitPadding(victim);
         for(const a of actors.filter(a=>a.owner!==e.owner&&a.fighter.hp>0))if(distance(a.pos,e.target)<1.65+.3*e.growth+actorHitPadding(a))this.hit({owner:e.owner,victimId:a.id,element:'wood',style:'vinehit',color:'#75b94d',damage:e.spell.damage,controlDuration:e.spell.controlDuration,unreflectable:true,v:[0,0,0]},a.pos,actors,impact);
@@ -218,7 +219,7 @@ export class WoodGarden {
       const elapsed=Math.min(dt,c.life);c.age+=elapsed;c.life-=elapsed;c.inside.clear();
       const radius=this.cloudRadius(c);
       for(const actor of actors){
-        if(actor.owner===c.owner||c.age<.35||distance(actor.pos,c.center)>radius+actorHitPadding(actor)||actor.pos[1]-this.floor(actor.pos[0],actor.pos[2])>c.height)continue;
+        if(actor.owner===c.owner||actor.fighter.hp<=0||c.age<.35||distance(actor.pos,c.center)>radius+actorHitPadding(actor)||actor.pos[1]-this.floor(actor.pos[0],actor.pos[2])>c.height)continue;
         c.inside.add(actor.untargetable?actor.id:actor.owner);const key=c.owner+':'+(actor.id||actor.owner),amount=c.damageRate*elapsed,current=exposure.get(key);
         if(!current||current.amount<amount)exposure.set(key,{cloud:c,actor,amount});
       }

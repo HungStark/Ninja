@@ -2,6 +2,7 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {MOVEMENT_SPEED_MULTIPLIER} from './game-pace.js';
 import {createSpellAimGuide} from './spell-aim-vfx.js';
+import {spellAimShape} from './spell-aim-shape.js';
 
 // The rails in scene.js enclose x = ±16, z = -26..12. Leave room for the body.
 export const PRACTICE_ARENA={minX:-16,maxX:16,minZ:-26,maxZ:12};
@@ -41,35 +42,30 @@ export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
   fence.traverse(o=>{if(o.isMesh)o.userData.snowSurface='fence';});
   const ray=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,1,0),0),hit=new T.Vector3();
   const focus=new T.Vector3(0,0,-4),back=new T.Vector3(Math.sin(CAMERA_YAW)*Math.cos(CAMERA_PITCH),Math.sin(CAMERA_PITCH),Math.cos(CAMERA_YAW)*Math.cos(CAMERA_PITCH));
-  let cursor=[0,0,-8],pointer=null,moveTarget=null,preview=null;
-  function projectPointer(camera,canvas){if(!pointer)return;const r=canvas.getBoundingClientRect();ray.setFromCamera(new T.Vector2((pointer[0]-r.left)/r.width*2-1,-(pointer[1]-r.top)/r.height*2+1),camera);if(ray.ray.intersectPlane(plane,hit))cursor=clampPracticePoint(hit.toArray());}
+  let cursor=[0,0,-8],movementCursor=[...cursor],pointer=null,moveTarget=null,preview=null;
+  function projectPointer(camera,canvas){if(!pointer)return;const r=canvas.getBoundingClientRect();ray.setFromCamera(new T.Vector2((pointer[0]-r.left)/r.width*2-1,-(pointer[1]-r.top)/r.height*2+1),camera);if(ray.ray.intersectPlane(plane,hit)){cursor=clampPracticePoint(hit.toArray());movementCursor=[...cursor];}}
   return {
     point:()=>[...cursor],
+    movementPoint:()=>[...movementCursor],
     aimAt(point){pointer=null;cursor=clampPracticePoint(point);},
     pointer(x,y,camera,canvas){pointer=[x,y];projectPointer(camera,canvas);},
-    move(from){moveTarget=clampPracticeActorPoint(cursor,'player',.65*actorScale,from);},
+    move(from){moveTarget=clampPracticeActorPoint(movementCursor,'player',.65*actorScale,from);},
     moveTo(point,from,unrestricted=false){moveTarget=unrestricted?clampPracticePoint(point):clampPracticeActorPoint(point,'player',.65*actorScale,from);},
     target:()=>moveTarget&&[...moveTarget],
     stop(){moveTarget=null;destination.visible=false;},
-    reset(){moveTarget=null;pointer=null;cursor=[0,0,-8];preview=null;root.visible=destination.visible=playerMarker.visible=fence.visible=false;},
+    reset(){moveTarget=null;pointer=null;cursor=[0,0,-8];movementCursor=[...cursor];preview=null;root.visible=destination.visible=playerMarker.visible=fence.visible=false;},
     camera(camera,canvas){
       const distance=CAMERA_HEIGHT/Math.sin(CAMERA_PITCH);
       camera.fov=CAMERA_FOV;camera.position.copy(focus).addScaledVector(back,distance);camera.lookAt(focus);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);projectPointer(camera,canvas);
     },
-    update({enabled,active,spell,available,position,target,heightAt,showFences=true}){
-      fence.visible=enabled&&showFences;playerMarker.visible=enabled;playerMarker.position.set(position[0],heightAt(position[0],position[2])+.14,position[2]);root.visible=active&&practiceSpellNeedsAim(spell);
+    update({enabled,active,spell,available,position,target,heightAt,showFences=true,fencesEnabled=enabled}){
+      fence.visible=fencesEnabled&&showFences;playerMarker.visible=enabled;playerMarker.position.set(position[0],heightAt(position[0],position[2])+.14,position[2]);root.visible=active&&practiceSpellNeedsAim(spell);
       destination.visible=active&&!!moveTarget;if(destination.visible)destination.position.set(moveTarget[0],heightAt(moveTarget[0],moveTarget[2])+.13,moveTarget[2]);
       preview=null;if(!root.visible)return;
-      const dx=cursor[0]-position[0],dz=cursor[2]-position[2],length=Math.hypot(dx,dz),direction=length>.001?[dx/length,0,dz/length]:[0,0,-1];
-      const self=['domain','shadowclone','shadowdive','snowstorm','icefog','flowerpoison'].includes(spell.style);
-      const wall=['firewall','waterwall','windwall','icewall','earthwall','lightmirror'].includes(spell.style);
-      const area=['meteor','thunder','jacob','waterbubbles','shadowbind','lightdome','earthgravity','earthquake','earthcraterspikes','stormfield','lightsphere','ignite','discharge','woodseed','aircombo'].includes(spell.style);
-      const fixed=spell.style==='lightmirror'?2.4:spell.style==='icewall'?3.2:wall?3:spell.style==='stormfield'?4:spell.style==='lightsphere'?3:null;
-      const center=self?[...position]:fixed!==null?[position[0]+direction[0]*fixed,0,position[2]+direction[2]*fixed]:area?[...target]:[position[0]+direction[0]*31,0,position[2]+direction[2]*31];
-      const radius=spell.style==='lightsphere'?.8:spell.blastRadius||spell.domeRadius||spell.fieldRadius||spell.radius||spell.domainRadius||2.2;
-      guide.update({kind:self||area?'area':wall?'wall':'direction',position,center,direction,width:wall?(spell.wallWidth||spell.width||4):Math.max(.22,spell.waveWidth||((spell.size||.25)*2)),radius,heightAt,available});
-      preview={spellId:spell.id,kind:self?'self':wall?'wall':area?'area':'direction',available,origin:[...position],target:center,direction,radius};
+      const shape=spellAimShape(spell,position,cursor,target);
+      guide.update({...shape,heightAt,available});
+      preview={spellId:spell.id,kind:shape.self?'self':shape.kind,available,origin:[...position],target:shape.center,direction:shape.direction,radius:shape.radius,width:shape.width};
     },
-    state:()=>({actorScale,cursor:[...cursor],moveTarget:moveTarget&&[...moveTarget],preview,visible:root.visible,fencesVisible:fence.visible,dividers:[...PRACTICE_DIVIDERS],bounds:{player:practiceMovementBounds('player',.65*actorScale),enemy:practiceMovementBounds('enemy',.65*actorScale)}})
+    state:()=>({actorScale,cursor:[...cursor],movementCursor:[...movementCursor],moveTarget:moveTarget&&[...moveTarget],preview,visible:root.visible,fencesVisible:fence.visible,dividers:[...PRACTICE_DIVIDERS],bounds:{player:practiceMovementBounds('player',.65*actorScale),enemy:practiceMovementBounds('enemy',.65*actorScale)}})
   };
 }

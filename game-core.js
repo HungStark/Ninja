@@ -463,9 +463,9 @@
     ]
   },
   "ice-orb": {
-    "cost": 51,
+    "cost": 52,
     "cooldown": 20,
-    "damage": 150
+    "damage": 160
   },
   "wind-orb": {
     "cost": 15

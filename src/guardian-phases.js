@@ -1,3 +1,4 @@
+import {createCombatWarningVfx} from './combat-warning-vfx.js';
 import * as T from 'three';
 import {GUARDIAN_ARTS,guardianPhaseHealth,guardianLeap,guardianBreath,GUARDIAN_BASIC_TIMING as BASIC} from './guardian-arts.js';
 import {guardianElementMultipliers} from './guardian-element-balance.js';
@@ -7,7 +8,7 @@ import {guardianRecovery,guardianIsEnraged} from './guardian-rhythm.js';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 export function createGuardianPhases(scene){
   const distinct=createGuardianBossCombat(scene);
-  const root=new T.Group();root.name='guardian-beast-arts';scene.add(root);
+  const root=new T.Group();root.name='guardian-beast-arts';scene.add(root);const warningVfx=createCombatWarningVfx(root);
   const sphere=new T.SphereGeometry(1,16,12),ring=new T.RingGeometry(.86,1,40),disk=new T.CircleGeometry(1,40),cylinder=new T.CylinderGeometry(1,1,1,12,1,true),box=new T.BoxGeometry(1,1,1),crystal=new T.OctahedronGeometry(1),leaf=new T.ConeGeometry(.45,1,4);
   let config=null,phase=1,health=[],transition=null,clock=0,wait=2,cycle=0,action=null,armor=0,attacks=0,pose={x:0,y:0,z:0,lean:0},totalDamage=0,enraged=false,comboCount=0,recoveryEnd=true;
   const hazards=[],history=[],scars=[];
@@ -15,7 +16,7 @@ export function createGuardianPhases(scene){
   const color=()=>GUARDIAN_ARTS[config?.village]?.color||'#dfc58c';
   function material(opacity=.55){return new T.MeshBasicMaterial({color:color(),transparent:true,opacity,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending});}
   function mesh(geo,p,scale,opacity=.55){const m=new T.Mesh(geo,material(opacity));m.position.fromArray(p);m.scale.fromArray(scale);root.add(m);return m;}
-  function dispose(m){if(!m)return;m.removeFromParent();m.material.dispose();if(m.userData.ownedGeometry)m.geometry.dispose();}
+  function dispose(m){if(!m)return;warningVfx.release(m);m.removeFromParent();m.material?.dispose();if(m.userData.ownedGeometry)m.geometry.dispose();}
   function clear(){distinct.clear();for(const child of [...root.children])dispose(child);hazards.length=scars.length=0;action=null;pose={x:0,y:0,z:0,lean:0};}
   function crackGround(target){
     const vertices=[];
@@ -23,14 +24,14 @@ export function createGuardianPhases(scene){
     for(let i=0;i<7;i++){const a=i*Math.PI*2/7+.2,r=1.7+i%3*.3,mid=[Math.sin(a+.12)*r*.5,Math.cos(a+.12)*r*.5],end=[Math.sin(a)*r,Math.cos(a)*r];strip([0,0],mid,.045);strip(mid,end,.03);strip(mid,[mid[0]+Math.cos(a)*.65,mid[1]-Math.sin(a)*.65],.02);}
     const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));const m=new T.Mesh(geometry,new T.MeshBasicMaterial({color:'#3d3026',transparent:true,opacity:.72,depthWrite:false,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}));m.name='guardian-ground-cracks';m.userData.ownedGeometry=true;m.position.set(target[0],.035,target[2]);root.add(m);scars.push({m,age:0});
   }
-  function mark(p,r=1.3,warning=1.3,damage=24){const m=mesh(ring,[p[0],.09,p[2]],[r,r,r]);m.rotation.x=-Math.PI/2;hazards.push({p:[...p],r,warning,damage,age:0,m,hit:false,column:null});}
+  function mark(p,r=1.3,warning=1.3,damage=24){const m=warningVfx.area(p,r);hazards.push({p:[...p],r,warning,damage,age:0,m,hit:false,column:null});}
   function hit(impact,p,damage,style='guardian-area',extra={}){impact({owner:'enemy',element:config.element,style,damage:damage*(phase===3?.6:1),unreflectable:true,v:[0,-1,0],color:color(),...extra},p);}
   function makeAction(index,player,boss,fighter,automatic=false){
     const school=GUARDIAN_ARTS[config.village]||GUARDIAN_ARTS.nameless,special=index===1?school.specials[0]:school.specials[1];
     const type=index===0?'slam':index===2?'breath':index===3?'armor':special.type,name=index===0?'Thiên giáng chấn địa':index===2?school.beam:index===3?'Giáp hộ vệ':special.name;
     action={type,name,age:0,target:[...player],origin:[...boss],damage:special.damage||24,definition:special,index,hits:0,lastTick:0,marks:0,damageAtStart:totalDamage,automatic};attacks++;history.push({type,name,phase,at:clock});if(history.length>30)history.shift();
     gameAudio.cast({element:config.element,rank:'S',style:'guardian-'+type});
-    if(type==='slam'){action.marker=mesh(disk,[player[0],.1,player[2]],[3.5,3.5,3.5],.4);action.marker.material.color.set('#ff2626');action.marker.rotation.x=-Math.PI/2;}
+    if(type==='slam'){action.marker=mesh(disk,[player[0],.1,player[2]],[3.5,3.5,3.5],.4);action.marker.material.color.set('#ff2626');action.marker.rotation.x=-Math.PI/2;action.marker.visible=false;action.tell=warningVfx.area(action.target,3.5);}
     if(type==='breath'){action.orb=mesh(sphere,[boss[0],2.5,boss[2]+1.5],[.05,.05,.05],.95);action.orb.material.blending=T.NormalBlending;action.beam=mesh(cylinder,[0,0,0],[0,0,0],.65);action.angle=Math.atan2(player[0]-boss[0],player[2]-boss[2]);action.motes=Array.from({length:16},()=>mesh(['earth','ice'].includes(config.element)?crystal:config.element==='wood'?leaf:sphere,[...boss],[.13,.13,.3],.7));}
     if(type==='armor'||type==='heal'){action.shell=mesh(sphere,[boss[0],boss[1],boss[2]],[4.4,3.3,4.4],.2);if(type==='armor')armor=BASIC.armor;if(type==='heal'){action.vines=Array.from({length:6},(_,i)=>{const a=i*Math.PI/3,m=mesh(cylinder,[boss[0]+Math.cos(a),boss[1],boss[2]+Math.sin(a)],[.14,3,.14],.55);m.rotation.z=Math.sin(a)*.35;return m;});}}
     if(type==='columns')for(let i=0;i<special.count;i++){const half=(special.count-1)*1.1,center=clamp(player[0],-5.5+half,5.5-half),x=center+(i-(special.count-1)/2)*2.2;mark([x,.06,player[2]],1.1,1.35+i*special.delay,special.damage);}
@@ -38,9 +39,14 @@ export function createGuardianPhases(scene){
     if(type==='lanes'){action.gap=[-3.6,0,3.6][Math.floor(clock)%3];for(const x of [-3.6,0,3.6])if(x!==action.gap)mark([x,.06,player[2]],1.55,1.8,special.damage);}
     if(type==='pincers'||type==='waves'){action.waves=[-1,1].map(s=>mesh(type==='waves'?box:sphere,[s*6,1.2,player[2]-8],[type==='waves'?2.4:1,2.4,1],.45));}
     if(type==='sweep'){action.line=mesh(box,[-6,1.5,player[2]],[.16,3,.6],.3);}
+    action.warningGuides=[];
+    if(type==='breath')action.warningGuides.push(warningVfx.lane(boss,[boss[0]+Math.sin(action.angle)*48,0,boss[2]+Math.cos(action.angle)*48],1.3));
+    if(['ring','frost','eye'].includes(type)){action.warningGuides.push(warningVfx.area(action.target,4.5));action.area.visible=false;action.eye.visible=false;}
+    if(['pincers','waves'].includes(type))for(const side of [-1,1])action.warningGuides.push(warningVfx.lane([side*6,0,player[2]-8],[side,0,player[2]+2],3.3));
+    if(type==='sweep')action.warningGuides.push(warningVfx.lane([-6,0,player[2]],[6,0,player[2]],12));
     return name;
   }
-  function removeAction(completed=true){if(!action)return;const automatic=action.automatic;for(const key of ['marker','orb','beam','shell','area','eye','line'])dispose(action[key]);for(const m of [...action.waves||[],...action.motes||[],...action.vines||[]])dispose(m);recoveryEnd=!completed||!automatic||++comboCount>=3;if(recoveryEnd)comboCount=0;action=null;pose={x:0,y:0,z:0,lean:0};wait=guardianRecovery(enraged,recoveryEnd);}
+  function removeAction(completed=true){if(!action)return;const automatic=action.automatic;for(const key of ['marker','orb','beam','shell','area','eye','line','tell'])dispose(action[key]);for(const m of [...action.waves||[],...action.motes||[],...action.vines||[],...action.warningGuides||[]])dispose(m);recoveryEnd=!completed||!automatic||++comboCount>=3;if(recoveryEnd)comboCount=0;action=null;pose={x:0,y:0,z:0,lean:0};wait=guardianRecovery(enraged,recoveryEnd);}
   function updateArmor(boss,dt){
     let shell=root.getObjectByName('guardian-armor');
     if(armor<=0){if(shell)dispose(shell);return;}
@@ -75,16 +81,16 @@ export function createGuardianPhases(scene){
       // Monster attacks stop under control; aura attacks are independent of the human.
       if(controlled&&phase===2){removeAction(false);updateArmor(boss,dt);return;}
       if(!action){wait-=dt;if(wait<=0){const sequence=config.basicOnly?[2,0]:config.village==='nameless'?[0,1,2,4]:[0,1,2,3,4];makeAction(sequence[cycle++%sequence.length],player,boss,fighter,true);} }
-      const a=action;if(a){a.age+=dt;const t=a.age;
+      const a=action;if(a){a.age+=dt;const t=a.age;if(a.warningGuides?.length&&((a.type==='breath'&&t>=BASIC.charge+BASIC.breathRecoil)||['ring','frost','eye'].includes(a.type)&&t>=1.7||['pincers','waves'].includes(a.type)&&t>=1.1||a.type==='sweep'&&t>=1.5)){for(const guide of a.warningGuides)dispose(guide);a.warningGuides=[];if(a.area)a.area.visible=true;if(a.eye)a.eye.visible=a.type!=='frost';}
         if(a.type==='slam'){
           const landing=BASIC.slamWindup+BASIC.slamFlight;
           const leap=guardianLeap(t);a.stage=leap.stage;pose={x:(a.target[0]-a.origin[0])*leap.progress,y:leap.height,z:(a.target[2]-a.origin[2])*leap.progress,lean:leap.lean};
-          if(t>=landing&&!a.hits){a.hits=1;a.marker.geometry=ring;a.marker.material.color.set(color());crackGround(a.target);if(config.basicOnly||Math.hypot(player[0]-a.target[0],player[2]-a.target[2])<3.5)hit(impact,a.target,38,'guardian-slam');gameAudio.cue('stone-impact');}
+          if(t>=landing&&!a.hits){a.hits=1;dispose(a.tell);a.tell=null;a.marker.visible=true;a.marker.geometry=ring;a.marker.material.color.set(color());crackGround(a.target);if(config.basicOnly||Math.hypot(player[0]-a.target[0],player[2]-a.target[2])<3.5)hit(impact,a.target,38,'guardian-slam');gameAudio.cue('stone-impact');}
           if(t>=landing){a.marker.scale.setScalar(3.5+(t-landing)*5);a.marker.material.opacity=Math.max(0,.7-(t-landing));const q=ease((t-landing-.5)/.7);pose.x=(a.target[0]-a.origin[0])*(1-q);pose.z=(a.target[2]-a.origin[2])*(1-q);}if(t>landing+1.2)removeAction();
         }else if(a.type==='breath'){
           const breath=guardianBreath(t);a.stage=breath.stage;pose.headPull=breath.headPull;pose.headTilt=breath.headTilt;
           const mouth=mouthPosition?.(pose)||[boss[0],boss[1]+.8,boss[2]+1.8*(config.facing||1)];
-          if(!breath.firing)a.angle=Math.atan2(player[0]-mouth[0],player[2]-mouth[2]);
+          if(!breath.firing){a.angle=Math.atan2(player[0]-mouth[0],player[2]-mouth[2]);a.warningGuides?.[0]?.userData.updateWarning?.({kind:'lane',from:mouth,to:[mouth[0]+Math.sin(a.angle)*48,0,mouth[2]+Math.cos(a.angle)*48],width:1.3});}
           const distance=Math.max(1,Math.hypot(player[0]-mouth[0],player[2]-mouth[2])),dir=new T.Vector3(Math.sin(a.angle),(player[1]-mouth[1])/distance,Math.cos(a.angle)).normalize(),start=new T.Vector3(...mouth).addScaledVector(dir,breath.orbScale+.3);
           a.orb.position.copy(start);a.orb.scale.setScalar(breath.orbScale);
           a.motes.forEach((m,i)=>{const q=(t*1.6+i/16)%1,angle=i*2.4+t*4;if(!breath.firing){m.position.copy(start).add(new T.Vector3(Math.cos(angle)*(1-q)*2.5,Math.sin(angle)*(1-q)*2.5,(1-q)*1.2));m.scale.setScalar(.1);}else{m.position.copy(start).addScaledVector(dir,q*40).add(new T.Vector3(Math.cos(angle)*.4,Math.sin(angle)*.4,0));m.scale.set(.15,.15,config.element==='lightning'?1:.4);}m.rotation.set(t*3+i,t*2,i);});
@@ -106,12 +112,12 @@ export function createGuardianPhases(scene){
         }else if(a.type==='sweep'){const x=-5.8+clamp((t-1.5)/3.2,0,1)*11.6;a.line.position.x=x;a.line.rotation.y=t*2;a.line.material.opacity=t>1.5?.75:.22;if(t>1.5){a.lastTick+=dt;if(a.lastTick>.12){const elapsed=a.lastTick;a.lastTick=0;if(Math.abs(player[0]-x)<.85)hit(impact,player,a.damage*elapsed);}}if(t>4.7)removeAction();}
         else if(t>2.8)removeAction();
       }
-      for(const h of [...hazards]){h.age+=dt;h.m.material.opacity=.35+(Math.sin(h.age*12)+1)*.15;if(!h.hit&&h.age>=h.warning){h.hit=true;h.column=mesh(cylinder,[h.p[0],2.5,h.p[2]],[h.r,5,h.r],.7);if(Math.hypot(player[0]-h.p[0],player[2]-h.p[2])<h.r)hit(impact,player,h.damage);gameAudio.impact(config.element,h.damage);}
+      for(const h of [...hazards]){h.age+=dt;h.m.userData.warningOpacity?.(.75+.25*Math.sin(h.age*12));if(!h.hit&&h.age>=h.warning){h.hit=true;h.column=mesh(cylinder,[h.p[0],2.5,h.p[2]],[h.r,5,h.r],.7);if(Math.hypot(player[0]-h.p[0],player[2]-h.p[2])<h.r)hit(impact,player,h.damage);gameAudio.impact(config.element,h.damage);}
         if(h.hit){h.column.scale.y=Math.max(.01,5*(1-(h.age-h.warning)/.6));if(h.age>h.warning+.6){dispose(h.m);dispose(h.column);hazards.splice(hazards.indexOf(h),1);}}}
       updateArmor(boss,dt);
     },
     trigger(index,player,boss,fighter){if(!config||phase===1||transition)return false;if(usesDistinct())return distinct.trigger(index,player,boss,fighter);if(!Number.isInteger(index)||index<0||index>4||(config.village==='nameless'&&index===3))return false;removeAction(false);return makeAction(index,player,boss,fighter);},
-    dispose(){clear();distinct.dispose();for(const geometry of [sphere,ring,disk,cylinder,box,crystal,leaf])geometry.dispose();root.removeFromParent();},
+    dispose(){clear();distinct.dispose();warningVfx.dispose();for(const geometry of [sphere,ring,disk,cylinder,box,crystal,leaf])geometry.dispose();root.removeFromParent();},
     get transitioning(){return !!transition;},get phase(){return phase;},get active(){return !!config;},get form(){return phase===1?'human':phase===2?'beast':'avatar';},get offset(){return usesDistinct()?distinct.offset:{...pose};},
     state:()=>({enraged,recovery:wait,recoveryKind:recoveryEnd?'rest':'combo-gap',comboCount,phase,maxPhase:health.length||1,form:phase===1?'human':phase===2?'beast':'avatar',phaseHealth:[...health],transition:transition?{age:transition.age,from:transition.from,to:transition.to,switched:transition.switched}:null,signature:action?.name||'',action:action?{type:action.type,name:action.name,age:action.age,stage:action.stage||action.type,orbScale:action.orb?.scale.x||0}:null,armor,attacks,cracks:scars.map(s=>({position:s.m.position.toArray(),age:s.age})),history:history.map(h=>({...h})),hazards:hazards.map(h=>({position:[...h.p],remaining:Math.max(0,h.warning-h.age),radius:h.r,hit:h.hit})),...(usesDistinct()?distinct.state():{}),offset:usesDistinct()?distinct.offset:{...pose}})
   };return api;
