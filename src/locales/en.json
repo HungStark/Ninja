@@ -2976,5 +2976,6 @@
   "Khám phá vùng đất": "Explore the region",
   "Game dùng giọng đọc của máy. Nếu máy không có giọng đọc, game phát tiếng bíp bíp.": "The game uses your device voice. If no system voice is available, it plays beep sounds.",
   "Chiêu": "Skill",
-  "Chọn góc nhìn trước trận; giữ nguyên đến khi trận kết thúc.": "Choose your camera before battle; it stays fixed until the battle ends."
+  "Có thể đổi góc nhìn khi trận đấu đang tạm dừng.": "You can switch camera views while the battle is paused.",
+  "Chọn trước trận hoặc đổi trong Tùy chỉnh chiến đấu khi tạm dừng.": "Choose before battle or switch in Combat settings while paused."
 }
