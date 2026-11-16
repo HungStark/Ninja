@@ -724,8 +724,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "spellIds": [
       "water-barrier",
       "water-lance",
-      "lightning-lance",
-      "fire-volley"
+      "lightning-lance"
     ]
   },
   "event:water-base:1": {
@@ -733,7 +732,6 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "hp": 210,
     "sealDelay": 0.8,
     "spellIds": [
-      "lightning-lance",
       "water-reflect",
       "water-barrier",
       "water-lance"
@@ -923,12 +921,6 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "story:crescent-ice:2": {
     "baseDamagePercent": 122,
     "hp": 1000
-  },
-  "story:crescent-light:2": {
-    "hp": 1040
-  },
-  "story:crescent-gatekeeper:2": {
-    "hp": 1120
   }
 }/* opponent-balance:end */;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
