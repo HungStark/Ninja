@@ -87,15 +87,15 @@ Game ninja 3D góc nhìn thứ nhất, kết ấn bằng hai tay và quyết đ�
 
 Mỗi hệ có kinh nghiệm riêng, khai mở ở cấp 1 và tối đa cấp 10. Hệ của thuật được chọn ở trưởng làng là hệ khởi đầu. **Kinh nghiệm giao chiến dựa vào hệ của đối thủ**: dùng chiêu Thủy hay phi tiêu đánh ninja Hỏa đều tăng Hỏa; thi triển chiêu không tự cho kinh nghiệm. Trong trận ba ninja, sát thương tính riêng theo từng người và thưởng thắng trận chia cho cả Hỏa, Thủy, Lôi. Khám phá và bài học từ cao nhân vẫn có phần kinh nghiệm riêng. Một lần tăng cấp không tự trao kỹ năng.
 
-Điểm nhận tại các cấp **1 → 10** lần lượt là **1, 1, 1, 1, 2, 2, 2, 3, 3, 4**, tổng 20 điểm mỗi hệ. Điểm từ mọi hệ gom vào **một quỹ chung**. Nhân vật chỉ có một bộ thuộc tính áp dụng cho tất cả chiêu và mọi hệ:
+Điểm nhận tại các cấp **1 → 10** lần lượt là **1, 1, 1, 1, 2, 1, 1, 1, 1, 2**, tổng 12 điểm mỗi hệ. Điểm từ mọi hệ gom vào **một quỹ chung**. Nhân vật chỉ có một bộ thuộc tính áp dụng cho tất cả chiêu và mọi hệ:
 
 | Thuộc tính chung | Mỗi lần nâng | Công thức |
 | --- | --- | --- |
-| Sinh lực | +20 máu | 200 + 20 × số lần nâng |
+| Sinh lực | +4 máu | 300 + 4 × số lần nâng |
 | Sức mạnh | +1% sát thương gốc | Sát thương gốc × (1 + sức mạnh/100) |
-| Mana | +1% chakra gốc | 100 + mana |
+| Mana | +1 mana và +0,1 mana/giây | 100 + mana; hồi 5 + 0,1 × mana mỗi giây |
 
-Các phần trăm cộng theo **chỉ số gốc**, không nhân lũy tiến. Ví dụ 10 sức mạnh cho phi tiêu 4,4 và phi tiêu nước 11; 10 mana cho tối đa 110 chakra. Giao diện **C / Tu luyện** hiển thị cấp, kinh nghiệm, điều kiện từng chiêu, sách và ba nút nâng thuộc tính. Chiêu yêu cầu từ cấp 1–5; đạt cấp 5 của một hệ là đủ điều kiện học toàn bộ thuật của hệ đó, nhưng vẫn phải được cao nhân dạy hoặc dùng sách. Cấp 6–10 tiếp tục cho điểm thuộc tính.
+Các phần trăm cộng theo **chỉ số gốc**, không nhân lũy tiến. Ví dụ 10 lần nâng sức mạnh cộng 10% sát thương gốc; 10 lần nâng mana cho tối đa 110 mana và hồi 6 mana/giây. Giao diện **C / Tu luyện** hiển thị cấp, kinh nghiệm, điều kiện từng chiêu, sách và ba nút nâng thuộc tính. Chiêu yêu cầu từ cấp 1–5; đạt cấp 5 của một hệ là đủ điều kiện học toàn bộ thuật của hệ đó, nhưng vẫn phải được cao nhân dạy hoặc dùng sách. Cấp 6–10 tiếp tục cho điểm thuộc tính.
 
 ## Chơi ngay
 

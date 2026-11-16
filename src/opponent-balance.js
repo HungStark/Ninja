@@ -54,7 +54,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "baseDamagePercent": 100
   },
   "ninja:random:water": {
-    "hp": 180,
+    "hp": 216,
     "baseDamagePercent": 90,
     "spellIds": [
       "water-barrier",
@@ -63,7 +63,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:quest:water": {
-    "hp": 180,
+    "hp": 216,
     "baseDamagePercent": 90,
     "spellIds": [
       "water-barrier",
@@ -72,7 +72,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:sidequest:water": {
-    "hp": 180,
+    "hp": 216,
     "baseDamagePercent": 90,
     "spellIds": [
       "water-barrier",
@@ -81,7 +81,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-guard:water": {
-    "hp": 210,
+    "hp": 252,
     "sealDelay": 0.8,
     "baseDamagePercent": 95,
     "spellIds": [
@@ -91,13 +91,13 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:guardian-guard:water": {
-    "hp": 240,
+    "hp": 288,
     "sealDelay": 0.7,
     "baseDamagePercent": 100,
     "mana": 120
   },
   "ninja:arena:water": {
-    "hp": 180,
+    "hp": 216,
     "baseDamagePercent": 90,
     "sealDelay": 0.5,
     "spellIds": [
@@ -112,15 +112,15 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "infiniteMana": false,
     "sealDelay": 0.65,
     "baseDamagePercent": 100,
-    "hp": 240,
+    "hp": 288,
     "mana": 150
   },
   "guardian:water:2": {
-    "hp": 480,
-    "baseDamagePercent": 100
+    "hp": 576,
+    "baseDamagePercent": 150
   },
   "ninja:random:fire": {
-    "hp": 210,
+    "hp": 252,
     "baseDamagePercent": 94,
     "spellIds": [
       "fire-volley",
@@ -129,7 +129,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:quest:fire": {
-    "hp": 210,
+    "hp": 252,
     "baseDamagePercent": 94,
     "spellIds": [
       "fire-volley",
@@ -138,7 +138,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:sidequest:fire": {
-    "hp": 210,
+    "hp": 252,
     "baseDamagePercent": 94,
     "spellIds": [
       "fire-volley",
@@ -147,7 +147,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-guard:fire": {
-    "hp": 240,
+    "hp": 288,
     "baseDamagePercent": 99,
     "sealDelay": 0.75,
     "spellIds": [
@@ -157,7 +157,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:arena:fire": {
-    "hp": 210,
+    "hp": 252,
     "baseDamagePercent": 94,
     "sealDelay": 0.5,
     "spellIds": [
@@ -169,24 +169,24 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:guardian-guard:fire": {
-    "hp": 280,
+    "hp": 336,
     "baseDamagePercent": 104,
     "sealDelay": 0.65,
     "mana": 120
   },
   "guardian:fire:1": {
-    "hp": 280,
+    "hp": 336,
     "infiniteMana": false,
     "sealDelay": 0.6,
     "baseDamagePercent": 104,
     "mana": 150
   },
   "guardian:fire:2": {
-    "hp": 560,
-    "baseDamagePercent": 104
+    "hp": 672,
+    "baseDamagePercent": 156
   },
   "event:fire:0": {
-    "hp": 260,
+    "hp": 312,
     "sealDelay": 0.7,
     "baseDamagePercent": 99,
     "spellIds": [
@@ -197,7 +197,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "mana": 120
   },
   "event:fire:1": {
-    "hp": 260,
+    "hp": 312,
     "sealDelay": 0.7,
     "baseDamagePercent": 99,
     "spellIds": [
@@ -212,24 +212,24 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "infiniteMana": false,
     "mana": 150,
     "baseDamagePercent": 108,
-    "hp": 320,
+    "hp": 384,
     "sealDelay": 0.55
   },
   "ninja:guardian-guard:lightning": {
     "mana": 120,
     "sealDelay": 0.6,
     "baseDamagePercent": 108,
-    "hp": 320
+    "hp": 384
   },
   "ninja:village-guard:lightning": {
     "sealDelay": 0.7,
     "baseDamagePercent": 103,
-    "hp": 270
+    "hp": 324
   },
   "ninja:arena:lightning": {
     "sealDelay": 0.5,
     "baseDamagePercent": 98,
-    "hp": 240,
+    "hp": 288,
     "spellIds": [
       "lightning-lance",
       "lightning-barrier",
@@ -240,7 +240,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:random:lightning": {
     "baseDamagePercent": 98,
-    "hp": 240,
+    "hp": 288,
     "spellIds": [
       "lightning-lance",
       "lightning-barrier",
@@ -249,7 +249,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:quest:lightning": {
     "baseDamagePercent": 98,
-    "hp": 240,
+    "hp": 288,
     "spellIds": [
       "lightning-lance",
       "lightning-barrier",
@@ -258,7 +258,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:sidequest:lightning": {
     "baseDamagePercent": 98,
-    "hp": 240,
+    "hp": 288,
     "spellIds": [
       "lightning-lance",
       "lightning-barrier",
@@ -266,8 +266,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "guardian:lightning:2": {
-    "baseDamagePercent": 108,
-    "hp": 640
+    "baseDamagePercent": 162,
+    "hp": 768
   },
   "ninja:practice": {
     "hp": 300,
@@ -283,7 +283,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:random:wind": {
     "baseDamagePercent": 102,
     "sealDelay": 0.7,
-    "hp": 270,
+    "hp": 324,
     "spellIds": [
       "wind-orb",
       "wind-volley",
@@ -293,7 +293,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:quest:wind": {
     "baseDamagePercent": 102,
     "sealDelay": 0.7,
-    "hp": 270,
+    "hp": 324,
     "spellIds": [
       "wind-orb",
       "wind-volley",
@@ -303,7 +303,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:sidequest:wind": {
     "baseDamagePercent": 102,
     "sealDelay": 0.7,
-    "hp": 270,
+    "hp": 324,
     "spellIds": [
       "wind-orb",
       "wind-volley",
@@ -313,18 +313,18 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "ninja:village-guard:wind": {
     "baseDamagePercent": 107,
     "sealDelay": 0.65,
-    "hp": 300
+    "hp": 360
   },
   "ninja:guardian-guard:wind": {
     "baseDamagePercent": 112,
-    "hp": 360,
+    "hp": 432,
     "mana": 120,
     "sealDelay": 0.55
   },
   "ninja:arena:wind": {
     "baseDamagePercent": 102,
     "sealDelay": 0.5,
-    "hp": 270,
+    "hp": 324,
     "spellIds": [
       "wind-orb",
       "wind-volley",
@@ -336,17 +336,17 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   "guardian:wind:1": {
     "baseDamagePercent": 112,
     "sealDelay": 0.5,
-    "hp": 360,
+    "hp": 432,
     "infiniteMana": false,
     "mana": 150
   },
   "guardian:wind:2": {
-    "baseDamagePercent": 112,
-    "hp": 720
+    "baseDamagePercent": 168,
+    "hp": 864
   },
   "ninja:random:earth": {
     "sealDelay": 0.65,
-    "hp": 300,
+    "hp": 360,
     "baseDamagePercent": 106,
     "spellIds": [
       "earth-orb",
@@ -356,7 +356,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:quest:earth": {
     "sealDelay": 0.65,
-    "hp": 300,
+    "hp": 360,
     "baseDamagePercent": 106,
     "spellIds": [
       "earth-orb",
@@ -366,7 +366,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:sidequest:earth": {
     "sealDelay": 0.65,
-    "hp": 300,
+    "hp": 360,
     "baseDamagePercent": 106,
     "spellIds": [
       "earth-orb",
@@ -376,18 +376,18 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:village-guard:earth": {
     "sealDelay": 0.6,
-    "hp": 330,
+    "hp": 396,
     "baseDamagePercent": 111
   },
   "ninja:guardian-guard:earth": {
     "sealDelay": 0.5,
     "mana": 120,
-    "hp": 400,
+    "hp": 480,
     "baseDamagePercent": 116
   },
   "ninja:arena:earth": {
     "sealDelay": 0.5,
-    "hp": 300,
+    "hp": 360,
     "baseDamagePercent": 106,
     "spellIds": [
       "earth-orb",
@@ -401,15 +401,15 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "sealDelay": 0.45,
     "infiniteMana": false,
     "mana": 150,
-    "hp": 400,
+    "hp": 480,
     "baseDamagePercent": 116
   },
   "guardian:earth:2": {
-    "hp": 800,
-    "baseDamagePercent": 116
+    "hp": 960,
+    "baseDamagePercent": 174
   },
   "ninja:random:wood": {
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.6,
     "baseDamagePercent": 110,
     "spellIds": [
@@ -420,7 +420,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:quest:wood": {
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.6,
     "baseDamagePercent": 110,
     "spellIds": [
@@ -431,12 +431,12 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:sidequest:wood": {
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.6,
     "baseDamagePercent": 110
   },
   "ninja:village-guard:wood": {
-    "hp": 390,
+    "hp": 468,
     "sealDelay": 0.55,
     "baseDamagePercent": 115,
     "spellIds": [
@@ -447,20 +447,20 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:guardian-guard:wood": {
-    "hp": 480,
+    "hp": 576,
     "mana": 130,
     "sealDelay": 0.45,
     "baseDamagePercent": 120
   },
   "guardian:wood:1": {
-    "hp": 480,
+    "hp": 576,
     "infiniteMana": false,
     "mana": 160,
     "sealDelay": 0.4,
     "baseDamagePercent": 120
   },
   "ninja:arena:wood": {
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.5,
     "baseDamagePercent": 110,
     "spellIds": [
@@ -472,11 +472,11 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "guardian:wood:2": {
-    "hp": 960,
-    "baseDamagePercent": 120
+    "hp": 1152,
+    "baseDamagePercent": 180
   },
   "ninja:random:ice": {
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.6,
     "baseDamagePercent": 110,
     "spellIds": [
@@ -487,7 +487,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:quest:ice": {
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.6,
     "baseDamagePercent": 110,
     "spellIds": [
@@ -498,7 +498,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:sidequest:ice": {
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.6,
     "baseDamagePercent": 110,
     "spellIds": [
@@ -509,7 +509,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-guard:ice": {
-    "hp": 390,
+    "hp": 468,
     "sealDelay": 0.55,
     "baseDamagePercent": 115,
     "spellIds": [
@@ -520,13 +520,13 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:guardian-guard:ice": {
-    "hp": 480,
+    "hp": 576,
     "mana": 130,
     "sealDelay": 0.45,
     "baseDamagePercent": 120
   },
   "ninja:arena:ice": {
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.5,
     "baseDamagePercent": 110,
     "spellIds": [
@@ -537,18 +537,18 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "guardian:ice:1": {
-    "hp": 480,
+    "hp": 576,
     "infiniteMana": false,
     "mana": 160,
     "sealDelay": 0.4,
     "baseDamagePercent": 120
   },
   "guardian:ice:2": {
-    "hp": 960,
-    "baseDamagePercent": 120
+    "hp": 1152,
+    "baseDamagePercent": 180
   },
   "ninja:random:light": {
-    "hp": 390,
+    "hp": 468,
     "baseDamagePercent": 115,
     "sealDelay": 0.55,
     "spellIds": [
@@ -559,7 +559,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:quest:light": {
-    "hp": 390,
+    "hp": 468,
     "baseDamagePercent": 115,
     "sealDelay": 0.55,
     "spellIds": [
@@ -570,7 +570,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:sidequest:light": {
-    "hp": 390,
+    "hp": 468,
     "baseDamagePercent": 115,
     "sealDelay": 0.55,
     "spellIds": [
@@ -581,7 +581,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-guard:light": {
-    "hp": 420,
+    "hp": 504,
     "baseDamagePercent": 120,
     "spellIds": [
       "light-orb",
@@ -592,20 +592,20 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     "sealDelay": 0.5
   },
   "ninja:guardian-guard:light": {
-    "hp": 520,
+    "hp": 624,
     "mana": 130,
     "baseDamagePercent": 125,
     "sealDelay": 0.4
   },
   "guardian:light:1": {
-    "hp": 520,
+    "hp": 624,
     "infiniteMana": false,
     "mana": 160,
     "baseDamagePercent": 125,
     "sealDelay": 0.35
   },
   "ninja:arena:light": {
-    "hp": 390,
+    "hp": 468,
     "baseDamagePercent": 115,
     "sealDelay": 0.5,
     "spellIds": [
@@ -617,26 +617,26 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "guardian:light:2": {
-    "hp": 1040,
-    "baseDamagePercent": 125
+    "hp": 1248,
+    "baseDamagePercent": 185
   },
   "ninja:random:dark": {
-    "hp": 420,
+    "hp": 504,
     "sealDelay": 0.5,
     "baseDamagePercent": 120
   },
   "ninja:quest:dark": {
-    "hp": 420,
+    "hp": 504,
     "sealDelay": 0.5,
     "baseDamagePercent": 120
   },
   "ninja:sidequest:dark": {
-    "hp": 420,
+    "hp": 504,
     "sealDelay": 0.5,
     "baseDamagePercent": 120
   },
   "ninja:village-guard:dark": {
-    "hp": 450,
+    "hp": 540,
     "sealDelay": 0.45,
     "baseDamagePercent": 125,
     "spellIds": [
@@ -647,20 +647,20 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:guardian-guard:dark": {
-    "hp": 560,
+    "hp": 672,
     "mana": 130,
     "sealDelay": 0.4,
     "baseDamagePercent": 130
   },
   "guardian:dark:1": {
-    "hp": 560,
+    "hp": 672,
     "infiniteMana": false,
     "mana": 160,
     "sealDelay": 0.35,
     "baseDamagePercent": 130
   },
   "ninja:arena:dark": {
-    "hp": 420,
+    "hp": 504,
     "sealDelay": 0.5,
     "baseDamagePercent": 120,
     "spellIds": [
@@ -673,16 +673,16 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "guardian:dark:3": {
     "mana": 160,
-    "hp": 560,
+    "hp": 672,
     "sealDelay": 0.35,
-    "baseDamagePercent": 130
+    "baseDamagePercent": 150
   },
   "guardian:dark:2": {
-    "hp": 1120,
-    "baseDamagePercent": 130
+    "hp": 1344,
+    "baseDamagePercent": 190
   },
   "ninja:village-event:dark": {
-    "hp": 500,
+    "hp": 600,
     "mana": 160,
     "baseDamagePercent": 130,
     "spellIds": [
@@ -695,7 +695,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "ninja:village-event:fire": {
     "baseDamagePercent": 99,
-    "hp": 240,
+    "hp": 288,
     "sealDelay": 0.75
   },
   "ninja:village-event:nameless": {
@@ -708,7 +708,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-event:water": {
-    "hp": 210,
+    "hp": 252,
     "baseDamagePercent": 95,
     "sealDelay": 0.8,
     "spellIds": [
@@ -719,7 +719,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "event:water-base:0": {
     "baseDamagePercent": 95,
-    "hp": 210,
+    "hp": 252,
     "sealDelay": 0.8,
     "spellIds": [
       "water-barrier",
@@ -729,7 +729,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
   },
   "event:water-base:1": {
     "baseDamagePercent": 95,
-    "hp": 210,
+    "hp": 252,
     "sealDelay": 0.8,
     "spellIds": [
       "water-reflect",
@@ -743,7 +743,8 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "fire-barrier",
       "fire-volley",
       "fire-lance"
-    ]
+    ],
+    "hp": 312
   },
   "event:fire-general:0": {
     "spellIds": [
@@ -753,11 +754,11 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "fire-reflect",
       "fire-meteor"
     ],
-    "hp": 280
+    "hp": 336
   },
   "ninja:village-event:lightning": {
     "baseDamagePercent": 98,
-    "hp": 240,
+    "hp": 288,
     "spellIds": [
       "lightning-lance",
       "lightning-barrier",
@@ -765,7 +766,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-event:wind": {
-    "hp": 300,
+    "hp": 360,
     "baseDamagePercent": 102,
     "spellIds": [
       "wind-orb",
@@ -774,10 +775,11 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "event:wind-courier:0": {
-    "baseDamagePercent": 107
+    "baseDamagePercent": 107,
+    "hp": 360
   },
   "ninja:village-event:earth": {
-    "hp": 300,
+    "hp": 360,
     "baseDamagePercent": 111
   },
   "event:earth-base:0": {
@@ -788,13 +790,13 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "earth-lance",
       "earth-reflect"
     ],
-    "hp": 360,
+    "hp": 432,
     "sealDelay": 0.6,
     "baseDamagePercent": 111
   },
   "event:earth-base:1": {
     "baseDamagePercent": 111,
-    "hp": 350,
+    "hp": 420,
     "sealDelay": 0.6,
     "spellIds": [
       "earth-orb",
@@ -805,12 +807,12 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-event:wood": {
-    "hp": 360,
+    "hp": 432,
     "baseDamagePercent": 110,
     "sealDelay": 0.6
   },
   "ninja:village-event:ice": {
-    "hp": 400,
+    "hp": 480,
     "baseDamagePercent": 110,
     "spellIds": [
       "ice-reflect",
@@ -827,11 +829,11 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "dark-domain",
       "dark-reflect"
     ],
-    "hp": 500,
+    "hp": 600,
     "baseDamagePercent": 115
   },
   "event:ice-coast:1": {
-    "hp": 500,
+    "hp": 600,
     "baseDamagePercent": 115,
     "spellIds": [
       "ice-reflect",
@@ -842,7 +844,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
     ]
   },
   "ninja:village-event:light": {
-    "hp": 400,
+    "hp": 480,
     "baseDamagePercent": 120,
     "spellIds": [
       "light-orb",
@@ -859,13 +861,13 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "light-barrier"
     ],
     "baseDamagePercent": 120,
-    "hp": 450,
+    "hp": 540,
     "sealDelay": 0.5
   },
   "event:light-battalion:1": {
     "baseDamagePercent": 120,
     "sealDelay": 0.5,
-    "hp": 450,
+    "hp": 540,
     "spellIds": [
       "light-lance",
       "light-reflect",
@@ -881,7 +883,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "dark-domain",
       "dark-orb"
     ],
-    "hp": 500,
+    "hp": 600,
     "baseDamagePercent": 115
   },
   "event:dark-battalion:0": {
@@ -892,7 +894,7 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "dark-reflect",
       "dark-domain"
     ],
-    "hp": 500,
+    "hp": 600,
     "baseDamagePercent": 115
   },
   "event:dark-battalion:1": {
@@ -903,24 +905,48 @@ export const opponentBalanceOverrides=/* opponent-balance:start */{
       "dark-domain",
       "dark-orb"
     ],
-    "hp": 500,
+    "hp": 600,
     "baseDamagePercent": 115
   },
   "story:crescent-wood:1": {
     "baseDamagePercent": 125,
-    "hp": 500
+    "hp": 600
   },
   "story:crescent-wood:2": {
     "baseDamagePercent": 125,
-    "hp": 1000
+    "hp": 1200
   },
   "story:crescent-ice:1": {
     "baseDamagePercent": 125,
-    "hp": 500
+    "hp": 600
   },
   "story:crescent-ice:2": {
     "baseDamagePercent": 122,
-    "hp": 1000
+    "hp": 1200
+  },
+  "event:fire-jail:0": {
+    "hp": 312
+  },
+  "event:fire-jail:1": {
+    "hp": 312
+  },
+  "event:wind-eagle:0": {
+    "hp": 864
+  },
+  "story:crescent-light:1": {
+    "hp": 624
+  },
+  "story:crescent-light:2": {
+    "hp": 1248
+  },
+  "story:crescent-gatekeeper:1": {
+    "hp": 672
+  },
+  "story:crescent-gatekeeper:2": {
+    "hp": 1344
+  },
+  "story:crescent-gatekeeper:3": {
+    "hp": 672
   }
 }/* opponent-balance:end */;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
