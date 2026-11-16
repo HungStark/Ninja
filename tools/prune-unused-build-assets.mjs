@@ -4,6 +4,9 @@ import {PORTRAIT_IMAGES} from '../src/portrait-images.js';
 import {prunePortraitFiles} from './prune-portrait-files.mjs';
 
 export async function pruneUnusedBuildAssets(output){
+  const speechDirectory=path.resolve(output,'vendor','espeak-ng');
+  if(!speechDirectory.startsWith(path.resolve(output)+path.sep))throw Error('Unexpected speech asset path');
+  await fs.rm(speechDirectory,{recursive:true,force:true});
   const directory=path.resolve(output,'assets');
   // These source models stay in the workspace. Runtime uses derived variants.
   for(const name of ['hero-ninja.glb','hero-ninja-simple.glb','npc.vrm','npc_nam.vrm','npc_nu.vrm','ha-ly.glb']){

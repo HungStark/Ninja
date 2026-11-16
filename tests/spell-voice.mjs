@@ -14,12 +14,12 @@ const original={setTimeout:globalThis.setTimeout,clearTimeout:globalThis.clearTi
 globalThis.setTimeout=(fn,ms)=>{const id=++serial;timers.set(id,{fn,at:now+ms});return id;};globalThis.clearTimeout=id=>timers.delete(id);Date.now=()=>now;
 function tick(ms){const until=now+ms;for(;;){const next=[...timers].filter(([,t])=>t.at<=until).sort((a,b)=>a[1].at-b[1].at)[0];if(!next)break;now=next[1].at;timers.delete(next[0]);next[1].fn();}now=until;}
 try{
- for(const backend of ['android','browser','bundled']){
+ for(const backend of ['android','browser','beep']){
   const env=new EventTarget(),requests=[];let callbacks,starts=0,ends=0;
   const event=(type,id)=>env.dispatchEvent(new CustomEvent('anhoa:native-speech',{detail:{type,id}}));
   if(backend==='android')env.AnHoaSpeech={getStatus:()=>({state:'ready'}),speak(text,id,rate,pitch,volume){requests.push({text,id,rate,pitch,volume});event('start',id);},stop(){},pause(){},resume(){}};
   if(backend==='browser'){env.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};env.speechSynthesis={getVoices:()=>[{lang:'vi-VN',name:'Nam Minh',localService:true}],speak(u){requests.push(u);u.onstart();},cancel(){},pause(){},resume(){},addEventListener(){},removeEventListener(){}};}
-  const output=createSpeechOutput({useSystemVoice:true,environment:env,onStart:()=>starts++,onEnd:()=>ends++,getOutput:backend==='bundled'?()=>({}):undefined,bundledFactory:options=>{callbacks=options;return {speak(text,o){requests.push({text,...o});options.onStart();},stop(){},pause(){},resume(){},destroy(){}};}});
+  const output=createSpeechOutput({useSystemVoice:true,environment:env,onStart:()=>starts++,onEnd:()=>ends++,getOutput:backend==='beep'?()=>({}):undefined,beepFactory:options=>{callbacks=options;return {speak(text,o){requests.push({text,...o});options.onStart();},stop(){},pause(){},resume(){},destroy(){}};}});
   const finish=()=>backend==='android'?event('done',requests.at(-1).id):backend==='browser'?requests.at(-1).onend():callbacks.onEnd();
   const parts=[{text:'Hỏa Vũ',rate:2,pitch:.9},{text:'Liên Châu.',rate:1.2,pitch:.9,pauseBefore:.02}];output.speak('Hỏa Vũ Liên Châu',{segments:parts,volume:.6});assert.equal(requests[0].text,'Hỏa Vũ');finish();assert.equal(ends,0);assert.equal(output.speaking,true);tick(19);assert.equal(requests.length,1);tick(1);assert.equal(requests[1].text,'Liên Châu.');assert.equal(requests[1].pitch,requests[0].pitch);assert.ok(requests[1].rate<requests[0].rate);assert.equal(requests[1].volume,.6);finish();assert.equal(starts,1);assert.equal(ends,1);assert.equal(output.speaking,false);
   output.speak('Hỏa Vũ Liên Châu',{segments:parts});finish();tick(7);output.pause();tick(1000);const count=requests.length;output.resume();tick(12);assert.equal(requests.length,count);tick(1);assert.equal(requests.length,count+1,'Resumes only the remaining pause');finish();
@@ -28,7 +28,7 @@ try{
  }
  const env=new EventTarget(),calls=[];let fallbackCallbacks;
  env.AnHoaSpeech={getStatus:()=>({state:'ready'}),speak:(...args)=>calls.push(args),stop(){}};
- const fallback=createSpeechOutput({useSystemVoice:true,environment:env,getOutput:()=>({}),bundledFactory:o=>{fallbackCallbacks=o;return {speak:(text,options)=>calls.push({text,options}),stop(){},destroy(){}};}});
+ const fallback=createSpeechOutput({useSystemVoice:true,environment:env,getOutput:()=>({}),beepFactory:o=>{fallbackCallbacks=o;return {speak:(text,options)=>calls.push({text,options}),stop(){},destroy(){}};}});
  const nativeEvent=(type,id)=>env.dispatchEvent(new CustomEvent('anhoa:native-speech',{detail:{type,id}}));fallback.speak('Hỏa Vũ Liên Châu',{segments:spellVoice('Hỏa Vũ Liên Châu')});const firstId=calls[0][1];nativeEvent('error',firstId);assert.equal(fallback.speaking,true);assert.equal(calls.at(-1).text,'Hỏa Vũ Liên Châu.');assert.equal(calls.at(-1).options.rate,1.5);assert.equal(calls.at(-1).options.pitch,.9);fallbackCallbacks.onEnd();assert.equal(fallback.speaking,false);fallback.destroy();
  const requests=[];globalThis.AnHoaSpeech={getStatus:()=>({state:'ready'}),speak:(...args)=>requests.push(args),stop(){}};
  const audio=createGameAudio({storage:{getItem:()=>null}});audio.speakSpell({name:'Hỏa Vũ Liên Châu'});assert.equal(requests.at(-1)[0],'Hỏa Vũ Liên Châu.');audio.speakSpell({name:'Tuyết táng'});assert.equal(requests.at(-1)[0],'Tuyết táng.');assert.equal(requests.at(-1)[2],.78*1.5);assert.equal(requests.at(-1)[3],.9);assert.equal(audio.state().speech.backend,'android');audio.destroy();delete globalThis.AnHoaSpeech;

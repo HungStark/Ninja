@@ -2,7 +2,7 @@
 
 - Nhạc nền nguyên bản cho Vô Danh, Hỏa, Thủy, Lôi, Phong, Thổ, Quang, Ám, Mộc, Băng và đấu trường. Mỗi bản có nhịp, giai điệu và hòa âm riêng; chuyển cảnh có chuyển âm nhẹ.
 - Kết ấn có tiếng tay và âm cao độ theo ấn; chiêu đủ ấn có tiếng báo. Hiệu ứng theo chín hệ, tiếng va chạm/khiên, phi tiêu, G, chiến thắng/thất bại, sấm trời và biến thân dùng chung bộ chỉnh âm lượng.
-- APK ưu tiên bộ đọc tiếng Việt Android qua `AnHoaSpeech`, không phụ thuộc Web Speech của WebView. Khi thiếu giọng hoặc bộ đọc lỗi, dùng eSpeak-NG tiếng Việt đã đóng gói, chạy ngoại tuyến trong worker. Chuyển lời, đóng hội thoại, tắt tiếng hoặc đưa ứng dụng ra nền sẽ ngắt âm cũ; hết hiệu ứng gõ chữ vẫn đọc hết câu. Bộ đọc dự phòng có giọng máy tổng hợp.
+- Game dùng bộ đọc của máy: Android TTS qua `AnHoaSpeech`, trình duyệt dùng Web Speech. Nếu thiếu giọng đọc hoặc bộ đọc lỗi, phát tiếng bíp bíp bằng Web Audio. Tạm dừng, tắt tiếng và ra nền đều ngắt hoặc dừng âm đúng trạng thái.
 - **Cài đặt âm thanh** có ở màn hình đầu, menu dừng chân khi khám phá và menu tạm dừng khi chiến đấu. Chỉnh riêng nhạc nền, hiệu ứng, hội thoại và lưu trên thiết bị. Nút ♪ và phím M trong chiến đấu vẫn bật/tắt nhanh. Phím M khi khám phá vẫn mở bản đồ.
 - Nhạc và hiệu ứng tạo bằng Web Audio, không tải tệp hoặc phụ thuộc dịch vụ ngoài. Khởi động sau thao tác đầu tiên của người chơi; tạm ngừng khi ứng dụng ra nền và tiếp tục khi trở lại. Giới hạn số nguồn âm đồng thời, tái sử dụng bộ đệm nhiễu và dùng bộ nén chung.
 
@@ -21,8 +21,8 @@ Nay các thao tác này chỉ thêm/xóa mục tiêu nhiệm vụ đang hoạt �
 
 ## Sửa âm thanh APK ngày 25/10/2026
 
-- Nguyên nhân mất giọng: trước đây chỉ gọi Web Speech API; WebView không đảm bảo cung cấp API này. Nay có cầu nối Android TTS và bộ đọc Việt ngoại tuyến trong APK. Không cần cài hoặc tải giọng ngoài.
+- Cầu nối Android TTS dùng giọng tiếng Việt đã có trên máy. Thiết bị thiếu giọng đọc phát âm báo bíp bíp.
 - Cài đặt có nút **Nghe thử giọng Việt** và trạng thái bộ đọc. Giữ tùy chọn tắt đọc thoại, âm lượng riêng và xử lý mute/nền ứng dụng.
 - Nhạc trên Android tăng gain 2 lần (khoảng +6 dB trước bộ nén); cài mới đặt nhạc 75%, giọng 90%. Giữ các mức cũ đã lưu, âm lượng hiệu ứng độc lập. Nhạc hạ khi đang đọc thoại.
-- Nguồn và giấy phép của bộ đọc được đóng gói tại `vendor/espeak-ng/`. Dữ liệu chỉ nạp lần đầu cần đọc và tổng hợp trong worker để tránh chặn giao diện.
+- Đã gỡ eSpeak-NG và worker khỏi mã nguồn, bản web và tài nguyên Android; game không tải bộ đọc thêm.
 - Kiểm tra: `tests/speech-output.mjs`, `tests/offline-speech-browser.cjs`, `tests/audio-browser.cjs`; phát PCM thật khi tắt nhạc và hiệu ứng, thiếu giọng hệ thống, hủy yêu cầu cũ, dừng/tiếp tục, mute, nền ứng dụng và giao diện nhỏ.

@@ -164,8 +164,7 @@ export function createGameAudio({storage,contextFactory,android=!!(globalThis.An
       while(nextNote<ctx.currentTime+.3){nextNote+=dt;step=(step+1)%128;stats.notes++;}
     }
     if(dialogue&&ctx.currentTime>=dialogue.next&&dialogue.remaining>0){
-      // A short, pitched character murmur remains available without a TTS voice.
-      const phase=dialogue.remaining%5,hz=dialogue.pitch*(1+phase*.055);note(voice,hz,ctx.currentTime,.065,.035,'triangle',hz*.85);note(voice,hz*2.1,ctx.currentTime,.055,.009,'sine');
+      const hz=dialogue.remaining%2?660:880;note(voice,hz,ctx.currentTime,.065,.035,'sine');
       dialogue.remaining--;dialogue.next=ctx.currentTime+.105;stats.syllables++;if(!dialogue.remaining){dialogue=null;apply();}
     }
   }

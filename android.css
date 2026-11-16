@@ -334,3 +334,14 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 /* Fire/lightning stacks stay above each compact enemy health bar. */
 .mobile-tactical #enemyNameplates .enemy-afflictions.compact-afflictions:not([hidden]){display:flex!important;gap:4px;pointer-events:none;z-index:1}
 .mobile-tactical #enemyNameplates .compact-afflictions span{font-size:11px;line-height:14px;padding:2px 5px}
+
+/* The editor displays the actual HUD; outlines only indicate drag targets. */
+#mobileLayoutGamePreview{position:absolute;inset:0;border:0;transform-origin:top left;pointer-events:none;background:transparent}
+#mobileLayoutEditor .mobile-layout-proxy{background:transparent!important;border:1px dashed #d1c18b55;box-shadow:none;padding:0;overflow:visible;color:transparent}
+#mobileLayoutEditor .mobile-layout-proxy.selected{background:transparent!important;border:2px solid #ffe1a1;box-shadow:0 0 8px #f9d17a77}
+.android-ui #combatSettingsButton,.android-ui.mobile-tactical #pauseCombatSettingsButton{display:none}
+#tacticalSettingsMenu #combatSettingsPanel{width:100%;max-height:none;overflow:visible}#tacticalSettingsMenu #combatSettingsPanel h2{display:block;font-size:18px;margin:0 0 10px}
+#tacticalSettingsMenu #closeCombatSettings{display:none}#tacticalSettingsMenu #androidLayoutSettings{display:block}
+#tacticalSettingsMenu .combat-setting{font-size:13px;padding:16px 0;flex-wrap:wrap}#tacticalSettingsMenu .combat-setting select{padding:10px;min-height:42px}
+
+#tacticalSettingsMenu #combatSettingsPanel .combat-view-help{display:block;font-size:11px;line-height:1.5}

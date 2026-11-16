@@ -4,10 +4,12 @@ import '../game-core.js';
 import {PRACTICE_GUARDIANS,validPracticeOpponent,practiceOpponentEncounter} from '../src/practice-opponent.js';
 import {createGuardianPhases} from '../src/guardian-phases.js';
 import {encounterAppearance} from '../src/encounter-appearance.js';
+import {opponentBalanceOverrides,createOpponentRules} from '../src/opponent-balance.js';
 const {spells,defaultLoadout,Fighter}=SealGameCore;
 assert.equal(PRACTICE_GUARDIANS.length,9);assert.equal(new Set(PRACTICE_GUARDIANS).size,9);assert.ok(!PRACTICE_GUARDIANS.includes('nameless'));
 for(const ids of [[],defaultLoadout.slice(0,4),[...defaultLoadout,spells[10].id],[...defaultLoadout.slice(0,4),defaultLoadout[0]],['unknown',...defaultLoadout.slice(0,4)]])assert.equal(validPracticeOpponent({type:'ninja',spells:ids},spells),false);
-const ninja=practiceOpponentEncounter({type:'ninja',spells:defaultLoadout},spells);assert.deepEqual(ninja.spellIds,defaultLoadout);assert.equal(ninja.hp,440);assert.notEqual(ninja.spellIds,defaultLoadout);
+const ninja=practiceOpponentEncounter({type:'ninja',spells:defaultLoadout},spells);assert.deepEqual(ninja.spellIds,defaultLoadout);assert.equal(ninja.hp,opponentBalanceOverrides['ninja:practice'].hp);assert.notEqual(ninja.spellIds,defaultLoadout);
+for(const element of PRACTICE_GUARDIANS){const ids=spells.filter(s=>s.element===element).slice(0,5).map(s=>s.id),profile=practiceOpponentEncounter({type:'ninja',spells:ids},spells),rules=createOpponentRules(SealGameCore.GameRules,profile);assert.deepEqual(profile.spellIds,ids);assert.deepEqual(rules.loadout,ids);assert.equal(profile.sealDelay,opponentBalanceOverrides['ninja:practice'].sealDelay);}
 assert.equal(validPracticeOpponent({type:'guardian',guardian:'nameless'},spells),false);
 for(const id of PRACTICE_GUARDIANS){
   const encounter=practiceOpponentEncounter({type:'guardian',guardian:id},spells),fighter=new Fighter(encounter.hp),phases=createGuardianPhases(new T.Scene());

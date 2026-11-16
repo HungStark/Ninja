@@ -17,6 +17,11 @@ export function mobileSpellPosition(index,count){
   const angle=(165+(index+.5)*120/count)*Math.PI/180;
   return {x:Math.cos(angle)*.73,y:Math.sin(angle)*.73};
 }
+export function createTacticalSpellButton(spell,index,count,doc=document){
+  const b=doc.createElement('button'),position=mobileSpellPosition(index,count);b.className='tactical-spell';b.dataset.tacticalSpell=index;b.dataset.mobileWidget='spell-'+index;b.setAttribute('aria-label',spell.name);b.style.setProperty('--dx',position.x);b.style.setProperty('--dy',position.y);b.style.setProperty('--element',spell.color);
+  b.innerHTML=`<span class="tactical-spell-icon">${spellImage(spell)}<b class="tactical-cooldown"></b></span><small class="tactical-cost"></small>`;
+  const cost=b.querySelector('.tactical-cost');cost.textContent=spell.cost;cost.setAttribute('aria-label','MANA '+spell.cost);return b;
+}
 export function setupMobileTacticalControls({canvas,getState,move=()=>{},aim=()=>{},cast,dash,selectTarget,heal,selectAmmo,sealSpell,pause,resume}){
   const root=document.createElement('section');root.id='mobileTacticalHUD';root.hidden=true;
   root.innerHTML=`<button id="tacticalSettings" aria-label="Cài đặt">⚙</button>
@@ -27,9 +32,10 @@ export function setupMobileTacticalControls({canvas,getState,move=()=>{},aim=()=
     <aside id="tacticalSpellInfo" role="tooltip" hidden><header><span class="tactical-info-art"></span><div><strong></strong><small></small></div></header><div class="tactical-info-seals"></div><p></p><small class="tactical-info-stats"></small></aside>`;
   document.body.append(root);
   const menu=document.createElement('section');menu.id='tacticalSettingsMenu';menu.hidden=true;menu.setAttribute('role','dialog');menu.setAttribute('aria-modal','true');menu.setAttribute('aria-label','Cài đặt');
-  menu.innerHTML='<nav><button data-tactical-tab="scroll" aria-pressed="true">Quyển trục</button><button data-tactical-tab="general" aria-pressed="false">Cài đặt chung</button></nav><div class="tactical-settings-body"><div data-tactical-pane="scroll"></div><div data-tactical-pane="general" hidden></div></div><button id="tacticalCloseSettings" aria-label="Đóng cài đặt">×</button>';
+  menu.innerHTML='<nav><button data-tactical-tab="scroll" aria-pressed="true">Quyển trục</button><button data-tactical-tab="general" aria-pressed="false">Cài đặt chung</button><button data-tactical-tab="combat" aria-pressed="false">Tùy chỉnh chiến đấu</button></nav><div class="tactical-settings-body"><div data-tactical-pane="scroll"></div><div data-tactical-pane="general" hidden></div><div data-tactical-pane="combat" hidden></div></div><button id="tacticalCloseSettings" aria-label="Đóng cài đặt">×</button>';
   document.body.append(menu);
   const get=id=>document.getElementById(id),pad=get('tacticalJoystick'),knob=pad.querySelector('i'),attack=get('tacticalCast'),aimPad=get('tacticalAimPad'),spells=get('tacticalSpells');
+  const previewSpells=globalThis.SealGameCore.spells.filter(s=>s.element==='fire').slice(0,5);spells.replaceChildren(...previewSpells.map((s,i)=>createTacticalSpellButton(s,i,previewSpells.length)));
   const guide=get('guide'),guideHome=guide.parentElement,pauseCard=document.querySelector('#pauseScreen .pause-card'),pauseHome=pauseCard.parentElement;
   const info=get('tacticalSpellInfo'),spellPointers=new Map(),tapPointers=new Map();let infoPointer=null;
   let enabled=false,menuOpen=false,wasExpanded=false,spellKey='',movePointer=null,attackPointer=null,worldPointer=null,ammoOpen=false,lastState=null;
@@ -51,7 +57,7 @@ export function setupMobileTacticalControls({canvas,getState,move=()=>{},aim=()=
     button.addEventListener('pointermove',e=>{const p=spellPointers.get(e.pointerId);if(p&&!p.held&&Math.hypot(e.clientX-p.x,e.clientY-p.y)>12){p.cancelled=true;clearTimeout(p.timer);}});
     button.addEventListener('click',e=>{e.preventDefault();if(e.detail===0&&live())sealSpell(index);});
   }
-  function showTab(tab){menu.querySelectorAll('[data-tactical-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tacticalTab===tab)));menu.querySelectorAll('[data-tactical-pane]').forEach(p=>p.hidden=p.dataset.tacticalPane!==tab);}
+  function showTab(tab){if(tab==='combat'){const panel=document.getElementById('combatSettingsPanel');if(panel)menu.querySelector('[data-tactical-pane="combat"]').append(panel);}menu.querySelectorAll('[data-tactical-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tacticalTab===tab)));menu.querySelectorAll('[data-tactical-pane]').forEach(p=>p.hidden=p.dataset.tacticalPane!==tab);}
   function openMenu(shouldPause=true){if(menuOpen)return;release();menuOpen=true;wasExpanded=guide.classList.contains('is-expanded');guide.classList.add('is-expanded');menu.querySelector('[data-tactical-pane="scroll"]').append(guide);menu.querySelector('[data-tactical-pane="general"]').append(pauseCard);menu.hidden=false;document.body.classList.add('mobile-tactical-menu-open');showTab('scroll');if(shouldPause)pause();get('tacticalCloseSettings').focus({preventScroll:true});}
   function closeMenu(shouldResume=true){if(!menuOpen)return;menuOpen=false;guideHome.append(guide);guide.classList.toggle('is-expanded',wasExpanded);pauseHome.append(pauseCard);menu.hidden=true;document.body.classList.remove('mobile-tactical-menu-open');if(shouldResume)resume();}
   menu.querySelectorAll('[data-tactical-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tacticalTab));
@@ -69,6 +75,8 @@ export function setupMobileTacticalControls({canvas,getState,move=()=>{},aim=()=
   attack.addEventListener('click',e=>{if(e.detail===0&&live()&&!attack.disabled)cast();});
   function end(e){
     tapPointers.delete(e.pointerId);
+    // Resolve pending seals before an attack released by the same touch event.
+    if(attackPointer?.id===e.pointerId&&e.type==='pointerup')for(const p of spellPointers.values()){if(!p.committed&&!p.held&&!p.cancelled){clearTimeout(p.timer);p.committed=true;sealSpell(p.index);}}
     const spellPointer=spellPointers.get(e.pointerId);if(spellPointer){clearTimeout(spellPointer.timer);spellPointers.delete(e.pointerId);spellPointer.button.classList.remove('pressed');if(infoPointer===e.pointerId)hideSpellInfo();if(e.type==='pointerup'&&!spellPointer.committed&&!spellPointer.held&&!spellPointer.cancelled&&live())sealSpell(spellPointer.index);}
     if(e.pointerId===movePointer){movePointer=null;move([0,0]);knob.style.transform='';}
     if(attackPointer?.id===e.pointerId){const cancel=e.type!=='pointerup';attackPointer=null;aimPad.hidden=true;attack.classList.remove('pressed');if(!cancel&&live()&&!attack.disabled)cast();else aim(null);}
@@ -88,9 +96,7 @@ export function setupMobileTacticalControls({canvas,getState,move=()=>{},aim=()=
     get('tacticalSnow').textContent=Math.floor(s.snow||0)+' '+ 'tuyết';const potion=get('tacticalPotion');potion.disabled=!s.canHeal;potion.querySelector('small').textContent=s.flask?.charges||0;
     const target=s.target;get('tacticalEnemy').hidden=!target;if(target){get('tacticalEnemy').dataset.enemyId=target.id;get('tacticalEnemy').querySelector('strong').textContent=target.name;const meter=get('tacticalEnemy').querySelector('.tactical-meter');meter.querySelector('i').style.width=Math.max(0,Math.min(100,target.hp/target.maxHp*100))+'%';meter.querySelector('span').textContent=Math.ceil(target.hp)+' / '+target.maxHp;renderEnemySeals(root.querySelector('.tactical-enemy-seals'),target.sequence||[],target.casting);}
     const key=s.spells.map(x=>x.spell.id).join('|');if(key!==spellKey){clearSpellPointers();spellKey=key;spells.replaceChildren();s.spells.forEach(({spell},i)=>{
-      const b=document.createElement('button'),position=mobileSpellPosition(i,s.spells.length);b.className='tactical-spell';b.dataset.tacticalSpell=i;b.setAttribute('aria-label',spell.name);b.style.setProperty('--dx',position.x);b.style.setProperty('--dy',position.y);
-      b.innerHTML=`<span class="tactical-spell-icon">${spellImage(spell)}<b class="tactical-cooldown"></b></span><small class="tactical-cost"></small>`;
-      const cost=b.querySelector('.tactical-cost');cost.textContent=spell.cost;cost.setAttribute('aria-label','MANA '+spell.cost);spellPress(b,i);spells.append(b);
+      const b=createTacticalSpellButton(spell,i,s.spells.length);spellPress(b,i);spells.append(b);
     });}
     s.spells.forEach((entry,i)=>{const b=spells.children[i];b.classList.toggle('selected',i===s.selected);b.classList.toggle('unavailable',!entry.available);b.style.setProperty('--element',entry.spell.color);b.querySelector('.tactical-cooldown').textContent=entry.remaining>.01?entry.remaining.toFixed(entry.remaining<10?1:0):'';});
     attack.disabled=!s.canAttack;get('tacticalDash').disabled=!s.canDash;get('tacticalDash').querySelector('small').textContent=s.dashCooldown>.01?s.dashCooldown.toFixed(1):'';

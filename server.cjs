@@ -2,7 +2,6 @@ const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
 const allowed=new Set(['index.en.html','language-loader.js','game.en.js','game-core.en.js','index.html','style.css','adventure.css','android.css','game.js','game-core.js','ket_an.jpg','assets/ui/attack-button.png','assets/ninja-hands.glb','assets/ha-ly.glb','assets/hero-ninja.glb','assets/npc.vrm','assets/npc_nam.vrm','assets/npc_nu.vrm']);
-for(const file of ['worker.js','pre-runtime.js','README.md','source.tgz','wrapper-source.tgz','package/espeak-ng.js','package/espeak-ng.data','package/COPYING','package/README.md','package/package.json'])allowed.add('vendor/espeak-ng/'+file);
 for(const file of ['ha-ly-simple.glb','hero-ninja-simple.glb','hero-ninja-reference.glb','village-ninja.glb','npc_nam-simple.vrm','npc_nu-simple.vrm'])allowed.add('assets/'+file);
 for(const id of ['nameless','water','fire','lightning','wind','earth','wood','ice','light','dark'])allowed.add('assets/music/'+id+'.wav');
 const portraitDirectory=path.join(__dirname,'assets','portraits');if(fs.existsSync(portraitDirectory))for(const file of fs.readdirSync(portraitDirectory))if(/^[a-f0-9]{20}\.webp$/.test(file))allowed.add('assets/portraits/'+file);

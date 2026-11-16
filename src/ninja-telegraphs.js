@@ -32,7 +32,7 @@ export function createNinjaTelegraphs(scene,{heightAt=()=>0}={}){
     sync,
     pending:id=>jobs.some(j=>!j.fired&&j.sourceId===id),
     clear(){for(const job of [...jobs])remove(job);},
-    state:()=>jobs.map(j=>({id:j.id,spellId:j.spellId,sourceId:j.sourceId,target:[...j.target],age:j.age,warning:NINJA_WARNING_TIME,visualStyle:'player-guide',borderColor:'red',fired:j.fired,visible:!!j.group,existingWarning:j.existingWarning,shapes:j.shapes})),
+    state:()=>jobs.map(j=>({id:j.id,spellId:j.spellId,sourceId:j.sourceId,target:[...j.target],age:j.age,warning:NINJA_WARNING_TIME,visualStyle:'player-guide',borderColor:'red',fired:j.fired,visible:!!j.group&&scene.userData.predictionLines!==false,existingWarning:j.existingWarning,shapes:j.shapes})),
     dispose(){this.clear();root.removeFromParent();warnings.dispose();}
   };
 }

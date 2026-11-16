@@ -26,7 +26,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
     report.push({mobile,id,frames:samples.length,finalEnemyHealth:samples.at(-1).enemyHealth});
    }
    if(!mobile){
-    checkpoint='manual look during spell';await page.locator('#beginnerAimAssist').uncheck();
+    checkpoint='manual look during spell';await page.locator('#combatSettingsButton').click();await page.locator('#beginnerAimAssist').uncheck();await page.locator('#closeCombatSettings').click();
     await page.evaluate(()=>{const api=__AN_HOA__;api.combatTest.resetArts();api.aimAt([0,1.72,-18]);api.advance(.01);api.combatTest.launch('water-tsunami');api.advance(.1);});
     const before=await page.evaluate(()=>__AN_HOA__.state());await page.evaluate(()=>document.getElementById('world').dispatchEvent(new MouseEvent('mousemove',{bubbles:true,movementX:20,movementY:12})));await page.evaluate(()=>__AN_HOA__.advance(.01));const after=await page.evaluate(()=>__AN_HOA__.state());assert.ok(Math.abs(after.yaw-before.yaw+.05)<1e-10);assert.ok(Math.abs(after.pitch-before.pitch+.03)<1e-10);stable(after,checkpoint);await page.screenshot({path:out+'/desktop-water-manual-look.png'});
    }else await page.screenshot({path:out+'/mobile-first-person.png'});

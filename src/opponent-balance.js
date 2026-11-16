@@ -946,7 +946,7 @@ function stageSettings(profile,phase,overrides){
   return {id,...(value.baseDamagePercent!==undefined?{baseDamagePercent:value.baseDamagePercent}:{}),
     mana:value.mana??100,infiniteMana:value.infiniteMana??profile.kind==='boss',
     sealDelay:value.sealDelay??profile.sealDelay??.42,
-    ...(value.hp!==undefined?{hp:value.hp}:{}),...(!beast&&value.spellIds?{spellIds:[...value.spellIds]}:{})};
+    ...(value.hp!==undefined?{hp:value.hp}:{}),...(!beast&&(profile.customSpellIds||value.spellIds)?{spellIds:[...(profile.customSpellIds||value.spellIds)]}:{})};
 }
 export function configureOpponent(profile,overrides=opponentBalanceOverrides){
   if(profile.tournamentStats){const s=profile.tournamentStats;return {...profile,balanceApplied:true,hp:s.maxHp,damageMultiplier:s.damageMultiplier,moveSpeed:s.moveSpeed,balanceStages:[{id:'school-tournament',mana:s.maxChakra,chakraRegen:s.chakraRegen,infiniteMana:false,sealDelay:profile.sealDelay??.9,baseDamagePercent:s.damageMultiplier*100}]};}

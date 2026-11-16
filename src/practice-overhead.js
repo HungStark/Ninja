@@ -58,8 +58,8 @@ export function createPracticeOverhead(scene,{actorScale=1,environment}={}){
       const distance=CAMERA_HEIGHT/Math.sin(CAMERA_PITCH);
       camera.fov=CAMERA_FOV;camera.position.copy(focus).addScaledVector(back,distance);camera.lookAt(focus);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);projectPointer(camera,canvas);
     },
-    update({enabled,active,spell,available,position,target,heightAt,showFences=true,fencesEnabled=enabled}){
-      fence.visible=fencesEnabled&&showFences;playerMarker.visible=enabled;playerMarker.position.set(position[0],heightAt(position[0],position[2])+.14,position[2]);root.visible=active&&practiceSpellNeedsAim(spell);
+    update({enabled,active,spell,available,position,target,heightAt,showFences=true,fencesEnabled=enabled,predictionLines=true}){
+      fence.visible=fencesEnabled&&showFences;playerMarker.visible=enabled;playerMarker.position.set(position[0],heightAt(position[0],position[2])+.14,position[2]);root.visible=active&&predictionLines&&practiceSpellNeedsAim(spell);
       destination.visible=active&&!!moveTarget;if(destination.visible)destination.position.set(moveTarget[0],heightAt(moveTarget[0],moveTarget[2])+.13,moveTarget[2]);
       preview=null;if(!root.visible)return;
       const shape=spellAimShape(spell,position,cursor,target);

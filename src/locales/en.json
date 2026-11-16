@@ -2963,5 +2963,18 @@
   "Di chuyển: Tùy chỉnh chiến đấu": "Movement: Combat customization",
   "G: Lướt": "G: Dash",
   "Chuột: chọn mục tiêu": "Mouse: select a target",
-  "Tạo sóng lớn gây sát thương lên mọi đối thủ bị quét qua, mỗi đối thủ một lần trong mỗi đợt sóng. Sóng tiếp tục sau khi trúng mục tiêu, cuốn chiêu thức và đẩy phân thân về phía sau đối thủ.": "Create a large wave that damages every opponent it sweeps through once per wave. It continues past targets, sweeps up spells and pushes shadow clones behind the opponent."
+  "Tạo sóng lớn gây sát thương lên mọi đối thủ bị quét qua, mỗi đối thủ một lần trong mỗi đợt sóng. Sóng tiếp tục sau khi trúng mục tiêu, cuốn chiêu thức và đẩy phân thân về phía sau đối thủ.": "Create a large wave that damages every opponent it sweeps through once per wave. It continues past targets, sweeps up spells and pushes shadow clones behind the opponent.",
+  "Góc nhìn": "Camera view",
+  "Góc nhìn thứ ba": "Third-person view",
+  "Đường dự đoán chiêu": "Skill prediction lines",
+  "Điểm hồi sinh": "Respawn point",
+  "Xem trước giao diện": "Interface preview",
+  "Âm báo bíp bíp khi máy không có giọng đọc.": "Beep sounds when no system voice is available.",
+  "Không phát được âm báo.": "Could not play beep sounds.",
+  "0 tuyết": "0 snow",
+  "E · Tương tác": "E · Interact",
+  "Khám phá vùng đất": "Explore the region",
+  "Game dùng giọng đọc của máy. Nếu máy không có giọng đọc, game phát tiếng bíp bíp.": "The game uses your device voice. If no system voice is available, it plays beep sounds.",
+  "Chiêu": "Skill",
+  "Chọn góc nhìn trước trận; giữ nguyên đến khi trận kết thúc.": "Choose your camera before battle; it stays fixed until the battle ends."
 }

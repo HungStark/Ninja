@@ -1,4 +1,5 @@
 import {sprintTargetClearance} from './mobile-sprint.js';
+import {createMobileLayoutPreview} from './mobile-layout-preview.js';
 export const MOBILE_LAYOUT_KEY='anhoa-mobile-layout-v1';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export function readMobileLayout(value,ids){
@@ -11,20 +12,21 @@ export function fitMobileWidget(base,pref,width,height,safe={left:8,right:8,top:
   return {x:clamp(pref?pref.x*width:base.x+base.width/2,safe.left+w/2,width-safe.right-w/2),y:clamp(pref?pref.y*height:base.y+base.height/2,safe.top+h/2,height-safe.bottom-h/2),width:w,height:h,scale,opacity:pref?.opacity??1};
 }
 
-export function setupMobileLayout({getState,pause,release}){
+export function setupMobileLayout({getState,pause,release,handsImage}){
   const specs=[
     ['joystick','explore','#androidJoystick','Cần di chuyển','◎'],
-    ['jump','explore','[data-mobile-key=" "]','Nhảy','↑'],['training','explore','[data-mobile-key="c"]','Tu luyện','C'],['equipment','explore','[data-mobile-key="v"]','Trang bị','V'],
+    ['interact','explore','[data-mobile-key="e"]','Tương tác','E'],['jump','explore','[data-mobile-key=" "]','Nhảy','↑'],['training','explore','[data-mobile-key="c"]','Tu luyện','C'],['equipment','explore','[data-mobile-key="v"]','Trang bị','V'],
     ['story','explore','.journey-quest','Tuyến truyện chính','▤'],['map','explore','.journey-minimap','Bản đồ khu vực','◎'],
     ['journal','explore','#openJournal','Nhật ký','▤'],['atlas','explore','#openAtlas','Bản đồ thế giới','◎'],['menu','explore','#journeyMenu','Tạm dừng','Ⅱ'],
-    ['location','explore','.journey-location','Tên vùng đất','◇'],['messages','explore','.android-explore-messages','Thông báo khám phá','!'],['nearby','explore','#nearbyAction','Gợi ý tương tác','E'],
+    ['location','explore','.journey-location','Tên vùng đất','◇'],['checkpoint','explore','.journey-checkpoint','Điểm hồi sinh','◇'],['messages','explore','.android-explore-messages','Thông báo khám phá','!'],['nearby','explore','#nearbyAction','Gợi ý tương tác','E'],
     ['health','combat','#tacticalVitals','Máu và mana','♥'],['enemy','combat','#tacticalEnemy','Mục tiêu đang ghim','⌖'],['combo','combat','.center-status','Chuỗi kết ấn','印'],
     ['cast','combat','#tacticalCast','Thi triển / Tấn công','✦'],['boost','combat','#tacticalDash','Lướt','G'],
-    ['battle-joystick','combat','#tacticalJoystick','Cần di chuyển chiến đấu','◎'],['spells','combat','#tacticalSpells','Các nút kết ấn','印'],
+    ['battle-joystick','combat','#tacticalJoystick','Cần di chuyển chiến đấu','◎'],
+    ...Array.from({length:5},(_,i)=>['spell-'+i,'combat','[data-tactical-spell="'+i+'"]','Chiêu '+(i+1),'印']),
     ['ammo','combat','#tacticalAmmo','Chọn phi tiêu','✦'],['settings','combat','#tacticalSettings','Cài đặt chiến đấu','⚙'],['hands','combat','#practiceHandInset','Khung kết ấn','▤']
   ].map(([id,mode,selector,label,glyph])=>({id,mode,selector,label,glyph,el:document.querySelector(selector)})).filter(s=>s.el);
   const ids=specs.map(s=>s.id);let saved={};try{saved=readMobileLayout(JSON.parse(localStorage.getItem(MOBILE_LAYOUT_KEY)),ids);}catch{}
-  let draft={},mode='explore',selected='',drag=null,open=false,scheduled=0,boardScale=1,bases=new Map();
+  let draft={},mode='explore',selected='',drag=null,open=false,scheduled=0,boardScale=1,bases=new Map(),previewDocument=null,previewRevision=0;
   for(const s of specs)s.el.dataset.mobileWidget=s.id;
   const safeProbe=document.createElement('div');safeProbe.className='mobile-safe-probe';document.body.append(safeProbe);
   const safe=()=>{const c=getComputedStyle(safeProbe);return {left:8+parseFloat(c.paddingLeft),right:8+parseFloat(c.paddingRight),top:8+parseFloat(c.paddingTop),bottom:8+parseFloat(c.paddingBottom)};};
@@ -40,7 +42,7 @@ export function setupMobileLayout({getState,pause,release}){
     if(base.width<20||base.height<16)return {x:innerWidth*.35,y:innerHeight*.75,width:Math.min(180,innerWidth*.4),height:44};return base;
   }
   function apply(){
-    const insets=safe();for(const s of specs){const p=saved[s.id];if(!p){for(const n of ['--mobile-layout-x','--mobile-layout-y','--mobile-layout-scale','--mobile-layout-opacity'])s.el.style.removeProperty(n);continue;}
+    const insets=safe();for(const s of specs){s.el=document.querySelector(s.selector)||s.el;const p=saved[s.id];if(!p){for(const n of ['--mobile-layout-x','--mobile-layout-y','--mobile-layout-scale','--mobile-layout-opacity'])s.el.style.removeProperty(n);continue;}
       if(s.id==='joystick'&&s.el.classList.contains('floating-active'))continue;
       const base=measure(s),fit=fitMobileWidget(base,p,innerWidth,innerHeight,widgetSafe(s,p)),el=s.el;
       el.style.setProperty('--mobile-layout-x','0px');el.style.setProperty('--mobile-layout-y','0px');el.style.setProperty('--mobile-layout-scale',String(fit.scale));el.style.setProperty('--mobile-layout-opacity',String(fit.opacity));
@@ -55,29 +57,30 @@ export function setupMobileLayout({getState,pause,release}){
   }
   function schedule(){if(scheduled)return;scheduled=requestAnimationFrame(()=>{scheduled=0;apply();});}
   const observer=new ResizeObserver(schedule);for(const s of specs)observer.observe(s.el);
+  new MutationObserver(schedule).observe(document.getElementById('tacticalSpells'),{childList:true});
   for(const id of ['guideToggle','campaignToggle'])document.getElementById(id).addEventListener('click',schedule);
-  window.addEventListener('resize',()=>{schedule();if(open){for(const s of specs)bases.set(s.id,measure(s));draw();}});
+  window.addEventListener('resize',()=>{schedule();if(open)chooseMode(mode);});
 
   const editor=document.createElement('section');editor.id='mobileLayoutEditor';editor.hidden=true;editor.setAttribute('role','dialog');editor.setAttribute('aria-modal','true');editor.setAttribute('aria-labelledby','mobileLayoutTitle');
   editor.innerHTML=`<header><div><small>CÀI ĐẶT ĐIỆN THOẠI</small><h2 id="mobileLayoutTitle">Tùy chỉnh giao diện</h2></div><nav><button data-layout-mode="explore">Khám phá</button><button data-layout-mode="combat">Chiến đấu</button></nav></header><div class="mobile-layout-workspace"><div class="mobile-layout-preview"><div id="mobileLayoutBoard"></div><p>Kéo nút hoặc bảng để đổi vị trí.</p></div><aside><label>Thành phần<select id="mobileLayoutSelection"></select></label><label>Ngang <output id="mobileLayoutXValue"></output><input id="mobileLayoutX" type="range" min="0" max="100" step="1"></label><label>Dọc <output id="mobileLayoutYValue"></output><input id="mobileLayoutY" type="range" min="0" max="100" step="1"></label><label>Kích thước <output id="mobileLayoutScaleValue"></output><input id="mobileLayoutScale" type="range" min="65" max="160" step="5"></label><label>Độ rõ <output id="mobileLayoutOpacityValue"></output><input id="mobileLayoutOpacity" type="range" min="40" max="100" step="5"></label><p>Cần di chuyển tự dịch trong vùng gần vị trí đã đặt.</p><button id="mobileLayoutResetItem">Đặt lại thành phần</button></aside></div><footer><button id="mobileLayoutReset">Mặc định tất cả</button><span id="mobileLayoutNotice" role="status"></span><button id="mobileLayoutCancel">Hủy</button><button id="mobileLayoutSave">Lưu bố cục</button></footer>`;
   document.body.append(editor);const get=id=>document.getElementById(id),board=get('mobileLayoutBoard'),select=get('mobileLayoutSelection');
+  const frame=document.createElement('iframe');frame.id='mobileLayoutGamePreview';frame.title='Xem trước giao diện';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');board.append(frame);
+  function previewWidget(s,fit){const el=previewDocument?.querySelector(s.selector),base=bases.get(s.id);if(!el||!base)return;el.style.setProperty('--mobile-layout-x',(fit.x-base.x-base.width/2)+'px');el.style.setProperty('--mobile-layout-y',(fit.y-base.y-base.height/2)+'px');el.style.setProperty('--mobile-layout-scale',String(fit.scale));el.style.setProperty('--mobile-layout-opacity',String(fit.opacity));}
   function current(){const s=specs.find(s=>s.id===selected),base=bases.get(selected),fit=fitMobileWidget(base,draft[selected],innerWidth,innerHeight,widgetSafe(s,draft[s.id]));return {s,fit,p:draft[selected]||{x:fit.x/innerWidth,y:fit.y/innerHeight,scale:1,opacity:1}};}
   function fields(){const {p}=current();for(const [name,value] of [['X',p.x*100],['Y',p.y*100],['Scale',p.scale*100],['Opacity',p.opacity*100]]){get('mobileLayout'+name).value=Math.round(value);get('mobileLayout'+name+'Value').textContent=Math.round(value)+'%';}select.value=selected;}
   function draw(){
-    if(!open)return;const parent=board.parentElement,availableW=parent.clientWidth-16,availableH=parent.clientHeight-34;boardScale=Math.max(.1,Math.min(availableW/innerWidth,availableH/innerHeight));board.style.width=innerWidth*boardScale+'px';board.style.height=innerHeight*boardScale+'px';board.replaceChildren();
+    if(!open)return;const parent=board.parentElement,availableW=parent.clientWidth-16,availableH=parent.clientHeight-34;boardScale=Math.max(.1,Math.min(availableW/innerWidth,availableH/innerHeight));board.style.width=innerWidth*boardScale+'px';board.style.height=innerHeight*boardScale+'px';frame.style.cssText=`width:${innerWidth}px;height:${innerHeight}px;transform:scale(${boardScale})`;board.querySelectorAll('[data-layout-widget]').forEach(el=>el.remove());
     editor.querySelectorAll('[data-layout-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.layoutMode===mode)));
     for(const s of specs.filter(s=>s.mode===mode)){
-      const fit=fitMobileWidget(bases.get(s.id),draft[s.id],innerWidth,innerHeight,widgetSafe(s,draft[s.id])),box=document.createElement('button');box.type='button';box.dataset.layoutWidget=s.id;box.className='mobile-layout-proxy'+(selected===s.id?' selected':'')+(s.id==='joystick'?' joystick-proxy':'');box.setAttribute('aria-label',s.label);box.style.cssText=`left:${(fit.x-fit.width/2)*boardScale}px;top:${(fit.y-fit.height/2)*boardScale}px;width:${fit.width*boardScale}px;height:${fit.height*boardScale}px;opacity:${fit.opacity}`;
-      const glyph=document.createElement('b');glyph.textContent=s.glyph;const label=document.createElement('small');label.textContent=s.label;box.append(glyph,label);
-      if(s.id==='guide'){const rows=document.createElement('span');rows.className='layout-guide-rows';rows.textContent='①　②　③　④　⑤';box.append(rows);}
+      const fit=fitMobileWidget(bases.get(s.id),draft[s.id],innerWidth,innerHeight,widgetSafe(s,draft[s.id])),box=document.createElement('button');box.type='button';box.dataset.layoutWidget=s.id;box.className='mobile-layout-proxy'+(selected===s.id?' selected':'');box.setAttribute('aria-label',s.label);box.title=s.label;box.style.cssText=`left:${(fit.x-fit.width/2)*boardScale}px;top:${(fit.y-fit.height/2)*boardScale}px;width:${fit.width*boardScale}px;height:${fit.height*boardScale}px`;previewWidget(s,fit);
       box.addEventListener('pointerdown',e=>{e.preventDefault();selected=s.id;fields();board.querySelector('.selected')?.classList.remove('selected');box.classList.add('selected');drag={id:e.pointerId,x:e.clientX,y:e.clientY,p:{...current().p},box};box.setPointerCapture(e.pointerId);});
-      box.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId)return;const p={...drag.p,x:clamp(drag.p.x+(e.clientX-drag.x)/boardScale/innerWidth,0,1),y:clamp(drag.p.y+(e.clientY-drag.y)/boardScale/innerHeight,0,1)};draft[s.id]=p;const f=fitMobileWidget(bases.get(s.id),p,innerWidth,innerHeight,widgetSafe(s,draft[s.id]));box.style.left=(f.x-f.width/2)*boardScale+'px';box.style.top=(f.y-f.height/2)*boardScale+'px';fields();});
+      box.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId)return;const p={...drag.p,x:clamp(drag.p.x+(e.clientX-drag.x)/boardScale/innerWidth,0,1),y:clamp(drag.p.y+(e.clientY-drag.y)/boardScale/innerHeight,0,1)};draft[s.id]=p;const f=fitMobileWidget(bases.get(s.id),p,innerWidth,innerHeight,widgetSafe(s,draft[s.id]));box.style.left=(f.x-f.width/2)*boardScale+'px';box.style.top=(f.y-f.height/2)*boardScale+'px';previewWidget(s,f);fields();});
       const finish=e=>{if(drag?.id!==e.pointerId)return;drag=null;draw();};for(const name of ['pointerup','pointercancel','lostpointercapture'])box.addEventListener(name,finish);board.append(box);
     }
     fields();
   }
-  function chooseMode(next){mode=next;const list=specs.filter(s=>s.mode===mode);select.replaceChildren(...list.map(s=>{const option=document.createElement('option');option.value=s.id;option.textContent=s.label;return option;}));if(!list.some(s=>s.id===selected))selected=list[0].id;draw();}
-  function close(){open=false;drag=null;editor.hidden=true;document.body.classList.remove('mobile-layout-editing');schedule();}
+  async function chooseMode(next){mode=next;const revision=++previewRevision;previewDocument=null;const list=specs.filter(s=>s.mode===mode);select.replaceChildren(...list.map(s=>{const option=document.createElement('option');option.value=s.id;option.textContent=s.label;return option;}));if(!list.some(s=>s.id===selected))selected=list[0].id;draw();const doc=await createMobileLayoutPreview(frame,mode,specs,{handsImage,isCurrent:()=>open&&revision===previewRevision});if(!open||revision!==previewRevision)return;previewDocument=doc;for(const s of list){const el=doc.querySelector(s.selector),r=el?.getBoundingClientRect();if(r?.width&&r.height)bases.set(s.id,{x:r.x,y:r.y,width:r.width,height:r.height});}draw();}
+  function close(){open=false;previewRevision++;drag=null;editor.hidden=true;document.body.classList.remove('mobile-layout-editing');schedule();}
   function show(){if(open)return;release();const state=getState();if(state.started&&!state.paused&&!state.won&&!['home','explore','dialog','progression','equipment','journal','shop','atlas'].includes(state.phase))pause();draft=structuredClone(saved);for(const s of specs)bases.set(s.id,measure(s));open=true;editor.hidden=false;document.body.classList.add('mobile-layout-editing');get('mobileLayoutNotice').textContent='';chooseMode(['combat','duel'].includes(state.phase)?'combat':'explore');}
   editor.querySelectorAll('[data-layout-mode]').forEach(b=>b.onclick=()=>chooseMode(b.dataset.layoutMode));select.onchange=()=>{selected=select.value;draw();};
   for(const [name,key,multiplier] of [['X','x',.01],['Y','y',.01],['Scale','scale',.01],['Opacity','opacity',.01]])get('mobileLayout'+name).oninput=e=>{draft[selected]={...current().p,[key]:Number(e.target.value)*multiplier};draw();};

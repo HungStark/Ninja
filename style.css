@@ -414,3 +414,11 @@ header>#helpButton{margin-left:auto}
 @media(max-width:760px){.desktop-battle-stack{left:12px;width:230px}.desktop-battle-stack>.center-status{padding:14px}}
 
 .combat-aim-toggle{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:40px;cursor:pointer;user-select:none;white-space:nowrap;touch-action:manipulation}.combat-aim-toggle input{width:17px;height:17px;margin:0;flex:none;accent-color:var(--orange);cursor:pointer}.combat-aim-toggle span{margin:0;font-size:inherit}.combat-aim-toggle:focus-within{outline:2px solid var(--orange);outline-offset:3px}.pause-card>.combat-aim-toggle{display:flex;width:100%;margin-top:16px;padding:14px;font-size:16px}.android-pause-settings>.combat-aim-toggle{flex:1 0 100%;min-height:44px}.pause-card{max-height:90dvh;overflow-y:auto}
+
+/* Combat settings share one panel on desktop and touch screens. */
+#combatSettingsDialog{z-index:180}#combatSettingsPanel{width:min(440px,92vw);text-align:left}
+#combatSettingsPanel h2{margin:0 0 18px}.combat-setting{display:flex;align-items:center;gap:12px;padding:14px 0;font-size:15px;color:#eee2c6}
+.combat-setting input{width:20px;height:20px;flex:none;accent-color:var(--orange)}.combat-setting select{margin-left:auto;max-width:65%;padding:9px;background:#17333b;color:#eee2c6;border:1px solid #b9aa7b88;border-radius:4px;font:inherit}
+#closeCombatSettings{width:100%;margin-top:15px}
+
+.combat-view-help{margin:0 0 12px;color:#a6bebc;font-size:12px;line-height:1.5}.combat-setting select:disabled{opacity:.55;cursor:not-allowed}

@@ -36,8 +36,4 @@ await fs.cp(path.join(root,'assets','ui','spells'),path.join(output,'assets','ui
 await fs.cp(path.join(root,'assets','music'),path.join(output,'assets','music'),{recursive:true,filter:source=>!path.extname(source)||source.endsWith('.wav')});
 console.log(`Prepared ${files.length} static files for Vercel in dist/`);
 
-// AAPT transparently expands .gz assets; use .tgz and remove old generated names.
-for(const name of ['source.tar.gz','wrapper-source.tar.gz'])await fs.unlink(path.join(output,'vendor/espeak-ng',name)).catch(e=>{if(e.code!=='ENOENT')throw e;});
-await fs.cp(path.join(root,'vendor/espeak-ng'),path.join(output,'vendor/espeak-ng'),{recursive:true});
-
 await pruneUnusedBuildAssets(output);

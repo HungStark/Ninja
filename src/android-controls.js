@@ -3,7 +3,7 @@ import {setupMobileLayout} from './mobile-layout.js';
 import {sprintTargetOffset,sprintTargetClearance} from './mobile-sprint.js';
 import {setupMobileTacticalControls} from './mobile-tactical-controls.js';
 export const androidInterface=()=>document.documentElement.dataset.android==='true'||(navigator.maxTouchPoints>0&&matchMedia('(pointer:coarse)').matches);
-export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAndCast,holdStep,releaseStep,boost,look,pause,selectAmmo,toggleGuide,sprint,tacticalMove,tacticalAim,tacticalCast,selectTarget,heal,resume}){
+export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAndCast,holdStep,releaseStep,boost,look,pause,selectAmmo,toggleGuide,sprint,tacticalMove,tacticalAim,tacticalCast,selectTarget,heal,resume,handsImage}){
   if(!androidInterface())return null;
   if(!document.querySelector('link[href$="android.css"]')){const css=document.createElement('link');css.rel='stylesheet';css.href='android.css';document.head.append(css);}
   document.body.classList.add('android-ui');
@@ -110,7 +110,7 @@ export function setupAndroidControls({canvas,getState,seal,sealSpell,cast,pinAnd
   window.addEventListener('resize',release);
   document.querySelector('.center-status').append(root.querySelector('#androidClearSeals'));
   const tactical=setupMobileTacticalControls({canvas,getState,move:tacticalMove,aim:tacticalAim,cast:tacticalCast,dash:boost,selectTarget,heal,selectAmmo,sealSpell,pause,resume});
-  const mobileLayout=setupMobileLayout({getState,pause,release:()=>{release();tactical.release();}});
+  const mobileLayout=setupMobileLayout({getState,pause,handsImage,release:()=>{release();tactical.release();}});
   return {enabled:true,get aiming(){return tactical.aiming||drag!==null;},tacticalState:()=>tactical.state(),update(){const s=getState();if(phase!==s.phase){release();phase=s.phase;hudSampleAt=-Infinity;}if(!live()&&(stepPointers.size||actionPointers.size||drag))release();combat.hidden=!s.started||s.won||s.paused||s.phase==='explore'||s.tactical;explore.hidden=s.phase!=='explore';if(s.phase==='explore')clearCoveredLabels();
     root.querySelectorAll('[data-touch-ammo]').forEach(b=>{const n=s.equipment?.ammo[b.dataset.touchAmmo]??(b.dataset.touchAmmo==='iron'?Infinity:0);b.disabled=n<=0;b.querySelector('small').textContent=n===Infinity?'∞':n;b.classList.toggle('selected',s.equipment?s.equipment.shuriken.id===b.dataset.touchAmmo:b.dataset.touchAmmo==='iron');});
     root.querySelector('#androidAmmoCurrent').textContent=s.equipment?s.equipment.shuriken.name.replace('Phi tiêu ',''):'sắt';

@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {createSpellAimGuide} from './spell-aim-vfx.js';
+export const COMBAT_PREDICTION_LAYER=2;
 
 // Enemy warnings use the player's exact guide geometry with a red palette.
 export function createCombatWarningVfx(parent,{heightAt=()=>0}={}){
@@ -13,7 +14,7 @@ export function createCombatWarningVfx(parent,{heightAt=()=>0}={}){
       const p=s.position||s.from,from=[0,0,0],to=s.to?[s.to[0]-p[0],0,s.to[2]-p[2]]:[0,0,0],length=Math.hypot(to[0],to[2])||1;
       root.position.set(p[0],heightAt(p[0],p[2])+.12,p[2]);root.userData.warningKind=s.kind;
       guide.update({kind:s.kind==='circle'?'area':s.kind==='sector'?'sector':s.kind==='wall'?'wall':'direction',position:from,center:to,direction:s.direction||[to[0]/length,0,to[2]/length],width:s.width||.2,radius:s.radius||1,arc:s.arc,heightAt:()=>-.2,available:true});
-    };root.userData.updateWarning=update;update(shape);return root;
+    };root.userData.updateWarning=update;update(shape);root.traverse(o=>o.layers.set(COMBAT_PREDICTION_LAYER));return root;
   }
   return {show,area:(p,r,host)=>show({kind:'circle',position:p,radius:r},host),lane:(a,b,width,host)=>show({kind:'lane',from:a,to:b,width},host),
     release(node){if(!node)return;const list=[];node.traverse(child=>{if(active.has(child))list.push(child);});for(const child of list)release(child);},
