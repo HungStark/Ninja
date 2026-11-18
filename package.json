@@ -135,6 +135,8 @@
     "test:shop-layout": "node tools/build.mjs && node tests/shop-layout-browser.cjs",
     "test:inventory-map": "node tests/inventory-map-core.mjs && node tools/build-android.mjs && node tests/inventory-map-browser.cjs",
     "test:opening": "node tools/build-vercel.mjs && node tests/opening-cinematic-browser.cjs",
+    "test:elite-gear-prices": "node tests/elite-gear-prices.mjs",
+    "test:guardian-strike-vfx": "node tests/guardian-strike-vfx-core.mjs && node tests/guardian-vfx-core.mjs && node tests/guardian-telegraphs-core.mjs && node tests/guardian-arsenal-browser.cjs",
     "test:guardian-bosses": "node tests/guardian-arsenal-core.mjs && node tests/guardian-vfx-core.mjs && node tools/build-android.mjs && node tests/guardian-arsenal-browser.cjs && node tests/guardian-arsenal-integration.cjs && node tests/guardian-arsenal-integration.cjs --adventure",
     "test:guardian-pressure": "node tests/guardian-arsenal-core.mjs && node tests/guardian-telegraphs-core.mjs && node tests/water-guardian-revision-core.mjs && node tests/guardian-balance-core.mjs && node tests/guardian-vfx-core.mjs && node tests/guardian-dragon-motion-core.mjs",
     "test:guardian-rhythm": "node tests/guardian-rhythm-core.mjs && node tests/opponent-balance-core.mjs && node tools/build.mjs && node tests/wind-eagle-rescue-browser.cjs",

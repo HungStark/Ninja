@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {createGuardianStrikeVfx} from './guardian-strike-vfx.js';
 const palettes={fire:['#e64b14','#ffe6a0'],water:['#2086b6','#d8ffff'],lightning:['#8059cf','#eee2ff'],wind:['#55bfa4','#e5fff5'],earth:['#877052','#ffe0a0'],light:['#c69736','#fff7c0'],dark:['#4a246b','#c496ff'],wood:['#408953','#d8ffac'],ice:['#619fbf','#e0fbff']};
 const vertex=`varying vec3 vP;varying vec3 vN;varying vec3 vView;uniform float uTime;uniform float uKind;
 void main(){vP=position;vec3 p=position;float flow=sin(p.y*7.+p.z*5.-uTime*7.)*sin(p.x*5.+uTime*3.);p+=normal*flow*(uKind==0.?0.045:0.018);vec4 mv=modelViewMatrix*vec4(p,1.);vN=normalize(normalMatrix*normal);vView=-mv.xyz;gl_Position=projectionMatrix*mv;}`;
@@ -24,6 +25,7 @@ export function createGuardianVfx(){
  function surface(opacity=1){const key=element+':surface:'+opacity;if(!cache.has(key))cache.set(key,shared(new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,transparent:opacity<1,depthWrite:opacity===1,side:T.DoubleSide,uniforms:{uTime:{value:time},uKind:{value:element==='fire'?0:element==='water'?1:element==='lightning'?2:3},uOpacity:{value:opacity},uColor:{value:new T.Color(colors()[0])},uCore:{value:new T.Color(colors()[1])}}})));return cache.get(key);}
  function glow(opacity=.5){const key=element+':glow:'+opacity;if(!cache.has(key))cache.set(key,shared(new T.MeshBasicMaterial({color:new T.Color(colors()[1]).multiplyScalar(1.15),transparent:true,opacity,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide})));return cache.get(key);}
  function part(parent,g,m,p=[0,0,0],s=[1,1,1]){const o=new T.Mesh(g,m);o.position.fromArray(p);o.scale.fromArray(s);o.name='guardian-energy-layer';parent.add(o);return o;}
+ const strikes=createGuardianStrikeVfx({root,part,geo,surface,glow,element:()=>element});
  const capacity=96,dummy=new T.Object3D(),sparkMat=shared(new T.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.65,depthWrite:false,blending:T.AdditiveBlending,vertexColors:true})),sparks=new T.InstancedMesh(geo.shard,sparkMat,capacity),particles=Array.from({length:capacity},()=>({p:new T.Vector3(),v:new T.Vector3(),age:1,life:0,size:0}));
  sparks.frustumCulled=false;sparks.instanceMatrix.setUsage(T.DynamicDrawUsage);root.add(sparks);let cursor=0;
  const charge=new T.Group();charge.name='guardian-cast-charge';root.add(charge);
@@ -31,8 +33,9 @@ export function createGuardianVfx(){
  function spawn(p,v,life,size){const s=particles[cursor++%capacity];s.p.fromArray(p);s.v.fromArray(v);s.age=0;s.life=life;s.size=size;}
  function burst(p,r=1){if(time-lastBurst<.035)return;lastBurst=time;for(let i=0;i<8;i++){const a=i*Math.PI/4+time;spawn(p,[Math.cos(a)*(1.8+r),.7+i%3*.6,Math.sin(a)*(1.8+r)],.35+i%3*.06,.045+Math.min(r,3)*.025);}}
  return {
-  surface,glow,part,geo,burst,
-  attach(parent,id){element=id in palettes?id:'fire';sparkColor.set(colors()[1]);parent.add(root);time=0;lastBurst=-1;for(const s of particles)s.life=0;sparks.count=0;charge.visible=false;},
+  surface,glow,part,geo,burst,strike:(shape,options)=>strikes.create(shape,options),
+  clear(){strikes.clear();for(const s of particles)s.life=0;sparks.count=0;charge.visible=false;},
+  attach(parent,id){strikes.clear();element=id in palettes?id:'fire';sparkColor.set(colors()[1]);parent.add(root);time=0;lastBurst=-1;for(const s of particles)s.life=0;sparks.count=0;charge.visible=false;},
   projectile(e,low=false){
    e.model.material.dispose();e.model.material=surface(.95);
    const core=!low&&e.r>=.3?part(e.root,geo.orb,glow(.65),[0,0,0],[e.r*.48,e.r*.48,e.r*.48]):null;
@@ -44,10 +47,20 @@ export function createGuardianVfx(){
    }
   },
   vortex(e){const water=e.kind==='vortex',ribbon=part(e.root,geo.spiral,surface(.65),[0,0,0],[e.r,water?1.05:.9,e.r]);if(water){part(e.root,geo.beam,surface(.22),[0,1.5,0],[e.r*.6,3,e.r*.6]);const base=part(e.root,geo.ring,glow(.7),[0,.12,0],[e.r,e.r,e.r]);base.rotation.x=Math.PI/2;}e.vfx={ribbon};},
-  zone(e){if(['fire','dark','blizzard','puddle'].includes(e.tag)){const ring=part(e.root,geo.ring,glow(.3),[0,.09,0],[e.r*.85,e.r*.85,e.r*.85]);ring.rotation.x=Math.PI/2;e.vfx={ring};}},
+  zone(e){
+   const ring=part(e.root,geo.ring,glow(.3),[0,.09,0],[e.r*.85,e.r*.85,e.r*.85]);ring.rotation.x=Math.PI/2;
+   const tufts=[];for(let i=0;i<8;i++){const a=i*Math.PI/4,r=e.r*.62,kind=['ice','earth'].includes(element)?'shard':['fire','wood','light'].includes(element)?'trail':'orb',m=part(e.root,geo[kind],surface(.6),[Math.sin(a)*r,.45,Math.cos(a)*r],[e.r*.13,.5+e.r*.12,e.r*.13]);tufts.push(m);}
+   e.vfx={ring,tufts};
+  },
+  trail(e){
+   const dx=e.b[0]-e.a[0],dz=e.b[2]-e.a[2],length=Math.max(.01,Math.hypot(dx,dz)),group=new T.Group();group.position.set(e.p[0],.12,e.p[2]);group.rotation.y=Math.atan2(dx,dz);e.root.add(group);
+   const beam=part(group,geo.beam,surface(.5),[0,.25,0],[e.r,length,e.r]);beam.rotation.x=Math.PI/2;
+   const tufts=[];for(let i=0,n=Math.min(12,Math.max(3,Math.ceil(length)));i<n;i++){const m=part(group,['earth','ice'].includes(element)?geo.shard:geo.trail,surface(.75),[0,.5,-length/2+(i+.5)*length/n],[e.r*.7,.8,Math.min(.45,length/n*.4)]);tufts.push(m);}e.vfx={tufts};
+  },
+  field(e){const bands=[];for(const r of [e.r*.55,e.r*.8,e.r*.98]){const m=part(e.root,geo.ring,surface(.55),[0,.25,r===e.r*.8?.1:0],[r,r,r]);m.rotation.x=Math.PI/2;bands.push(m);}e.vfx={bands};},
   beam(parent,a,b,r){const from=new T.Vector3(...a),to=new T.Vector3(...b),delta=to.sub(from),length=delta.length(),g=new T.Group();g.position.copy(from).addScaledVector(delta,.5);g.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize());parent.add(g);part(g,geo.beam,surface(.8),[0,0,0],[r,length,r]);part(g,geo.beam,glow(.45),[0,0,0],[r*.32,length,r*.32]);return g;},
   update(dt,clock,entities,body,action){
-   time=clock;for(const m of materials)if(m.uniforms)m.uniforms.uTime.value=time;
+   time=clock;strikes.update(dt,clock);for(const m of materials)if(m.uniforms)m.uniforms.uTime.value=time;
    if(chargeElement!==element){charge.clear();part(charge,geo.orb,glow(.4));for(let i=0;i<2;i++){const ring=part(charge,geo.ring,glow(.4));ring.rotation.x=i?Math.PI/2:0;}chargeElement=element;}
    const windup=action?.windup||action?.warning||.6,charging=action&&action.age<windup;charge.visible=!!charging;
    if(charging){const k=Math.min(1,action.age/windup);if(action.type==='dragon-prison'&&action.prisonFrom)charge.position.fromArray(action.prisonFrom);else charge.position.set(body[0],1.9,body[2]);charge.scale.setScalar(.2+k*.5);charge.rotation.set(time*.8,time*2,time*.3);}
@@ -57,12 +70,14 @@ export function createGuardianVfx(){
    if(e.vfx?.prisonRings)for(const ring of e.vfx.prisonRings)ring.rotation.y+=dt*3;
     if(e.kind==='wave'&&clock-(e.sparkAt||0)>.1){e.sparkAt=clock;for(const side of [-1,1]){const x=side<0?(-e.width/2+e.gapOffset-e.gap/2)/2:(e.width/2+e.gapOffset+e.gap/2)/2;spawn([e.p[0]+x,.9,e.p[2]],[0,1,.2],.3,.07);}}
     if(e.vfx?.ribbon)e.vfx.ribbon.rotation.y+=dt*(e.kind==='vortex'?-4:3);
+    if(e.vfx?.tufts)for(const [i,m]of e.vfx.tufts.entries()){m.scale.y=.65+Math.sin(clock*7+i*1.7)*.22;m.position.y=.5+Math.sin(clock*5+i)*.12;}
+    if(e.vfx?.bands)for(const [i,m]of e.vfx.bands.entries()){m.position.y=.25+(Math.sin(clock*4+i)*.5+.5)*(i+1)*.4;m.rotation.z+=dt*(i%2?-2:2);}
     if(e.vfx?.ring){e.vfx.ring.rotation.z+=dt;if(clock-(e.sparkAt||0)>.16){e.sparkAt=clock;const theta=clock*3;spawn([e.p[0]+Math.sin(theta)*e.r,.2,e.p[2]+Math.cos(theta)*e.r],[0,e.tag==='blizzard'?.15:.6,0],.45,.07);}}
    }
    let count=0;for(const s of particles){if(s.age>=s.life)continue;s.age+=dt;s.p.addScaledVector(s.v,dt);s.v.y-=dt*1.5;dummy.position.copy(s.p);dummy.rotation.set(time*3+s.age,time*2,s.age*7);dummy.scale.setScalar(s.size*Math.max(0,1-s.age/s.life));dummy.updateMatrix();sparks.setMatrixAt(count,dummy.matrix);sparks.setColorAt(count,sparkColor);count++;}
    sparks.count=count;sparks.instanceMatrix.needsUpdate=true;if(sparks.instanceColor)sparks.instanceColor.needsUpdate=true;
   },
-  state:()=>({particles:sparks.count,capacity,materials:materials.size,sharedGeometries:Object.keys(geo).length,charging:charge.visible}),
-  dispose(){root.removeFromParent();sparks.dispose();for(const g of Object.values(geo))g.dispose();for(const m of materials)m.dispose();}
+  state:()=>({particles:sparks.count,capacity,materials:materials.size,sharedGeometries:Object.keys(geo).length,charging:charge.visible,strikes:strikes.state()}),
+  dispose(){strikes.dispose();root.removeFromParent();sparks.dispose();for(const g of Object.values(geo))g.dispose();for(const m of materials)m.dispose();}
  };
 }

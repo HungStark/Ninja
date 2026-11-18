@@ -60,8 +60,8 @@ export function updateSkySkill(a,c,dt){
  case 'gold-pierce':
   rush('pierce',a.windup,a.damage,{armorPiercing:true,armorReduction:.25});break;
  case 'gold-greatsword':
-  at('gather',0,()=>{a.countFeathers=resources().feathers.length;for(const e of resources().feathers)c.destroy(e);a.sword=c.entity('greatsword',[c.body[0],5,c.body[2]],{life:a.duration});c.mesh('cone',[0,0,0],[.45,8,.5],c.designColor,.9,a.sword.root);});
-  for(let i=0;i<3;i++)at('cut'+i,a.windup+i*1.1,()=>{const from=[...c.body],to=predict(t,.3);c.telegraphLine(from,to,2,.65);later(.65,()=>c.attackLine(from,to,1,a.damage,{},src));});
+  at('gather',0,()=>{a.countFeathers=resources().feathers.length;for(const e of resources().feathers)c.destroy(e);a.sword=c.entity('greatsword',[c.body[0],5,c.body[2]],{life:a.duration});a.sword.root.name='guardian-greatsword';a.sword.blade=c.mesh('cone',[0,0,0],[.45,8,.5],c.designColor,.9,a.sword.root);a.sword.root.rotation.order='YXZ';a.sword.update=()=>{const cut=a.sword.cut;if(!cut)return;const q=Math.min(1,(a.sword.age-cut.start)/.65),s=q*q*(3-2*q);a.sword.root.position.set((cut.from[0]+cut.to[0])/2,.6+(1-s)*4.4,(cut.from[2]+cut.to[2])/2);a.sword.root.rotation.set(-s*Math.PI/2,c.angle(cut.from,cut.to),0);a.sword.root.visible=a.sword.age-cut.start<1;};});
+  for(let i=0;i<3;i++)at('cut'+i,a.windup+i*1.1,()=>{const from=[...c.body],to=predict(t,.3);c.telegraphLine(from,to,2,.65);a.sword.cut={from,to,start:a.sword.age};a.sword.blade.scale.y=Math.max(.1,c.distance(from,to));later(.65,()=>c.attackLine(from,to,1,a.damage,{},src));});
   at('rain',a.duration-1.15,()=>{for(const p of aimPoints(Math.min(12,6+Math.floor((a.countFeathers||0)/3))))mark(p,.9,.75,()=>hurt(p,.9,a.damage*.45),'ice');});break;
  default:return false;
  }

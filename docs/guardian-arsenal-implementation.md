@@ -40,4 +40,6 @@ Quy tắc cảnh báo và kết quả rà soát nằm trong [cảnh báo kỹ n�
 
 Hiệu ứng dùng bộ đệm 96 hạt và dùng chung hình học/vật liệu. Vật thể, lịch đánh và trạng thái được dọn khi đổi trận; tạm nghỉ đóng băng mô phỏng.
 
+Đòn quét có vệt chém hình quạt; đòn theo đường có luồng nguyên tố; vùng sát thương kéo dài có hiệu ứng nổi trên mặt đất. Hình ảnh dùng chính vị trí, bán kính, hướng và góc của phép tính sát thương. Chuyển động chân/cánh/đuôi nhận nhịp ra đòn thực tế, kể cả đòn nhiều lượt. Cầu lửa của Cửu Nhật bay theo đường đã báo và đại kiếm của Kim Ưng hạ xuống theo hành lang chém. Hình ảnh chiêu nằm riêng với lớp cảnh báo nên tắt đường dự đoán vẫn thấy chiêu. Bộ đệm tối đa 40 hiệu ứng đánh được dọn khi rời trận. Kiểm tra bằng `npm run test:guardian-strike-vfx`.
+
 Thủy Long không có chân và không dùng nhịp bước của thú bốn chân. Hai lưới thân/bụng uốn theo từng vòng; lịch sử đường di chuyển cho đuôi trễ tối đa 0,35 giây khi đổi hướng. Đầu dẫn hướng, vây và vảy bụng đi theo thân; tụ chiêu thu đầu, khi phóng thì vươn ra. Tia áp suất bắt đầu từ mốc miệng đang hoạt ảnh. Kiểm tra riêng: `tests/guardian-dragon-motion-core.mjs`; ảnh WebGL di chuyển/tụ/phóng nằm trong `test-results/guardian-arsenal-render/water-*.png`.

@@ -51,7 +51,7 @@ export function createGuardianBossCombat(scene,extension={}){
  function circle(p,r,color=design?.color,filled=false,parent=root){if(['#ff6477','#ffb3a6','#ff657a'].includes(color))return warningVfx.area(p,r,parent);const m=mesh(filled?'disk':'ring',[p[0],.065,p[2]],[r,r,r],color,filled?.18:.7,parent);m.rotation.x=-Math.PI/2;return m;}
  function line(a,b,w=.12,color=design?.color,parent=root){const d=sub(b,a),m=mesh('box',add(a,mul(d,.5)),[w,w,Math.max(.001,length(d))],color,.65,parent);m.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),new T.Vector3(...unit(d)));return m;}
  function remove(node){if(!node)return;warningVfx.release(node);const materials=new Set();node.traverse(m=>{if(m.material)for(const mat of Array.isArray(m.material)?m.material:[m.material])materials.add(mat);});node.removeFromParent();for(const mat of materials)if(!mat.userData.guardianShared)mat.dispose();}
- function entity(kind,p,properties={}){const group=new T.Group();group.position.fromArray(p);root.add(group);const e={id:++serial,kind,p:[...p],root:group,age:0,life:1,hit:new Set(),...properties};if(['vortex','tornado'].includes(kind))vfx.vortex(e);entities.push(e);return e;}
+ function entity(kind,p,properties={}){const group=new T.Group();group.position.fromArray(p);root.add(group);const e={id:++serial,kind,p:[...p],root:group,age:0,life:1,hit:new Set(),...properties};if(['vortex','tornado'].includes(kind))vfx.vortex(e);if(kind==='storm-eye')vfx.field(e);entities.push(e);return e;}
  function flash(p,r=1,color=design?.color){vfx.burst([p[0],p[1]+.2,p[2]],r);const e=entity('flash',[p[0],.12,p[2]],{r,life:.45});circle([0,0,0],r,color,false,e.root);return e;}
  function skin(m,opacity=1){m.material.dispose();m.material=vfx.surface(opacity);return m;}
  function beam(a,b,r,life){const e=entity('beam',[0,0,0],{life});vfx.beam(e.root,a,b,r);return e;}
@@ -74,6 +74,11 @@ export function createGuardianBossCombat(scene,extension={}){
   return [safeX<(b.minX+b.maxX)/2?b.maxX-radius:b.minX+radius,.1,best?.[2]??b.minZ];
  }
  const source=a=>({type:a?.type||'passive',castId:a?.castId||0,power:a?.power??1});
+ function present(shape,src=source(action),life=.55){return vfx.strike(shape,{source:src?.type,castId:src?.castId,life});}
+ function releasePose(kind,src=source(action),direction=null){
+  if(!action||src?.castId!==action.castId)return;
+  action.release={age:action.age,kind,side:((action.release?.side||0)+1)%2,direction:direction&&[...direction]};
+ }
  function applySlow(t,amount,time){const s=status(t.id);s.slow=Math.max(s.slow,amount);s.slowTime=Math.max(s.slowTime,time);}
  function control(t,kind,time){
   if(!t||t.fighter?.invulnerableTime>0)return;
@@ -105,15 +110,17 @@ export function createGuardianBossCombat(scene,extension={}){
   const s=status(t.id),armorReduction=id==='light'?s.stacks*passive.armorReduction:0,bonus=extra.passive!==false&&id==='light'&&s.stacks>=passive.stackCount,ambush=extra.passive!==false&&id==='dark'&&ambushReady;let damage=amount*(src.power??1)*(phase===3?.6:1);
   if(bonus)damage+=passive.bonusDamage*(phase===3?.6:1);
   if(ambush)damage*=1+passive.firstHitBonus;
+  if(damage>0)present({kind:'contact',position:t.pos,radius:.45},src,.32);
   const shot={owner:'enemy',victimId:t.id,element:id,style:'guardian-'+src.type,damage,unreflectable:true,color:design.color,v:unit(sub(t.pos,body)),armorReduction,...extra};
   const result=ctx.impact(shot,t.pos)||shot.hitResult||{damage:0};
   if(result.damage>0){castHits.set(src.castId,(castHits.get(src.castId)||0)+1);lastCombat=clock;if(extra.passive!==false){if(bonus){s.stacks=0;s.stackTime=0;}if(ambush)ambushReady=false;applyPassive(t,src);}if(extra.slow)applySlow(t,extra.slow,extra.slowTime||1);if(extra.root)control(t,'root',extra.root);if(extra.air)control(t,'air',extra.air);}
   return result;
  }
  const insideWarning=(p,r)=>!!currentWarning&&distance(currentWarning.p,p)+r<=currentWarning.r+.001;
- function area(p,r,damage,extra={},src){if(extension.requireTelegraphs&&!insideWarning(p,r)&&!extra.telegraphed){const point=[...p];warning(point,r,.55,()=>area(point,r,damage,{...extra,telegraphed:true},src),'none');return 0;}let hits=0;for(const t of targets())if(distance(t.pos,p)<=r+(t.hitboxScale||1)*.45&&(!extra.ground||t.pos[1]<3.5)){if(emit(damage,t,extra,src).damage>0)hits++;}flash(p,r);return hits;}
- function attackLine(a,b,r,damage,extra={},src){let hits=0;for(const t of targets())if(along(t.pos,a,b)<=r+(t.hitboxScale||1)*.45&&(!extra.ground||t.pos[1]<3.5)){if(emit(damage,t,extra,src).damage>0)hits++;}return hits;}
+ function area(p,r,damage,extra={},src){if(extension.requireTelegraphs&&!insideWarning(p,r)&&!extra.telegraphed){const point=[...p];warning(point,r,.55,()=>area(point,r,damage,{...extra,telegraphed:true},src),'none');return 0;}if(damage>0){present({kind:'area',position:p,radius:r},src);releasePose('area',src);}let hits=0;for(const t of targets())if(distance(t.pos,p)<=r+(t.hitboxScale||1)*.45&&(!extra.ground||t.pos[1]<3.5)){if(emit(damage,t,extra,src).damage>0)hits++;}flash(p,r);return hits;}
+ function attackLine(a,b,r,damage,extra={},src){if(damage>0){present({kind:'lane',from:a,to:b,radius:r},src);releasePose('line',src,unit(flat(sub(b,a))));}let hits=0;for(const t of targets())if(along(t.pos,a,b)<=r+(t.hitboxScale||1)*.45&&(!extra.ground||t.pos[1]<3.5)){if(emit(damage,t,extra,src).damage>0)hits++;}return hits;}
  function cone(p,d,r,arc,damage,extra={},src){
+  if(damage>0){present({kind:'sector',position:p,direction:d,radius:r,arc},src,.48);releasePose('sweep',src,d);}
   for(const t of targets()){const delta=flat(sub(t.pos,p));if(length(delta)<=r+.5&&unit(delta).reduce((n,v,i)=>n+v*d[i],0)>=Math.cos(arc/2))emit(damage,t,extra,src);}
   if(!extension.requireTelegraphs)for(let i=0;i<7;i++){const theta=Math.atan2(d[0],d[2])-arc/2+arc*i/6;telegraphLine(p,add(p,[Math.sin(theta)*r,0,Math.cos(theta)*r]),.18,.4);}
  }
@@ -131,7 +138,7 @@ export function createGuardianBossCombat(scene,extension={}){
  }
  function announceEntity(e){if(!extension.requireTelegraphs||(!e.a&&insideWarning(e.p,e.r))||e.kind==='prison'||e.kind==='feather')return e;const lead=.6;e.activationDelay=lead;e.life+=lead;e.root.visible=false;if(e.a)telegraphLine(e.a,e.b,e.r*2,lead);else warning(e.p,e.r,lead,()=>{},'none');return e;}
  function zone(tag,p,r,life,props={}){const e=entity('zone',[p[0],.03,p[2]],{tag,r,life,tick:0,...props});circle([0,0,0],r,tag==='fire'?'#f56b25':tag==='puddle'?'#4b9edf':tag==='electric'?'#c19aff':tag==='ice'?'#abe8ff':design.color,true,e.root);circle([0,0,0],r,design.color,false,e.root);vfx.zone(e);return announceEntity(e);}
- function trail(tag,a,b,width,life,props={}){const e=zone(tag,add(a,mul(sub(b,a),.5)),width,life,{a:[...a],b:[...b],...props});remove(e.root);e.root=new T.Group();e.root.visible=!e.activationDelay;root.add(e.root);line([a[0],.08,a[2]],[b[0],.08,b[2]],width*2,design.color,e.root);return e;}
+ function trail(tag,a,b,width,life,props={}){const e=zone(tag,add(a,mul(sub(b,a),.5)),width,life,{a:[...a],b:[...b],...props});remove(e.root);e.root=new T.Group();e.root.visible=!e.activationDelay;root.add(e.root);line([a[0],.08,a[2]],[b[0],.08,b[2]],width*2,design.color,e.root);vfx.trail(e);return e;}
  function object(kind,p,hp,r,life,props={}){
   const e=entity(kind,[p[0],0,p[2]],{hp,maxHp:hp,r,life,...props});circle([0,0,0],r,design.color,false,e.root);
   if(kind==='tree'||kind==='treant'){mesh('pillar',[0,1.6,0],[.5,3.2,.5],'#7e6540',1,e.root);for(const side of [-1,1]){line([0,2,0],[side*1.4,3.8,0],.23,'#7e6540',e.root);mesh('orb',[side*.8,3.7,0],[1.7,1,1.4],'#71ae62',.9,e.root);}}
@@ -191,6 +198,9 @@ export function createGuardianBossCombat(scene,extension={}){
   if(!d&&a.age>=at-.4){d=a.dashes[key]={from:null,to:fitBody(destination,'land'),hit:new Set()};const lead=Math.max(.15,at-a.age);telegraphLine(body,d.to,extension.requireTelegraphs?r*2:Math.max(.12,r*.18),lead,id==='dark'?'#b78ae8':'#d7bbff');if(extension.requireTelegraphs)warning(d.to,extra.air?Math.max(2.2,r):r,lead,()=>{},'none');}
   if(!d||a.age<at||d.done)return null;
   d.from??=[...body];const old=[...body],q=clamp((a.age-at)/duration,0,1);body=fitBody(add(d.from,mul(sub(d.to,d.from),q)));pose.y=Math.sin(q*Math.PI)*(id==='dark'?.6:1.8);
+  if(damage>0&&(d.visualAt==null||clock-d.visualAt>=.05||q>=1)){
+   present({kind:'lane',from:d.visualFrom||old,to:body,radius:r},source(a),.35);d.visualAt=clock;d.visualFrom=[...body];releasePose('rush',source(a),unit(flat(sub(d.to,d.from))));
+  }
   for(const t of targets())if(!d.hit.has(t.id)&&along(t.pos,old,body)<r+.45){d.hit.add(t.id);const marked=status(t.id).markTime>0;const result=emit(damage,t,extra,source(a));if(result.damage>0&&marked&&a.cooldownReduction&&!a.markCooldownReduced){a.markCooldownReduced=true;a.recoveryScale=a.cooldownReduction;cooldowns[a.index]=Math.max(clock+Math.max(0,a.duration-a.age),clock+Math.max(0,(cooldowns[a.index]||clock)-clock)*a.cooldownReduction);}}
   pose.lean=-.3;pose.yaw=angle(d.from,d.to);if(q>=1){d.done=true;extra.onFinish?.(d);}return d;
  }
@@ -276,6 +286,7 @@ export function createGuardianBossCombat(scene,extension={}){
  }
  function updateProjectile(e,dt){
   if(e.age<(e.delay||0))return;e.root.visible=true;
+  if(!e.launched){e.launched=true;releasePose('projectile',e.src,e.v);}
   const t=target(e.targetId);if(t&&e.homing&&e.age<e.homingTime){const desired=unit(sub(t.pos,e.p));e.v=unit(add(mul(e.v,Math.max(0,1-dt*e.homing)),mul(desired,Math.min(1,dt*e.homing))));}
   const old=[...e.p];e.p=add(e.p,mul(e.v,e.speed*dt));e.travel=(e.travel||0)+e.speed*dt;projectileInteraction(e);if(e.dead)return;
   if(e.style==='goldarc')for(const f of [...all('feather')])if(along(f.p,old,e.p)<f.r+e.r){projectile([f.p[0],1.1,f.p[2]],e.v,{style:'feather',damage:e.damage*.5,speed:e.speed,life:3,armorPiercing:true,src:e.src,featherLife:passive.featherLife});destroy(f);}
@@ -356,7 +367,7 @@ export function createGuardianBossCombat(scene,extension={}){
     const spirits=all('spirit');for(const link of e.links)if(!spirits.some(s=>s.id===link.spiritId))destroy(link);e.links=e.links.filter(alive);
     for(const spirit of spirits){let link=e.links.find(l=>l.spiritId===spirit.id);if(!link){link=telegraphLine([e.p[0],1.5,e.p[2]],[spirit.p[0],1.5,spirit.p[2]],.06,e.life-e.age,'#b6e594');link.spiritId=spirit.id;e.links.push(link);}}
    }else if(e.kind==='flower'&&e.age>=e.delay){radial(e.p,e.seedCount,e.damage,e.speed,{style:'seed',slow:e.slow,slowTime:e.slowTime,healFraction:e.healFraction,thornDamage:e.thornDamage,thornRadius:e.thornRadius,src:e.src});destroy(e);}
-   else if(e.kind==='flash'){e.root.scale.setScalar(1+e.age*3);e.root.children.forEach(m=>{if(m.material)m.material.opacity=Math.max(0,1-e.age/e.life);});}
+   else if(e.kind==='flash'){e.root.scale.setScalar(.6+.4*Math.min(1,e.age/e.life));e.root.children.forEach(m=>{if(m.material)m.material.opacity=Math.max(0,1-e.age/e.life);});}
    else if(e.kind==='armor-visual'){e.root.position.fromArray(body);if(armor<=0)destroy(e);}
    else if(e.update)e.update(dt);
    if(e.age>=e.life)destroy(e);
@@ -366,7 +377,7 @@ export function createGuardianBossCombat(scene,extension={}){
  }
  const skillContext={
   telegraphCone,get hasWarningTrace(){return !!ctx?.traceGuardianWarning;},traceWarning:w=>ctx?.traceGuardianWarning?.(w),
-  launchWaterPrison(from,direction,a){if(!ctx?.launchWaterPrison)return false;ctx.launchWaterPrison(from,direction,{damage:a.damage*source(a).power*(phase===3?.6:1),speed:a.speed,radius:a.radius,range:a.range,controlDuration:a.controlDuration});return true;},
+  launchWaterPrison(from,direction,a){if(!ctx?.launchWaterPrison)return false;releasePose('projectile',source(a),direction);ctx.launchWaterPrison(from,direction,{damage:a.damage*source(a).power*(phase===3?.6:1),speed:a.speed,radius:a.radius,range:a.range,controlDuration:a.controlDuration});return true;},
   get mouthPosition(){return ctx?.mouthPosition?.(pose)||[body[0],1.6,body[2]];},
   interrupt(seconds=0){queuedSkill=null;cancel(false);director?.endCombo();comboSerial++;recoveryEnd=true;wait=guardianRest(enraged);stagger=Math.max(stagger,seconds);memory.exposedUntil=Math.max(memory.exposedUntil||0,clock+seconds);if(excursion){returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}},
   forceSkill(type,targetId){const index=design.skills.findIndex(s=>s.type===type);if(index<0)return false;const result=action&&director?director.finish(action,true,enraged):{end:false};cancel(false);recoveryEnd=result.end;wait=guardianRecovery(enraged,recoveryEnd);if(result.end){comboSerial++;if(excursion&&distance(body,excursion)>.15)returning={from:[...body],to:[...excursion],age:0,duration:.7};excursion=null;}queuedSkill={index,targetId};return true;},
@@ -380,7 +391,7 @@ export function createGuardianBossCombat(scene,extension={}){
   takeRecovery(){recoveryEnd=true;wait=guardianRest(enraged);}
  };
  function hidden(){if(extension.hidden?.(skillContext))return true;return !!ctx&&id==='dark'&&clock-lastCombat>=passive.hideAfter&&clock>=revealUntil&&stagger<=0;}
- function clear(){queuedSkill=null;for(const e of entities)destroy(e);for(const child of [...root.children])remove(child);root.removeFromParent();memory={};combatStage=1;home=excursion=returning=null;blockedTime=0;castHits.clear();director?.reset();entities=[];ongoing=[];history=[];action=null;ctx=null;body=origin=previousBody=null;armorShell=null;pose={};stats.clear();previousTargets.clear();armor=armorLevels=tailCount=energy=energyTravel=speedStacks=rage=stagger=stationary=lastCombat=movement=moveSpeed=revealUntil=0;}
+ function clear(){queuedSkill=null;vfx.clear();for(const e of entities)destroy(e);for(const child of [...root.children])remove(child);root.removeFromParent();memory={};combatStage=1;home=excursion=returning=null;blockedTime=0;castHits.clear();director?.reset();entities=[];ongoing=[];history=[];action=null;ctx=null;body=origin=previousBody=null;armorShell=null;pose={};stats.clear();previousTargets.clear();armor=armorLevels=tailCount=energy=energyTravel=speedStacks=rage=stagger=stationary=lastCombat=movement=moveSpeed=revealUntil=0;}
  const api={
   reset(nextId,nextPhase=2){clear();recoveryEnd=true;patrolDirection=1;id=nextId;design=designBank[id]||null;passive=guardianPassiveStats(id);phase=nextPhase;clock=serial=castSerial=attacks=0;wait=.75;seed=Array.from(id||'').reduce((n,c)=>n+c.charCodeAt(0),123);comboCursor=comboRepeats=comboSerial=0;combo=[];previousCombo='';cooldowns={};enraged=ambushReady=false;passiveAt=passive.puddleInterval||passive.windInterval||passive.spiritInterval||Infinity;if(design){scene.add(root);vfx.attach(root,id);}},
   clear,trigger:begin,
@@ -436,7 +447,7 @@ export function createGuardianBossCombat(scene,extension={}){
   obscures(p){return all('dark').some(e=>overlaps(e,p));},
   get offset(){return {x:body&&origin?body[0]-origin[0]:0,y:0,z:body&&origin?body[2]-origin[2]:0,lean:stagger>0?.5:0,...pose};},
   state(){return {
-   action:action?{index:action.index,role:action.role,targetId:action.targetId,type:action.type,name:action.name,age:action.age,stage:action.age<(action.windup||action.warning||.6)?'warning':'active',parameters:guardianSkillStats(action.type),commitment:action.commitment}:null,
+   action:action?{index:action.index,role:action.role,targetId:action.targetId,type:action.type,name:action.name,age:action.age,stage:action.age<(action.windup||action.warning||.6)?'warning':'active',parameters:guardianSkillStats(action.type),commitment:action.commitment,release:action.release?{...action.release}:null}:null,
    vfx:vfx.state(),signature:action?.name||'',attacks,history:history.map(h=>({...h})),armor,armorLevels,stationary,tailCount,energy,speedStacks,rage,enraged,recovery:wait,recoveryKind:recoveryEnd?'rest':'combo-gap',queuedSkill:queuedSkill?design.skills[queuedSkill.index].type:null,skillCooldowns:design?.skills.map((s,i)=>Math.max(0,(cooldowns[i]||0)-clock))||[],combo:[...combo],comboCursor,comboSerial,
    arsenal:!!design?.arsenal,combatStage,mechanics:{...memory.summary},director:director?.state()||null,homePosition:home?[...home]:null,returning:returning?{destination:[...returning.to],age:returning.age}:null,aiOwnedMovement:!!design,bossPosition:body?[...body]:null,moving:movement>.002,moveSpeed,moveVelocity:body&&previousBody?[(body[0]-previousBody[0])/(movement||1)*moveSpeed,0,(body[2]-previousBody[2])/(movement||1)*moveSpeed]:[0,0,0],ongoing:ongoing.map(a=>({type:a.type,age:a.age,duration:a.duration})),difficulty:design?.difficulty||0,title:design?.title||'',role:design?.role||'',passive:design?.passive||'',counter:design?.counter||'',skills:design?.skills.map(s=>s.name)||[],passiveParameters:{...passive},
    statuses:[...stats].map(([key,s])=>({id:key,stacks:s.stacks,stackTime:s.stackTime,markTime:s.markTime,slow:s.slow,slowTime:s.slowTime,rootTime:s.rootTime,freezeImmune:s.freezeImmune})),
