@@ -28,7 +28,10 @@ export function batchStaticScenery(land,{moving=new Set(),terrain,cellSize=96}={
   land.traverse(object=>{
     if(!object.isMesh||!object.visible||object.isInstancedMesh||object===terrain||Array.isArray(object.material)||!object.geometry.attributes.uv)return;
     for(let parent=object;parent&&parent!==land;parent=parent.parent)if(parent===terrain||moving.has(parent)||parent.userData.dynamic)return;
-    const key=object.material.uuid;if(!batches.has(key))batches.set(key,{material:object.material,objects:[]});batches.get(key).objects.push(object);
+    // Authored Blender foliage also carries vertex color. Keep attribute
+    // layouts separate when it shares a material with existing village props.
+    const layout=Object.entries(object.geometry.attributes).map(([name,a])=>`${name}:${a.itemSize}:${a.array.constructor.name}:${a.normalized}`).sort().join('|');
+    const key=object.material.uuid+':'+layout;if(!batches.has(key))batches.set(key,{material:object.material,objects:[]});batches.get(key).objects.push(object);
   });
   let groups=0,sourceMeshes=0;
   for(const {material,objects} of batches.values()){

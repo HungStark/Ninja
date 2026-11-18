@@ -4,6 +4,8 @@
   "private": true,
   "description": "Third-person ninja exploration across ten villages, with hand-seal duels and checkpoint respawns",
   "scripts": {
+    "test:reference-guardians": "node tests/reference-guardians-core.mjs && node tests/guardian-dragon-motion-core.mjs && node tools/build.mjs && node tools/preview-reference-guardians.cjs && node tests/reference-guardians-game.cjs",
+    "test:fantasy-visuals": "node tests/fantasy-visuals-core.mjs && node tools/build.mjs && node tests/fantasy-visuals-browser.cjs",
     "test:harbor-crescent": "node tests/harbor-companion-core.mjs && node tests/harbor-voyage-core.mjs && node tests/model-portraits-core.mjs && node tests/harbor-crescent-browser.cjs",
     "start": "node server.cjs",
     "test:damage-numbers": "node tests/damage-numbers-core.mjs && node tools/build.mjs && node tests/damage-numbers-browser.cjs",

@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {toon} from './materials.js';
+import {sculptedSurface} from './fantasy-scenery.js';
 
 export const VILLAGE_NINJA_STYLES=Object.freeze({
   nameless:{coat:'#626d56',accent:'#cfb980',skin:'#c69873',hair:'#312923',hairStyle:'short',motif:'knot'},
@@ -106,6 +107,7 @@ export function applyVillageNinjaStyle(model,profile){
         m.customProgramCacheKey=()=> 'village-ninja-uniform-v2-'+(profile.faction||'village');
       }
     }else m=source.clone();
+    if(!/eye|mouth|brow|badge/.test(name))sculptedSurface(m,{rim:.04});
     m.name=source.name;materialCache.set(source,m);return m;
   }
   model.traverse(o=>{

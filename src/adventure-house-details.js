@@ -5,12 +5,19 @@ export function detailVillageHouse(c,g,{w,d,h,stilt,index}){
  if(!c.surfaces)return;
  const {box,cyl,mesh,M,surfaces:s,id}=c,detail=new T.Group();detail.name=id+'-house-craft';detail.userData.noCollision=true;g.add(detail);
  const wood=s.wood,stone=s.stone,trim=M(id==='water'?'#d1c7a2':id==='lightning'?'#b59968':'#d9c5a0'),metal=M('#514c48'),front=d/2;
+ // Raised joinery and layered sills cast small readable shadows at walking
+ // distance. The existing roof, storeys, stilts and village motifs are retained.
+ if(!['lightning','wood'].includes(id))for(const side of [-1,1]){
+  box(detail,stone,side*(w*.5-.13),stilt+.17,front+.025,.36,.34,.22);
+  box(detail,wood,side*(w*.5-.055),stilt+h*.5,front+.075,.095,h-.18,.075);
+  for(const y of [stilt+.32,stilt+h-.17]){const peg=cyl(detail,metal,side*(w*.5-.06),y,front+.13,.027,.025,6);peg.rotation.x=Math.PI/2;}
+ }
  for(let floor=0;floor<Math.round(h/2.7);floor++)for(const side of [-1,1]){
   const y=stilt+1.65+floor*2.5,x=side*w*.31;
   box(detail,wood,x,y-.51,front+.2,.94,.13,.34);box(detail,trim,x,y+.52,front+.18,.91,.11,.2);
   for(const hand of [-1,1]){const shutter=box(detail,wood,x+hand*.47,y,front+.22,.2,.78,.065);shutter.rotation.y=hand*.22;for(let k=0;k<4;k++)box(detail,trim,x+hand*.47,y-.26+k*.17,front+.27,.17,.025,.025);}
  }
- for(const side of [-1,1]){box(detail,wood,side*(w/2+.045),stilt+1.6,0,.09,1.2,1.15);box(detail,M('#a8b6aa'),side*(w/2+.1),stilt+1.6,0,.035,.86,.87);for(let k=-1;k<=1;k++)box(detail,wood,side*(w/2+.13),stilt+1.6,k*.3,.04,.94,.035);}
+ for(const side of [-1,1]){box(detail,wood,side*(w/2+.045),stilt+1.6,0,.09,1.2,1.15);box(detail,s.glass,side*(w/2+.1),stilt+1.6,0,.035,.86,.87);for(let k=-1;k<=1;k++)box(detail,wood,side*(w/2+.13),stilt+1.6,k*.3,.04,.94,.035);box(detail,stone,side*(w/2+.09),stilt+1.1,0,.24,.12,1.22);}
  box(detail,trim,0,stilt+2.24,front+.16,1.25,.2,.1);box(detail,M(c.v.color),0,stilt+2.24,front+.22,.3,.14,.025);
  for(let k=0;k<5;k++)box(detail,trim,-.32+k*.16,stilt+1,front+.11,.018,1.8,.025);
  cyl(detail,metal,.25,stilt+1.05,front+.2,.055,.09,7).rotation.x=Math.PI/2;

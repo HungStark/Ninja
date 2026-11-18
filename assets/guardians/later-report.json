@@ -1,0 +1,37 @@
+[
+  {
+    "id": "earth",
+    "triangles": 18422,
+    "draws": 27,
+    "joints": 14,
+    "glbBytes": 863128
+  },
+  {
+    "id": "wood",
+    "triangles": 15776,
+    "draws": 26,
+    "joints": 21,
+    "glbBytes": 609840
+  },
+  {
+    "id": "ice",
+    "triangles": 16768,
+    "draws": 31,
+    "joints": 15,
+    "glbBytes": 757552
+  },
+  {
+    "id": "light",
+    "triangles": 13666,
+    "draws": 29,
+    "joints": 19,
+    "glbBytes": 567384
+  },
+  {
+    "id": "dark",
+    "triangles": 13342,
+    "draws": 37,
+    "joints": 21,
+    "glbBytes": 537884
+  }
+]

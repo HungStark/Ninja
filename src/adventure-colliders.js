@@ -36,7 +36,7 @@ export function registerSceneryColliders(root,physics,{moving=[],leafColors=[],l
   const excluded=new Set(moving),leaves=new Set(leafColors.map(c=>new T.Color(c).getHexString())),supported=new Set(['BoxGeometry','CylinderGeometry','ConeGeometry','DodecahedronGeometry','IcosahedronGeometry','OctahedronGeometry','SphereGeometry']),instance=new T.Matrix4(),matrix=new T.Matrix4();let count=0;
   root.updateMatrixWorld(true);
   root.traverse(o=>{
-    if(!o.isMesh||!o.visible||o.userData.collider||o.userData.noCollision||!supported.has(o.geometry.type)||Array.isArray(o.material)||o.material.transparent||o.material.side===T.BackSide)return;
+    if(!o.isMesh||!o.visible||o.userData.collider||o.userData.noCollision||!supported.has(o.geometry.type)&&!o.geometry.userData.solidScenery||Array.isArray(o.material)||o.material.transparent||o.material.side===T.BackSide)return;
     for(let p=o;p&&p!==root;p=p.parent)if(excluded.has(p)||p.userData.noCollision)return;
     if(leaves.has(o.material.color?.getHexString())||['vegetation-crowns','ground-grass','river-gravel','river-reeds','distant-backdrop'].includes(o.name))return;
     for(let i=0;i<(o.isInstancedMesh?o.count:1);i++){

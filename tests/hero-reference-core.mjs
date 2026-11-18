@@ -26,7 +26,9 @@ for(const i of active)for(const p of hero.json.meshes[i].primitives){
  assert.ok(positions.every(p=>p.every(Number.isFinite)));assert.ok(indices.every(([i])=>i>=0&&i<positions.length));assert.ok(weights.every(w=>Math.abs(w.reduce((a,b)=>a+b,0)-1)<.002));assert.ok(joints.every(row=>row.every(j=>j<hero.json.skins[0].joints.length)));triangles+=indices.length/3;
 }
 assert.ok(triangles<28000,'single hero geometry budget');
-for(const part of ['Hair','Mask','Collar','Mantle','Harness','Belt','HipPanels','Gloves','Boots'])assert.ok([...active].some(i=>hero.json.meshes[i].name==='HeroReference'+part));
+for(const part of ['Hair','Mask','Collar','Mantle','Harness','Belt','HipPanels','Gloves','Boots','Hood','KageArms','KageSleeves','KageSash','KageShoulderMetal','KageArmMetal','KageGreavesMetal','Katana'])assert.ok([...active].some(i=>hero.json.meshes[i].name==='HeroReference'+part));
+assert.equal(hero.json.extras.heroReference.style,'kage-reference-sheet');
+const sash=hero.json.meshes.find(m=>m.name==='HeroReferenceKageSash');assert.deepEqual(sash.extras.targetNames,['KageFlutter']);assert.ok(values(hero,sash.primitives[0].targets[0].POSITION).some(row=>row.some(v=>Math.abs(v)>.01)),'cloth has a real deformation target');
 assert.ok(hero.json.extras.heroReference.integratedMask);
 assert.ok(hero.json.scenes[hero.json.scene||0].extras.heroReference.integratedMask,'GLTFLoader scene exposes the integrated-mask flag');
 console.log('PASS: reference GLB keeps rig, bind matrices, native face and blink; valid skinned geometry, embedded textures and mobile geometry/file budgets. '+triangles+' triangles.');

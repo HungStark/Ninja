@@ -1,0 +1,37 @@
+[
+  {
+    "id": "nameless",
+    "triangles": 17292,
+    "draws": 35,
+    "joints": 18,
+    "glbBytes": 703344
+  },
+  {
+    "id": "fire",
+    "triangles": 25986,
+    "draws": 48,
+    "joints": 23,
+    "glbBytes": 976928
+  },
+  {
+    "id": "water",
+    "triangles": 22360,
+    "draws": 9,
+    "joints": 17,
+    "glbBytes": 1039400
+  },
+  {
+    "id": "lightning",
+    "triangles": 13670,
+    "draws": 33,
+    "joints": 17,
+    "glbBytes": 575716
+  },
+  {
+    "id": "wind",
+    "triangles": 7214,
+    "draws": 23,
+    "joints": 17,
+    "glbBytes": 325696
+  }
+]

@@ -6,20 +6,23 @@ import {village} from './adventure-data.js';
 export function createVillageGrass({id,limit,heightAt,allowed,rand}){
   const root=new T.Group();root.name='village-grass';root.userData.noCollision=true;
   const ground=new T.Color(village(id).ground);
-  const geometry=createGrassGeometry(ground.clone().multiplyScalar(.76),ground.clone().multiplyScalar(.95));
+  const tips={wood:'#7da751',water:'#89b8a1',wind:'#b0c47b',fire:'#b6a079',earth:'#b5a078',lightning:'#9b91af',dark:'#8b79a1',nameless:'#aba778',ice:'#d4e1df',light:'#d5c78d'};
+  const geometry=createGrassGeometry(ground.clone().multiplyScalar(.68),ground.clone().lerp(new T.Color(tips[id]),.32));
   const normals=geometry.attributes.normal;
-  for(let i=0;i<normals.count;i++)normals.setXYZ(i,0,1,0);
+  for(let i=0;i<normals.count;i++){const n=new T.Vector3(normals.getX(i)*.2,1,normals.getZ(i)*.2).normalize();normals.setXYZ(i,n.x,n.y,n.z);}
   // Match both the terrain hue and its lighting; only the blade tips brighten a little.
   const material=withWind(new T.MeshStandardMaterial({vertexColors:true,roughness:1,side:T.DoubleSide}),{upwardLighting:true});
   const dummy=new T.Object3D(),chunks=[],tile=28;
-  const density=id==='wood'||id==='wind'?.8:id==='ice'?.38:.6;
+  const density=id==='wood'?1.15:id==='wind'?.9:id==='ice'?.3:.72;
   for(let x0=-limit;x0<limit;x0+=tile)for(let z0=-limit;z0<limit;z0+=tile){
     const width=Math.min(tile,limit-x0),depth=Math.min(tile,limit-z0);
     const matrices=[],tints=[];
     for(let k=0;k<Math.ceil(width*depth*density);k++){
       const x=x0+rand()*width,z=z0+rand()*depth;
       if(!allowed(x,z,.4))continue;
-      const s=.65+rand()*.85;
+      // Broad patches interspersed with small tufts, retaining each biome's hue.
+      const patch=.5+.5*Math.sin(x*.18+Math.sin(z*.12)*2)*Math.cos(z*.21);
+      const s=.48+rand()*.6+patch*.45;
       dummy.position.set(x-x0,heightAt(x,z)-.025,z-z0);
       dummy.rotation.set(0,rand()*Math.PI*2,0);
       dummy.scale.set(s,s*(id==='ice'?.7:1),s);dummy.updateMatrix();

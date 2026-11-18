@@ -1,5 +1,6 @@
 import {buildGuardianBeast} from './guardian-beasts.js';
 import * as T from 'three';
+import {sceneryGeometry} from './fantasy-scenery.js';
 import {buildThatchedRuin,buildWarCemetery} from './adventure-ruins.js';
 import {buildVolcano} from './adventure-volcano.js';
 import {detailVillageHouse} from './adventure-house-details.js';
@@ -92,7 +93,7 @@ export function buildDistrict(c,zone,index){
   const a=Math.atan2(zone.x,zone.z),spot=c.setpieceSpot(zone),x=spot.x,z=spot.z,g=group(x,z),stone=M(id==='earth'?'#b58b5c':id==='fire'?'#544944':'#8c8c7c'),wood=M('#51483c'),roof=M(v.roof),white=M(id==='earth'?'#c8a276':'#d7d6bf'),accent=M(v.color,.35);
   const ring=(parent,r,y,material=accent)=>{const o=mesh(new T.TorusGeometry(r,.19,6,36),material,parent,0,y,0);return o;};
   const pillar=(px,pz,h=10,r=1.2,material=stone)=>cyl(g,material,px,h/2,pz,r,h,7);
-  const giantTree=(px,pz,h=23,r=3)=>{cyl(g,wood,px,h*.4,pz,r,h*.8,9);for(let k=0;k<5;k++){const a=k*2.4;const crown=mesh(new T.IcosahedronGeometry(r*2.6,1),M(v.tree),g,px+Math.sin(a)*r*2,h*.78+Math.cos(k)*2,pz+Math.cos(a)*r*1.6);crown.scale.y=.65;}for(let k=0;k<5;k++){const a=k*Math.PI*.4;const root=box(g,wood,px+Math.sin(a)*r*1.4,r*.5,pz+Math.cos(a)*r*1.4,r*.7,r,5);root.rotation.y=a;}};
+  const giantTree=(px,pz,h=23,r=3)=>{cyl(g,wood,px,h*.4,pz,r,h*.8,9);for(let k=0;k<5;k++){const a=k*2.4;const crown=mesh(sceneryGeometry('layered-crown').scale(r*2.6,r*2.6,r*2.6),M(v.tree),g,px+Math.sin(a)*r*2,h*.78+Math.cos(k)*2,pz+Math.cos(a)*r*1.6);crown.scale.y=.65;}for(let k=0;k<5;k++){const a=k*Math.PI*.4;const root=box(g,wood,px+Math.sin(a)*r*1.4,r*.5,pz+Math.cos(a)*r*1.4,r*.7,r,5);root.rotation.y=a;}};
   const mill=(px,pz,h=10)=>{mesh(new T.ConeGeometry(2.2,h,8),white,g,px,h/2,pz);const rotor=new T.Group();rotor.position.set(px,h-1,pz+1.2);g.add(rotor);for(let k=0;k<4;k++){const arm=new T.Group();arm.rotation.z=k*Math.PI/2;rotor.add(arm);box(arm,wood,0,2.7,0,.18,6,.14);box(arm,white,.5,2.9,0,1.1,3.3,.08);}animated.push({kind:'windmill',mesh:rotor});};
   const portal=(h=12)=>{for(const s of [-1,1]){pillar(s*4,0,h,1,white);box(g,roof,s*1.8,h+.2,0,5.4,.5,1.5).rotation.z=s*.1;}box(g,roof,0,h+1,0,11,.5,2);};
   if(zone.id==='terraces'){
@@ -102,7 +103,7 @@ export function buildDistrict(c,zone,index){
     g.name='ruined-stone-bridge';for(let k=0;k<11;k++){const t=k/10,h=2+Math.sin(t*Math.PI)*3,deck=box(g,k%3?stone:M('#70735f'),Math.sin(k)*.08,h,-10+k*2,4.8,.6,2.1);c.solidMesh?.(deck,{name:'stone-bridge-deck'});for(const s of [-1,1]){if((k+(s===1?1:0))%4===1)continue;const rail=box(g,stone,s*2.4,h+.4,-10+k*2,.35,k%3===0?.45:1.1,1.7);rail.rotation.z=s*(k%3)*.07;c.solidMesh?.(rail,{name:'stone-bridge-rail',stepable:false});}if(k%2===0)box(g,M('#62694b'),1.65,.32+h,-10+k*2,.7,.035,1.4);}for(const s of [-1,1]){const pier=cyl(g,stone,0,2,s*7,1,4,7);c.solidMesh?.(pier,{name:'stone-bridge-pier'});}return;
   }
   if(zone.id==='maple'){
-    for(let k=0;k<5;k++){const px=Math.sin(k*2.4)*7,pz=Math.cos(k*2.4)*5,h=6+k%2*2;cyl(g,wood,px,h/2,pz,.4,h,7);for(let j=0;j<3;j++){const crown=mesh(new T.IcosahedronGeometry(3.5,0),M(j%2?'#bf593b':'#db8850'),g,px+(j-1)*1.8,h+1,pz);crown.scale.y=.6;}}return;
+    for(let k=0;k<5;k++){const px=Math.sin(k*2.4)*7,pz=Math.cos(k*2.4)*5,h=6+k%2*2;cyl(g,wood,px,h/2,pz,.4,h,7);for(let j=0;j<3;j++){const crown=mesh(sceneryGeometry('layered-crown').scale(3.5,3.5,3.5),M(j%2?'#bf593b':'#db8850'),g,px+(j-1)*1.8,h+1,pz);crown.scale.y=.6;}}return;
   }
   if(zone.id==='lotus'||zone.id==='frozen-lake'||zone.id==='mirror-pool'){
     const water=M(zone.id==='mirror-pool'?'#514868':zone.id==='frozen-lake'?'#91c7d7':'#6caaaa',.1),pool=mesh(new T.CylinderGeometry(10,10,.12,48),water,g,0,.08,0);pool.scale.z=.75;

@@ -1,10 +1,13 @@
 import * as T from 'three';
+import {sculptedSurface} from './fantasy-scenery.js';
+import {buildReferenceGuardian} from './reference-guardians.js';
 export const GUARDIAN_FORMS={fire:{name:'Cửu Viêm Hồ',shape:'nine-tailed-fox'},water:{name:'Thủy Long',shape:'serpent-dragon'},lightning:{name:'Lôi Thần Lang',shape:'thunder-wolf'},wind:{name:'Phong Ưng',shape:'wind-eagle'},earth:{name:'Sơn Quy',shape:'mountain-tortoise'},wood:{name:'Thanh Lộc',shape:'forest-stag'},ice:{name:'Băng Hổ',shape:'ice-tiger'},light:{name:'Kim Ưng',shape:'golden-eagle'},dark:{name:'U Minh Lang',shape:'shadow-wolf'},nameless:{name:'Vô Danh Thú',shape:'faceless-spirit'}};
 
 // One authored low-poly model is shared by exploration, transformations and the Dark aura.
 export function buildGuardianBeast(c){
- const {id,mesh}=c,root=new T.Group(),materials=new Map(),mat=(color,glow=0)=>{const key=color+glow;if(!materials.has(key))materials.set(key,c.M(color,glow));return materials.get(key);};root.name='guardian-'+GUARDIAN_FORMS[id].shape;root.userData.guardian={...GUARDIAN_FORMS[id],village:id};
- const ell=(name,p,s,color)=>{const m=mesh(new T.IcosahedronGeometry(1,1),mat(color),root,...p);m.name=name;m.scale.fromArray(s);return m;};
+ const reference=buildReferenceGuardian(c,GUARDIAN_FORMS[c.id]);if(reference)return reference;
+ const {id,mesh}=c,root=new T.Group(),materials=new Map(),mat=(color,glow=0)=>{const key=color+glow;if(!materials.has(key))materials.set(key,sculptedSurface(c.M(color,glow),{rim:.065}));return materials.get(key);};root.name='guardian-'+GUARDIAN_FORMS[id].shape;root.userData.guardian={...GUARDIAN_FORMS[id],village:id};
+ const ell=(name,p,s,color)=>{const geometry=new T.IcosahedronGeometry(1,1),pos=geometry.attributes.position,colors=[];for(let i=0;i<pos.count;i++){const value=.88+(pos.getY(i)+1)*.06;colors.push(value,value,value);}geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));const material=mat(color);material.vertexColors=true;material.flatShading=false;material.roughness=.82;const m=mesh(geometry,material,root,...p);m.name=name;m.scale.fromArray(s);return m;};
  const rod=(name,a,b,r,color,r2=r*.75)=>{const av=new T.Vector3(...a),bv=new T.Vector3(...b),d=bv.clone().sub(av),m=mesh(new T.CylinderGeometry(r2,r,d.length(),7),mat(color),root,...av.add(bv).multiplyScalar(.5).toArray());m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());m.name=name;return m;};
  const spike=(name,p,s,color,lean=0)=>{const m=mesh(new T.ConeGeometry(1,1,5),mat(color),root,...p);m.scale.fromArray(s);m.rotation.z=lean;m.name=name;return m;};
  const tube=(name,points,r,color)=>{const curve=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p))),geo=new T.TubeGeometry(curve,12,r,6,false);if(name.startsWith('fire-tail')||name==='spirit-tail'){const pos=geo.attributes.position;for(let i=0;i<=12;i++){const center=curve.getPointAt(i/12),factor=.2+Math.sin(Math.PI*i/12)*1.15;for(let j=0;j<=6;j++){const at=i*7+j,v=new T.Vector3().fromBufferAttribute(pos,at).sub(center).multiplyScalar(factor).add(center);pos.setXYZ(at,v.x,v.y,v.z);}}geo.computeVertexNormals();}const m=mesh(geo,mat(color),root);m.name=name;return m;};

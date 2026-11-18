@@ -1,4 +1,5 @@
 import {prepareCharacterSource} from './character-assets.js';
+import {sculptedSurface} from './fantasy-scenery.js';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
@@ -52,7 +53,7 @@ export function attachHaLy(root,profile,fallback){
     const outlines=[];visual.traverse(o=>{if(!o.isMesh)return;o.geometry=o.geometry.clone();o.castShadow=o.receiveShadow=true;
       const material=m=>{const n=m.name.toLowerCase(),cloth=/cloth|tops|shoes/.test(n);const result=new T.MeshToonMaterial({name:m.name,color:m.color,map:m.map,alphaMap:m.alphaMap,alphaTest:m.alphaTest,transparent:m.transparent,opacity:m.opacity,side:m.side,depthWrite:m.depthWrite,gradientMap:ramp,flatShading:cloth});
         if(n.includes('skin'))result.color.multiply(new T.Color('#d4b294'));
-        if(cloth){result.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat l=dot(diffuseColor.rgb,vec3(.299,.587,.114));diffuseColor.rgb=mix(vec3(l),diffuseColor.rgb,.67)*.82;');};result.customProgramCacheKey=()=>'ha-ly-muted-cloth-v1';}return result;};
+        if(cloth){result.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat l=dot(diffuseColor.rgb,vec3(.299,.587,.114));diffuseColor.rgb=mix(vec3(l),diffuseColor.rgb,.67)*.82;');};result.customProgramCacheKey=()=>'ha-ly-muted-cloth-v1';}if(!/eye|mouth|brow|lash|highlight/.test(n))sculptedSurface(result,{rim:.035});return result;};
       o.material=Array.isArray(o.material)?o.material.map(material):material(o.material);if(!/eye|mouth|brow|lash|highlight/i.test(Array.isArray(o.material)?o.material.map(m=>m.name).join(' '):o.material.name))outlines.push(o);
     });
     for(const o of outlines)addInkOutline(o,ink);

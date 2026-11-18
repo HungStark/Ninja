@@ -286,15 +286,25 @@ for side in (-1,1):
             ribbon('Boots',[(x-flip*.028,y-.009,z),(x+flip*.026,y+.012,z)],.004,'leather_light',leg)
     diamond('Boots',x,.235,.067,.03,.039,leg)
 
+exec(compile((ROOT/'tools/hero-kage-outfit.py').read_text(encoding='utf-8'),str(ROOT/'tools/hero-kage-outfit.py'),'exec'))
+
 # Export skinned batches. Source skin joint order and inverse bind matrices
 # are reused exactly, so existing animation and equipment attachment still work.
 for (label,kind),(attributes,indices) in groups.items():
     primitive=dict(material=materials[kind]);asset.replace(primitive,attributes,indices)
     index=len(g['meshes']);name='HeroReference'+label+('Metal' if kind=='metal' else '')
-    g['meshes'].append(dict(name=name,primitives=[primitive]))
+    mesh=dict(name=name,primitives=[primitive])
+    if label=='KageSash':
+        deltas=[]
+        for x,y,z in attributes['POSITION']:
+            weight=max(0,min(1,(1.06-y)/.63))**1.5
+            deltas.append((math.sin(y*12)*.022*weight,.004*weight,-.034*weight))
+        primitive['targets']=[{'POSITION':asset.append(deltas,'VEC3')}]
+        mesh.update(weights=[0],extras={'targetNames':['KageFlutter']})
+    g['meshes'].append(mesh)
     node=len(g['nodes']);g['nodes'].append(dict(name=name,mesh=index,skin=skin_index))
     g['scenes'][g.get('scene',0)]['nodes'].append(node)
-metadata=dict(version=1,source='hero-ninja-simple.glb',integratedMask=True,rigPreserved=True)
+metadata=dict(version=2,style='kage-reference-sheet',source='hero-ninja-simple.glb',integratedMask=True,rigPreserved=True,hood=True,katana=True,asymmetricShoulder=True)
 g.setdefault('extras',{})['heroReference']=metadata
 g['scenes'][g.get('scene',0)].setdefault('extras',{})['heroReference']=metadata
 output=ROOT/'assets/hero-ninja-reference.glb';asset.save(output)

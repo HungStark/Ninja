@@ -1,10 +1,12 @@
 import * as T from 'three';
 import {createGuardianDragonMotion} from './guardian-dragon-motion.js';
+import {createReferenceGuardianAnimation} from './reference-guardian-animation.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 // Build joints once. Animation only updates transforms and the dragon's two
 // small tube meshes; it creates no geometry or materials during a frame.
 export function createGuardianAnimation(id,body){
+ if(body.referenceRig)return createReferenceGuardianAnimation(id,body);
  const joints=[],wings=[],tails=[],dragon=[],restY=body.position.y,restZ=body.position.z,restScale=body.scale.clone(),worldScale=new T.Vector3();
  const parts=[];body.updateWorldMatrix(true,true);body.traverse(m=>{if(m.isMesh)parts.push(m);});
  const local=m=>body.worldToLocal(m.getWorldPosition(new T.Vector3()));

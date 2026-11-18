@@ -5,6 +5,7 @@ import {characterInkMaterial,addInkOutline} from './ink-outline.js';
 import {residentActivityPose,residentStandingPose,reachResidentHand} from './resident-rig-pose.js';
 import {REST_ARM_OPEN} from './character-motion.js';
 import {prepareCharacterSource} from './character-assets.js';
+import {sculptedSurface} from './fantasy-scenery.js';
 import {applyElderFace} from './elder-face.js';
 
 const toonRamp=new T.DataTexture(new Uint8Array([52,52,52,255,112,112,112,255,194,194,194,255,255,255,255,255]),4,1,T.RGBAFormat);
@@ -36,7 +37,7 @@ export function attachNpcModel(root,profile){
     const recolor=(material,color,low=.62,high=1.16)=>{
       const m=material.isMeshBasicMaterial?new T.MeshToonMaterial({name:material.name,color:'#ffffff',map:material.map,alphaMap:material.alphaMap,alphaTest:material.alphaTest,opacity:material.opacity,transparent:material.transparent,side:material.side,depthWrite:material.depthWrite,depthTest:material.depthTest,blending:material.blending,vertexColors:material.vertexColors,gradientMap:toonRamp}):material.clone();m.color.set('#ffffff');
       m.onBeforeCompile=shader=>{shader.uniforms.npcTint={value:color.clone()};shader.uniforms.npcShade={value:new T.Vector2(low,high)};shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 npcTint;uniform vec2 npcShade;').replace('#include <map_fragment>','#include <map_fragment>\nfloat npcLuma=dot(diffuseColor.rgb,vec3(0.299,0.587,0.114));diffuseColor.rgb=npcTint*mix(npcShade.x,npcShade.y,npcLuma);');};
-      m.customProgramCacheKey=()=>'npc-lit-toon-appearance-v1';m.needsUpdate=true;return m;
+      m.customProgramCacheKey=()=>'npc-lit-toon-appearance-v1';sculptedSurface(m,{rim:.035});m.needsUpdate=true;return m;
     };
     const outlineMeshes=[];model.traverse(o=>{
       if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;

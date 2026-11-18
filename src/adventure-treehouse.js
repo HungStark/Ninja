@@ -1,6 +1,7 @@
 import {buildTreeRopeLadder} from './tree-rope-ladder.js';
 import {createSacredTreeStatus} from './sacred-tree.js';
 import * as T from 'three';
+import {sceneryGeometry} from './fantasy-scenery.js';
 
 export function buildTreeHouse(c,route){
   const {box,cyl,mesh,M,land}=c,p=route.platform,y=route.toY,root=new T.Group();root.name='central-tree-house';land.add(root);
@@ -10,10 +11,10 @@ export function buildTreeHouse(c,route){
   for(let k=0;k<vertices.count;k++){const h=vertices.getY(k)+19;vertices.setX(k,vertices.getX(k)+Math.sin(h*.07)*.8);vertices.setZ(k,vertices.getZ(k)+Math.sin(h*.09)*.45);}trunkGeo.computeVertexNormals();mesh(trunkGeo,bark,root,p.x,19,p.z).name='ancient-tree-trunk';
   for(let k=0;k<7;k++){const a=k*2.4;beam([p.x,2,p.z],[p.x+Math.sin(a)*4,.1,p.z+Math.cos(a)*4],.72,bark);}
   for(let k=0;k<7;k++){const a=k*2.4,ex=p.x+Math.sin(a)*(7+k%2*2),ez=p.z+Math.cos(a)*(6+k%3),ey=27+k%3*2;beam([p.x,23+k*.4,p.z],[ex,ey,ez],.85,bark);beam([ex,ey,ez],[ex+Math.cos(a)*3,ey+4,ez-Math.sin(a)*2],.38,bark);
-    const crown=mesh(new T.IcosahedronGeometry(1,1),leaves[k%3],root,ex,ey+3.8,ez);crown.scale.set(6.5,5.4,6);crown.userData.noCollision=true;
+    const crown=mesh(sceneryGeometry('layered-crown'),leaves[k%3],root,ex,ey+3.8,ez);crown.scale.set(6.5,5.4,6);crown.userData.noCollision=true;
   }
-  for(const [dx,h,dz] of [[-8,23,-3],[8,24,-4],[3,25,-9]]){const crown=mesh(new T.IcosahedronGeometry(1,1),leaves[1],root,p.x+dx,h,p.z+dz);crown.scale.set(3.6,2.8,3.5);crown.userData.noCollision=true;}
-  const top=mesh(new T.IcosahedronGeometry(1,1),leaves[0],root,p.x+.4,36,p.z);top.scale.set(8,6,7.5);top.userData.noCollision=true;
+  for(const [dx,h,dz] of [[-8,23,-3],[8,24,-4],[3,25,-9]]){const crown=mesh(sceneryGeometry('layered-crown'),leaves[1],root,p.x+dx,h,p.z+dz);crown.scale.set(3.6,2.8,3.5);crown.userData.noCollision=true;}
+  const top=mesh(sceneryGeometry('layered-crown'),leaves[0],root,p.x+.4,36,p.z);top.scale.set(8,6,7.5);top.userData.noCollision=true;
   p.customLayout=true;p.obstacles=[{x:p.x,z:p.z,r:2.55}];p.stairNotch=false;
   for(let j=0;j<24;j++){const x=-5.75+j*.5,hole=Math.sqrt(Math.max(0,2.45**2-x*x)),front=6;
     if(front>hole)box(root,planks[j%3],p.x+x,y-.16,p.z+(hole+front)/2,.48,.32,front-hole);
