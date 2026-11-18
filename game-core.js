@@ -618,6 +618,7 @@
       const actual = Math.min(this.hp, Math.max(0, damage - absorbed)); this.hp -= actual;
       const defeated = this.hp <= 0, restored = defeated && this.autoRestore !== false;
       if (restored) this.hp = this.maxHp;
+      if(actual>0)this.onDamage?.(actual);
       return { damage: actual, absorbed, reflected: false, restored, defeated };
     }
   }

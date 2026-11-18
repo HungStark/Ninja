@@ -6,6 +6,7 @@
   "scripts": {
     "test:harbor-crescent": "node tests/harbor-companion-core.mjs && node tests/harbor-voyage-core.mjs && node tests/model-portraits-core.mjs && node tests/harbor-crescent-browser.cjs",
     "start": "node server.cjs",
+    "test:damage-numbers": "node tests/damage-numbers-core.mjs && node tools/build.mjs && node tests/damage-numbers-browser.cjs",
     "balance": "node tools/balance-server.mjs",
     "test:balance-editor": "node tests/spell-balance-editor.mjs",
     "test:opponent-balance": "node tests/opponent-balance-core.mjs && node tools/build.mjs && node tests/opponent-balance-editor.mjs",
