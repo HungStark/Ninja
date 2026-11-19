@@ -31,14 +31,7 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
     }
     return null;
   }
-  function trail(from,anchor,task){
-    if(task.destinationOffset){
-      const [dx,dz]=task.destinationOffset,end=safePoint(anchor.x+dx,anchor.z+dz);
-      if(end){
-        const preferred=findPath([from.x,from.z],[end.x,end.z],blocked);
-        if(preferred.length>=4&&preferred.length<task.distance*3)return preferred;
-      }
-    }
+  function chaseTrail(from,anchor,task){
     const heading=Math.atan2(anchor.x,anchor.z)+Math.PI;
     for(const turn of [0,.65,-.65,1.3,-1.3,2.1,-2.1,Math.PI]){
       const a=heading+turn,p=safePoint(from.x+Math.sin(a)*task.distance,from.z+Math.cos(a)*task.distance);
@@ -47,6 +40,36 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
       if(path.length>=4&&path.length<task.distance*3)return path;
     }
     return [];
+  }
+  function escortTrail(from,anchor,site){
+    if(!site)return null;
+    const [x,z]=site.point||[anchor.x+site.offset[0],anchor.z+site.offset[1]];
+    // Search the footprint of the named site for a clear spot. Keep reroutes
+    // inside this same site instead of picking an unrelated stopping point.
+    for(const radius of [0,1.2,2.4,3.2])for(let i=0;i<(radius?12:1);i++){
+      const px=x+Math.cos(i*Math.PI/6)*radius,pz=z+Math.sin(i*Math.PI/6)*radius;
+      if(blocked(px,pz)||blocked(Math.round(px),Math.round(pz)))continue;
+      const route=findPath([from.x,from.z],[px,pz],blocked);
+      if(!route.length&&Math.hypot(px-from.x,pz-from.z)>.8)continue;
+      const destination={x:px,y:floor(px,pz),z:pz,label:site.label,kind:'escort-destination'};
+      return {path:route.length?route:[[px,pz]],destination};
+    }
+    return null;
+  }
+  function escortSite(destination,site){
+    const group=new T.Group();group.name='escort-destination';group.position.set(destination.x,destination.y,destination.z);root.add(group);
+    const landmark=createQuestItem({model:site.prop,name:site.label});landmark.position.set(.85,.32,0);group.add(landmark);
+    box(group,'#82664a',.85,.22,0,1,.21,.74);
+    if(site.prop==='medicine'||site.prop==='net')box(group,'#bfa67f',-.65,.15,.45,1.3,.21,.7);
+  }
+  function stopForObstacle(run){
+    const obstacle=run.obstacle;
+    if(!obstacle||obstacle.phase!=='ahead'||run.path.length>obstacle.remaining)return false;
+    obstacle.phase='waiting';run.entry.label=obstacle.label;
+    const p=run.group.position,prop=createQuestItem({model:obstacle.prop,name:obstacle.label});
+    prop.position.set(p.x+Math.sin(run.group.rotation.y)*1.25,p.y,p.z+Math.cos(run.group.rotation.y)*1.25);
+    prop.name='escort-obstacle';root.add(prop);obstacle.object=prop;
+    return true;
   }
   function bridgeWork(progress){
     const bridge=scene.getObjectByName('ruined-stone-bridge');if(!bridge)return;
@@ -116,6 +139,7 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
     const entry={kind,id:'field-'+mission.key+'-'+mission.step,label:task.label,...point};
     const group=new T.Group();group.name='field-task-'+task.mode;group.position.set(point.x,point.y,point.z);root.add(group);
     const mobile=task.mode==='escort'||task.mode==='chase';
+    const escort=task.mode==='escort'?escortTrail(point,anchor,task.destination):null;
     let actor=null,represented=null;
     if(task.name){
       const nurse=mission.key==='fire:2';
@@ -128,22 +152,38 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
     }
     if(task.model)group.add(createQuestItem({model:task.model}));
     const ring=new T.Mesh(new T.TorusGeometry(.83,.032,6,28),new T.MeshBasicMaterial({color:0xead29b}));ring.rotation.x=Math.PI/2;ring.position.y=.14;group.add(ring);
-    let path=mobile?trail(point,anchor,task):[];
-    const end=path.at(-1);
-    if(end){const post=createQuestItem({model:'lantern'});post.name='field-destination';post.position.set(end[0],floor(...end),end[1]);root.add(post);}
-    interactives.push(entry);active={entry,mission,task,group,actor,represented,path,end,ring};
+    const path=escort?.path||(task.mode==='chase'?chaseTrail(point,anchor,task):[]);
+    const end=path.at(-1),destination=escort?.destination;
+    const obstacle=destination&&task.destination.obstacle?{...task.destination.obstacle,phase:'ahead',remaining:Math.max(1,Math.floor(path.length*.55)),progress:0}:null;
+    if(destination)escortSite(destination,task.destination);
+    else if(end){const post=createQuestItem({model:'lantern'});post.name='field-destination';post.position.set(end[0],floor(...end),end[1]);root.add(post);}
+    interactives.push(entry);active={entry,mission,task,group,actor,represented,path,end,destination,obstacle,ring};
   }
   function start(entry){
-    if(!active||entry!==active.entry||started||finished)return false;
+    if(!active||entry!==active.entry||finished||active.task.mode==='escort'&&!active.destination)return false;
+    if(started){
+      if(active.obstacle?.phase!=='waiting')return false;
+      active.obstacle.phase='clearing';return true;
+    }
     started=true;return true;
   }
   function update(dt,time){
     if(!active||finished)return null;
-    const {entry,mission,task,group,actor,path,end,ring}=active;
+    const {entry,mission,task,group,actor,path,end,destination,obstacle,ring}=active;
     const p=hero.root.position,position=group.position,distance=()=>p.distanceTo(position);
     let moving=false,complete=false;
     if(started){
       elapsed+=dt;
+      if(obstacle?.phase==='clearing'){
+        if(distance()<=3.3)obstacle.progress+=dt;
+        if(obstacle.progress>=obstacle.seconds){
+          obstacle.phase='cleared';entry.label=task.label;
+          if(obstacle.object){dispose(obstacle.object);obstacle.object.removeFromParent();obstacle.object=null;}
+        }
+      }
+      if(obstacle?.phase==='waiting'||obstacle?.phase==='clearing'){
+        actor?.update(time,false,null,dt);return null;
+      }
       if(task.mode==='hold'){
         active.progress=(active.progress||0)+(distance()<=3.3?dt:0);
         ring.material.color.setHex(distance()<=3.3?0x86dfb0:0xead29b);ring.scale.setScalar(1+.32*Math.min(1,active.progress/task.seconds));
@@ -151,27 +191,30 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
       }else if(task.mode==='interact')complete=true;
       else{
         const chase=task.mode==='chase';
-        if(path.length&&(chase||distance()<5.5)){
+        if(path.length&&(chase||distance()<5.5)&&!stopForObstacle(active)){
           let budget=dt*(chase?4.2:2.05);
           while(budget>0&&path.length){
             const [x,z]=path[0],dx=x-position.x,dz=z-position.z,d=Math.hypot(dx,dz),step=Math.min(d,budget);
             if(d>.001){position.x+=dx/d*step;position.z+=dz/d*step;position.y=floor(position.x,position.z,position.y+.45);group.rotation.y=Math.atan2(dx,dz);moving=true;}
             if(d<=step+.002)path.shift();budget-=step;
+            if(stopForObstacle(active))break;
           }
           Object.assign(entry,{x:position.x,y:position.y,z:position.z});
         }
-        complete=chase?(elapsed>1.25&&distance()<2.5):(!path.length&&distance()<4);
-        if(!end&&elapsed>1&&distance()<3)complete=true;
+        complete=chase?(elapsed>1.25&&distance()<2.5):!!destination&&!path.length&&(!obstacle||obstacle.phase==='cleared')&&Math.hypot(p.x-destination.x,p.y-destination.y,p.z-destination.z)<4;
+        if(chase&&!end&&elapsed>1&&distance()<3)complete=true;
       }
     }
     actor?.update(time,moving,null,dt);
     if(!complete)return null;
-    finished=true;return {key:mission.key,step:mission.step,point:[position.x,position.z]};
+    finished=true;return {key:mission.key,step:mission.step,point:[position.x,position.z],arrival:task.destination?.arrival};
   }
   function state(){
     if(!active)return null;
-    const {task,entry,end,progress}=active;
-    return {mode:task.mode,started,finished,progress:task.seconds?Math.min(1,(progress||0)/task.seconds):null,near:hero.root.position.distanceTo(active.group.position)<=3.3,target:[entry.x,entry.y,entry.z],end,entry};
+    const {task,entry,end,destination,obstacle,progress}=active;
+    const distance=hero.root.position.distanceTo(active.group.position);
+    const obstruction=obstacle&&['waiting','clearing'].includes(obstacle.phase)?{label:obstacle.label,text:obstacle.text,clearing:obstacle.phase==='clearing',progress:obstacle.progress/obstacle.seconds}:null;
+    return {mode:task.mode,started,finished,progress:task.seconds?Math.min(1,(progress||0)/task.seconds):obstruction?.clearing?obstruction.progress:null,near:distance<=3.3,waiting:task.mode==='escort'&&distance>=5.5,target:[entry.x,entry.y,entry.z],end,entry,destination,obstruction};
   }
   return {sync,start,update,reset,state};
 }

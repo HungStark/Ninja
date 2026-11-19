@@ -12,6 +12,7 @@ import {legionGuardId} from './island-occupation.js';
 import {companionSacrificed} from './phoenix-blessing.js';
 import {FIELD_ROUTE_REVISION,readFieldMissions} from './field-route.js';
 import {readCinematicSides} from './cinematic-route.js';
+import {openingTutorialStep} from './opening-tutorial.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
@@ -28,6 +29,7 @@ export function readStory(raw,save){
     s.peaceSeals=Object.keys(save.bosses).filter(id=>id!=='nameless');s.sealCore=true;s.questItems.push('nameless:seal-core');if(save.expeditions?.fire===3)s.questItems.push('fire:lotus-medicine');return s;
   }
   s.stage=STAGES.includes(raw.stage)?raw.stage:'mother';
+  if(raw.openingTutorial&&typeof raw.openingTutorial==='object')s.openingTutorial={blessed:raw.openingTutorial.blessed===true,treated:raw.openingTutorial.treated===true};
   s.cinematicSides=readCinematicSides(raw.cinematicSides);
   if(raw.fieldRouteRevision===FIELD_ROUTE_REVISION){s.fieldRouteRevision=FIELD_ROUTE_REVISION;s.fieldMissions=readFieldMissions(raw.fieldMissions);}
   s.guardianOrders=[...new Set((Array.isArray(raw.guardianOrders)?raw.guardianOrders:[]).filter(id=>REGIONS[id]&&id!=='nameless'))];
@@ -84,7 +86,7 @@ export function chooseStarter(save,id){
   const e=save.equipment;e.ownedBags=[...new Set([...e.ownedBags,'pouch-30'])];e.bag='pouch-30';e.ammo={iron:10,steel:0,tempered:0,chakra:0};e.shuriken='iron';return true;
 }
 export function reportGuardian(save){
-  if(save.story.stage!=='report')return false;
+  if(save.story.stage!=='report'||openingTutorialStep(save)==='treatment')return false;
   for(const {id,element} of STARTER_CHOICES){
     save.progression.xp[element]??=0;
     if(!save.learnedSpells.includes(id))save.learnedSpells.push(id);

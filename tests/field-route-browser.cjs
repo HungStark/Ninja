@@ -37,7 +37,9 @@ const {chromium}=require('playwright');
       await page.evaluate(i=>{
         for(let k=0;k<180&&(__AN_HOA__.adventure().save.story.fieldMissions?.['nameless:road']?.step||0)===i;k++){
           const field=__fieldWorld.fieldRoute.state();
-          __fieldWorld.hero.root.position.fromArray(field.target);__AN_HOA__.advance(.15);
+          __fieldWorld.hero.root.position.fromArray(field.target);
+          if(field.obstruction&&!field.obstruction.clearing)__AN_HOA__.explore.interact('field-task',field.entry.id);
+          __AN_HOA__.advance(.15);
         }
       },i);
       assert.equal(await step(),i+1);

@@ -21,7 +21,12 @@
     "guardianThreat": "Stand back. Something is holding me inside this seal.",
     "regroup": "Regroup",
     "regroupLine": "You made it back. Rest and tend your wounds before you try again. The meeting point is still there.",
-    "guardStandDown": "Left guard, right guard, stand down. The seal keeper has earned passage. Open the road to the council hall."
+    "guardStandDown": "Left guard, right guard, stand down. The seal keeper has earned passage. Open the road to the council hall.",
+    "escortDestination": "Escort destination",
+    "waitingEscort": "Return to the person waiting for you",
+    "escortUnavailable": "The route to the meeting point is blocked. Re-enter the area to try again.",
+    "escortClear": "Press E to clear the obstacle",
+    "walkThroughGate": "Walk through the gate"
   },
   "openings": {
     "nameless": "Take this end of the rope. I will hold the lower end. Pull when I call.",
@@ -39,13 +44,28 @@
     "nameless": {
       "zone": "tea-road",
       "title": "A Light for the Crossing",
-      "intro": "People across the bank think the fire below is the crossing. Help me put the lamp back before someone follows it.",
+      "intro": "The light at the Tea Road turnoff went out. Travelers take the wrong downhill path instead of turning toward Echo Bridge. Help me bring a new lamp to the turnoff.",
       "end": "You can see the way home from here. Tea is on me.",
       "steps": [
         {
           "mode": "escort",
           "label": "Walk with the lamp bearer",
-          "distance": 12
+          "description": "Tra is carrying a replacement lamp so travelers do not take the wrong downhill turn. Escort her to the turnoff, then secure the lamp in its bracket.",
+          "destination": {
+            "point": [
+              15,
+              14
+            ],
+            "label": "Tea Road turnoff for Echo Bridge",
+            "prop": "lantern",
+            "arrival": "The lamp is at the turnoff. Secure it to show travelers the way to Echo Bridge.",
+            "obstacle": {
+              "prop": "crate",
+              "seconds": 2.5,
+              "label": "Clear the crate at the turnoff",
+              "text": "Tra has both hands on the lamp. Move the crate so she can pass without dropping it."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -64,7 +84,22 @@
         {
           "mode": "escort",
           "label": "Escort the carrier to the water point",
-          "distance": 14
+          "description": "Van is carrying clean water to households staying away from the relief barrels. Escort her to the station, then open the tap for the residents.",
+          "destination": {
+            "point": [
+              16,
+              -102
+            ],
+            "label": "Water station in the riverside hamlet",
+            "prop": "medicine",
+            "arrival": "The water is at the station. Open the tap so Van can serve the nearby households.",
+            "obstacle": {
+              "prop": "tools",
+              "seconds": 3,
+              "label": "Wedge the slippery board",
+              "text": "The board is slipping on the wet ground. Wedge it before Van carries the water across."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -103,7 +138,22 @@
         {
           "mode": "escort",
           "label": "Escort the lamp bearer to high ground",
-          "distance": 15
+          "description": "People in the fields cannot see the shelter through the rain. Escort Am with the lamp to the post on the rise, then light it.",
+          "destination": {
+            "point": [
+              -87,
+              -83
+            ],
+            "label": "Beacon post on the storm-shelter rise",
+            "prop": "lantern",
+            "arrival": "The lamp is at the beacon post. Light it to guide people in the fields back to shelter.",
+            "obstacle": {
+              "prop": "lantern",
+              "seconds": 3,
+              "label": "Shelter the lamp through a lightning burst",
+              "text": "Am stops when lightning strikes close to the trail. Shelter the lamp until the burst passes."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -122,7 +172,22 @@
         {
           "mode": "escort",
           "label": "Escort the guide to the slope",
-          "distance": 16
+          "description": "The wind has shifted and the lower station does not know whether to send the couriers. Escort Dieu to the signal mast, then hold the latch long enough for them to see it.",
+          "destination": {
+            "point": [
+              40,
+              40
+            ],
+            "label": "Signal mast on the Kite Meadow slope",
+            "prop": "cloth",
+            "arrival": "You have reached the mast. Hold the latch so the lower station can read and answer the signal.",
+            "obstacle": {
+              "prop": "cloth",
+              "seconds": 4,
+              "label": "Retie the kite line",
+              "text": "A gust pulled the signal line free. Steady the kite while Dieu reties it."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -152,7 +217,22 @@
         {
           "mode": "escort",
           "label": "Escort the mine inspector to safety",
-          "distance": 14
+          "description": "The reopened side passage is still at risk of rockfall. Escort Thach to the roll-call point so he can confirm no one was left behind.",
+          "destination": {
+            "point": [
+              45,
+              41
+            ],
+            "label": "Roll-call point outside the quarry",
+            "prop": "net",
+            "arrival": "Thach is clear of the rockfall area and confirms the passage is open. Receive your reward here.",
+            "obstacle": {
+              "prop": "ore",
+              "seconds": 3,
+              "label": "Clear loose rock at the side shaft",
+              "text": "Thach stops at the loose rubble. Clear the path without disturbing the brace."
+            }
+          }
         }
       ]
     },
@@ -165,7 +245,22 @@
         {
           "mode": "escort",
           "label": "Escort the seedling carrier",
-          "distance": 13
+          "description": "The seedlings could drown beside the poisoned roots. Escort Ha with the trays to the dry nursery, then water them there.",
+          "destination": {
+            "point": [
+              42,
+              40
+            ],
+            "label": "Backup nursery beside the Herb Garden",
+            "prop": "seeds",
+            "arrival": "The trays are at the dry nursery. Water them to keep the seedlings alive while the old roots recover.",
+            "obstacle": {
+              "prop": "tools",
+              "seconds": 3,
+              "label": "Brace a board over the flooded patch",
+              "text": "Mud covers the trail and could tip the seed trays. Secure the board before the trays cross."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -184,7 +279,22 @@
         {
           "mode": "escort",
           "label": "Escort the traveler to the hearth",
-          "distance": 14
+          "description": "The traveler is exhausted and cannot find their way in the storm. Escort them to the hearth, then shield the fire from the wind.",
+          "destination": {
+            "point": [
+              -10,
+              98
+            ],
+            "label": "Snow hamlet warming hearth",
+            "prop": "lantern",
+            "arrival": "The traveler is at the hearth. Shield the fire so it can catch and warm them.",
+            "obstacle": {
+              "prop": "cloth",
+              "seconds": 4,
+              "label": "Put up the roadside windbreak",
+              "text": "The exhausted traveler has to stop in the wind. Put up the screen so they can catch their breath."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -222,7 +332,22 @@
         {
           "mode": "escort",
           "label": "Escort the resident through the dark street",
-          "distance": 15
+          "description": "Residents still keep their doors shut because they think the occupiers are outside. Escort Dom to the first post and light it to show the street is safe.",
+          "destination": {
+            "point": [
+              -40,
+              39
+            ],
+            "label": "Lamp post at the entrance to Lantern Street",
+            "prop": "lantern",
+            "arrival": "You have reached the first post. Light it so residents know it is safe to come out.",
+            "obstacle": {
+              "prop": "tools",
+              "seconds": 3,
+              "label": "Remove the street barricade",
+              "text": "Residents barred the street with timber to keep the soldiers out. Clear the way for the lamp keeper."
+            }
+          }
         },
         {
           "mode": "hold",

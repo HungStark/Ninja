@@ -1,5 +1,6 @@
 import {AUTO_SAVE_SECONDS,captureCheckpoint,restoreCheckpoint,checkpointSummary} from './checkpoint-state.js';
 import {planSavePoints} from './save-points.js';
+import {OPENING_SAVE_POINT,CHIEF_BLESSING_LINE,CHIEF_TREATMENT_LINE,CHIEF_CHECKUP_LINE,openingTutorialStep} from './opening-tutorial.js';
 import {infiltratorEncounter,infiltrationLimit} from './crescent-infiltration.js';
 import {challengeJailer,militaryIntrusion} from './military-jailer.js';
 import {sacrificeForHero,companionSacrificed,storyEnding} from './phoenix-blessing.js';
@@ -13,7 +14,7 @@ import {villageMapMarkup} from './village-map.js';
 import {createVillageMapControls} from './village-map-controls.js';
 import {inventoryItemDetails} from './inventory-details.js';
 import {guardianGuardIds,guardianOrdered,nextGuardianGuard,orderGuardianGuards,guardianStoryPending,inCouncilCourtyard} from './village-confrontation.js';
-import {planVillageExits} from './village-exits.js';
+import {crossedRoadGate,gateArrival,planVillageExits} from './village-exits.js';
 import {atlasMarkup} from './world-atlas.js';
 import {travelKind} from './village-travel.js';
 import {createPeaceCeremony} from './peace-ceremony.js';
@@ -42,7 +43,7 @@ import * as T from 'three';
 import {VILLAGES,INTERACTION_RANGE,village,newJourney,readJourney,resolveBattle,findPath,SAVE_KEY,discoverZone,mentorReady,completeLesson,canTravel,canSignTreaty,signTreaty,campaignStage,campaignObjective} from './adventure-data.js';
 import {REGIONS,regionMetrics,riverAt} from './adventure-world.js';
 import {planExpedition,markerTraversal} from './adventure-biomes.js';
-import {planVillageCivic,civicGatePosition} from './village-civic.js';
+import {planVillageCivic} from './village-civic.js';
 import {createAdventureScene} from './adventure-scene.js';
 import {physicalKey,textInputTarget,releaseMovementKeys,setupGameFocus} from './game-input.js';
 import {createDialogueUI,heroSpeaker,dialogueCast,conversationLines,sidequestThanks,sidequestLines,campaignLines} from './adventure-dialogue.js';
@@ -50,6 +51,7 @@ import {SYSTEMS,SKILL_LEVELS,LEVEL_XP,ATTRIBUTE_GAINS,systemLevel,requiredLevel,
 import {FIELD_ROUTE,FIELD_ROUTE_REVISION,fieldMission,completeFieldTask,enableFieldRoute} from './field-route.js';
 import {CINEMATIC_ROUTE,SIDE_REWARD,villageSideStory,startSideStory,advanceSideStory,isStoryScene,isMajorBattle} from './cinematic-route.js';
 
+const FACILITY_ACTIONS={clinic:'Hồi phục',shop:'Mua đồ'};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=id=>document.getElementById(id);
 export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},onLoadJourney=()=>{},onAdminChange=()=>{}}){
@@ -221,7 +223,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     const objective=campaignObjective(save,{localOnly:admin.active});$('campaignTitle').textContent=objective.title;$('campaignSummary').textContent=objective.title;$('campaignDescription').textContent=objective.description;
     $('campaignChapter').textContent=campaignChapter(save)+(objective.storyStep?' · '+objective.storyStep+'/'+objective.storyTotal:'');$('campaignTrack').textContent=objective.targetKind==='complete'?'Xem hành trình đã đi qua ↗':'Đánh dấu mục tiêu ↗';
     const roles={'spirit-ore':'KHAI THÁC','interior-enter':'CỬA VÀO','interior-exit':'LỐI RA',military:'KHU QUÂN SỰ',school:'TRƯỜNG HỌC',clinic:'TRẠM Y TẾ','arena-host':'VÕ ĐƯỜNG','village-event':'SỰ KIỆN CHÍNH',companion:'BẠN ĐỒNG HÀNH','story-witness':'NGƯỜI CẦN GIÚP','intro-guardian':'HỘ VỆ BỊ PHÁ HỎNG','village-guard':'CẢNH VỆ','sidequest-target':'VIỆC CƯ DÂN',roamer:'TRĂNG KHUYẾT',home:'QUÊ NHÀ',shop:'THƯƠNG HỘI',dock:'BẾN THUYỀN',gate:'CỔNG LÀNG',save:'ĐIỂM HỒI SINH',quest:'NHIỆM VỤ',npc:'TRƯỞNG LÀNG',mentor:'CAO NHÂN · TRUYỀN THỤ',lore:'CƯ DÂN',healer:'Y SƯ',boss:'THỦ LĨNH KHU VỰC',landmark:'ĐỊA DANH',treaty:'HỘI NGHỊ BA LÀNG',envoy:'SỨ GIẢ HÒA BÌNH',traversal:'BẾN BÈ / ĐƯỜNG LEO','expedition-giver':'NHIỆM VỤ LEO NÚI','expedition-goal':'VẬT PHẨM NHIỆM VỤ'};
-    $('worldLabels').innerHTML=world.interactives.filter(i=>!i.depleted&&i.id!=='fire-dan'&&(i.kind!=='boss'||admin.active||!save.bosses[v.id])).map(i=>`<button class="world-label ${i.kind}" data-world="${world.interactives.indexOf(i)}"><small>${i.guardRole==='guardian'?'HỘ VỆ LINH THÚ':roles[i.kind]||'KHÁM PHÁ'}</small><span>${i.kind==='dock'?'⚓':i.kind==='gate'?'↗':i.kind==='save'?'◇':i.kind==='quest'||i.kind==='boss'?'⚔':i.kind==='mentor'?'✧':i.kind==='landmark'?'⌖':i.kind==='clinic'?'+':'!'} ${esc(i.label)}</span></button>`).join('');
+    $('worldLabels').innerHTML=world.interactives.filter(i=>!i.depleted&&i.id!=='fire-dan'&&(i.kind!=='boss'||admin.active||!save.bosses[v.id])).map(i=>`<button class="world-label ${i.kind}" data-world="${world.interactives.indexOf(i)}"><small>${i.guardRole==='guardian'?'HỘ VỆ LINH THÚ':roles[i.kind]||'KHÁM PHÁ'}</small><span>${i.kind==='dock'?'⚓':i.kind==='gate'?'↗':i.kind==='save'?'◇':i.kind==='quest'||i.kind==='boss'?'⚔':i.kind==='mentor'?'✧':i.kind==='landmark'?'⌖':i.kind==='clinic'?'+':'!'} ${esc(FACILITY_ACTIONS[i.kind]||i.label)}</span></button>`).join('');
     const stats=combatStats(save.progression);$('journeyHeroLevel').textContent=`${Math.ceil(stats.maxHp*(save.healthFraction??1))} / ${stats.maxHp} máu · ${stats.maxChakra.toFixed(0)} mana`;
     $('journeyCompanionHealth').hidden=!companionPresent(save);$('journeyCompanionHealth').textContent=companionUnconscious(save)?'Hạ Ly · Bất tỉnh · Đang bế · Tốc độ −30%':'Hạ Ly · '+Math.ceil(save.story.companion.hp)+' / '+save.story.companion.maxHp+' máu';
     progressButton.innerHTML=`Tu luyện <kbd>C</kbd><span>${remainingPoints(save.progression)} điểm chung</span>`;
@@ -318,7 +320,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(side){
       const card=document.createElement('button');card.type='button';card.className='journal-zone';
       const status=side.complete?CINEMATIC_ROUTE.ui.done:side.step<0?CINEMATIC_ROUTE.ui.open:CINEMATIC_ROUTE.ui.active;
-      card.innerHTML='<small>'+esc(status)+'</small><strong>'+esc(side.title)+'</strong><p>'+esc(side.complete?side.end:side.task?.label||side.intro)+'</p><span>'+SIDE_REWARD+' xu</span>';
+      card.innerHTML='<small>'+esc(status)+'</small><strong>'+esc(side.title)+'</strong><p>'+esc(side.complete?side.end:side.task?.description||side.task?.label||side.intro)+'</p><span>'+SIDE_REWARD+' xu</span>';
       card.disabled=side.complete;
       card.onclick=()=>{closeDialog();const target=world.sideRoute.state()?.entry||findJourneyItem(REGIONS[v.id].npcs.find(n=>n.id===side.giver)?.kind,side.giver);if(target)setObjectiveMarker(target,'side-story');};
       work.prepend(card);
@@ -341,10 +343,10 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   function arriveVillage(target){
     $('journeyTravel').hidden=true;
     return runLoading('Đang tới '+village(target).name+'…',()=>{
-      const old=save.village,from=village(old),next=village(target),a=Math.atan2(from.x-next.x,from.y-next.y),plan=planVillageCivic(target);
-      const border=plan?civicGatePosition(plan,a):{x:Math.sin(a)*regionMetrics(target).arrivalRadius,z:Math.cos(a)*regionMetrics(target).arrivalRadius},byBoat=travelKind(old,target)==='dock',gate=byBoat?planVillageExits(next,village).find(g=>g.id===old):border;
-      const length=Math.hypot(gate.x,gate.z),back=travelKind(old,target)==='dock'?0:6;
-      save.village=target;save.interior=null;save.surface=null;save.elevation=null;save.position=[gate.x*(1-back/length),gate.z*(1-back/length)];
+      const old=save.village,from=village(old),next=village(target),byBoat=travelKind(old,target)==='dock';
+      const gate=planVillageExits(next,village).find(g=>g.id===old);
+      if(!gate)throw new Error('Missing village return exit: '+old+' → '+target);
+      save.village=target;save.interior=null;save.surface=null;save.elevation=null;save.position=byBoat?[gate.x,gate.z]:gateArrival(gate);
       if(!save.visited.includes(target))save.visited.push(target);
       world.clearEnemy();enter();cooldown=35;distance=0;
       if(byBoat){if(!world.beginHarborArrival(old))throw new Error('Destination harbor is missing');setPhase('boarding');$('journeyTravel').hidden=false;$('journeyTravel').textContent='Thuyền đang vào bến · '+next.name;}
@@ -382,7 +384,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   function moveTo(point,item=null){if(phase!=='explore'||world.riding)return false;const legs=routeTo(point,item);if(!legs){toast('Địa hình chắn lối. Hãy tìm bến bè hoặc đường leo.');return false;}journeyLegs=legs;path=[];automaticJourney=true;action=item;nextJourneyLeg();world.destination.position.set(point[0],item?.y??world.heightAt(point[0],point[1])+.12,point[1]);world.destination.visible=true;return true;}
   function markWaypoint(item,source='manual'){waypoint=item;waypointSource=source;waypointVia=null;const plan=routeTo([item.x,item.z],item),ride=plan?.find(l=>l.kind==='traverse');if(ride)waypointVia=world.interactives.find(i=>i.kind==='traversal'&&i.routeId===ride.id&&i.side===ride.side);}
   function itemDistance(item){if(item.platform&&item.platform!==world.surface||!item.platform&&world.surface)return Infinity;const p=world.hero.root.position;if(item.kind==='shop'&&item.area){const a=item.area,x=Math.max(a.x1,Math.min(a.x2,p.x)),z=Math.max(a.z1,Math.min(a.z2,p.z));return Math.hypot(p.x-x,p.z-z,p.y-a.y);}return Math.hypot(p.x-item.x,p.z-item.z,p.y-(item.y??world.heightAt(item.x,item.z)));}
-  function moveToItem(item,walk=false,source='manual'){if(phase!=='explore'||!item||world.riding)return;if(item.kind!=='landmark'&&itemDistance(item)<2){interact(item);return;}if(walk){moveTo([item.x,item.z],item);return;}path=[];journeyLegs=[];automaticJourney=false;action=null;markWaypoint(item,source);const target=waypointVia||item;world.destination.position.set(target.x,(target.y??world.heightAt(target.x,target.z))+.12,target.z);world.destination.visible=true;toast('Đã đánh dấu · '+item.label+(waypointVia?' · Tới '+waypointVia.label:item.kind==='landmark'?'':' · Dùng WASD để tới gần rồi nhấn E'));}
+  function moveToItem(item,walk=false,source='manual'){if(phase!=='explore'||!item||world.riding)return;if(!['landmark','gate'].includes(item.kind)&&itemDistance(item)<2){interact(item);return;}if(walk){moveTo([item.x,item.z],item);return;}path=[];journeyLegs=[];automaticJourney=false;action=null;markWaypoint(item,source);const target=waypointVia||item;world.destination.position.set(target.x,(target.y??world.heightAt(target.x,target.z))+.12,target.z);world.destination.visible=true;toast('Đã đánh dấu · '+item.label+(waypointVia?' · Tới '+waypointVia.label:item.kind==='landmark'?'':' · Dùng WASD để tới gần rồi nhấn E'));}
   function dialog(kicker,title,body,buttons,options={}){sceneHandoff=null;path=[];journeyLegs=[];automaticJourney=false;action=null;world.destination.visible=false;dialogue.reset();setPhase('dialog');$('dialogKicker').textContent=kicker;$('dialogTitle').textContent=title;$('dialogBody').textContent=body;$('dialogActions').replaceChildren();const gated=[];for(const [index,[label,fn,secondary]] of buttons.entries()){const locked=options.requireComplete&&!secondary,b=document.createElement('button');b.className=secondary?'journey-secondary':'journey-primary';b.textContent=label;b.disabled=!!locked;if(locked){gated.push(b);b.title='Hãy đọc hết cuộc đối thoại trước khi tiếp tục.';}b.onclick=()=>{if(locked&&!dialogue.complete)return;fn();};$('dialogActions').append(b);}const cast=dialogueCast(dialogueItem,save,REGIONS[save.village],village(save.village)),script=options.script||(cast&&conversationLines(dialogueItem,save,cast,body));const candidates=script?.filter(line=>line.text).map(line=>({...line,speaker:line.speaker.appearance&&!line.speaker.thought?{...line.speaker,sceneCharacter:true}:line.speaker}));
     const showScene=options.cinematic===true;
     if(candidates?.length){
@@ -427,7 +429,11 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   function startFieldAction(item){
     if(companionUnconscious(save)){guideMainPlot();return;}
     const side=item.kind==='side-story-task',route=side?world.sideRoute:world.fieldRoute;
-    if(itemDistance(item)>INTERACTION_RANGE||!route.start(item))return;
+    if(itemDistance(item)>INTERACTION_RANGE)return;
+    const field=route.state();
+    if(!admin.active&&!side&&save.village==='nameless'&&openingTutorialStep(save)==='blessing'){guideMainPlot();return;}
+    if(field?.mode==='escort'&&!field.destination){toast(CINEMATIC_ROUTE.ui.escortUnavailable);return;}
+    if(!route.start(item))return;
     setObjectiveMarker(item,side?'side-story':'campaign');
     gameAudio.tone(440,.1,'sine',.04);
   }
@@ -444,7 +450,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       if(!startSideStory(save,[item.x,item.z]))return;
       refreshStory();const task=world.sideRoute.state()?.entry;
       if(task){setObjectiveMarker(task,'side-story');if(itemDistance(task)<=INTERACTION_RANGE)startFieldAction(task);}
-    }],[CINEMATIC_ROUTE.ui.leave,closeDialog,true]],{script:[{speaker:npc,text:story.intro},{speaker:heroSpeaker(save),text:CINEMATIC_ROUTE.ui.reply}],cinematic:true,requireComplete:true});
+    }],[CINEMATIC_ROUTE.ui.leave,closeDialog,true]],{script:[{speaker:npc,text:story.steps[0].description||story.intro},{speaker:heroSpeaker(save),text:CINEMATIC_ROUTE.ui.reply}],cinematic:true,requireComplete:true});
   }
   function finishSideAction(action){
     const result=advanceSideStory(save,action.key,action.step,action.point);if(!result)return;
@@ -456,6 +462,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       toast(`${result.story.title} · +${SIDE_REWARD} xu`);
     }else{
       const task=world.sideRoute.state()?.entry;if(task)setObjectiveMarker(task,'side-story');
+      if(action.arrival)toast(action.arrival);
     }
   }
   function approachStory(){
@@ -528,7 +535,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     const authored=villageSideStory(save);
     if(!tracked&&authored?.task){
       $('questTitle').textContent=authored.title;
-      $('questDescription').textContent=authored.task.label;
+      $('questDescription').textContent=authored.task.description||authored.task.label;
       $('questTrack').textContent='Đánh dấu việc làng ↗';
       return;
     }
@@ -546,16 +553,29 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     dialog('VIỆC RIÊNG · '+q.giverName,q.title,body,status===3?[['Tạm biệt',closeDialog]]:status===2?[['Nhận thưởng',()=>{if(claimSidequest(save,q)){refreshStory();toast('Hoàn thành · '+q.title+' · '+reward+(loot.scroll?' · Mở C để học khi đủ cấp':''));}}]]:status===1?[['Theo dấu nhiệm vụ',go],['Để sau',closeDialog,true]]:early?[['Nhận thưởng',()=>{acceptSidequest(save,q);sidequestDialog(q);}]]:[['Nhận việc',()=>{if(acceptSidequest(save,q)){refreshStory();toast('Đã nhận · '+q.title);}}],['Hẹn lúc khác',closeDialog,true]],{script:cast&&sidequestLines(q,status,cast,body,early||save.story.earlyTargets?.includes(q.id))});
     sidequestView=false;
   }
+  function openingDispatch(lines=FIELD_ROUTE.dispatch){
+    dialogueItem=null;
+    dialog(PLOT.chapters[0],FIELD_ROUTE.ui.dispatchTitle,'',[[FIELD_ROUTE.ui.dispatchAction,()=>{if(reportGuardian(save)){refreshStory();followCampaign();}}]],{script:campaignLines(lines,save,'nameless'),requireComplete:true,cinematic:true});
+  }
   function openingChief(){
     const stage=save.story.stage;
+    const tutorial=admin.active?null:save.story.openingTutorial,step=openingTutorialStep(save);
+    const markObjective=()=>{closeDialog();followCampaign();};
     if(stage==='mother'){dialog('TRƯỞNG LÀNG','Trước khi lên đường','Mẹ con đang ở nghĩa trang. Hãy tới nói chuyện với bà trước; những người đã mất cần được nhớ bằng một lời hứa, chứ không phải một cuộc trả thù.',[['Tìm mẹ',()=>{closeDialog();moveToItem(world.interactives.find(i=>i.id===MOTHER_ID));}]]);return;}
-    if(stage==='chief'){dialog('TRUYỀN THỤ · CHỌN MỘT THUẬT','Một con đường để bắt đầu','',STARTER_CHOICES.map(choice=>['Học '+choice.name,()=>{if(chooseStarter(save,choice.id)){onLearn(choice.id);refreshStory();toast('Đã học '+choice.name+' · Nhận túi, 10 phi tiêu sắt và bình thuốc cấp 1');}}]),{script:campaignLines(PLOT.chiefOpening,save,'nameless'),requireComplete:true,cinematic:true});return;}
-    if(stage==='guardian'){dialog('SỨ MỆNH ĐẦU TIÊN','Cứu hộ vệ quê nhà','Ba ninja Hỏa, Thủy, Lôi đã phá hỏng hộ vệ gần Đồi Chuông Gió. Mỗi tên chỉ biết một thuật cơ bản. Con phải đối đầu cả ba cùng lúc để lấy lại lõi ấn hồi sinh hộ vệ. Hãy nhìn nhịp kết ấn và né đòn; G giúp chuẩn bị một cú lướt.',[['Đánh dấu hộ vệ',()=>{closeDialog();moveToItem(world.interactives.find(i=>i.kind==='intro-guardian'));}],['Chuẩn bị thêm',closeDialog,true]]);return;}
+    if(stage==='chief'){
+      const lines=tutorial?[...PLOT.chiefOpening,['chief',CHIEF_BLESSING_LINE]]:PLOT.chiefOpening;
+      dialog('TRUYỀN THỤ · CHỌN MỘT THUẬT','Một con đường để bắt đầu','',STARTER_CHOICES.map(choice=>['Học '+choice.name,()=>{if(chooseStarter(save,choice.id)){onLearn(choice.id);refreshStory();toast('Đã học '+choice.name+' · Nhận túi, 10 phi tiêu sắt và bình thuốc cấp 1');}}]),{script:campaignLines(lines,save,'nameless'),requireComplete:true,cinematic:true});return;
+    }
+    if(tutorial&&step==='blessing'){dialog('TRƯỞNG LÀNG',campaignObjective(save).title,CHIEF_BLESSING_LINE,[['Đánh dấu Ấn hồi sinh',markObjective]]);return;}
+    if(tutorial&&step==='treatment'){dialog('TRƯỞNG LÀNG',campaignObjective(save).title,openingClinicLine(),[['Tới trạm y tế',markObjective]]);return;}
+    if(stage==='guardian'){dialog('SỨ MỆNH ĐẦU TIÊN','Cứu hộ vệ quê nhà','Ba ninja Hỏa, Thủy, Lôi đã phá hỏng hộ vệ gần Đồi Chuông Gió. Mỗi tên chỉ biết một thuật cơ bản. Con phải đối đầu cả ba cùng lúc để lấy lại lõi ấn hồi sinh hộ vệ. Hãy nhìn nhịp kết ấn và né đòn; G giúp chuẩn bị một cú lướt.',[['Theo tuyến truyện chính ↗',markObjective],['Chuẩn bị thêm',closeDialog,true]]);return;}
     if(stage==='report'){
+      if(tutorial?.treated&&save.story.fieldRouteRevision===FIELD_ROUTE_REVISION){openingDispatch();return;}
       const remaining=STARTER_CHOICES.filter(s=>!save.learnedSpells.includes(s.id)),names=remaining.map(s=>s.name).join(' và ');
       dialog('BÁO CÁO · HỘ VỆ ĐÃ HỒI SINH','Buộc ba cường quốc rút quân','Mảnh lõi Vô Danh sẽ giúp con phát hiện phong ấn bất thường. Hãy điều tra những gì xảy ra ở Thủy, Hỏa và Lôi, rồi thách đấu các thủ lĩnh để buộc họ ngừng dùng quê nhà làm chiến trường. Trở về khi ba làng đã cam kết rút quân.',[[`Nhận sứ mệnh · 100 xu${remaining.length?' + '+remaining.length+' thuật':''}`,()=>{if(reportGuardian(save)){refreshStory();toast(remaining.length?'Đã học '+names+' · Nhận 100 xu':'Nhận 100 xu · Ba con đường đã mở');}}]]);
     }
   }
+  function openingClinicLine(){return (save.healthFraction??1)<1?CHIEF_TREATMENT_LINE:CHIEF_CHECKUP_LINE;}
   function signVillagePeace(){const id=save.village;if(!WAR_VILLAGES.includes(id))return;let signed=false;resetMovement();setPhase('peace-ceremony');peaceCeremony.begin({hero:{...save.hero,armor:equipmentState(save).armor},village:village(id),cancel:()=>{setPhase('explore');refresh();}},document=>{signed=negotiatePeace(save,id,document);if(signed)persist();},()=>runLoading('Đang cập nhật khu vực…',()=>{refreshStory({rebuildWorld:true});if(signed)toast('Đã ký cam kết rút quân · '+village(id).name);}));}
   function closeDialog(){if(retreatLocked()){toast('Đối thủ đã áp sát · Phải hoàn tất giao chiến');return;}setPhase('explore');if(waypointSource==='campaign'||waypointSource==='sidequest')refreshObjectiveMarker();}
   function interact(item){
@@ -628,7 +648,16 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       save.story.questItems??=[];save.story.questItems.push('fire:hong-lien');if(save.expeditions.fire===1)save.expeditions.fire=2;refreshStory();toast('Đã hái Hồng Liên · Cất vào hành trang');return;
     }
     if(item.kind==='shop'){openShop();return;}
-    if(item.kind==='save'){if(admin.active){toast('Admin · Không lưu tiến trình');return;}const activated=save.activated.slice();if(!save.activated.includes(v.id))save.activated.push(v.id);const ok=persist({checkpointPoint:item});if(!ok)save.activated=activated;refresh();toast(ok?'Đã lưu toàn bộ tiến trình tại ấn':'Chưa lưu được');return;}
+    if(item.kind==='save'){
+      if(admin.active){toast('Admin · Không lưu tiến trình');return;}
+      const activated=save.activated.slice(),blessing=item.id===OPENING_SAVE_POINT&&openingTutorialStep(save)==='blessing';
+      if(!save.activated.includes(v.id))save.activated.push(v.id);
+      if(blessing)save.story.openingTutorial.blessed=true;
+      const ok=persist({checkpointPoint:item});
+      if(!ok){save.activated=activated;if(blessing)save.story.openingTutorial.blessed=false;}
+      refresh();
+      toast(ok?(blessing?'Đã nhận lời phù hộ và lưu tiến trình tại ấn':'Đã lưu toàn bộ tiến trình tại ấn'):'Chưa lưu được');return;
+    }
     if(item.kind==='npc'){dialog('TRƯỞNG LÀNG','Đường xa còn đợi','Những làng bên kia cổng vẫn đang cần bạn.',[['Tiếp tục hành trình',closeDialog]]);return;}
     if(item.kind==='boss'&&!save.bosses[v.id]){if(!admin.active&&!WAR_VILLAGES.includes(v.id)&&v.id!=='earth')guideMainPlot();else offerBattle('boss');return;}
     if(item.kind==='landmark')return;
@@ -686,6 +715,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     }else{persist();offerBattle('village-guard',{guardId:item.id,name:'Cai ngục',element:item.element,occupation:!!item.occupation,militaryIntrusion:true});}
   }
   function offerBattle(kind,details={}){if(kind==='quest'||phase==='boarding'||retreatLocked())return;if(!save.learnedSpells.length){toast('Hãy gặp mẹ và học một thuật từ trưởng làng trước.');return;}
+    if(!admin.active&&kind==='intro-trio'&&openingTutorialStep(save)==='blessing'){guideMainPlot();return;}
     if(!admin.active&&(save.healthFraction??1)<=0){toast('Bạn cần tới trạm y tế để trị thương trước khi giao chiến.');return;}
     const r=REGIONS[save.village],id=save.village;
     const departureTrial=kind==='boss'&&id==='earth';
@@ -745,8 +775,12 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       const script=campaignLines([[save.village==='nameless'?'mother':'chief',CINEMATIC_ROUTE.ui.regroupLine]],save);
       dialog(CINEMATIC_ROUTE.ui.afterBattle,CINEMATIC_ROUTE.ui.regroup,'',[[CINEMATIC_ROUTE.ui.continue,closeDialog]],{script,cinematic:true,handoff:closeDialog});return;
     }
+    if(victory&&battle.kind==='intro-trio'&&openingTutorialStep(save)==='treatment'){
+      dialogueItem=null;
+      dialog(PLOT.chapters[0],campaignObjective(save).title,'',[['Tới trạm y tế',()=>{closeDialog();followCampaign();}]],{script:campaignLines([...PLOT.guardianSaved,['chief',openingClinicLine()]],save,'nameless'),requireComplete:true,cinematic:true});return;
+    }
     if(victory&&battle.kind==='intro-trio'&&save.story.fieldRouteRevision===FIELD_ROUTE_REVISION){
-      dialogueItem=null;dialog(PLOT.chapters[0],FIELD_ROUTE.ui.dispatchTitle,'',[[FIELD_ROUTE.ui.dispatchAction,()=>{if(reportGuardian(save)){refreshStory();followCampaign();}}]],{script:campaignLines([...PLOT.guardianSaved,...FIELD_ROUTE.dispatch],save,'nameless'),requireComplete:true,cinematic:true});return;
+      openingDispatch([...PLOT.guardianSaved,...FIELD_ROUTE.dispatch]);return;
     }
     if(victory&&battle.kind==='intro-trio'){dialogueItem=null;dialog(PLOT.chapters[0],'Mảnh lõi của Vô Danh Thú','',[['Nhận mảnh lõi và trở về báo cáo',()=>{closeDialog();followCampaign();}]],{script:campaignLines(PLOT.guardianSaved,save,'nameless'),requireComplete:true,cinematic:true});return;}
     if(victory&&battle.kind==='boss'&&WAR_VILLAGES.includes(battle.village)){chiefArmistice();return;}
@@ -762,7 +796,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   }
   function enteredHeroName(){const input=$('heroName');input.value=input.value.trim();return input.reportValidity()?input.value:null;}
   const restartDialog=$('newJourneyDialog');let pendingHero=null;
-  function startNewJourney(hero){if(admin.active||loading)return;return runLoading('Đang bắt đầu hành trình…',()=>{save=newJourney(hero.name);enableFieldRoute(save);captureCheckpoint(save,planSavePoints('nameless')[0],{source:'initial'});encounter=null;distance=0;spawnAt=90+Math.random()*70;cooldown=45;enter();openingPending=true;setPhase('opening');});}
+  function startNewJourney(hero){if(admin.active||loading)return;return runLoading('Đang bắt đầu hành trình…',()=>{save=newJourney(hero.name);save.story.openingTutorial={blessed:false,treated:false};enableFieldRoute(save);captureCheckpoint(save,planSavePoints('nameless')[0],{source:'initial'});encounter=null;distance=0;spawnAt=90+Math.random()*70;cooldown=45;enter();openingPending=true;setPhase('opening');});}
   $('heroForm').onsubmit=e=>{e.preventDefault();if(admin.active){toast('Thoát admin trước khi tạo hành trình mới.');return;}const name=enteredHeroName();if(!name)return;const hero={name};if(stored){pendingHero=hero;if(!restartDialog.open)restartDialog.showModal();return;}startNewJourney(hero);};
   $('cancelNewJourney').onclick=()=>restartDialog.close();
   restartDialog.addEventListener('close',()=>{pendingHero=null;});
@@ -780,7 +814,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
   root.querySelectorAll('[data-region]').forEach(g=>{const select=()=>{atlasSelection=g.dataset.region;renderAtlas();};g.onclick=select;g.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();select();}};});
   function nearest(){
     if(world.riding)return null;
-    const candidates=world.interactives.filter(i=>!i.depleted&&i.kind!=='landmark'&&(!['village-guard','roamer'].includes(i.kind)||i.revealed)&&(i.kind!=='boss'||admin.active||!save.bosses[save.village])).map(i=>({i,d:itemDistance(i)}));
+    const candidates=world.interactives.filter(i=>!i.depleted&&!['landmark','gate'].includes(i.kind)&&(!['village-guard','roamer'].includes(i.kind)||i.revealed)&&(i.kind!=='boss'||admin.active||!save.bosses[save.village])).map(i=>({i,d:itemDistance(i)}));
     return candidates.filter(({d})=>d<=INTERACTION_RANGE).sort((a,b)=>Number(['field-task','side-story-task'].includes(b.i.kind))-Number(['field-task','side-story-task'].includes(a.i.kind))||Number(a.i.kind==='companion')-Number(b.i.kind==='companion')||a.d-b.d)[0]?.i;
   }
   canvas.addEventListener('pointerdown',e=>{if(phase!=='explore'||cameraDrag||![0,2].includes(e.button))return;focusGame();world.unlockAudio();e.preventDefault();cameraDrag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);canvas.classList.add('camera-dragging');});
@@ -818,7 +852,22 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
     if(phase==='opening'){world.update(dt,false,false,true);opening.update(dt);return;}
     peaceCeremony.update(dt);time+=dt;dialogue.update(dt);let moving=false;
     if(phase==='dialog'&&sceneHandoff&&!gameAudio.state().speaking){sceneHandoff.left-=dt;if(sceneHandoff.left<=0){const {run}=sceneHandoff;sceneHandoff=null;run();}}
-    if(phase==='treatment'){treatmentRemaining=Math.max(0,treatmentRemaining-dt);if(companionTreatment){treatCompanion(save,dt);updateCompanionTreatmentUI();saveTimer+=dt;if(saveTimer>=5)persist();}world.update(dt,false,false,false);if(treatmentRemaining<=0){$('companionTreatmentPanel').hidden=true;save.healthFraction=1;refillFlask(save);healCompanion(save);world.syncVillageEvents(save);setPhase('explore');persist();refresh();toast(companionTreatment?'Hạ Ly đã tỉnh lại · Có thể tiếp tục tuyến truyện chính':'Đã trị thương và nạp đầy bình thuốc.');companionTreatment=false;}return;}
+    if(phase==='treatment'){
+      treatmentRemaining=Math.max(0,treatmentRemaining-dt);
+      if(companionTreatment){treatCompanion(save,dt);updateCompanionTreatmentUI();saveTimer+=dt;if(saveTimer>=5)persist();}
+      world.update(dt,false,false,false);
+      if(treatmentRemaining<=0){
+        const openingTreatment=!admin.active&&save.village==='nameless'&&openingTutorialStep(save)==='treatment';
+        $('companionTreatmentPanel').hidden=true;
+        save.healthFraction=1;refillFlask(save);healCompanion(save);
+        if(openingTreatment)save.story.openingTutorial.treated=true;
+        world.syncVillageEvents(save);setPhase('explore');persist();refresh();
+        toast(companionTreatment?'Hạ Ly đã tỉnh lại · Có thể tiếp tục tuyến truyện chính':'Đã trị thương và nạp đầy bình thuốc.');
+        companionTreatment=false;
+        if(openingTreatment&&save.story.fieldRouteRevision===FIELD_ROUTE_REVISION)openingDispatch();
+      }
+      return;
+    }
     if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('journeyToast').hidden=true;}
     if(phase==='explore'&&!tournamentBoard.isOpen){
       if(!admin.active&&(save.healthFraction??1)>0&&!guardianStoryPending(save)&&!world.interior&&!world.riding&&!world.surface&&save.story.stage==='infiltrate'&&WAR_VILLAGES.includes(save.village)&&canProgressPlot(save,save.village)&&!save.bosses[save.village]&&inCouncilCourtyard(world.civic,world.hero.root.position)){if(!guardianOrdered(save)){guardianGateDialog();return;}if(nextGuardianGuard(save)){startGuardianGuard();return;}}
@@ -828,6 +877,7 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       }
       cooldown=Math.max(0,cooldown-dt);mineCooldown=Math.max(0,mineCooldown-dt);saveTimer+=dt;if(world.syncMines(save))refresh();
       const forward=Number(mobileAutoRun||held.has('w')||held.has('arrowup'))-Number(held.has('s')||held.has('arrowdown')),side=Number(held.has('d')||held.has('arrowright'))-Number(held.has('a')||held.has('arrowleft'));
+      const beforeGate=world.hero.root.position.clone();
       if(world.riding){const completed=world.advanceTraversal(dt*(world.traversalState().automatic?companionMoveMultiplier(save):1),forward,automaticJourney);if(completed){persist();if(waypoint)markWaypoint(waypoint,waypointSource);}}
       else {
         if(forward||side||save.village==='ice'&&Math.hypot(momentum.x,momentum.z)>.015){
@@ -845,8 +895,12 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
           if(!path.length)nextJourneyLeg();
         }
       }
-      if(phase==='boarding'||loading)return;
+      if(phase!=='explore'||loading)return;
       const p=world.hero.root.position;
+      if(moving&&!world.interior&&!world.riding&&!world.surface){
+        const gate=crossedRoadGate(world.gates,beforeGate,p,world.heightAt);
+        if(gate){interact(gate);return;}
+      }
       if(moving&&approachStory())return;
       const task=world.riding||world.surface?null:world.fieldRoute.update(dt,time);
       if(task){finishFieldAction(task);return;}
@@ -855,15 +909,22 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       const sideField=world.sideRoute.state();
       const field=sideField?.started?sideField:world.fieldRoute.state(),panel=$('fieldProgress');
       panel.hidden=!field?.started;
+      let escortTarget=null;
       if(field?.started){
-        const hint=field.mode==='hold'?(field.near?FIELD_ROUTE.ui.holding:FIELD_ROUTE.ui.return):FIELD_ROUTE.ui[field.mode];
+        const obstacle=field.obstruction;
+        const hint=field.mode==='hold'?(field.near?FIELD_ROUTE.ui.holding:FIELD_ROUTE.ui.return):obstacle
+          ? `${obstacle.text} ${obstacle.clearing?field.near?FIELD_ROUTE.ui.holding:FIELD_ROUTE.ui.return:CINEMATIC_ROUTE.ui.escortClear}`
+          : field.waiting?CINEMATIC_ROUTE.ui.waitingEscort:field.destination?`${CINEMATIC_ROUTE.ui.escortDestination} · ${field.destination.label}`:FIELD_ROUTE.ui[field.mode];
         panel.querySelector('span').textContent=hint;
         const progress=panel.querySelector('progress');progress.hidden=field.progress===null;if(!progress.hidden)progress.value=field.progress;
-        if(waypoint===field.entry&&!waypointVia)world.destination.position.set(field.entry.x,field.entry.y+.12,field.entry.z);
+        if(waypoint===field.entry&&!waypointVia){
+          escortTarget=field.waiting||obstacle?null:field.destination;
+          const target=escortTarget||field.entry;world.destination.position.set(target.x,target.y+.12,target.z);
+        }
       }
       $('waypointHint').hidden=!waypoint;if(waypoint){
-        const target=waypointVia||waypoint,d=Math.hypot(target.x-p.x,target.z-p.z),angle=-(Math.atan2(target.x-p.x,target.z-p.z)-world.cameraState().yaw-Math.PI);
-        const hint=target.kind==='landmark'?'':d<2.1?'Nhấn E':waypointVia?'Tới bến / chân đường leo':'';
+        const target=escortTarget||waypointVia||waypoint,d=Math.hypot(target.x-p.x,target.z-p.z),angle=-(Math.atan2(target.x-p.x,target.z-p.z)-world.cameraState().yaw-Math.PI);
+        const hint=target.kind==='gate'?CINEMATIC_ROUTE.ui.walkThroughGate:['landmark','escort-destination'].includes(target.kind)?'':d<2.1?'Nhấn E':waypointVia?'Tới bến / chân đường leo':'';
         $('waypointHint').innerHTML=`<b style="transform:rotate(${angle}rad)">↑</b><span title="${esc(target.label)}">${esc(target.label)}<small>${Math.ceil(d)} m${hint?' · '+hint:''}</small></span>`;
       }
       let newDiscovery=false;
@@ -894,7 +955,10 @@ export function createAdventure({canvas,onBattle,onDuel,onReturn,onLearn=()=>{},
       const sentry=world.caughtGuard();if(sentry&&!world.riding){if(sentry.guardRole==='jailer')jailerDialog(sentry);else offerBattle('village-guard',{guardId:sentry.id,name:sentry.label});}
       if(saveTimer>=AUTO_SAVE_SECONDS&&(moving||storageFailed))persist();
       const intro=landmarkNotices[0],near=nearest();renderLandmarkIntroduction();
-      $('nearbyAction').hidden=phase!=='explore'||!!intro||!near;if(near)$('nearbyAction').innerHTML=`<kbd>E</kbd> ${questAction(near)||(['field-task','side-story-task'].includes(near.kind)?FIELD_ROUTE.ui.action:near.kind==='spirit-ore'?'Gõ linh thạch · ':near.kind==='interior-enter'?'Đi vào · ':near.kind==='interior-exit'?'Đi ra · ':near.kind==='arena-host'?'Thi đấu · ':near.kind==='dock'?'Lên thuyền tới ':near.kind==='gate'?'Đi tới ':near.kind==='save'?'Lưu tiến trình · ':['quest','boss','roamer','village-guard','intro-guardian'].includes(near.kind)?'Đối mặt ':near.kind==='traversal'?'Sử dụng · ':near.kind==='expedition-goal'?'Thu thập · ':'Nói chuyện · ')}${esc(near.label)}`;
+      $('nearbyAction').hidden=phase!=='explore'||!!intro||!near;if(near){
+        const facility=FACILITY_ACTIONS[near.kind];
+        $('nearbyAction').innerHTML=facility?`<kbd>E</kbd> ${esc(facility)}`:`<kbd>E</kbd> ${questAction(near)||(['field-task','side-story-task'].includes(near.kind)?FIELD_ROUTE.ui.action:near.kind==='spirit-ore'?'Gõ linh thạch · ':near.kind==='interior-enter'?'Đi vào · ':near.kind==='interior-exit'?'Đi ra · ':near.kind==='arena-host'?'Thi đấu · ':near.kind==='dock'?'Lên thuyền tới ':near.kind==='gate'?'Đi tới ':near.kind==='save'?'Lưu tiến trình · ':['quest','boss','roamer','village-guard','intro-guardian'].includes(near.kind)?'Đối mặt ':near.kind==='traversal'?'Sử dụng · ':near.kind==='expedition-goal'?'Thu thập · ':'Nói chuyện · ')}${esc(near.label)}`;
+      }
       updateMinimap();
     }
     const ride=world.traversalState();$('journeyTravel').hidden=phase!=='explore'||!ride;if(ride)$('journeyTravel').innerHTML=`<strong>${ride.automatic?'Đang tự động leo thang':ride.kind==='raft'?'Bè đang qua sông':ride.kind==='cave'?'Đang đi qua lối hang':ride.kind==='rock-climb'?(ride.mode==='hang'?'Đang bám · W / Space để trèo lên · S để buông':ride.mode==='jump'?'E: bám mép đá':'Space: nhảy gờ kế · S + Space: quay lại · E: leo tự do'):ride.kind==='stairs'?'Đang đi cầu thang · Giữ W để tiếp tục':'Đang leo · Giữ W để tiếp tục'}</strong><small>${ride.automatic?'Không cần giữ phím di chuyển': ['raft','cave'].includes(ride.kind)?'Tự cập bến / đến cửa ở cuối đường':'S để quay lại · thả phím để nghỉ'} · ${Math.round(ride.progress*100)}%</small>`;

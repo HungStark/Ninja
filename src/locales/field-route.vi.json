@@ -31,18 +31,28 @@
    {
     "mode": "escort",
     "label": "Đưa người bị thương khỏi chân cầu",
-    "description": "Nhấn E để cùng người bị thương rời khu sạt lở. Đi cạnh họ; họ sẽ đợi nếu bạn đi quá xa. Đích đến được đánh dấu ngay trên đường tới đồi chuông.",
+    "description": "Người bị thương chưa đứng vững, còn khu chân cầu có thể sạt tiếp. Đi cạnh họ tới bãi sơ cứu trên đường lên Đồi Chuông.",
     "name": "Người dân được cứu",
-    "distance": 14,
     "offset": [
      5,
      -3
     ],
-    "result": "Người dân đã tới chỗ nghỉ an toàn và chỉ hướng dấu giày còn mới. Tiền công cứu hộ sẽ trao ngay tại đây.",
-    "destinationOffset": [
-     12,
-     -12
-    ]
+    "result": "Người dân đã được đỡ ngồi tại bãi sơ cứu. Họ chỉ cho bạn dấu giày mới trên đường lên đồi.",
+    "destination": {
+     "point": [
+      -18,
+      -37
+     ],
+     "label": "Bãi sơ cứu đường lên Đồi Chuông",
+     "prop": "medicine",
+     "arrival": "Người dân đã được đỡ ngồi tại bãi sơ cứu. Họ chỉ cho bạn dấu giày mới trên đường lên đồi.",
+     "obstacle": {
+      "prop": "tools",
+      "seconds": 3,
+      "label": "Cố định ván qua bờ lở",
+      "text": "Người bị thương không thể bước qua tấm ván đang trượt."
+     }
+    }
    },
    {
     "mode": "interact",
@@ -76,10 +86,24 @@
     {
      "mode": "escort",
      "label": "Đưa dân rời nước cứu trợ bị đầu độc",
-     "description": "Mộc An tự kiểm tra thùng nước. Bạn đưa người choáng váng tới khu khô ráo; đi cạnh họ và giữ lối qua thông thoáng.",
+     "description": "Người uống nước cứu trợ đang choáng, đứng sát bến dễ ngã xuống nước. Đưa họ tới điểm sơ cứu bên Hồ Sen để ngồi nghỉ và được chăm sóc.",
      "name": "Người dân choáng váng",
-     "distance": 18,
-     "result": "Người dân đã tới chỗ an toàn. Mộc An mang niêm phong giả tới gặp bạn ngay tại bến."
+     "result": "Người bệnh đã ở chỗ khô ráo. Mộc An đem dấu sáp giả tới điểm sơ cứu để cùng bạn xem xét.",
+     "destination": {
+      "point": [
+       -53,
+       32
+      ],
+      "label": "Điểm sơ cứu bên Hồ Sen",
+      "prop": "medicine",
+      "arrival": "Người bệnh đã ở chỗ khô ráo. Mộc An đem dấu sáp giả tới điểm sơ cứu để cùng bạn xem xét.",
+      "obstacle": {
+       "prop": "crate",
+       "seconds": 3,
+       "label": "Dời thùng cứu trợ bị đổ",
+       "text": "Thùng chắn lối lên bờ. Người đang choáng cần một lối rộng và khô."
+      }
+     }
     }
    ],
    "script": [
@@ -156,18 +180,28 @@
     {
      "mode": "escort",
      "label": "Dẫn Y nữ Đan tới Hạ Ly",
-     "description": "Đan mang sẵn thuốc và dụng cụ. Cùng cô vào khu vừa được giải cứu; không cần chạy lên núi hái hoa rồi quay về.",
+     "description": "Hạ Ly đang mất máu và chưa thể tự đứng dậy. Dẫn Y nữ Đan từ ngoài sân tới cửa nhà lao để cô xử lý vết thương tại chỗ.",
      "name": "Y nữ Đan",
-     "distance": 12,
-     "result": "Đan đã tới vị trí cứu thương. Cô nhờ bạn cố định băng để Hạ Ly có thể đứng dậy.",
+     "result": "Đan đã tới cửa nhà lao. Hãy giữ băng trong lúc cô cầm máu cho Hạ Ly.",
      "offset": [
       0,
       12
      ],
-     "destinationOffset": [
-      3,
-      0
-     ]
+     "destination": {
+      "offset": [
+       3,
+       0
+      ],
+      "label": "Điểm cứu thương cạnh cửa nhà lao",
+      "prop": "medicine",
+      "arrival": "Đan đã tới cửa nhà lao. Hãy giữ băng trong lúc cô cầm máu cho Hạ Ly.",
+      "obstacle": {
+       "prop": "tools",
+       "seconds": 2.5,
+       "label": "Gỡ chốt cửa sân bị kẹt",
+       "text": "Đan cần cả hai tay giữ hộp thuốc. Hãy gỡ chốt để cô đi qua."
+      }
+     }
     },
     {
      "mode": "hold",
@@ -288,10 +322,24 @@
     {
      "mode": "escort",
      "label": "Đưa thợ mỏ ra khỏi vùng đá rơi",
-     "description": "Thợ mỏ đã được kéo qua khe. Đi cùng họ tới chỗ Sơn; họ nghỉ lại nếu bạn bỏ quá xa.",
+     "description": "Thợ mỏ đã ra khỏi khe nhưng vẫn ở trong vùng đá rơi. Đi cạnh họ tới khu tập kết để Sơn kiểm tra đủ người và nhận mẫu thuốc nổ họ mang ra.",
      "name": "Thợ mỏ được cứu",
-     "distance": 17,
-     "result": "Thợ mỏ đã ra khỏi vùng nguy hiểm. Họ tự trao mẫu tinh thể lấy từ thuốc nổ, không cần quay về nhận thưởng."
+     "result": "Sơn đã điểm đủ người. Một thợ mỏ trao mẫu tinh thể; hãy kiểm tra nó ngay tại điểm tập kết.",
+     "destination": {
+      "point": [
+       -30,
+       21
+      ],
+      "label": "Điểm tập kết thợ mỏ ngoài cửa hầm",
+      "prop": "net",
+      "arrival": "Sơn đã điểm đủ người. Một thợ mỏ trao mẫu tinh thể; hãy kiểm tra nó ngay tại điểm tập kết.",
+      "obstacle": {
+       "prop": "ore",
+       "seconds": 4,
+       "label": "Chèn đá ở lối ra",
+       "text": "Đá vụn vừa trượt xuống lối. Gia cố mép đường để thợ mỏ đi qua."
+      }
+     }
     }
    ]
   },
@@ -330,10 +378,24 @@
     {
      "mode": "escort",
      "label": "Dẫn người sống sót tới đèn trú bão",
-     "description": "Thiếu nữ giữ ấm cho đứa trẻ, bạn dẫn người bị thương theo đèn. Đi cùng đoàn; không có đồng hồ ép phải chạy bỏ người phía sau.",
+     "description": "Bão đang xóa dấu chân và người bị thương không thể tự tìm đường. Đi cạnh người lữ hành tới đèn trú bão để cả nhóm sưởi ấm trước khi báo trưởng làng.",
      "name": "Người lữ hành bị thương",
-     "distance": 21,
-     "result": "Nhóm đã tới chỗ trú bão. Tuyết Nghi gặp lại con; câu chuyện về cuộc xâm lược được kể ngay bên bếp ấm."
+     "result": "Cả nhóm đã tới đèn trú bão. Tuyết Nghi gặp lại con; thiếu nữ có thể kể chuyện trước khi mọi người vào nhà họp.",
+     "destination": {
+      "point": [
+       32,
+       24
+      ],
+      "label": "Đèn trú bão bên Hồ Băng",
+      "prop": "lantern",
+      "arrival": "Cả nhóm đã tới đèn trú bão. Tuyết Nghi gặp lại con; thiếu nữ có thể kể chuyện trước khi mọi người vào nhà họp.",
+      "obstacle": {
+       "prop": "lantern",
+       "seconds": 4,
+       "label": "Che gió cho đèn dẫn đoàn",
+       "text": "Gió tạt làm đèn tắt. Giữ tấm chắn cho đến khi ánh đèn trở lại."
+      }
+     }
     }
    ]
   },
@@ -351,10 +413,24 @@
     {
      "mode": "escort",
      "label": "Hộ tống cảnh vệ tới điểm tập hợp",
-     "description": "Cùng cảnh vệ đưa những người được cứu tới chỗ trưởng làng. Họ sẽ tham gia bảo vệ đường đi sau cuộc giải cứu.",
+     "description": "Những người vừa ra khỏi nhà ngục còn tản mác. Đi cùng cảnh vệ tới sân tập hợp để điểm danh và giao họ cho đội cứu viện.",
      "name": "Cảnh vệ được giải cứu",
-     "distance": 16,
-     "result": "Những người bị giam đã tới điểm tập hợp. Cảnh vệ Quang bắt đầu bảo vệ làng và chuẩn bị hỗ trợ cuộc tiến vào Ám."
+     "result": "Cảnh vệ đã tập hợp những người được cứu. Trưởng làng tiếp nhận đoàn và bạn có thể tới nhà họp bàn đường sang Ám.",
+     "destination": {
+      "point": [
+       52,
+       0
+      ],
+      "label": "Sân tập hợp ngoài khu giam",
+      "prop": "lantern",
+      "arrival": "Cảnh vệ đã tập hợp những người được cứu. Trưởng làng tiếp nhận đoàn và bạn có thể tới nhà họp bàn đường sang Ám.",
+      "obstacle": {
+       "prop": "tools",
+       "seconds": 3,
+       "label": "Mở thanh chắn lối sơ tán",
+       "text": "Thanh chắn cũ vẫn khóa đường ra sân. Dỡ nó để đoàn đi qua cùng nhau."
+      }
+     }
     }
    ]
   },
@@ -393,10 +469,24 @@
     {
      "mode": "escort",
      "label": "Dẫn tù nhân ra hành lang an toàn",
-     "description": "Trưởng làng và cảnh vệ đang tập hợp người bị giam. Đi cùng người cuối đoàn qua lối vừa mở trước khi gặp lại thủ lĩnh bại trận.",
+     "description": "Vùng nghi thức chưa an toàn dù thủ lĩnh đã thua. Đi cùng người cuối đoàn tới chốt sơ tán để cảnh vệ tiếp nhận trước khi bạn quay lại hỏi cung.",
      "name": "Người dân được giải thoát",
-     "distance": 18,
-     "result": "Những người bị giam đã rời vùng nghi thức. Cảnh vệ tiếp quản việc sơ tán; bạn có thể hỏi thủ lĩnh về những biến số."
+     "result": "Người cuối đoàn đã qua chốt; cảnh vệ tiếp quản. Bạn có thể trở lại phòng họp nói chuyện với thủ lĩnh bại trận.",
+     "destination": {
+      "point": [
+       -6,
+       -42
+      ],
+      "label": "Chốt sơ tán ngoài pháo đài",
+      "prop": "lantern",
+      "arrival": "Người cuối đoàn đã qua chốt; cảnh vệ tiếp quản. Bạn có thể trở lại phòng họp nói chuyện với thủ lĩnh bại trận.",
+      "obstacle": {
+       "prop": "seal-core",
+       "seconds": 4,
+       "label": "Cô lập dấu khóa còn rò lực",
+       "text": "Dấu khóa còn phóng tia ngay trên lối ra. Giữ lõi ấn để ngắt mạch trước khi người dân đi qua."
+      }
+     }
     }
    ]
   },

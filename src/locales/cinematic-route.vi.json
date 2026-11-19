@@ -21,7 +21,12 @@
     "guardianThreat": "Lùi lại. Có thứ gì đó đang giữ ta trong dấu ấn này.",
     "regroup": "Tập hợp lại",
     "regroupLine": "Cậu đã về được đây là tốt rồi. Nghỉ một lát, kiểm tra thương tích rồi hãy quay lại. Chỗ hẹn vẫn còn đó.",
-    "guardStandDown": "Tả vệ, hữu vệ, lui lại. Người giữ ấn đã vượt qua được chúng ta. Mở đường vào phòng họp."
+    "guardStandDown": "Tả vệ, hữu vệ, lui lại. Người giữ ấn đã vượt qua được chúng ta. Mở đường vào phòng họp.",
+    "escortDestination": "Đích hộ tống",
+    "waitingEscort": "Quay lại đón người đang chờ",
+    "escortUnavailable": "Lối tới điểm hẹn đang bị chặn. Hãy vào lại khu vực để thử tiếp.",
+    "escortClear": "Nhấn E để xử lý trở ngại",
+    "walkThroughGate": "Đi qua cổng"
   },
   "openings": {
     "nameless": "Nắm đầu dây này. Tôi giữ phía dưới. Kéo khi nghe tôi gọi.",
@@ -39,13 +44,28 @@
     "nameless": {
       "zone": "tea-road",
       "title": "Đèn qua cầu",
-      "intro": "Người ở bờ bên kia cứ tưởng ánh lửa dưới dốc là lối qua. Giúp tôi đặt lại đèn trước khi có người đi theo nó.",
+      "intro": "Đèn ở ngã Đường Trà đã tắt. Khách xuống nhầm dốc thay vì rẽ về Cầu Vọng Âm. Đi với tôi mang đèn mới tới ngã rẽ nhé.",
       "end": "Đứng đây nhìn cũng thấy đường về. Trà hôm nay tôi đãi.",
       "steps": [
         {
           "mode": "escort",
           "label": "Đi cùng người cầm đèn",
-          "distance": 12
+          "description": "Cô Trà mang đèn mới để người qua đường khỏi rẽ nhầm xuống dốc. Đi cùng cô tới ngã rẽ rồi cài đèn vào giá.",
+          "destination": {
+            "point": [
+              15,
+              14
+            ],
+            "label": "Ngã rẽ Đường Trà đi Cầu Vọng Âm",
+            "prop": "lantern",
+            "arrival": "Đèn đã tới ngã rẽ. Cài chốt để người đi đường thấy lối về Cầu Vọng Âm.",
+            "obstacle": {
+              "prop": "crate",
+              "seconds": 2.5,
+              "label": "Dọn kiện hàng chắn ngã rẽ",
+              "text": "Cô Trà đang ôm đèn. Dời kiện hàng để cô đi qua mà không làm vỡ đèn."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -64,7 +84,22 @@
         {
           "mode": "escort",
           "label": "Đưa người vận chuyển tới điểm phát nước",
-          "distance": 14
+          "description": "Chị Vân mang nước sạch cho những nhà tránh xa thùng cứu trợ. Đi cùng chị tới điểm phát trong xóm, rồi mở vòi để dân lấy nước.",
+          "destination": {
+            "point": [
+              16,
+              -102
+            ],
+            "label": "Điểm phát nước ở xóm ven bờ",
+            "prop": "medicine",
+            "arrival": "Nước đã tới điểm phát. Mở vòi để chị Vân chia nước cho các nhà quanh xóm.",
+            "obstacle": {
+              "prop": "tools",
+              "seconds": 3,
+              "label": "Chèn nêm cho tấm ván trơn",
+              "text": "Tấm ván đang trượt trên nền ướt. Cố định nó trước khi chị Vân mang nước qua."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -103,7 +138,22 @@
         {
           "mode": "escort",
           "label": "Đi cùng người cầm đèn tới điểm cao",
-          "distance": 15
+          "description": "Trong mưa, người ngoài đồng không nhìn thấy mái trú. Đi cùng Bà Ấm mang đèn lên trụ trên gò rồi bật đèn chỉ đường.",
+          "destination": {
+            "point": [
+              -87,
+              -83
+            ],
+            "label": "Trụ đèn trên gò cạnh Trạm Trú Giông",
+            "prop": "lantern",
+            "arrival": "Đèn đã tới trụ trên gò. Bật đèn để người ngoài đồng tìm được đường về mái trú.",
+            "obstacle": {
+              "prop": "lantern",
+              "seconds": 3,
+              "label": "Giữ chân trụ qua một đợt giông",
+              "text": "Bà Ấm đứng lại khi chớp đánh sát lối. Giữ đèn dưới mái chắn cho tới khi đợt giông qua."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -122,7 +172,22 @@
         {
           "mode": "escort",
           "label": "Đi theo người chỉ đường ra sườn",
-          "distance": 16
+          "description": "Gió đã đổi hướng và trạm dưới núi chưa biết nên cho đoàn thư đi hay chờ. Đi cùng Cô Diều tới cột tín hiệu để giữ chốt cho tín hiệu hiện đủ lâu.",
+          "destination": {
+            "point": [
+              40,
+              40
+            ],
+            "label": "Cột tín hiệu sườn Đồng Diều",
+            "prop": "cloth",
+            "arrival": "Đã tới cột tín hiệu. Giữ chốt cho trạm dưới núi đọc và đáp lại tín hiệu.",
+            "obstacle": {
+              "prop": "cloth",
+              "seconds": 4,
+              "label": "Buộc lại dây diều bị gió giật",
+              "text": "Gió giật tuột dây tín hiệu. Giữ mép cánh trong lúc Cô Diều buộc lại."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -152,7 +217,22 @@
         {
           "mode": "escort",
           "label": "Đưa thợ kiểm tra ra chỗ an toàn",
-          "distance": 14
+          "description": "Lối phụ vừa mở vẫn còn nguy cơ đá rơi. Đi cùng Thợ Mỏ Thạch ra điểm kiểm đếm để xác nhận không còn ai bị bỏ lại.",
+          "destination": {
+            "point": [
+              45,
+              41
+            ],
+            "label": "Điểm kiểm đếm ngoài Mỏ Đá",
+            "prop": "net",
+            "arrival": "Thợ Thạch đã ra khỏi khu đá rơi và xác nhận lối phụ thông. Nhận thưởng tại điểm kiểm đếm.",
+            "obstacle": {
+              "prop": "ore",
+              "seconds": 3,
+              "label": "Dọn đá nhỏ ở cửa hầm phụ",
+              "text": "Thợ Thạch dừng vì lối ra có đá vụn. Dọn lối đi mà không động vào cột chống."
+            }
+          }
         }
       ]
     },
@@ -165,7 +245,22 @@
         {
           "mode": "escort",
           "label": "Đi cùng người mang khay giống",
-          "distance": 13
+          "description": "Khay giống có thể úng cạnh rễ đang nhiễm độc. Đi cùng Dược nông Hạ tới bãi ươm ráo rồi tưới khay ở đó.",
+          "destination": {
+            "point": [
+              42,
+              40
+            ],
+            "label": "Vườn ươm dự phòng cạnh Vườn Thuốc",
+            "prop": "seeds",
+            "arrival": "Khay đã tới bãi ươm ráo. Tưới khay để giữ cây giống trong lúc chờ rễ lớn hồi phục.",
+            "obstacle": {
+              "prop": "tools",
+              "seconds": 3,
+              "label": "Kê ván qua vũng ngập",
+              "text": "Bùn ngập lối làm khay giống dễ đổ. Cố định tấm ván trước khi chuyển khay qua."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -184,7 +279,22 @@
         {
           "mode": "escort",
           "label": "Đưa người lữ hành về gần bếp",
-          "distance": 14
+          "description": "Người lữ hành đã kiệt sức và không tự tìm lối trong bão. Đi cạnh họ tới bếp sưởi rồi che gió để nhóm trú chân nhóm lửa.",
+          "destination": {
+            "point": [
+              -10,
+              98
+            ],
+            "label": "Bếp sưởi ở xóm tuyết",
+            "prop": "lantern",
+            "arrival": "Người lữ hành đã tới bếp. Che gió cho ngọn lửa bén để họ được sưởi ấm.",
+            "obstacle": {
+              "prop": "cloth",
+              "seconds": 4,
+              "label": "Dựng tấm chắn gió cạnh đường",
+              "text": "Người lữ hành kiệt sức phải dừng giữa gió. Dựng tấm chắn để họ lấy lại hơi."
+            }
+          }
         },
         {
           "mode": "hold",
@@ -222,7 +332,22 @@
         {
           "mode": "escort",
           "label": "Đi cùng người mở cửa qua đoạn tối",
-          "distance": 15
+          "description": "Người dân vẫn đóng cửa vì tưởng lính chiếm đóng còn ngoài phố. Đi cùng Thợ Đèn Đốm tới cột đầu phố và thắp đèn báo đường đã an toàn.",
+          "destination": {
+            "point": [
+              -40,
+              39
+            ],
+            "label": "Cột đèn đầu Phố Đèn",
+            "prop": "lantern",
+            "arrival": "Đã tới cột đầu phố. Thắp đèn báo cho người trong nhà biết họ có thể ra ngoài.",
+            "obstacle": {
+              "prop": "tools",
+              "seconds": 3,
+              "label": "Dỡ thanh gỗ chắn phố",
+              "text": "Người dân từng chặn lối bằng gỗ để tránh lính. Dỡ thanh chắn để thợ đèn mang đèn qua."
+            }
+          }
         },
         {
           "mode": "hold",

@@ -27,15 +27,23 @@ function playTask(save){
   }
   if(state.mode==='escort'||state.mode==='chase')assert.ok(state.end,'a moving task has a walkable destination');
   if(state.mode==='escort'){
+    assert.ok(state.destination?.label,'escort has a named destination');
     p.x+=10;world.fieldRoute.update(1,1);
     assert.deepEqual(world.fieldRoute.state().target,state.target,'escorted actor waits when the player leaves');
   }
   let done=null;
   for(let i=0;i<350&&!done;i++){
-    if(state.mode!=='hold')p.fromArray(world.fieldRoute.state().target);
+    const live=world.fieldRoute.state();
+    if(state.mode!=='hold')p.fromArray(live.target);
+    if(live.obstruction&&!live.obstruction.clearing){
+      assert.equal(world.fieldRoute.update(.2,i*.1),null,'escort stops at the obstruction');
+      assert.deepEqual(world.fieldRoute.state().target,live.target);
+      assert.ok(world.fieldRoute.start(live.entry));
+    }
     done=world.fieldRoute.update(.1,i*.1);
   }
   assert.ok(done,'task can finish');
+  if(state.destination)assert.ok(Math.hypot(done.point[0]-state.destination.x,done.point[1]-state.destination.z)<.1,'escort finishes at the named place');
   assert.ok(completeFieldTask(save,done.key,done.step));
   assert.equal(completeFieldTask(save,done.key,done.step),null,'same completion cannot reward twice');
   world.syncVillageEvents(save);

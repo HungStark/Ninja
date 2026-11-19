@@ -12,17 +12,6 @@ const overlapsLandmark=(plot,zone)=>Math.hypot(Math.max(0,Math.abs(zone.x-plot.x
 export const hallId=id=>id+'-council-hall';
 export function civicPoint(plot,x,z){return {x:plot.x+Math.cos(plot.yaw||0)*x+Math.sin(plot.yaw||0)*z,z:plot.z-Math.sin(plot.yaw||0)*x+Math.cos(plot.yaw||0)*z};}
 
-// Keep border entrances and their approach clear of the larger estates.
-// Travel arrivals use this same position as the visible village gate.
-export function civicGatePosition(layout,angle){
-  for(let step=0;step<=180;step+=2)for(const side of step?[-1,1]:[1]){
-    const yaw=angle+side*step*Math.PI/180,sin=Math.sin(yaw),cos=Math.cos(yaw),radius=130/Math.max(Math.abs(sin),Math.abs(cos)),p={x:sin*radius,z:cos*radius};
-    if([0,6,12].some(back=>layout.plots.some(plot=>insidePlot(plot,p.x-sin*back,p.z-cos*back,6))))continue;
-    return p;
-  }
-  throw Error('No clear village gate: '+layout.id);
-}
-
 export function civicWaterRoutes(layout,routes){
   const placed=[];
   return routes.map(route=>{
@@ -192,7 +181,7 @@ export function buildVillageCivic(c,layout){
 }
 
 export function buildGateWatch(c,gates){
-  for(const gate of gates){const yaw=Math.atan2(gate.x,gate.z),root=c.group(gate.x,gate.z);root.rotation.y=yaw;root.name='gate-watch-'+gate.id;root.userData.noCollision=true;
+  for(const gate of gates){const root=c.group(gate.x,gate.z);root.rotation.y=gate.yaw;root.name='gate-watch-'+gate.id;root.userData.noCollision=true;
     for(const side of [-1,1]){const tower=new T.Group();tower.position.set(side*8,0,-2);root.add(tower);const timber=c.surfaces.wood,stone=c.surfaces.stone;const base=c.box(tower,stone,0,3,0,3.4,6,3.4);c.solidMesh(base,{name:'gate-watchtower',stepable:false});c.box(tower,timber,0,6.15,0,5,.3,5);for(const a of [-1,1])for(const b of [-1,1])c.box(tower,timber,a*2,7.5,b*2,.15,2.7,.15);buildGabledRoof(c,tower,5,5,9,.45,c.surfaces.roof);}
   }
 }

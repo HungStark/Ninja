@@ -27,15 +27,18 @@ for(const id of Object.keys(CINEMATIC_ROUTE.side)){
     const field=world.sideRoute.state();
     assert.ok(field,id+' exposes side-story objective '+step);
     assert.equal(world.blocked(field.target[0],field.target[2]),false);
-    if(field.mode==='escort')assert.ok(field.end,id+' escort has a walkable route');
+    if(field.mode==='escort')assert.ok(field.end&&field.destination?.label,id+' escort has a named, walkable destination');
     const p=world.hero.root.position;p.fromArray(field.target);
     assert.equal(world.sideRoute.start(field.entry),true);
     let result=null;
+    let cleared=false;
     for(let frame=0;frame<250&&!result;frame++){
-      p.fromArray(world.sideRoute.state().target);
+      const live=world.sideRoute.state();p.fromArray(live.target);
+      if(live.obstruction&&!live.obstruction.clearing){assert.ok(world.sideRoute.start(live.entry));cleared=true;}
       result=world.sideRoute.update(.15,frame*.15);
     }
     assert.ok(result,id+' task completes');
+    if(field.mode==='escort')assert.ok(cleared&&result.arrival,id+' clears an obstacle and reaches the site');
     assert.ok(advanceSideStory(save,result.key,result.step,result.point));
     assert.equal(advanceSideStory(save,result.key,result.step,result.point),null);
     save=readJourney({getItem:()=>JSON.stringify(save)});

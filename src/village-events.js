@@ -8,7 +8,7 @@ import {botHealth} from './enemy-balance.js';
 import {readCompanionHealth} from './companion-health.js';
 import {WOOD_SACRED_TREE} from './sacred-tree.js';
 import {endingEvent} from './phoenix-blessing.js';
-import {fieldMission,fieldObjective,FIELD_ROUTE_REVISION} from './field-route.js';
+import {fieldMission,fieldObjective,FIELD_ROUTE,FIELD_ROUTE_REVISION} from './field-route.js';
 
 export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
 export const HA_LY_MOTHER={id:'fire-ha-ly-mother',name:'Bà Hồng',role:'Mẹ nuôi của Hạ Ly',kind:'healer',female:true,age:'elder',hair:'#bdb5a2',hairStyle:'bun',coat:'#7c594d',accent:'#b79e75',height:2.7,width:.94,shawl:true};
@@ -42,6 +42,11 @@ export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=
 export function eventSpot(id,event,save){
   if(save?.story.fieldRouteRevision===FIELD_ROUTE_REVISION){
     if(id==='fire'&&[2,3].includes(event.step))return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+5};
+    if(!event.interior&&((id==='water'&&event.step===1)||(id==='earth'&&event.step===2))){
+      const escort=FIELD_ROUTE.events[id+':'+(event.step-1)].steps.find(task=>task.mode==='escort');
+      const [x,z]=escort.destination.point;
+      return {x:x+2,z};
+    }
     if(!event.interior&&id==='water'&&event.step<=4){const base=eventSpot(id,{spot:0});return {x:base.x+[0,3,6,5,7][event.step],z:base.z+[0,-3,-2,3,5][event.step]};}
     if(!event.interior&&id==='lightning'&&event.step<=2){const base=eventSpot(id,{spot:0});return {x:base.x+event.step*3,z:base.z+event.step*2};}
     if(id==='earth'&&[1,2].includes(event.step)){const base=eventSpot(id,{spot:0});return {x:base.x+5,z:base.z-4};}

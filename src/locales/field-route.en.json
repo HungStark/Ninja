@@ -31,18 +31,28 @@
    {
     "mode": "escort",
     "label": "Escort the injured villager",
-    "description": "Press E to start. Stay beside the villager as they walk toward the marked shelter.",
+    "description": "The injured villager is unsteady and the bridge bank can still give way. Walk with them to the first-aid lay-by on Bell Hill Road.",
     "name": "Injured villager",
-    "distance": 14,
     "offset": [
      5,
      -3
     ],
-    "result": "The villager reaches shelter and points you to fresh tracks.",
-    "destinationOffset": [
-     12,
-     -12
-    ]
+    "result": "The villager is seated at the first-aid lay-by and points out fresh tracks up the hill.",
+    "destination": {
+     "point": [
+      -18,
+      -37
+     ],
+     "label": "First-aid lay-by on Bell Hill Road",
+     "prop": "medicine",
+     "arrival": "The villager is seated at the first-aid lay-by and points out fresh tracks up the hill.",
+     "obstacle": {
+      "prop": "tools",
+      "seconds": 3,
+      "label": "Secure the plank at the eroded bank",
+      "text": "The injured villager cannot cross the slipping plank."
+     }
+    }
    },
    {
     "mode": "interact",
@@ -76,10 +86,24 @@
     {
      "mode": "escort",
      "label": "Escort the sick villager",
-     "description": "Moc An checks the water barrel. Guide the dizzy villager to dry ground.",
+     "description": "The tainted relief water left the villager dizzy and at risk of falling off the landing. Walk them to first aid by Lotus Pond.",
      "name": "Dizzy villager",
-     "distance": 18,
-     "result": "The villager is safe. Moc An brings the forged seal to the landing."
+     "result": "The villager is safe on dry ground. Moc An brings the forged wax seal to the station.",
+     "destination": {
+      "point": [
+       -53,
+       32
+      ],
+      "label": "Lotus Pond first-aid station",
+      "prop": "medicine",
+      "arrival": "The villager is safe on dry ground. Moc An brings the forged wax seal to the station.",
+      "obstacle": {
+       "prop": "crate",
+       "seconds": 3,
+       "label": "Move the overturned relief crate",
+       "text": "The crate blocks the landing. The dizzy villager needs a clear, dry passage."
+      }
+     }
     }
    ],
    "script": [
@@ -156,18 +180,28 @@
     {
      "mode": "escort",
      "label": "Escort Medic Dan to Ha Ly",
-     "description": "Dan has her supplies ready. Walk with her into the secured yard.",
+     "description": "Ha Ly is losing blood and cannot stand. Escort Medic Dan from the yard to the prison door so she can treat her there.",
      "name": "Medic Dan",
-     "distance": 12,
-     "result": "Dan reaches the triage point and asks you to help with the bandage.",
+     "result": "Dan has reached the prison door. Hold the dressing while she stops the bleeding.",
      "offset": [
       0,
       12
      ],
-     "destinationOffset": [
-      3,
-      0
-     ]
+     "destination": {
+      "offset": [
+       3,
+       0
+      ],
+      "label": "Triage station by the prison door",
+      "prop": "medicine",
+      "arrival": "Dan has reached the prison door. Hold the dressing while she stops the bleeding.",
+      "obstacle": {
+       "prop": "tools",
+       "seconds": 2.5,
+       "label": "Free the jammed yard latch",
+       "text": "Dan needs both hands for the medicine box. Free the latch so she can pass."
+      }
+     }
     },
     {
      "mode": "hold",
@@ -288,10 +322,24 @@
     {
      "mode": "escort",
      "label": "Escort the miners out of the rockfall zone",
-     "description": "Walk beside the rescued miners as they make their way to Son.",
+     "description": "The miners are out of the shaft but still in the rockfall area. Walk with them to the assembly point so Son can count the crew and receive their sample.",
      "name": "Rescued miner",
-     "distance": 17,
-     "result": "The miners are safe and hand over a crystal from the explosives."
+     "result": "Son has counted the crew. A miner hands over a crystal sample for examination at the assembly point.",
+     "destination": {
+      "point": [
+       -30,
+       21
+      ],
+      "label": "Mine crew assembly point",
+      "prop": "net",
+      "arrival": "Son has counted the crew. A miner hands over a crystal sample for examination at the assembly point.",
+      "obstacle": {
+       "prop": "ore",
+       "seconds": 4,
+       "label": "Brace the rockfall passage",
+       "text": "Loose rock slid onto the path. Brace the edge so the miners can pass."
+      }
+     }
     }
    ]
   },
@@ -330,10 +378,24 @@
     {
      "mode": "escort",
      "label": "Escort the survivors to the shelter lantern",
-     "description": "Stay beside the injured traveler while the young mage keeps the child warm.",
+     "description": "The storm is erasing the tracks and the injured traveler cannot find their way alone. Escort them to the shelter lantern to warm up before reporting to the chief.",
      "name": "Injured traveler",
-     "distance": 21,
-     "result": "The group reaches shelter. Tuyet Nghi is reunited with her child."
+     "result": "Everyone reaches the lantern. Tuyet Nghi is reunited with her child, and the young mage can speak before the group enters the council hall.",
+     "destination": {
+      "point": [
+       32,
+       24
+      ],
+      "label": "Storm shelter lantern by the Frozen Lake",
+      "prop": "lantern",
+      "arrival": "Everyone reaches the lantern. Tuyet Nghi is reunited with her child, and the young mage can speak before the group enters the council hall.",
+      "obstacle": {
+       "prop": "lantern",
+       "seconds": 4,
+       "label": "Shield the group lantern",
+       "text": "A gust put out the lantern. Hold the windbreak until the light returns."
+      }
+     }
     }
    ]
   },
@@ -351,10 +413,24 @@
     {
      "mode": "escort",
      "label": "Escort the guard to the rally point",
-     "description": "Guide the rescued guard and the others to the chief.",
+     "description": "The freed prisoners are still scattered. Escort the guard to the rally yard to count them and hand them over to the relief team.",
      "name": "Rescued guard",
-     "distance": 16,
-     "result": "Everyone reaches the rally point. The Sun Village guard takes over."
+     "result": "The guard gathers the survivors. The chief receives the group, and you can go to the council hall to discuss the route to Dark Village.",
+     "destination": {
+      "point": [
+       52,
+       0
+      ],
+      "label": "Rally yard outside the prison",
+      "prop": "lantern",
+      "arrival": "The guard gathers the survivors. The chief receives the group, and you can go to the council hall to discuss the route to Dark Village.",
+      "obstacle": {
+       "prop": "tools",
+       "seconds": 3,
+       "label": "Open the evacuation barrier",
+       "text": "The old barrier still blocks the yard. Open it so the group can move through together."
+      }
+     }
     }
    ]
   },
@@ -393,10 +469,24 @@
     {
      "mode": "escort",
      "label": "Escort the last group to safety",
-     "description": "Walk beside the rear of the group as they leave the ritual site.",
+     "description": "The ritual area is still unsafe even after the leader has fallen. Escort the last evacuee to the post where the guards can take over.",
      "name": "Freed villager",
-     "distance": 18,
-     "result": "The guards take over the evacuation. You can speak to the defeated leader."
+     "result": "The last evacuee has reached the post. The guards take over, and you can question the defeated leader in the council hall.",
+     "destination": {
+      "point": [
+       -6,
+       -42
+      ],
+      "label": "Evacuation post outside the stronghold",
+      "prop": "lantern",
+      "arrival": "The last evacuee has reached the post. The guards take over, and you can question the defeated leader in the council hall.",
+      "obstacle": {
+       "prop": "seal-core",
+       "seconds": 4,
+       "label": "Isolate the leaking seal",
+       "text": "The seal is still discharging over the exit. Hold the fragment in place to cut the current."
+      }
+     }
     }
    ]
   },
