@@ -1,0 +1,459 @@
+{
+ "opening": {
+  "title": "The bridge gives way",
+  "steps": [
+   {
+    "mode": "hold",
+    "label": "Pull the stranded villager up",
+    "description": "Find the rescue rope at Echo Bridge. Press E and stay close while you pull the villager up.",
+    "name": "Stranded villager",
+    "seconds": 4,
+    "model": "net",
+    "offset": [
+     0,
+     0
+    ],
+    "result": "The villager is safe. Tin points out a freshly cut support. This was no accident."
+   },
+   {
+    "mode": "hold",
+    "label": "Brace the crossing with Carpenter Tin",
+    "description": "The tools are here. Hold the support while Tin pins it in place.",
+    "name": "Carpenter Tin",
+    "seconds": 5,
+    "model": "tools",
+    "offset": [
+     5,
+     -3
+    ],
+    "result": "The crossing is reinforced. A witness saw someone run toward the bell hill."
+   },
+   {
+    "mode": "escort",
+    "label": "Escort the injured villager",
+    "description": "Press E to start. Stay beside the villager as they walk toward the marked shelter.",
+    "name": "Injured villager",
+    "distance": 14,
+    "offset": [
+     5,
+     -3
+    ],
+    "result": "The villager reaches shelter and points you to fresh tracks.",
+    "destinationOffset": [
+     12,
+     -12
+    ]
+   },
+   {
+    "mode": "interact",
+    "label": "Inspect the cut anchor rope",
+    "description": "Check the clean cut and the tracks leading uphill.",
+    "model": "notes",
+    "offset": [
+     12,
+     -12
+    ],
+    "result": "A strip of cloth is caught on the rocks. The saboteur is still nearby."
+   },
+   {
+    "mode": "chase",
+    "label": "Catch up with the saboteur",
+    "description": "Press E to give chase. Catch up, or meet the runner at the end of the path.",
+    "name": "Saboteur",
+    "distance": 20,
+    "offset": [
+     14,
+     -16
+    ],
+    "result": "The saboteur reveals where the attack is headed. The crossing is secure. You receive 35 coins."
+   }
+  ]
+ },
+ "events": {
+  "water:0": {
+   "title": "Evacuate the landing",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Escort the sick villager",
+     "description": "Moc An checks the water barrel. Guide the dizzy villager to dry ground.",
+     "name": "Dizzy villager",
+     "distance": 18,
+     "result": "The villager is safe. Moc An brings the forged seal to the landing."
+    }
+   ],
+   "script": [
+    [
+     "guide",
+     "The villager just woke up. They say the whole barrel came from one cart. Look closely at this seal."
+    ],
+    [
+     "hero",
+     "There is a flame, but they pressed fresh wax over an older mark. Show me where they unloaded the cart."
+    ]
+   ]
+  },
+  "water:2": {
+   "title": "Restore clean water",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Close the warehouse valve",
+     "description": "Stay by the valve while you shut off the contaminated supply.",
+     "seconds": 4,
+     "model": "tools",
+     "offset": [
+      -4,
+      0
+     ],
+     "result": "The contaminated supply has stopped."
+    },
+    {
+     "mode": "hold",
+     "label": "Open the clean water branch",
+     "description": "Open the second control so clean water can reach the landing.",
+     "seconds": 3,
+     "model": "medicine",
+     "offset": [
+      4,
+      0
+     ],
+     "result": "Clean water is running again. Moc An can testify here."
+    }
+   ]
+  },
+  "water:5": {
+   "title": "Trace the chakra lines",
+   "steps": [
+    {
+     "mode": "interact",
+     "label": "Inspect the altered connection",
+     "description": "Check the connector while Moc An compares the records.",
+     "model": "notes",
+     "offset": [
+      -5,
+      0
+     ],
+     "result": "The connector was recently altered. Another line is still glowing."
+    },
+    {
+     "mode": "hold",
+     "label": "Isolate the chakra line",
+     "description": "Stay by the connector with the seal fragment while Moc An locates the prisoners.",
+     "seconds": 5,
+     "model": "seal-core",
+     "offset": [
+      5,
+      -3
+     ],
+     "result": "The extraction line is weakened. The prisoners are just ahead."
+    }
+   ]
+  },
+  "fire:2": {
+   "title": "Triage at the prison",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Escort Medic Dan to Ha Ly",
+     "description": "Dan has her supplies ready. Walk with her into the secured yard.",
+     "name": "Medic Dan",
+     "distance": 12,
+     "result": "Dan reaches the triage point and asks you to help with the bandage.",
+     "offset": [
+      0,
+      12
+     ],
+     "destinationOffset": [
+      3,
+      0
+     ]
+    },
+    {
+     "mode": "hold",
+     "label": "Help Dan treat Ha Ly",
+     "description": "Stay close and help with the dressing. Ha Ly is awake and can explain what she found.",
+     "seconds": 5,
+     "model": "medicine",
+     "offset": [
+      3,
+      0
+     ],
+     "result": "Ha Ly is stable. The group can continue the investigation from here."
+    }
+   ],
+   "script": [
+    [
+     "haly",
+     "Dan, keep the bandage a little lower. I can stand now. Is Mother Hong outside?"
+    ],
+    [
+     "hero",
+     "She is waiting to hear from you. Who gave the order to take you?"
+    ],
+    [
+     "haly",
+     "They wore Fire uniforms, but their orders used the wrong cipher. I can show you where it was altered. Come with me."
+    ]
+   ]
+  },
+  "lightning:0": {
+   "title": "Restore the lightning relay",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Ground the residential circuit",
+     "description": "Hold the ground connection while Tu Khang works the control panel.",
+     "seconds": 4,
+     "model": "tools",
+     "offset": [
+      -5,
+      0
+     ],
+     "result": "The electrical surge has been diverted from the houses."
+    },
+    {
+     "mode": "hold",
+     "label": "Reset the relay breaker",
+     "description": "Stay by the breaker while Tu Khang restores power.",
+     "seconds": 4,
+     "model": "lantern",
+     "offset": [
+      5,
+      0
+     ],
+     "result": "The relay is working. Tu Khang finds the occupation order in the control box."
+    }
+   ],
+   "script": [
+    [
+     "guide",
+     "The lights are back. Wait. There is a slip of paper under the breaker."
+    ],
+    [
+     "haly",
+     "Let me see. This is a Lightning troop cipher. Someone changed a line after the seal was applied."
+    ],
+    [
+     "hero",
+     "I saw a correction like that in the Fire orders. Keep both copies."
+    ]
+   ]
+  },
+  "wind:2": {
+   "title": "Intercept the false courier",
+   "steps": [
+    {
+     "mode": "chase",
+     "label": "Catch up with the fleeing courier",
+     "description": "Start the chase and close the distance. The courier will stop at the end of the path.",
+     "name": "False courier",
+     "distance": 24,
+     "result": "You have cut off the courier. He draws his weapon and calls for help."
+    }
+   ]
+  },
+  "earth:0": {
+   "title": "Brace the mine entrance",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Hold the support while Son wedges it",
+     "description": "Stay by the cracked support while Son secures it.",
+     "seconds": 4,
+     "model": "tools",
+     "offset": [
+      -4,
+      0
+     ],
+     "result": "The roof is braced. You can clear a rescue opening."
+    },
+    {
+     "mode": "hold",
+     "label": "Clear an air gap for the miners",
+     "description": "Help clear the rubble until the trapped miners can breathe freely.",
+     "seconds": 4,
+     "model": "ore",
+     "offset": [
+      4,
+      -2
+     ],
+     "result": "Air is flowing and the miners answer. The rescue rope is ready."
+    }
+   ]
+  },
+  "earth:1": {
+   "title": "Guide the miners to safety",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Escort the miners out of the rockfall zone",
+     "description": "Walk beside the rescued miners as they make their way to Son.",
+     "name": "Rescued miner",
+     "distance": 17,
+     "result": "The miners are safe and hand over a crystal from the explosives."
+    }
+   ]
+  },
+  "wood:3": {
+   "title": "Contain the poison at the roots",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Steady the seal at a living root",
+     "description": "Stay near the seal while Ha Ly and Linh Chi draw out the poison.",
+     "seconds": 5,
+     "model": "seal-core",
+     "offset": [
+      -5,
+      0
+     ],
+     "result": "The poison has left the living roots. Seal the containment vessel now."
+    },
+    {
+     "mode": "hold",
+     "label": "Seal the containment vessel",
+     "description": "Hold the lid while Linh Chi locks the vessel.",
+     "seconds": 4,
+     "model": "medicine",
+     "offset": [
+      4,
+      0
+     ],
+     "result": "The poison is contained. New growth appears at the roots."
+    }
+   ]
+  },
+  "ice:3": {
+   "title": "Walk with the survivors",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Escort the survivors to the shelter lantern",
+     "description": "Stay beside the injured traveler while the young mage keeps the child warm.",
+     "name": "Injured traveler",
+     "distance": 21,
+     "result": "The group reaches shelter. Tuyet Nghi is reunited with her child."
+    }
+   ]
+  },
+  "light:4": {
+   "title": "Evacuate the prison",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Break the prison seal",
+     "description": "Stay beside the seal to release the last lock.",
+     "seconds": 4,
+     "model": "seal-core",
+     "result": "The door is open. A guard is leading the prisoners into the yard."
+    },
+    {
+     "mode": "escort",
+     "label": "Escort the guard to the rally point",
+     "description": "Guide the rescued guard and the others to the chief.",
+     "name": "Rescued guard",
+     "distance": 16,
+     "result": "Everyone reaches the rally point. The Sun Village guard takes over."
+    }
+   ]
+  },
+  "dark:3": {
+   "title": "Free the Jade Deer",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Release the first seal connection",
+     "description": "Ha Ly watches the Jade Deer while you loosen the first seal.",
+     "seconds": 4,
+     "model": "seal-core",
+     "offset": [
+      -4,
+      0
+     ],
+     "result": "One lock has cracked. The other connection is still draining the guardian."
+    },
+    {
+     "mode": "hold",
+     "label": "Release the second seal connection",
+     "description": "Disconnect the remaining seal to open the way out for the guardian.",
+     "seconds": 4,
+     "model": "tools",
+     "offset": [
+      4,
+      0
+     ],
+     "result": "The Jade Deer is free and the route to the next commander is open."
+    }
+   ]
+  },
+  "dark:7": {
+   "title": "Evacuate the stronghold",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Escort the last group to safety",
+     "description": "Walk beside the rear of the group as they leave the ritual site.",
+     "name": "Freed villager",
+     "distance": 18,
+     "result": "The guards take over the evacuation. You can speak to the defeated leader."
+    }
+   ]
+  },
+  "nameless:1": {
+   "title": "Establish the alliance defenses",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Light the evacuation lantern",
+     "description": "Light the path behind the defensive line so residents can move to safety.",
+     "seconds": 3,
+     "model": "lantern",
+     "offset": [
+      -6,
+      0
+     ],
+     "result": "The lantern guides the residents away from the front."
+    },
+    {
+     "mode": "hold",
+     "label": "Stabilize the barrier with the alliance",
+     "description": "Hold position at the barrier while the villages channel chakra together.",
+     "seconds": 5,
+     "model": "seal-core",
+     "offset": [
+      6,
+      0
+     ],
+     "result": "The barrier holds. The vanguard is approaching."
+    }
+   ]
+  }
+ },
+ "ui": {
+  "continue": "Continue here",
+  "dispatchTitle": "News from the bell hill",
+  "dispatchAction": "Accept the mission and set out",
+  "holding": "Stay close to continue",
+  "return": "Return to the marker to continue",
+  "escort": "Stay beside the person you are escorting",
+  "chase": "Catch up with the runner",
+  "action": "Act · ",
+  "enable": "Enable the new mission route",
+  "enabled": "New mission route enabled. Your current progress has been kept."
+ },
+ "dispatch": [
+  [
+   "chief",
+   "I came from the bridge. Everyone is on dry ground. Tin sends his thanks."
+  ],
+  [
+   "hero",
+   "The saboteur wanted to cut off help. I saw him run toward the people attacking the Nameless Beast."
+  ],
+  [
+   "chief",
+   "Take the seal fragment to the Water landing. If anyone is trying to turn the villages against each other, look for their trail there. I will teach you the remaining two signs before you leave."
+  ]
+ ]
+}

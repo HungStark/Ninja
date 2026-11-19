@@ -353,7 +353,6 @@ body[data-journey=opening] #journeyToast{display:none}
 .opening-subtitle strong{display:block;color:#e4c78d;font-size:14px;letter-spacing:.04em}.opening-subtitle p{margin:8px 0 0;font-size:clamp(15px,1.35vw,20px);line-height:1.6;min-height:3.2em;max-height:24vh;overflow:auto}
 .opening-next{display:block;margin:10px 0 0 auto;padding:7px 15px;background:#dec38e;color:#182c30;border:0;border-radius:4px;font:600 13px "Segoe UI",Arial,sans-serif;cursor:pointer}
 .opening-subtitle[hidden],.opening-next[hidden]{display:none}
-.opening-memory{position:absolute;inset:0;display:none;overflow:hidden;background:#101721}.past-life .opening-memory{display:block}.opening-memory svg{width:100%;height:100%}.memory-invaders{animation:memory-descent 8s linear both}.memory-flames{animation:memory-flame 2s ease-in-out infinite alternate}.memory-blade{transform-origin:0 0;animation:memory-strike 8s ease-in-out both}.memory-blackout{animation:memory-darken 8s linear both}.opening-memory~.opening-skip{z-index:2}@keyframes memory-descent{from{transform:translateY(-15px)}to{transform:translateY(35px)}}@keyframes memory-flame{from{opacity:.5}to{opacity:.8}}@keyframes memory-strike{0%,65%{transform:rotate(-65deg)}80%,100%{transform:rotate(0deg)}}@keyframes memory-darken{0%,82%{opacity:0}100%{opacity:1}}@media(prefers-reduced-motion:reduce){.memory-invaders,.memory-flames{animation:none}}
 @media(max-height:500px){.opening-subtitle{bottom:7vh;padding:10px 16px;width:min(720px,88vw)}.opening-subtitle p{margin-top:4px;font-size:15px;line-height:1.4;min-height:2.8em;max-height:21vh}.opening-subtitle strong{font-size:12px}.opening-next{margin-top:6px;padding:5px 12px}.opening-skip{padding:6px 12px;top:6vh}}
 
 /* Visibility reduction belongs only to a third-person guardian shadow field. */
@@ -361,9 +360,6 @@ body[data-journey=opening] #journeyToast{display:none}
 
 body[data-journey=village-map] #startScreen,body[data-journey=treatment] #startScreen{display:none!important}
 body[data-journey=treatment] #worldLabels{visibility:hidden}
-.journey-opening.past-life{background:radial-gradient(ellipse at 50% 30%,#553b38 0%,#211820 65%,#08090e 100%)}
-.journey-opening.past-life:before{content:"";position:absolute;inset:20% 0 10%;height:auto;background:linear-gradient(148deg,transparent 48%,#9a693b22 49%,transparent 51%),linear-gradient(24deg,transparent 47%,#79554133 48%,transparent 50%);clip-path:polygon(0 68%,10% 54%,14% 65%,18% 32%,22% 34%,27% 70%,35% 54%,39% 77%,47% 61%,52% 15%,56% 18%,60% 70%,69% 63%,74% 38%,78% 41%,84% 73%,93% 60%,100% 70%,100% 100%,0 100%);background-color:#11131a;pointer-events:none}
-.journey-opening.past-life .opening-subtitle{z-index:1;opacity:1}
 #campaignAllyHud{position:fixed;right:20px;bottom:85px;z-index:12;width:174px;padding:10px 12px;background:#183537e8;border:1px solid #b8cfb15c;border-radius:5px;color:#e0dfc5;font:11px "Segoe UI",sans-serif;pointer-events:none}#campaignAllyHud[hidden]{display:none}#campaignAllyHud strong{display:inline-block;margin-bottom:6px}#campaignAllyHud span{float:right}#campaignAllyHud progress{display:block;width:100%;height:7px;accent-color:#9dcd9a}#campaignAllyHud[data-unconscious=true]{border-color:#d69487;color:#ebaa9c}#journeyCompanionHealth{color:#b8d7ac;margin-top:4px}@media(max-height:500px){#campaignAllyHud{right:12px;bottom:48px;width:135px;padding:6px 8px;font-size:10px}}
 
 
@@ -389,3 +385,14 @@ body[data-journey=treatment] #worldLabels{visibility:hidden}
 .tournament-rounds{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:12px;overflow-x:auto;padding-bottom:12px}.tournament-rounds h3{font-size:15px;min-height:38px}
 .tournament-match{display:flex;flex-direction:column;gap:9px;margin-bottom:12px;background:#233f37;padding:12px;border:1px solid #496254;border-radius:7px}.tournament-match small{font-size:10px;color:#a4b4a6}.tournament-match strong{font-size:12px;color:#b6d5b3}.tournament-match .is-winner{color:#a7e8a4}.tournament-match.is-next{border-color:#e2bf75}
 @media(max-width:700px){.tournament-popup{padding:12px}.tournament-popup header{top:-12px}.tournament-popup h2{font-size:16px}.tournament-records{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.field-progress{position:absolute;top:24%;left:50%;transform:translateX(-50%);width:max-content;max-width:min(76vw,360px);box-sizing:border-box;padding:8px 12px;border:1px solid #d7c49577;border-radius:4px;background:#173138ee;color:#f1e1bd;text-align:center;font:600 12px/1.35 'Segoe UI',sans-serif;pointer-events:none}
+.field-progress progress{display:block;width:100%;height:7px;margin-top:6px;accent-color:#93d6af}.field-progress[hidden],.field-progress progress[hidden]{display:none}
+#adventure #journeyDialog.story-shot{padding:0 clamp(12px,4vw,60px) max(14px,env(safe-area-inset-bottom));background:none}
+#adventure #journeyDialog.story-shot .journey-dialog-card.is-conversation{width:min(780px,100%);height:auto;max-height:43dvh;gap:5px;padding:10px 16px;overflow:auto;background:#12242bef;border:1px solid #c6b98f70;border-radius:5px;box-shadow:0 6px 30px #0006}
+#adventure #journeyDialog.story-shot #dialogKicker{display:none}#adventure #journeyDialog.story-shot #dialogTitle{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#adventure #journeyDialog.story-shot .dialog-layout{display:block;flex:auto;overflow:visible}#adventure #journeyDialog.story-shot .dialog-person{display:block;width:auto;text-align:left;margin:0 0 4px;padding:0;border:0;background:none}
+#adventure #journeyDialog.story-shot #dialogPortrait,#adventure #journeyDialog.story-shot #dialogSpeakerRole{display:none}#adventure #journeyDialog.story-shot #dialogSpeakerName{margin:0;color:#e4c78d;font-size:13px}
+#adventure #journeyDialog.story-shot #dialogBody{flex:auto;margin:0;min-height:1.55em;max-height:15dvh;color:#f5ebd6;font-size:clamp(12px,1.55vw,17px);line-height:1.45}
+#adventure #journeyDialog.story-shot #dialogConversationControls{margin:0}#adventure #journeyDialog.story-shot #dialogActions:not(:empty){margin-top:0}#adventure #journeyDialog.story-shot #dialogActions button{min-height:32px;padding:6px 12px}
+#adventure:has(#journeyDialog.story-shot:not([hidden])) #journeyToast{visibility:hidden}
+@media(max-height:460px){#adventure #journeyDialog.story-shot .journey-dialog-card.is-conversation{max-height:49dvh;padding:6px 9px}#adventure #journeyDialog.story-shot #dialogActions button{min-height:28px}}

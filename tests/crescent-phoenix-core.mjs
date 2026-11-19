@@ -19,7 +19,7 @@ const f=campaignFixtures();assert.equal(PLOT_VERSION,4);assert.ok(PLOT.opening.s
 for(const [id,chapter]of Object.entries(PLOT.villages))if(id!=='dark')for(const event of chapter.stages)assert.ok((event.script||[]).every(([key,line])=>key!=='hero'||!/kiếp trước|trùng sinh/i.test(line)),'past-life secret must remain internal before the private leader conversation');
 assert.equal(PLOT.guardianSaved.find(([,line])=>line.includes('Một tương lai'))[0],'memory');
 assert.equal(villageGuards('wind').filter(g=>g.guardRole==='hidden').length,3);assert.equal(villageGuards('earth').filter(g=>g.guardRole==='hidden').length,3);assert.equal(infiltrationLimit('wind'),4);
-for(const id of ['nameless','water','fire','lightning','wind','earth','wood','ice','light','dark'])assert.equal(villageGuards(id).filter(g=>g.guardRole==='jailer').length,id==='fire'?2:1);
+for(const id of ['nameless','water','fire','lightning','wind','earth','wood','ice','light','dark'])assert.equal(villageGuards(id).filter(g=>g.guardRole==='jailer').length,id==='nameless'?0:id==='fire'?2:1);
 for(const id of ['wind','earth','wood','ice']){
  const s=f[id+':0'],e=infiltratorEncounter(s,{id:'test',element:id,mode:'ambush'}),guard=configureOpponent({...encounterProfile(s,'village-guard',id),kind:'village-guard',village:id});
  for(const key of ['hp','spellIds','balanceStages','damageMultiplier','restTime','weaponInterval','sealDelay','rank','moveSpeed'])assert.deepEqual(e[key],guard[key],id+' same guard '+key);
@@ -36,9 +36,14 @@ const entries=[],land=new T.Group(),hero={root:new T.Group()},agents=createInfil
 agents.spawn(20,0,'wind','survey');agents.update(1,1,false);assert.ok(Math.hypot(entries[0].x-20,entries[0].z)>0);hero.root.position.set(entries[0].x,0,entries[0].z);assert.equal(agents.update(.1,2,false)?.mode,'survey');agents.clear();hero.root.position.set(0,0,0);agents.spawn(5,0,'earth','ambush');assert.equal(agents.state()[0].visible,false);agents.update(.1,2,false);assert.equal(agents.state()[0].phase,'chasing');assert.ok(agents.state()[0].visible);hero.root.position.copy(agents.first.root.position);assert.ok(agents.update(.1,3,false));agents.clear();assert.equal(entries.length,0);
 globalThis.innerWidth=1280;globalThis.innerHeight=900;const world=createAdventureScene();
 for(const id of ['nameless','wind','earth','wood','ice','fire']){
- const seed=structuredClone(f[id==='nameless'?'nameless:0':id+':0']);world.load(id,seed);assert.equal(world.interactives.filter(i=>i.kind==='village-guard'&&i.guardRole==='jailer').length,id==='fire'?2:1);
- if(id!=='fire'){const jailer=world.interactives.find(i=>i.guardRole==='jailer');assert.ok(Math.hypot(jailer.x-world.military.gate.x,jailer.z-world.military.gate.z)<.01);assert.equal(world.blocked(jailer.x,jailer.z),false,'gate must be accessible '+id);}
- if(id==='nameless')assert.equal(world.clinics.length,1);if(id==='fire')assert.ok(world.scene.getObjectByName('fallen-fire-jailer'));
+ const seed=structuredClone(f[id==='nameless'?'nameless:0':id+':0']);world.load(id,seed);assert.equal(world.interactives.filter(i=>i.kind==='village-guard'&&i.guardRole==='jailer').length,id==='nameless'?0:id==='fire'?2:1);
+ if(!['nameless','fire'].includes(id)){const jailer=world.interactives.find(i=>i.guardRole==='jailer');assert.ok(Math.hypot(jailer.x-world.military.gate.x,jailer.z-world.military.gate.z)<.01);assert.equal(world.blocked(jailer.x,jailer.z),false,'gate must be accessible '+id);}
+ if(id==='nameless'){
+  assert.equal(world.clinics.length,1);assert.equal(world.military,null);
+  assert.equal(world.scene.getObjectByName('nameless-military'),undefined);assert.equal(world.scene.getObjectByName('nameless-prison'),undefined);
+  assert.equal(world.interactives.some(i=>i.kind==='military'||i.guardRole==='jailer'),false);
+  assert.equal(world.solids.some(s=>s.id?.startsWith('nameless-prison')||s.name==='military-wall'),false,'removed prison has no invisible walls');
+ }if(id==='fire')assert.ok(world.scene.getObjectByName('fallen-fire-jailer'));
 }
 world.load('nameless',{...structuredClone(f['nameless:3']),story:{...f['nameless:3'].story,companion:{...s.story.companion}}});assert.ok(world.scene.getObjectByName('ha-ly-memorial'));assert.equal(world.storyState().recruited,false);
 const ally=createCampaignAlly(new T.Scene());ally.reset(true,{hp:300,maxHp:300});ally.sacrifice();assert.equal(ally.actor(),null);ally.update(4,4,[],new SealGameCore.Fighter(300),[0,1.72,7],()=>{});assert.equal(ally.state().visible,false);assert.equal(ally.state().phoenixVisible,false);ally.dispose();

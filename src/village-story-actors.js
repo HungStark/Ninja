@@ -13,8 +13,9 @@ import {islandOccupied,beastRescued,crescentEmblem} from './island-occupation.js
 import {planVillageCivic} from './village-civic.js';
 import {buildGuardianBeast} from './guardian-beasts.js';
 import {campaignSceneCast,campaignSpeakers} from './campaign-characters.js';
+import {fieldMission} from './field-route.js';
 
-export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>!blocked(p.x,p.z),addSolid,removeSolid=()=>{}}){
+export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>!blocked(p.x,p.z),addSolid,removeSolid=()=>{},localGuardian=()=>null}){
   const root=new T.Group();root.name='village-story-actors';scene.add(root);
   let follower=null,follow=null,entry=null,activeEvent=null,current='nameless',list=[],moving=false,clock=0;
   let stationary=[],prison=null,captive=null,mother=null,privateScene=false;
@@ -39,7 +40,7 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
   function addActor(id,p,wounded=false){const model=createNinja(HA_LY);model.root.name=wounded?'ha-ly-wounded':'ha-ly-companion';model.root.position.set(p.x,p.y,p.z);root.add(model.root);if(wounded)stationary.push(model);return model;}
   function restoreBorrowed(items){for(const b of items){b.root.position.copy(b.position);b.root.rotation.copy(b.rotation);b.root.visible=b.visible;if(b.entry)Object.assign(b.entry,b.entryPosition);if(b.identity===undefined)delete b.root.userData.storyCharacterId;else b.root.userData.storyCharacterId=b.identity;}items.length=0;}
   function clearDialogue(){restoreBorrowed(dialogueBorrowed);for(const actor of dialogueModels){actor.dispose?.();dispose(actor.root);}dialogueModels=[];dialogueRecords=[];invalidate();}
-  function ensureSpeaker(speaker,point,{dialogue=false,name}={}){
+  function ensureSpeaker(speaker,point,{dialogue=false,name,live=false}={}){
     if(!speaker?.appearance||speaker.id==='hero'||speaker.thought||speaker.appearance.kind==='creature')return;
     const records=dialogue?dialogueRecords:castRecords,p=speaker.appearance;
     const present=[...castRecords,...dialogueRecords].find(r=>r.id===speaker.id);if(present&&!dialogue)return;
@@ -53,7 +54,8 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
       if(speaker.id!==HA_LY.id){
         const entry=list.find(i=>i.id===p.id||i.kind==='npc'&&p.id==='chief'),borrowed=dialogue?dialogueBorrowed:eventBorrowed;
         borrowed.push({root:actorRoot,position:actorRoot.position.clone(),rotation:actorRoot.rotation.clone(),visible:actorRoot.visible,identity:actorRoot.userData.storyCharacterId,entry,entryPosition:entry?{x:entry.x,z:entry.z,y:entry.y}:null});
-        const world=actorRoot.getWorldPosition(new T.Vector3());if(Math.hypot(world.x-point.x,world.z-point.z)>(dialogue?1.25:4.5)){const parentPoint=actorRoot.parent.worldToLocal(new T.Vector3(point.x,point.y,point.z));actorRoot.position.copy(parentPoint);if(entry)Object.assign(entry,{x:point.x,z:point.z,y:point.y});}
+        const world=actorRoot.getWorldPosition(new T.Vector3());if(Math.hypot(world.x-point.x,world.z-point.z)>(live?9:dialogue?1.25:4.5)){const parentPoint=actorRoot.parent.worldToLocal(new T.Vector3(point.x,point.y,point.z));actorRoot.position.copy(parentPoint);if(entry)Object.assign(entry,{x:point.x,z:point.z,y:point.y});}
+        if(live){const p=actorRoot.getWorldPosition(new T.Vector3());actorRoot.rotation.y=Math.atan2(hero.root.position.x-p.x,hero.root.position.z-p.z);}
         actorRoot.visible=true;const budget=actorRoot.getObjectByName('character-render-budget');if(budget)budget.visible=true;
       }
     }else{
@@ -66,13 +68,27 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
     }
     actorRoot.userData.storyCharacterId=speaker.id;if(!present)records.push({id:speaker.id,root:actorRoot,appearance:p});invalidate();
   }
-  function stageDialogue(speakers){
-    clearDialogue();const people=[...new Map(speakers.filter(s=>s?.sceneCharacter&&s.appearance?.kind!=='creature').map(s=>[s.id,s])).values()],p=hero.root.position;
-    for(const [i,speaker] of people.entries()){const angle=hero.root.rotation.y+(i-(people.length-1)/2)*.65;ensureSpeaker(speaker,safePoint({x:p.x+Math.sin(angle)*3.4,y:p.y,z:p.z+Math.cos(angle)*3.4}),{dialogue:true});}
+  function stageDialogue(speakers,live=false){
+    clearDialogue();const people=[...new Map(speakers.filter(s=>s?.sceneCharacter&&(live||s.appearance?.kind!=='creature')).map(s=>[s.id,s])).values()],p=hero.root.position;
+    for(const [i,speaker] of people.entries()){
+      const angle=hero.root.rotation.y+(i-(people.length-1)/2)*.65,creature=speaker.appearance?.kind==='creature',distance=creature?7:3.4;
+      const point=safePoint({x:p.x+Math.sin(angle)*distance,y:p.y,z:p.z+Math.cos(angle)*distance});
+      if(creature){
+        let beast=localGuardian(speaker.appearance.id);
+        if(!beast||beast.getWorldPosition(new T.Vector3()).distanceTo(p)>16){
+          beast=buildGuardianBeast({id:speaker.appearance.id,M:color=>new T.MeshStandardMaterial({color,roughness:.82,flatShading:true}),mesh:(g,m,parent,x=0,y=0,z=0)=>{const part=new T.Mesh(g,m);part.position.set(x,y,z);parent.add(part);return part;}});
+          beast.name='cutscene-guardian-'+speaker.appearance.id;beast.scale.setScalar(1.35);beast.position.set(point.x,point.y,point.z);beast.rotation.y=Math.atan2(p.x-point.x,p.z-point.z);root.add(beast);
+          dialogueModels.push({root:beast,update:()=>{}});
+        }
+        const size=new T.Box3().setFromObject(beast).getSize(new T.Vector3());beast.userData.storyEyeHeight=Math.max(2.5,size.y*.6);
+        dialogueRecords.push({id:speaker.id,root:beast,appearance:speaker.appearance});invalidate();
+      }else ensureSpeaker(speaker,point,{dialogue:true,live});
+    }
   }
+  const dialogueActor=id=>id==='hero'?hero.root:[...dialogueRecords,...castRecords].find(r=>r.id===id)?.root;
   function reset(keepFollower=false){clearDialogue();restoreBorrowed(eventBorrowed);castRecords=[];hero.setCarrying(false);carrying=false;syncedKey=null;syncedList=null;for(const s of prison?.colliders||[])removeSolid(s);prison=null;for(const actor of stationary){actor.dispose?.();actor.root.userData.villager=null;dispose(actor.root);}stationary=[];captive=null;mother=null;if(!keepFollower&&follower){follower.dispose();dispose(follower.root);}for(const child of [...root.children])if(!keepFollower||child!==follower?.root)dispose(child);if(!keepFollower){follower=null;follow=null;entry=null;}activeEvent=null;moving=false;privateScene=false;}
   function sync(save,id,interactives,inInterior=false){
-    const key=JSON.stringify([id,inInterior,villageEventStep(save,id),companionPresent(save),carryingCompanion(save),save.arena?.completedRuns]);
+    const key=JSON.stringify([id,inInterior,villageEventStep(save,id),companionPresent(save),carryingCompanion(save),save.arena?.completedRuns,fieldMission(save,currentVillageEvent(save,id))?.step]);
     if(key===syncedKey&&interactives===syncedList)return;
     reset(current===id&&!!follower&&companionPresent(save));current=id;list=interactives;for(let i=list.length-1;i>=0;i--)if(['village-event','story-witness','companion'].includes(list[i].kind))list.splice(i,1);
     const event=currentVillageEvent(save,id),roomId=typeof inInterior==='string'?inInterior:inInterior?save.interior?.id:null;
@@ -100,7 +116,7 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
         if(step===0||step===2)list.push({kind:'story-witness',id:'ha-ly-wounded',x:p.x,z:p.z+3.25,y:p.y,label:'Hạ Ly · Nhà lao'});
       }
     }
-    if(activeEvent){const giver=id==='fire'&&activeEvent.style==='medicine'?list.find(i=>i.kind==='expedition-giver'):null,coast=activeEvent.spot==='coast'&&list.find(i=>i.kind==='dock'&&i.id==='light'),coastPoint=coast&&{x:coast.x-Math.sin(Math.atan2(coast.x,coast.z))*10,z:coast.z-Math.cos(Math.atan2(coast.x,coast.z))*10},original=giver||coastPoint||eventSpot(id,activeEvent),dry=id==='water'&&!waterFootprintDry(original.x,original.z,{w:4,d:4,padding:.8})?nearestDryWaterPoint(original.x,original.z,{w:4,d:4,padding:.8,valid:(x,z)=>!blocked(x,z)}):null,p=safePoint(dry||original);const g=new T.Group();g.position.set(p.x,p.y,p.z);root.add(g);
+    if(activeEvent){const giver=id==='fire'&&activeEvent.style==='medicine'?list.find(i=>i.kind==='expedition-giver'):null,coast=activeEvent.spot==='coast'&&list.find(i=>i.kind==='dock'&&i.id==='light'),coastPoint=coast&&{x:coast.x-Math.sin(Math.atan2(coast.x,coast.z))*10,z:coast.z-Math.cos(Math.atan2(coast.x,coast.z))*10},original=giver||coastPoint||eventSpot(id,activeEvent,save),dry=id==='water'&&!waterFootprintDry(original.x,original.z,{w:4,d:4,padding:.8})?nearestDryWaterPoint(original.x,original.z,{w:4,d:4,padding:.8,valid:(x,z)=>!blocked(x,z)}):null,p=safePoint(dry||original);const g=new T.Group();g.position.set(p.x,p.y,p.z);root.add(g);
       if(id!=='fire'&&activeEvent.style!=='commander'&&(id!=='wood'||activeEvent.style==='medicine'&&!roomId))props(g,activeEvent.style);
       const people=campaignSceneCast(save,id,activeEvent);
       for(const [i,speaker] of people.entries()){
@@ -112,7 +128,8 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
       if(activeEvent.style==='memorial'){const stone=mesh(g,new T.BoxGeometry(1.1,1.7,.45),'#6b7470',[0,.85,0]);stone.name='ha-ly-memorial';mesh(g,new T.TorusGeometry(.28,.035,5,16),'#bf9761',[0,1.5,.26]);for(let i=0;i<8;i++)mesh(g,new T.OctahedronGeometry(.13),'#ede7d1',[Math.sin(i)*.8,.15,Math.cos(i)*.5]);}
 
       const mark=mesh(g,new T.OctahedronGeometry(.18),'#f4d88d',[0,3.6,0]);mark.name='story-event-marker';
-      list.push({kind:'village-event',id:`story-${id}-${activeEvent.step}`,eventVillage:id,step:activeEvent.step,x:p.x,z:p.z,y:p.y,label:activeEvent.title});
+      const mission=fieldMission(save,activeEvent);mark.visible=!mission||mission.complete;
+      if(mark.visible)list.push({kind:'village-event',id:`story-${id}-${activeEvent.step}`,eventVillage:id,step:activeEvent.step,x:p.x,z:p.z,y:p.y,label:activeEvent.title});
     }
     if(companionPresent(save)){if(!follower){const hp=hero.root.position,yaw=hero.root.rotation.y,p=safePoint({x:hp.x-Math.sin(yaw)*FOLLOW_GAP,y:hp.y,z:hp.z-Math.cos(yaw)*FOLLOW_GAP});follower=addActor(HA_LY.id,p);follower.root.rotation.y=yaw;entry={kind:'companion',id:HA_LY.id,label:'Hạ Ly · Bạn đồng hành',x:p.x,z:p.z,y:p.y};follow=createCompanionFollow({position:follower.root.position,canOccupy:canFollow,safePoint});follow.reset(hp,{yaw});}if(carryingCompanion(save)){carrying=true;hero.setCarrying(true);hero.root.add(follower.root);follower.root.name='ha-ly-carried';follower.root.position.set(1.25,1.55,.7);follower.root.rotation.set(0,0,Math.PI/2);follower.setStoryPose('carried');follow=null;}else if(follower.root.parent!==root){root.add(follower.root);follower.root.name='ha-ly-companion';follower.root.rotation.z=0;follower.setStoryPose('standing');const hp=hero.root.position;follower.root.position.copy(hp);follow=createCompanionFollow({position:follower.root.position,canOccupy:canFollow,safePoint});follow.reset(hp,{yaw:hero.root.rotation.y});}list.push(entry);}
     if(follower)follower.root.visible=!privateScene;
@@ -126,5 +143,5 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
     const p=follower.root.position,state=paused?follow.state():follow.update(dt,hero.root.position,{...leader,yaw:hero.root.rotation.y,riding,groundAt:(x,z,y)=>floor(x,z,y+.03)});moving=!paused&&state.moving;
     follower.root.rotation.y=state.pose.yaw??follower.root.rotation.y;follower.root.visible=!privateScene;follower.update(clock,moving,paused?null:state.velocity,paused?0:dt,state.pose);Object.assign(entry,{x:p.x,z:p.z,y:p.y});
   }
-  return {sync,reset,update,stageDialogue,clearDialogue,harborPassengers:()=>follower&&!carrying&&!privateScene?[follower.root]:[],finishHarbor(){follow?.reset(hero.root.position,{yaw:hero.root.rotation.y});},senseSeal(){const item=list.find(i=>i.kind==='village-event');if(!item||!activeEvent?.sealTrace)return false;const target=activeEvent.targetObject===WOOD_SACRED_TREE.id?WOOD_SACRED_TREE:item;sense.position.set(target.x,floor(target.x,target.z),target.z);senseLife=2;sense.visible=true;return true;},actors:()=>[...stationary,...dialogueModels,...(follower?[follower]:[])],state:()=>({cast:[...castRecords,...dialogueRecords].map(r=>({id:r.id,appearance:r.appearance,visible:r.root.visible,position:r.root.getWorldPosition(new T.Vector3()).toArray()})),carrying,sealSense:senseLife>0,event:activeEvent?{village:current,step:activeEvent.step,title:activeEvent.title}:null,prison:prison?{opened:prison.opened,position:[prison.point.x,prison.point.y,prison.point.z]}:null,captive:captive?{pose:captive.root.userData.storyPose,modelReady:captive.modelReady,position:captive.root.position.toArray()}:null,mother:mother?{id:HA_LY_MOTHER.id,position:mother.root.position.toArray()}:null,recruited:!!follower,visible:!!follower?.root.visible,position:follower?.root.getWorldPosition(new T.Vector3()).toArray()||null,female:follower?.profile.female||false,moving,distance:follower?follower.root.getWorldPosition(new T.Vector3()).distanceTo(hero.root.position):null,catchups:follow?.state().catchups||0,following:follow?{...follow.state(),pose:{...follow.state().pose}}:null})};
+  return {sync,reset,update,stageDialogue,clearDialogue,dialogueActor,harborPassengers:()=>follower&&!carrying&&!privateScene?[follower.root]:[],finishHarbor(){follow?.reset(hero.root.position,{yaw:hero.root.rotation.y});},senseSeal(){const item=list.find(i=>i.kind==='village-event');if(!item||!activeEvent?.sealTrace)return false;const target=activeEvent.targetObject===WOOD_SACRED_TREE.id?WOOD_SACRED_TREE:item;sense.position.set(target.x,floor(target.x,target.z),target.z);senseLife=2;sense.visible=true;return true;},actors:()=>[...stationary,...dialogueModels,...(follower?[follower]:[])],state:()=>({cast:[...castRecords,...dialogueRecords].map(r=>({id:r.id,appearance:r.appearance,visible:r.root.visible,position:r.root.getWorldPosition(new T.Vector3()).toArray()})),carrying,sealSense:senseLife>0,event:activeEvent?{village:current,step:activeEvent.step,title:activeEvent.title}:null,prison:prison?{opened:prison.opened,position:[prison.point.x,prison.point.y,prison.point.z]}:null,captive:captive?{pose:captive.root.userData.storyPose,modelReady:captive.modelReady,position:captive.root.position.toArray()}:null,mother:mother?{id:HA_LY_MOTHER.id,position:mother.root.position.toArray()}:null,recruited:!!follower,visible:!!follower?.root.visible,position:follower?.root.getWorldPosition(new T.Vector3()).toArray()||null,female:follower?.profile.female||false,moving,distance:follower?follower.root.getWorldPosition(new T.Vector3()).distanceTo(hero.root.position):null,catchups:follow?.state().catchups||0,following:follow?{...follow.state(),pose:{...follow.state().pose}}:null})};
 }

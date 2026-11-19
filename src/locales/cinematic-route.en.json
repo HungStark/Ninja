@@ -1,0 +1,294 @@
+{
+  "ui": {
+    "accept": "Help out",
+    "leave": "Later",
+    "handoff": "Begin",
+    "continue": "Continue",
+    "nearby": "Village work",
+    "done": "Completed",
+    "open": "Available",
+    "active": "In progress",
+    "sideRole": "Villager",
+    "patrol": "Village patrol",
+    "occupiedPatrol": "Crescent patrol",
+    "reply": "I am here. Let us start.",
+    "escorting": "Stay beside the guide. They will wait if you move too far away.",
+    "holding": "Stay near the work until it is finished.",
+    "inspect": "Approach and inspect the site.",
+    "prepare": "Prepare first",
+    "patrolLine": "We are keeping the roads clear. Check the village map if you need directions.",
+    "afterBattle": "After the battle",
+    "guardianThreat": "Stand back. Something is holding me inside this seal.",
+    "regroup": "Regroup",
+    "regroupLine": "You made it back. Rest and tend your wounds before you try again. The meeting point is still there.",
+    "guardStandDown": "Left guard, right guard, stand down. The seal keeper has earned passage. Open the road to the council hall."
+  },
+  "openings": {
+    "nameless": "Take this end of the rope. I will hold the lower end. Pull when I call.",
+    "water": "Do not drink it. If you can still stand, help me bring them ashore.",
+    "fire": "If you find her, tell her I am waiting outside. Do not let her try to stand alone.",
+    "lightning": "Stay out of the standing water. Hold the ground rod while I shut the relay off.",
+    "wind": "The courier has never been late. This morning two people came through with the same wax seal.",
+    "earth": "Three knocks. They can hear us. Hold the support. Leave the large slab where it is.",
+    "wood": "Another root just cracked. Listen close. Sap is still flowing beneath it.",
+    "ice": "The small footprints lead to the pines. Please stay off the middle of the lake.",
+    "light": "Those weapons belong to the village guards. The marks on the lock will tell us who is still inside.",
+    "dark": "The Light guards are behind us. Let us find a way for them to get the residents out before we reach the center."
+  },
+  "side": {
+    "nameless": {
+      "zone": "tea-road",
+      "title": "A Light for the Crossing",
+      "intro": "People across the bank think the fire below is the crossing. Help me put the lamp back before someone follows it.",
+      "end": "You can see the way home from here. Tea is on me.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Walk with the lamp bearer",
+          "distance": 12
+        },
+        {
+          "mode": "hold",
+          "label": "Secure the roadside lamp",
+          "seconds": 4,
+          "model": "lantern"
+        }
+      ]
+    },
+    "water": {
+      "zone": "floating-market",
+      "title": "A Delivery of Clean Water",
+      "intro": "If they fetch water themselves, they have to pass the poisoned barrels. I will go with you.",
+      "end": "Now they have drinking water while we find out who did this.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Escort the carrier to the water point",
+          "distance": 14
+        },
+        {
+          "mode": "hold",
+          "label": "Open the clean water tap",
+          "seconds": 4,
+          "model": "medicine"
+        }
+      ]
+    },
+    "fire": {
+      "zone": "forge",
+      "title": "The Cold Forge",
+      "intro": "I put out the forge. Hold the lever while I pull out the old pin.",
+      "end": "Hear how steady that is? The hillside farmers will have plows tomorrow.",
+      "steps": [
+        {
+          "mode": "hold",
+          "label": "Hold the air vent",
+          "seconds": 4,
+          "model": "tools"
+        },
+        {
+          "mode": "hold",
+          "label": "Hold the lever while the forge restarts",
+          "seconds": 5,
+          "model": "lantern"
+        }
+      ]
+    },
+    "lightning": {
+      "zone": "storm-shelter",
+      "title": "A Light Through the Storm",
+      "intro": "The people in the fields can only see rain. The road lamp has to guide them here.",
+      "end": "They have turned toward us. Leave the light on overnight.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Escort the lamp bearer to high ground",
+          "distance": 15
+        },
+        {
+          "mode": "hold",
+          "label": "Light the storm beacon",
+          "seconds": 4,
+          "model": "lantern"
+        }
+      ]
+    },
+    "wind": {
+      "zone": "kite-meadow",
+      "title": "The Wind Signal",
+      "intro": "Follow me to the slope. Wait until the kite turns into the wind before pulling.",
+      "end": "They answered. The next party can set out.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Escort the guide to the slope",
+          "distance": 16
+        },
+        {
+          "mode": "hold",
+          "label": "Hold the wind signal in place",
+          "seconds": 5,
+          "model": "cloth"
+        }
+      ]
+    },
+    "earth": {
+      "zone": "quarry",
+      "title": "Knocks Below",
+      "intro": "Two quick knocks, that is me. Listen for an answer before you pull the pin.",
+      "end": "This way is clear. No one has to go down alone now.",
+      "steps": [
+        {
+          "mode": "interact",
+          "label": "Inspect the tracks by the mine entrance",
+          "model": "notes"
+        },
+        {
+          "mode": "hold",
+          "label": "Hold the support while the passage is opened",
+          "seconds": 5,
+          "model": "tools"
+        },
+        {
+          "mode": "escort",
+          "label": "Escort the mine inspector to safety",
+          "distance": 14
+        }
+      ]
+    },
+    "wood": {
+      "zone": "herb-garden",
+      "title": "A Second Nursery",
+      "intro": "Get the trays clear of the standing water. We can bring the seedlings back when the old tree recovers.",
+      "end": "With this place, everything no longer depends on one tree.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Escort the seedling carrier",
+          "distance": 13
+        },
+        {
+          "mode": "hold",
+          "label": "Water the seed trays in the new nursery",
+          "seconds": 4,
+          "model": "seeds"
+        }
+      ]
+    },
+    "ice": {
+      "zone": "hearth",
+      "title": "A Fire Through the Night",
+      "intro": "The wagon driver is still outside. The firewood is ready. Bring the driver in first.",
+      "end": "Leave a small fire burning. The next traveler will see it.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Escort the traveler to the hearth",
+          "distance": 14
+        },
+        {
+          "mode": "hold",
+          "label": "Shield the hearth while the fire catches",
+          "seconds": 5,
+          "model": "lantern"
+        }
+      ]
+    },
+    "light": {
+      "zone": "glass-bridge",
+      "title": "Lighting the Glass Crossing",
+      "intro": "It is too dark to see the cracks. Shine the lamp on that bracket.",
+      "end": "The guards can bring the elders across now.",
+      "steps": [
+        {
+          "mode": "interact",
+          "label": "Inspect the crack by the bridge bracket",
+          "model": "notes"
+        },
+        {
+          "mode": "hold",
+          "label": "Secure the reflector lamp",
+          "seconds": 4,
+          "model": "lantern"
+        }
+      ]
+    },
+    "dark": {
+      "zone": "lantern-street",
+      "title": "Lighting Lantern Street",
+      "intro": "The doors are shut because they think the soldiers are still outside. Let us light the street so they know it is safe.",
+      "end": "Tomorrow I will hang a light at each door that has someone home.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Escort the resident through the dark street",
+          "distance": 15
+        },
+        {
+          "mode": "hold",
+          "label": "Light the first lantern on the street",
+          "seconds": 5,
+          "model": "lantern"
+        }
+      ]
+    }
+  },
+  "aftermath": {
+    "water-base": [
+      "guide",
+      "They are breathing steadily. Leave the lines in place until I bring help to get them ashore."
+    ],
+    "fire-jail": [
+      "haly",
+      "The key is by the door. Do not lift me yet. Bring Dan in. I have something to tell you when I can think clearly."
+    ],
+    "fire-general": [
+      "haly",
+      "Keep the ledger. The corrections are intact. I want to face Xich Nham and name the people he left behind."
+    ],
+    "wind-courier": [
+      "haly",
+      "Let them go. Look at the mark on this seal. It leads to where they are holding the Wind Eagle."
+    ],
+    "wind-eagle": [
+      "guardian",
+      "The wind has returned. Tell Thanh Vu the mountain courier route is clear."
+    ],
+    "earth-base": [
+      "haly",
+      "The line has stopped, but those wheel tracks are fresh. A shipment got away before we arrived."
+    ],
+    "ice-coast": [
+      "haly",
+      "The guards are down. Look out to sea. They are raising the anchor."
+    ],
+    "light-battalion": [
+      "haly",
+      "The council entrance is open. The prisoners are still behind us. Go before the commander seals it again."
+    ],
+    "crescent-light": [
+      "guardian",
+      "The seal has broken. Open the prison and bring the survivors into the light."
+    ],
+    "dark-battalion": [
+      "haly",
+      "They withdrew from the main road. Follow that glowing seal to whoever is holding the Jade Deer."
+    ],
+    "crescent-wood": [
+      "haly",
+      "The Jade Deer is still breathing. Two links are holding it here. We will disconnect them one at a time."
+    ],
+    "crescent-ice": [
+      "guardian",
+      "I can no longer hear his orders. That seal still holds some energy. Read it before you touch it."
+    ],
+    "crescent-gatekeeper": [
+      "guardian",
+      "I am free, but the current has not stopped. Get the residents out, then ask him where the gate is."
+    ],
+    "invasion-vanguard": [
+      "hero",
+      "The vanguard has fallen back. Check the injured and keep the lanterns lit until everyone is accounted for."
+    ]
+  }
+}

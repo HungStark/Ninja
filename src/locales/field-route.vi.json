@@ -1,0 +1,459 @@
+{
+ "opening": {
+  "title": "Tiếng gãy ở Cầu Vọng Âm",
+  "steps": [
+   {
+    "mode": "hold",
+    "label": "Giữ dây cứu người mắc kẹt",
+    "description": "Cầu Vọng Âm vừa gãy thanh chống. Tới dây cứu hộ, nhấn E rồi ở gần để kéo người mắc kẹt lên. Rời vị trí sẽ tạm ngừng cứu hộ.",
+    "name": "Người dân mắc kẹt",
+    "seconds": 4,
+    "model": "net",
+    "offset": [
+     0,
+     0
+    ],
+    "result": "Người dân đã lên bờ. Tín chỉ vào thanh chống vừa bị cắt: đây không phải tai nạn."
+   },
+   {
+    "mode": "hold",
+    "label": "Gia cố lối qua cùng Thợ Mộc Tín",
+    "description": "Dụng cụ đã có tại cầu. Giữ thanh chống trong lúc Tín đóng chốt, không cần quay về tìm hay giao vật phẩm.",
+    "name": "Thợ Mộc Tín",
+    "seconds": 5,
+    "model": "tools",
+    "offset": [
+     5,
+     -3
+    ],
+    "result": "Thanh chống đã chắc. Người dân bắt đầu dùng lại lối qua; một người nhìn thấy kẻ lạ chạy về đồi chuông."
+   },
+   {
+    "mode": "escort",
+    "label": "Đưa người bị thương khỏi chân cầu",
+    "description": "Nhấn E để cùng người bị thương rời khu sạt lở. Đi cạnh họ; họ sẽ đợi nếu bạn đi quá xa. Đích đến được đánh dấu ngay trên đường tới đồi chuông.",
+    "name": "Người dân được cứu",
+    "distance": 14,
+    "offset": [
+     5,
+     -3
+    ],
+    "result": "Người dân đã tới chỗ nghỉ an toàn và chỉ hướng dấu giày còn mới. Tiền công cứu hộ sẽ trao ngay tại đây.",
+    "destinationOffset": [
+     12,
+     -12
+    ]
+   },
+   {
+    "mode": "interact",
+    "label": "Đọc dấu cắt trên dây neo",
+    "description": "Kiểm tra đầu dây bị cắt gọn và dấu giày cạnh lối lên đồi. Hung thủ đang cố cô lập Vô Danh Thú trước cuộc tập kích.",
+    "model": "notes",
+    "offset": [
+     12,
+     -12
+    ],
+    "result": "Một dải vải che mặt vướng trên đá. Kẻ phá cầu vừa rời đây; có thể bám theo hắn tới chỗ đồng bọn."
+   },
+   {
+    "mode": "chase",
+    "label": "Bám theo kẻ phá cầu",
+    "description": "Nhấn E để bắt đầu bám dấu. Chạy theo kẻ phá cầu và áp sát để chặn đường; nếu hụt, hắn sẽ dừng ở cuối lối, không cần làm lại cả nhiệm vụ.",
+    "name": "Kẻ phá cầu",
+    "distance": 20,
+    "offset": [
+     14,
+     -16
+    ],
+    "result": "Kẻ phá cầu để lộ hướng tập kích Đồi Chuông Gió. Dân đã an toàn, cầu được gia cố. Nhận 35 xu tại chỗ và tới trợ giúp Vô Danh Thú."
+   }
+  ]
+ },
+ "events": {
+  "water:0": {
+   "title": "Sơ tán bến nước",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Đưa dân rời nước cứu trợ bị đầu độc",
+     "description": "Mộc An tự kiểm tra thùng nước. Bạn đưa người choáng váng tới khu khô ráo; đi cạnh họ và giữ lối qua thông thoáng.",
+     "name": "Người dân choáng váng",
+     "distance": 18,
+     "result": "Người dân đã tới chỗ an toàn. Mộc An mang niêm phong giả tới gặp bạn ngay tại bến."
+    }
+   ],
+   "script": [
+    [
+     "guide",
+     "Người vừa tỉnh dậy nói cả thùng nước đều đến từ một xe. Nhìn kỹ dấu sáp này đi."
+    ],
+    [
+     "hero",
+     "Có hình ngọn lửa, nhưng sáp mới đè lên một dấu khác. Dẫn ta tới chỗ xe dỡ hàng."
+    ]
+   ]
+  },
+  "water:2": {
+   "title": "Ngắt nguồn độc",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Khóa van dẫn từ kho",
+     "description": "Tới van có nước sẫm màu, nhấn E rồi giữ vị trí để khóa nguồn độc. Mộc An sẽ xử lý nước sạch bên cạnh.",
+     "seconds": 4,
+     "model": "tools",
+     "offset": [
+      -4,
+      0
+     ],
+     "result": "Nguồn nước độc đã bị chặn. Đường nước sạch vẫn cần được mở lại."
+    },
+    {
+     "mode": "hold",
+     "label": "Mở nhánh nước sạch cho bến",
+     "description": "Mở chốt thứ hai. Đèn báo sẽ sáng khi nguồn nước sạch được nối lại.",
+     "seconds": 3,
+     "model": "medicine",
+     "offset": [
+      4,
+      0
+     ],
+     "result": "Nước sạch đã trở lại bến. Dân được tiếp nước và Mộc An sẵn sàng làm chứng ngay tại đây."
+    }
+   ]
+  },
+  "water:5": {
+   "title": "Lần theo đường dẫn chakra",
+   "steps": [
+    {
+     "mode": "interact",
+     "label": "Đối chiếu dấu niêm phong",
+     "description": "Dấu ở kiện hàng hướng về đường dẫn ngầm. Mộc An đối chiếu hồ sơ trong lúc bạn kiểm tra đầu nối.",
+     "model": "notes",
+     "offset": [
+      -5,
+      0
+     ],
+     "result": "Đầu nối có vết mài mới. Một đường dẫn khác còn đang phát sáng."
+    },
+    {
+     "mode": "hold",
+     "label": "Cô lập đường dẫn đang rút chakra",
+     "description": "Giữ mảnh lõi tại đầu nối để Mộc An dò ra vị trí những người bị bắt. Bỏ vị trí sẽ ngừng cộng hưởng.",
+     "seconds": 5,
+     "model": "seal-core",
+     "offset": [
+      5,
+      -3
+     ],
+     "result": "Đã tìm ra căn cứ và làm yếu đường rút chakra. Những người bị bắt đang ở ngay phía trước."
+    }
+   ]
+  },
+  "fire:2": {
+   "title": "Trạm cứu thương tại nhà lao",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Dẫn Y nữ Đan tới Hạ Ly",
+     "description": "Đan mang sẵn thuốc và dụng cụ. Cùng cô vào khu vừa được giải cứu; không cần chạy lên núi hái hoa rồi quay về.",
+     "name": "Y nữ Đan",
+     "distance": 12,
+     "result": "Đan đã tới vị trí cứu thương. Cô nhờ bạn cố định băng để Hạ Ly có thể đứng dậy.",
+     "offset": [
+      0,
+      12
+     ],
+     "destinationOffset": [
+      3,
+      0
+     ]
+    },
+    {
+     "mode": "hold",
+     "label": "Cùng Đan cầm máu cho Hạ Ly",
+     "description": "Giữ vị trí trong lúc Đan băng bó. Hạ Ly vẫn tỉnh và bắt đầu chỉ ra những điểm bất thường trong quân lệnh.",
+     "seconds": 5,
+     "model": "medicine",
+     "offset": [
+      3,
+      0
+     ],
+     "result": "Hạ Ly đã qua nguy hiểm. Thuốc được dùng tại hiện trường; cả nhóm có thể tiếp tục điều tra ngay."
+    }
+   ],
+   "script": [
+    [
+     "haly",
+     "Đan, giữ băng thấp hơn một chút. Ta đứng được rồi. Bà Hồng vẫn ở ngoài chứ?"
+    ],
+    [
+     "hero",
+     "Bà đang chờ tin cô. Ai đã ra lệnh bắt cô?"
+    ],
+    [
+     "haly",
+     "Hai kẻ đó mặc áo lính Hỏa, nhưng quân lệnh của chúng sai mật mã. Ta có thể chỉ cho ngươi cách nhận ra nét sửa. Đi cùng ta."
+    ]
+   ]
+  },
+  "lightning:0": {
+   "title": "Cứu trạm tiếp lôi",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Nối dây tiếp đất phía dân cư",
+     "description": "Tử Khang đang giữ bảng điều khiển. Tới cọc nối đất, nhấn E và giữ vị trí để đưa dòng điện khỏi nhà dân.",
+     "seconds": 4,
+     "model": "tools",
+     "offset": [
+      -5,
+      0
+     ],
+     "result": "Dòng điện đã rời khu dân cư. Trạm còn một bộ ngắt cần khôi phục."
+    },
+    {
+     "mode": "hold",
+     "label": "Khôi phục bộ ngắt trạm tiếp lôi",
+     "description": "Giữ bộ ngắt cho Tử Khang đóng điện. Khi đèn trạm sáng lại, bản quân lệnh mắc trong hộp điều khiển sẽ được lộ ra.",
+     "seconds": 4,
+     "model": "lantern",
+     "offset": [
+      5,
+      0
+     ],
+     "result": "Trạm tiếp lôi hoạt động trở lại. Tử Khang tìm thấy lệnh chiếm đóng Vô Danh trong hộp điều khiển."
+    }
+   ],
+   "script": [
+    [
+     "guide",
+     "Đèn đã sáng. Khoan, có mảnh giấy bị kẹp dưới bộ ngắt."
+    ],
+    [
+     "haly",
+     "Đưa ta xem. Đây là mật mã điều quân của Lôi, nhưng có một dòng được sửa sau khi đóng dấu."
+    ],
+    [
+     "hero",
+     "Ta đã thấy nét sửa giống vậy trong quân lệnh ở Hỏa. Giữ cả hai bản."
+    ]
+   ]
+  },
+  "wind:2": {
+   "title": "Chặn người đưa thư giả",
+   "steps": [
+    {
+     "mode": "chase",
+     "label": "Áp sát người đưa thư đang bỏ chạy",
+     "description": "Bắt đầu bám theo rồi chạy tới gần người đưa thư. Hắn tìm cách chạy về chốt gác; tới cuối đường hắn sẽ bị chặn, không mất dấu vĩnh viễn.",
+     "name": "Người đưa thư giả",
+     "distance": 24,
+     "result": "Đã chặn được người đưa thư trước chốt gác. Hắn gọi đồng bọn và rút vũ khí; mật thư vẫn còn nguyên."
+    }
+   ]
+  },
+  "earth:0": {
+   "title": "Chống hầm trước khi cứu người",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Giữ cột chống cho Sơn đóng nêm",
+     "description": "Tiếng gõ vẫn còn sau lớp đá. Giữ cột nứt trước; Sơn đang chuẩn bị nêm ngay bên cạnh.",
+     "seconds": 4,
+     "model": "tools",
+     "offset": [
+      -4,
+      0
+     ],
+     "result": "Mái hầm đã được chống chắc. Có thể mở khe cứu người mà không làm đá sập tiếp."
+    },
+    {
+     "mode": "hold",
+     "label": "Mở khe thông khí cho thợ mỏ",
+     "description": "Tới lớp đá vụn và nhấn E để cùng Sơn dọn một khe nhỏ. Người trong hầm sẽ đáp lại khi thông khí được khôi phục.",
+     "seconds": 4,
+     "model": "ore",
+     "offset": [
+      4,
+      -2
+     ],
+     "result": "Không khí đã vào hầm. Tiếng người sống sót vang rõ; dây cứu hộ đã được đưa tới cửa khe."
+    }
+   ]
+  },
+  "earth:1": {
+   "title": "Đoàn thợ trở về",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Đưa thợ mỏ ra khỏi vùng đá rơi",
+     "description": "Thợ mỏ đã được kéo qua khe. Đi cùng họ tới chỗ Sơn; họ nghỉ lại nếu bạn bỏ quá xa.",
+     "name": "Thợ mỏ được cứu",
+     "distance": 17,
+     "result": "Thợ mỏ đã ra khỏi vùng nguy hiểm. Họ tự trao mẫu tinh thể lấy từ thuốc nổ, không cần quay về nhận thưởng."
+    }
+   ]
+  },
+  "wood:3": {
+   "title": "Cách ly độc tố ở rễ cây",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Giữ lõi ấn tại rễ còn sống",
+     "description": "Hạ Ly và Linh Chi bắt đầu chuyển độc. Ở gần mảnh lõi để giữ cộng hưởng; rời đi sẽ tạm ngừng quá trình.",
+     "seconds": 5,
+     "model": "seal-core",
+     "offset": [
+      -5,
+      0
+     ],
+     "result": "Độc tố đã rời phần rễ sống. Phải niêm kín vật chứa trước khi cây hấp thụ trở lại."
+    },
+    {
+     "mode": "hold",
+     "label": "Niêm kín vật chứa độc tố",
+     "description": "Giữ nắp phong ấn trong lúc Linh Chi khóa bình. Màu độc sẽ tắt và những mầm mới xuất hiện sau khi hoàn tất.",
+     "seconds": 4,
+     "model": "medicine",
+     "offset": [
+      4,
+      0
+     ],
+     "result": "Độc tố đã được cách ly. Mầm cây trở lại; Hạ Ly và Linh Chi ở lại lập trạm chữa trị bên gốc cây."
+    }
+   ]
+  },
+  "ice:3": {
+   "title": "Đi cùng những người sống sót",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Dẫn người sống sót tới đèn trú bão",
+     "description": "Thiếu nữ giữ ấm cho đứa trẻ, bạn dẫn người bị thương theo đèn. Đi cùng đoàn; không có đồng hồ ép phải chạy bỏ người phía sau.",
+     "name": "Người lữ hành bị thương",
+     "distance": 21,
+     "result": "Nhóm đã tới chỗ trú bão. Tuyết Nghi gặp lại con; câu chuyện về cuộc xâm lược được kể ngay bên bếp ấm."
+    }
+   ]
+  },
+  "light:4": {
+   "title": "Đưa người bị giam ra ngoài",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Phá khóa phong ấn nhà ngục",
+     "description": "Đội chiếm đóng đã mất quyền kiểm soát. Giữ mảnh lõi để phá lớp khóa cuối, giúp những người bên trong tự mở cửa.",
+     "seconds": 4,
+     "model": "seal-core",
+     "result": "Cửa đã mở. Một cảnh vệ dẫn người bị giam ra sân và cần bạn đi cùng."
+    },
+    {
+     "mode": "escort",
+     "label": "Hộ tống cảnh vệ tới điểm tập hợp",
+     "description": "Cùng cảnh vệ đưa những người được cứu tới chỗ trưởng làng. Họ sẽ tham gia bảo vệ đường đi sau cuộc giải cứu.",
+     "name": "Cảnh vệ được giải cứu",
+     "distance": 16,
+     "result": "Những người bị giam đã tới điểm tập hợp. Cảnh vệ Quang bắt đầu bảo vệ làng và chuẩn bị hỗ trợ cuộc tiến vào Ám."
+    }
+   ]
+  },
+  "dark:3": {
+   "title": "Cắt dây khống chế Thanh Lộc",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Tháo mạch phong ấn thứ nhất",
+     "description": "Phó đoàn đã bại nhưng mạch khống chế vẫn còn. Hạ Ly theo dõi nhịp thở Thanh Lộc trong lúc bạn làm yếu đầu nối.",
+     "seconds": 4,
+     "model": "seal-core",
+     "offset": [
+      -4,
+      0
+     ],
+     "result": "Một lớp khóa trung tâm đã nứt. Đầu nối còn lại đang hút năng lượng khỏi linh thú."
+    },
+    {
+     "mode": "hold",
+     "label": "Mở lối cho Thanh Lộc rời trận",
+     "description": "Ngắt đầu nối còn lại. Thanh Lộc sẽ được đưa khỏi trận địa thay vì tiếp tục bị giữ ở đây.",
+     "seconds": 4,
+     "model": "tools",
+     "offset": [
+      4,
+      0
+     ],
+     "result": "Thanh Lộc được tự do. Mạch khóa sụp xuống, mở đường tới kẻ phản bội Băng."
+    }
+   ]
+  },
+  "dark:7": {
+   "title": "Hành lang thoát khỏi pháo đài",
+   "steps": [
+    {
+     "mode": "escort",
+     "label": "Dẫn tù nhân ra hành lang an toàn",
+     "description": "Trưởng làng và cảnh vệ đang tập hợp người bị giam. Đi cùng người cuối đoàn qua lối vừa mở trước khi gặp lại thủ lĩnh bại trận.",
+     "name": "Người dân được giải thoát",
+     "distance": 18,
+     "result": "Những người bị giam đã rời vùng nghi thức. Cảnh vệ tiếp quản việc sơ tán; bạn có thể hỏi thủ lĩnh về những biến số."
+    }
+   ]
+  },
+  "nameless:1": {
+   "title": "Dựng phòng tuyến cùng liên minh",
+   "steps": [
+    {
+     "mode": "hold",
+     "label": "Kích hoạt đèn dẫn đường sơ tán",
+     "description": "Các làng đang tập hợp. Bật đèn để dân biết lối về phía sau phòng tuyến, rồi hỗ trợ kết giới.",
+     "seconds": 3,
+     "model": "lantern",
+     "offset": [
+      -6,
+      0
+     ],
+     "result": "Đèn sơ tán đã sáng. Dân làng rời khu chiến tuyến trong trật tự."
+    },
+    {
+     "mode": "hold",
+     "label": "Cùng liên quân ổn định trụ kết giới",
+     "description": "Vô Danh Thú đang giữ khe cổng. Ở gần trụ kết giới để các đại diện truyền chakra vào cùng một nhịp.",
+     "seconds": 5,
+     "model": "seal-core",
+     "offset": [
+      6,
+      0
+     ],
+     "result": "Liên minh đã giữ được kết giới. Những người từng được cứu đứng vào phòng tuyến; đội tiên phong đang tới."
+    }
+   ]
+  }
+ },
+ "ui": {
+  "continue": "Tiếp tục tại đây",
+  "dispatchTitle": "Tin từ đồi chuông",
+  "dispatchAction": "Nhận sứ mệnh và lên đường",
+  "holding": "Ở gần để tiếp tục",
+  "return": "Quay lại điểm đánh dấu để tiếp tục",
+  "escort": "Đi cạnh người được hộ tống",
+  "chase": "Áp sát người đang bỏ chạy",
+  "action": "Thực hiện · ",
+  "enable": "Bật tuyến nhiệm vụ mới",
+  "enabled": "Đã bật tuyến nhiệm vụ mới. Tiến trình hiện tại được giữ."
+ },
+ "dispatch": [
+  [
+   "chief",
+   "Ta đến từ đầu cầu. Người dân đã lên bờ, và Tín gửi lời cảm ơn con."
+  ],
+  [
+   "hero",
+   "Kẻ phá cầu muốn chặn đường tiếp viện. Con đã thấy hắn chạy về phía những người đánh Vô Danh Thú."
+  ],
+  [
+   "chief",
+   "Vậy hãy mang mảnh lõi tới bến Thủy. Nếu có kẻ muốn ba làng đổ lỗi cho nhau, con sẽ tìm thấy dấu tay chúng ở đó. Ta chỉ con hai cách kết ấn còn lại trước khi đi."
+  ]
+ ]
+}

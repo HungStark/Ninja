@@ -14,6 +14,7 @@ import {readInterior,INTERIORS} from './adventure-interiors.js';
 import {combatExperienceRewards} from './combat-experience.js';
 import {villageEventObjective,villageEventComplete,advanceVillageEvent} from './village-events.js';
 import {newStory,readStory,HOME,openingObjective,FIRST_VILLAGES,completeSidequestTarget,villageSidequests,INTRO_SQUAD} from './journey-story.js';
+import {fieldObjective} from './field-route.js';
 import {newEquipment,readEquipment} from './equipment.js';
 import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS,regionMetrics} from './adventure-world.js';
 import {newProgression,readProgression,regionElement,gainExperience,systemLevel,learnFromBook,canLearn,addBooks,spellElement} from './progression.js';
@@ -81,7 +82,7 @@ export function deliverTreaty(save,id){
 }
 export function campaignObjective(save,{localOnly=false}={}){
   if(companionUnconscious(save))return {title:'Đưa Hạ Ly tới trạm y tế',description:'Hạ Ly đang bất tỉnh. Bế cô ấy tới trạm y tế và chữa trị đủ 60 giây trước khi tiếp tục tuyến truyện chính.',targetVillage:save.village,targetKind:'clinic'};
-  const opening=openingObjective(save);if(opening&&!localOnly)return opening;
+  const opening=openingObjective(save);if(opening&&!localOnly)return fieldObjective(save)||opening;
   const stage=campaignStage(save);
   if(!localOnly&&stage==='treaty')return {title:'Ba cường quốc đình chiến',description:'Đưa đại diện Thủy, Hỏa và Lôi trở về Vô Danh để ký cam kết rút quân.',targetVillage:'nameless',targetKind:'treaty'};
   if(!localOnly&&stage==='homecoming')return {title:'Lời hứa đầu tiên với mẹ',description:'Trở về nghĩa trang gặp mẹ cùng Hạ Ly. Từ đây, ký ức tương lai không còn chỉ sẵn đường đi.',targetVillage:'nameless',targetKind:'lore',targetId:'nameless-resident-war-cemetery'};

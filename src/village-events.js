@@ -8,6 +8,7 @@ import {botHealth} from './enemy-balance.js';
 import {readCompanionHealth} from './companion-health.js';
 import {WOOD_SACRED_TREE} from './sacred-tree.js';
 import {endingEvent} from './phoenix-blessing.js';
+import {fieldMission,fieldObjective,FIELD_ROUTE_REVISION} from './field-route.js';
 
 export const HA_LY={id:'ha-ly',name:'Hạ Ly',role:'Nữ ninja Làng Hỏa · Bạn đồng hành',village:'fire',kind:'ninja',female:true,coat:'#922638',hair:'#28160f',hairStyle:'long'};
 export const HA_LY_MOTHER={id:'fire-ha-ly-mother',name:'Bà Hồng',role:'Mẹ nuôi của Hạ Ly',kind:'healer',female:true,age:'elder',hair:'#bdb5a2',hairStyle:'bun',coat:'#7c594d',accent:'#b79e75',height:2.7,width:.94,shawl:true};
@@ -17,9 +18,10 @@ export const VILLAGE_EVENTS=PLOT.villages;
 export function villageEventStep(save,id){return Math.max(0,Math.min(VILLAGE_EVENTS[id]?.stages.length||0,save.story?.villageEvents?.[id]||0));}
 export function villageEventComplete(save,id){return !VILLAGE_EVENTS[id]||villageEventStep(save,id)>=VILLAGE_EVENTS[id].stages.length;}
 export function currentVillageEvent(save,id=save.village){const chapter=id==='nameless'&&!invasionAvailable(save)&&!save.story?.plotPreview?null:VILLAGE_EVENTS[id],step=villageEventStep(save,id),event=endingEvent(save,chapter?.stages[step]);return event?{...event,step,village:id,chapter:chapter.title,speaker:event.speaker||chapter.speaker}:null;}
-export function villageEventObjective(save,id=save.village){const e=currentVillageEvent(save,id);if(id==='wood'&&e?.requiresTournament&&!(save.arena?.completedRuns>0))return {title:'Tham gia giải đấu tại trường học',description:'Hạ Ly đang tìm phương pháp chữa cây. Gặp trọng tài ở trường học để đăng ký và thi đấu tới khi vô địch hoặc bị loại, rồi gặp lại cô trong nhà trên cây.',targetVillage:id,targetKind:'arena-host',targetId:'wood-arena-host',storyStep:e.step+1,storyTotal:VILLAGE_EVENTS[id].stages.length};return e?{title:e.title,description:e.body,targetVillage:id,targetKind:'village-event',targetId:`story-${id}-${e.step}`,interior:e.interior,storyStep:e.step+1,storyTotal:VILLAGE_EVENTS[id].stages.length} : null;}
+export function villageEventObjective(save,id=save.village){const e=currentVillageEvent(save,id);if(id==='wood'&&e?.requiresTournament&&!(save.arena?.completedRuns>0))return {title:'Tham gia giải đấu tại trường học',description:'Hạ Ly đang tìm phương pháp chữa cây. Gặp trọng tài ở trường học để đăng ký và thi đấu tới khi vô địch hoặc bị loại, rồi gặp lại cô trong nhà trên cây.',targetVillage:id,targetKind:'arena-host',targetId:'wood-arena-host',storyStep:e.step+1,storyTotal:VILLAGE_EVENTS[id].stages.length};return e?(fieldObjective(save,e)||{title:e.title,description:e.body,targetVillage:id,targetKind:'village-event',targetId:`story-${id}-${e.step}`,interior:e.interior,storyStep:e.step+1,storyTotal:VILLAGE_EVENTS[id].stages.length}):null;}
 export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=false}={}){
   const e=currentVillageEvent(save,id);if(!e||!canProgressPlot(save,id,{battleResult:victory&&!!e.battle})||save.village!==id||e.step!==expectedStep)return {ok:false,reason:'stage'};
+  const mission=fieldMission(save,e);if(mission&&!mission.complete)return {ok:false,reason:'field'};
   if(e.sealTrace&&!save.story.sealCore&&!save.story.plotPreview)return {ok:false,reason:'seal-core'};
   if(e.requiresTournament&&!(save.arena?.completedRuns>0))return {ok:false,reason:'tournament',message:'Hãy hoàn thành một lượt giải đấu tại trường học trước khi gặp lại Hạ Ly.'};
   if(id==='fire'&&[2,3].includes(e.step)&&!save.story.questItems?.includes('fire:lotus-medicine'))return {ok:false,reason:'medicine',message:'Hãy mang Hồng Liên trên đỉnh Vách Tro Hồng về cho Y nữ Đan điều chế thuốc cứu Hạ Ly.'};
@@ -37,7 +39,13 @@ export function advanceVillageEvent(save,id,expectedStep,{choiceIndex=0,victory=
   if(completed){save.gold+=45;save.xp+=40;gainExperience(save.progression,regionElement(id),40);}
   return {ok:true,completed,recruited:!!e.recruit,separated:!!e.separate,reconciled:!!e.reconcile};
 }
-export function eventSpot(id,event){
+export function eventSpot(id,event,save){
+  if(save?.story.fieldRouteRevision===FIELD_ROUTE_REVISION){
+    if(id==='fire'&&[2,3].includes(event.step))return {x:FIRE_PRISON.x,z:FIRE_PRISON.z+5};
+    if(!event.interior&&id==='water'&&event.step<=4){const base=eventSpot(id,{spot:0});return {x:base.x+[0,3,6,5,7][event.step],z:base.z+[0,-3,-2,3,5][event.step]};}
+    if(!event.interior&&id==='lightning'&&event.step<=2){const base=eventSpot(id,{spot:0});return {x:base.x+event.step*3,z:base.z+event.step*2};}
+    if(id==='earth'&&[1,2].includes(event.step)){const base=eventSpot(id,{spot:0});return {x:base.x+5,z:base.z-4};}
+  }
   if(event.interior&&event.interior!=='wood-arena')return {x:0,z:-10};
   if(event.spot==='prison'){const p=planVillageCivic(id).military.prison;return {x:p.x,z:p.z+8};}
   if(event.spot==='coast')return {x:110,z:70};

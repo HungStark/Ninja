@@ -1,0 +1,294 @@
+{
+  "ui": {
+    "accept": "Giúp một tay",
+    "leave": "Để sau",
+    "handoff": "Bắt đầu",
+    "continue": "Tiếp tục",
+    "nearby": "Việc trong làng",
+    "done": "Đã hoàn thành",
+    "open": "Chưa nhận",
+    "active": "Đang thực hiện",
+    "sideRole": "Người trong làng",
+    "patrol": "Cảnh vệ tuần tra",
+    "occupiedPatrol": "Tuần tra Trăng Khuyết",
+    "reply": "Tôi ở đây. Bắt đầu đi.",
+    "escorting": "Đi cạnh người dẫn đường. Họ sẽ chờ nếu bạn đi xa.",
+    "holding": "Ở gần điểm thao tác cho đến khi xong.",
+    "inspect": "Tới gần và kiểm tra dấu vết.",
+    "prepare": "Chuẩn bị thêm",
+    "patrolLine": "Chúng tôi đang giữ đường cho dân đi qua. Nếu cần chỉ lối, cứ xem bản đồ làng.",
+    "afterBattle": "Sau trận",
+    "guardianThreat": "Lùi lại. Có thứ gì đó đang giữ ta trong dấu ấn này.",
+    "regroup": "Tập hợp lại",
+    "regroupLine": "Cậu đã về được đây là tốt rồi. Nghỉ một lát, kiểm tra thương tích rồi hãy quay lại. Chỗ hẹn vẫn còn đó.",
+    "guardStandDown": "Tả vệ, hữu vệ, lui lại. Người giữ ấn đã vượt qua được chúng ta. Mở đường vào phòng họp."
+  },
+  "openings": {
+    "nameless": "Nắm đầu dây này. Tôi giữ phía dưới. Kéo khi nghe tôi gọi.",
+    "water": "Đừng uống. Người còn đứng được giúp tôi đưa họ lên bờ.",
+    "fire": "Nếu gặp con bé, bảo nó mẹ đợi ở ngoài. Đừng để nó đứng lên một mình.",
+    "lightning": "Đừng bước vào vũng nước. Giữ cọc nối đất trước, tôi sẽ ngắt trạm.",
+    "wind": "Người đưa thư qua trạm này chưa từng trễ. Sáng nay có hai người tới, mang cùng một dấu sáp.",
+    "earth": "Ba tiếng. Họ nghe được ta. Giữ cột, đừng phá tảng lớn.",
+    "wood": "Rễ vừa gãy thêm một đoạn. Cúi xuống mà nghe. Bên dưới vẫn còn nhựa chạy.",
+    "ice": "Dấu chân nhỏ đi về rặng tùng. Xin đừng chạy ra giữa hồ.",
+    "light": "Vũ khí chúng đang giữ là của cảnh vệ làng. Đọc dấu trên khóa sẽ biết ai còn ở trong.",
+    "dark": "Cảnh vệ Quang chờ phía sau. Ta tìm hành lang cho họ đưa dân ra trước khi tiến vào trung tâm."
+  },
+  "side": {
+    "nameless": {
+      "zone": "tea-road",
+      "title": "Đèn qua cầu",
+      "intro": "Người ở bờ bên kia cứ tưởng ánh lửa dưới dốc là lối qua. Giúp tôi đặt lại đèn trước khi có người đi theo nó.",
+      "end": "Đứng đây nhìn cũng thấy đường về. Trà hôm nay tôi đãi.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Đi cùng người cầm đèn",
+          "distance": 12
+        },
+        {
+          "mode": "hold",
+          "label": "Cài chốt đèn bên đường",
+          "seconds": 4,
+          "model": "lantern"
+        }
+      ]
+    },
+    "water": {
+      "zone": "floating-market",
+      "title": "Chuyến nước sạch",
+      "intro": "Để họ tự tới lấy thì phải qua chỗ thùng độc. Tôi đi cùng bạn.",
+      "end": "Thế là họ có nước uống trước khi biết chuyện này do ai gây ra.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Đưa người vận chuyển tới điểm phát nước",
+          "distance": 14
+        },
+        {
+          "mode": "hold",
+          "label": "Mở vòi nước sạch",
+          "seconds": 4,
+          "model": "medicine"
+        }
+      ]
+    },
+    "fire": {
+      "zone": "forge",
+      "title": "Lò rèn tắt lửa",
+      "intro": "Tôi dập lò rồi. Giữ tay đòn giúp tôi để tôi rút chốt cũ ra.",
+      "end": "Nghe tiếng đều rồi đấy. Sáng mai lại có cày cho người ở sườn đồi.",
+      "steps": [
+        {
+          "mode": "hold",
+          "label": "Giữ cửa gió",
+          "seconds": 4,
+          "model": "tools"
+        },
+        {
+          "mode": "hold",
+          "label": "Giữ tay đòn khởi động lại lò",
+          "seconds": 5,
+          "model": "lantern"
+        }
+      ]
+    },
+    "lightning": {
+      "zone": "storm-shelter",
+      "title": "Đèn báo giông",
+      "intro": "Ai đi ngoài đồng chỉ thấy một màn mưa. Đèn ngoài đường phải dẫn được họ về mái trú.",
+      "end": "Họ đã đổi hướng về đây rồi. Để đèn cháy qua đêm.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Đi cùng người cầm đèn tới điểm cao",
+          "distance": 15
+        },
+        {
+          "mode": "hold",
+          "label": "Bật đèn báo giông",
+          "seconds": 4,
+          "model": "lantern"
+        }
+      ]
+    },
+    "wind": {
+      "zone": "kite-meadow",
+      "title": "Tín hiệu gió",
+      "intro": "Theo tôi ra sườn. Đừng giật dây cho đến khi cánh quay cùng chiều.",
+      "end": "Bên kia đã đáp lại. Chuyến đi tiếp theo có thể xuất phát.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Đi theo người chỉ đường ra sườn",
+          "distance": 16
+        },
+        {
+          "mode": "hold",
+          "label": "Giữ chốt tín hiệu gió",
+          "seconds": 5,
+          "model": "cloth"
+        }
+      ]
+    },
+    "earth": {
+      "zone": "quarry",
+      "title": "Nhịp gõ dưới đất",
+      "intro": "Hai lần gõ ngắn là tôi. Hãy nghe xem bên trong có trả lời trước khi kéo chốt.",
+      "end": "Lối này thông rồi. Không ai phải một mình xuống tìm nữa.",
+      "steps": [
+        {
+          "mode": "interact",
+          "label": "Kiểm tra dấu chân ngoài cửa hầm",
+          "model": "notes"
+        },
+        {
+          "mode": "hold",
+          "label": "Giữ cột mở lối",
+          "seconds": 5,
+          "model": "tools"
+        },
+        {
+          "mode": "escort",
+          "label": "Đưa thợ kiểm tra ra chỗ an toàn",
+          "distance": 14
+        }
+      ]
+    },
+    "wood": {
+      "zone": "herb-garden",
+      "title": "Vườn ươm dự phòng",
+      "intro": "Mang khay ra khỏi vũng nước trước. Nếu cây lớn khỏe lại, ta vẫn có thể trả các mầm về.",
+      "end": "Có chỗ này, chúng ta không đặt tất cả lên một gốc cây nữa.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Đi cùng người mang khay giống",
+          "distance": 13
+        },
+        {
+          "mode": "hold",
+          "label": "Tưới khay ở vườn dự phòng",
+          "seconds": 4,
+          "model": "seeds"
+        }
+      ]
+    },
+    "ice": {
+      "zone": "hearth",
+      "title": "Lửa qua đêm",
+      "intro": "Anh đánh xe vẫn ở ngoài. Tôi đã chuẩn bị củi, chỉ cần đưa người về trước.",
+      "end": "Cứ để ngọn lửa nhỏ thôi. Người sau vẫn còn thấy đường.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Đưa người lữ hành về gần bếp",
+          "distance": 14
+        },
+        {
+          "mode": "hold",
+          "label": "Che gió cho bếp bén lửa",
+          "seconds": 5,
+          "model": "lantern"
+        }
+      ]
+    },
+    "light": {
+      "zone": "glass-bridge",
+      "title": "Lối phản quang",
+      "intro": "Đường này chưa đủ sáng để nhìn vết nứt. Soi đèn lên tấm chốt kia giúp tôi.",
+      "end": "Cảnh vệ có thể dẫn cả nhóm trưởng lão qua rồi.",
+      "steps": [
+        {
+          "mode": "interact",
+          "label": "Kiểm tra vết nứt ở chốt cầu",
+          "model": "notes"
+        },
+        {
+          "mode": "hold",
+          "label": "Cố định đèn phản quang",
+          "seconds": 4,
+          "model": "lantern"
+        }
+      ]
+    },
+    "dark": {
+      "zone": "lantern-street",
+      "title": "Phố đèn trở sáng",
+      "intro": "Họ vẫn nhìn những cửa đóng mà tưởng lính còn ở ngoài. Ta thắp đèn đầu phố để họ biết có thể bước ra.",
+      "end": "Ngày mai tôi sẽ treo thêm một ngọn ở mỗi cửa có người về.",
+      "steps": [
+        {
+          "mode": "escort",
+          "label": "Đi cùng người mở cửa qua đoạn tối",
+          "distance": 15
+        },
+        {
+          "mode": "hold",
+          "label": "Thắp đèn đầu phố",
+          "seconds": 5,
+          "model": "lantern"
+        }
+      ]
+    }
+  },
+  "aftermath": {
+    "water-base": [
+      "guide",
+      "Họ đã thở đều lại. Đừng tháo hết dây vội, tôi sẽ gọi người tới đưa họ lên bờ."
+    ],
+    "fire-jail": [
+      "haly",
+      "Chìa khóa ở cạnh cửa. Đừng đỡ ta đứng lên vội. Hãy đưa Đan vào, ta có chuyện cần nói khi tỉnh táo hơn."
+    ],
+    "fire-general": [
+      "haly",
+      "Giữ cuốn sổ. Các dấu sửa còn nguyên. Ta muốn tự đứng trước Xích Nham và nói tên những người bị bỏ lại."
+    ],
+    "wind-courier": [
+      "haly",
+      "Đừng đuổi theo nữa. Nhìn dấu trên phong ấn này. Nó dẫn tới chỗ Phong Ưng đang bị khống chế."
+    ],
+    "wind-eagle": [
+      "guardian",
+      "Gió đã trở lại. Hãy nói với Thanh Vũ, đường thư qua núi đã thông."
+    ],
+    "earth-base": [
+      "haly",
+      "Dây chuyền đã dừng. Nhưng vết bánh xe vẫn còn mới. Một chuyến quặng đã rời đi trước chúng ta."
+    ],
+    "ice-coast": [
+      "haly",
+      "Chúng ta đã dẹp được lính gác. Nhìn ra biển kìa, dây neo trên thuyền đang được kéo lên."
+    ],
+    "light-battalion": [
+      "haly",
+      "Lối vào nhà họp đã mở. Những người bị giam vẫn còn ở phía sau. Ta vào trước khi phó đoàn khóa lại cửa."
+    ],
+    "crescent-light": [
+      "guardian",
+      "Lớp ấn đã vỡ. Hãy mở nhà ngục và đưa những người còn sống ra ánh sáng."
+    ],
+    "dark-battalion": [
+      "haly",
+      "Họ rút khỏi đường chính. Dấu phong ấn vẫn sáng ở phía trước, dẫn thẳng tới người giữ Thanh Lộc."
+    ],
+    "crescent-wood": [
+      "haly",
+      "Thanh Lộc còn thở. Hai mạch vẫn giữ nó tại chỗ. Ta ngắt từng mạch rồi đưa nó đi."
+    ],
+    "crescent-ice": [
+      "guardian",
+      "Ta không còn nghe lệnh của hắn nữa. Dấu ấn kia còn giữ một phần năng lượng. Đừng chạm vào nó khi chưa đọc hết."
+    ],
+    "crescent-gatekeeper": [
+      "guardian",
+      "Ta đã thoát, nhưng dòng lực không dừng lại. Đưa dân ra ngoài trước, rồi hãy hỏi hắn cánh cổng đang ở đâu."
+    ],
+    "invasion-vanguard": [
+      "hero",
+      "Đội tiên phong đã lùi. Kiểm tra người bị thương và giữ đèn sáng cho tới khi mọi người về đủ."
+    ]
+  }
+}

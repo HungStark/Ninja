@@ -10,6 +10,8 @@ import {PLOT_VERSION,WAR_VILLAGES,ALLIANCE_VILLAGES,plotEventComplete} from './c
 import {readCompanionHealth,companionUnconscious} from './companion-health.js';
 import {legionGuardId} from './island-occupation.js';
 import {companionSacrificed} from './phoenix-blessing.js';
+import {FIELD_ROUTE_REVISION,readFieldMissions} from './field-route.js';
+import {readCinematicSides} from './cinematic-route.js';
 
 export const MOTHER_ID='nameless-resident-war-cemetery';
 export const HOME={x:-33,z:58,spawn:[-33,63]};
@@ -17,7 +19,7 @@ export const STARTER_CHOICES=[{id:'fire-volley',name:'Hỏa Vũ Liên Châu',ele
 export const INTRO_SQUAD=STARTER_CHOICES.map((s,i)=>({name:['Hỏa nhẫn đột kích','Thủy nhẫn đột kích','Lôi nhẫn đột kích'][i],element:s.element,village:s.element,hp:botHealth(85),spellIds:[s.id],damageMultiplier:.32,sealDelay:.85,restTime:5+i*.7,weaponInterval:4,initialDelay:2+i*2}));
 export const FIRST_VILLAGES=['water','fire','lightning'];
 const STAGES=['mother','chief','guardian','report','infiltrate'];
-export function newStory(){return {revision:1,plotVersion:PLOT_VERSION,stage:'mother',starter:null,guardianRestored:false,sealCore:false,sealTraces:[],homecomingDone:false,alliances:[],peaceSeals:[],guardianOrders:[],treaties:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,villageOrder:[],villageEvents:{},companion:{recruited:false,phase:'with-party',...readCompanionHealth()}};}
+export function newStory(){return {revision:1,plotVersion:PLOT_VERSION,stage:'mother',starter:null,guardianRestored:false,sealCore:false,sealTraces:[],homecomingDone:false,alliances:[],peaceSeals:[],guardianOrders:[],treaties:[],defeatedGuards:[],sidequests:{},questItems:[],earlyTargets:[],earlyVillageQuests:[],trackedQuest:null,cinematicSides:{},villageOrder:[],villageEvents:{},companion:{recruited:false,phase:'with-party',...readCompanionHealth()}};}
 export function readStory(raw,save){
   const s=newStory();
   if(raw?.revision!==1){
@@ -26,6 +28,8 @@ export function readStory(raw,save){
     s.peaceSeals=Object.keys(save.bosses).filter(id=>id!=='nameless');s.sealCore=true;s.questItems.push('nameless:seal-core');if(save.expeditions?.fire===3)s.questItems.push('fire:lotus-medicine');return s;
   }
   s.stage=STAGES.includes(raw.stage)?raw.stage:'mother';
+  s.cinematicSides=readCinematicSides(raw.cinematicSides);
+  if(raw.fieldRouteRevision===FIELD_ROUTE_REVISION){s.fieldRouteRevision=FIELD_ROUTE_REVISION;s.fieldMissions=readFieldMissions(raw.fieldMissions);}
   s.guardianOrders=[...new Set((Array.isArray(raw.guardianOrders)?raw.guardianOrders:[]).filter(id=>REGIONS[id]&&id!=='nameless'))];
   s.treaties=readTreaties(raw.treaties);
   s.starter=STARTER_CHOICES.some(c=>c.id===raw.starter)?raw.starter:null;
@@ -111,7 +115,7 @@ export function villageGuards(id){
   }
   const length=Math.hypot(r.boss.x,r.boss.z)||1,fx=-r.boss.x/length,fz=-r.boss.z/length;
   if(id!=='nameless')for(let i=0;i<GUARDIAN_GUARD_COUNT;i++){const side=i?-1:1;guards.push({id:id+'-guardian-sentry-'+(i+1),village:id,element:id,name:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ'),x:r.boss.x+fx*10+fz*side*9,z:r.boss.z+fz*10-fx*side*9,guardRole:'guardian',disguise:null,kind:'village-guard',label:'Hộ vệ linh thú · '+(i?'Hữu vệ':'Tả vệ')});}
-  for(let i=0;i<(id==='fire'?2:1);i++)guards.push({id:id+'-jailer-'+(i+1),village:id,element:id==='nameless'?'wind':id,name:id==='fire'?'Nội gián Trăng Khuyết':'Cai ngục',kind:'village-guard',guardRole:'jailer',disguise:null,x:0,z:0,label:id==='fire'?'Kẻ bắt giữ Hạ Ly':'Cai ngục'});
+  for(let i=0;i<(id==='nameless'?0:id==='fire'?2:1);i++)guards.push({id:id+'-jailer-'+(i+1),village:id,element:id==='nameless'?'wind':id,name:id==='fire'?'Nội gián Trăng Khuyết':'Cai ngục',kind:'village-guard',guardRole:'jailer',disguise:null,x:0,z:0,label:id==='fire'?'Kẻ bắt giữ Hạ Ly':'Cai ngục'});
   return guards;
 }
 const taskByActivity={
