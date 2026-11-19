@@ -12,7 +12,12 @@ export function createQuestItem({model='satchel',name=''}){
   const box=(m,x,y,z,w,h,d)=>add(new T.BoxGeometry(w,h,d),m,x,y,z);
   const cyl=(m,x,y,z,r,h)=>add(new T.CylinderGeometry(r,r,h,8),m,x,y,z);
   const wood=M('#80613f'),linen=M('#d5c59b'),dark=M('#454b46'),green=M('#627947'),metal=M('#a1abb1',{metalness:.5,roughness:.4});
-  if(model==='lotus'){
+  if(model==='seal-core'){
+    const stone=M('#80c6bd',{metalness:.35,roughness:.3,emissive:'#397c78',emissiveIntensity:.35});
+    const core=add(new T.OctahedronGeometry(.36),stone,0,.45,0);core.rotation.z=.2;
+    const ring=add(new T.TorusGeometry(.4,.035,6,24),M('#cfb77f',{metalness:.5,roughness:.4}),0,.45,0);ring.rotation.x=.3;
+    for(const side of [-1,1])box(linen,side*.17,.45,.28,.035,.28,.025).rotation.z=side*.5;
+  }else if(model==='lotus'){
     const stem=cyl(green,0,.52,0,.035,1.04),petalGeometry=new T.SphereGeometry(1,10,7),petal=M('#d95c79'),heart=M('#ffc66a',{emissive:'#db681c',emissiveIntensity:.35});
     for(let k=0;k<8;k++){const a=k*Math.PI/4,o=add(petalGeometry,petal,Math.sin(a)*.18,1.04,Math.cos(a)*.18,.095,.25,.055);o.rotation.set(Math.cos(a)*.55,0,-Math.sin(a)*.55);}
     add(new T.SphereGeometry(.12,10,7),heart,0,1.08,0);

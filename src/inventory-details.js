@@ -1,8 +1,8 @@
 import {armorById,armguardById,shurikenById,equipmentState} from './equipment.js';
 import {flaskState} from './healing-flask.js';
 import {requiredLevel,spellElement,systemLevel} from './progression.js';
-import {villageSidequests} from './journey-story.js';
-import {REGIONS} from './adventure-world.js';
+import {questInventoryItem,worldItemIcon} from './inventory-visuals.js';
+import {shurikenIcon} from './shuriken-icon.js';
 import {resistanceText,bonusText,itemGlyph} from './equipment-ui.js';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -17,7 +17,7 @@ export function inventoryItemDetails(save,kind,id){
   }else if(kind==='shuriken'){
     const item=shurikenById(id);if(!item||!(e.ammo[id]>0))return null;
     title=item.name;stats=[item.damage+' sát thương','Đang có: '+e.ammo[id]+' chiếc'];description='Được sử dụng khi tấn công mà chưa kết đủ ấn. Không tiêu hao mana.';
-    visual=`<span class="inventory-item-symbol" style="color:${item.color}">✦</span>`;action='equip';equipped=e.shuriken===id;
+    visual=`<div class="inventory-ammo-visual" style="color:${item.color}">${shurikenIcon({tinted:true,hole:'#183037'})}</div>`;action='equip';equipped=e.shuriken===id;
   }else if(kind==='bag'){
     title=equipment.bag.name;stats=[equipment.bag.capacity+' chỗ đựng phi tiêu','Đang mang: '+equipment.count+' / '+equipment.bag.capacity];
     description='Tự động sử dụng túi tốt nhất đã sở hữu. Túi là nâng cấp sức chứa, không chiếm ô hành trang và không thể đổi xuống cấp thấp hơn.';visual=itemGlyph('bag');
@@ -28,13 +28,13 @@ export function inventoryItemDetails(save,kind,id){
   }else if(kind==='book'){
     if(!save.progression.books.includes(id))return null;
     const spell=globalThis.SealGameCore?.spells.find(s=>s.id===id);title=spell?.name||id;description=spell?.subtitle||'Sách truyền thụ nhẫn thuật.';
-    stats=['Cần cấp '+requiredLevel(id),'Cấp hệ hiện tại: '+systemLevel(save.progression,spellElement(id))];visual='<span class="inventory-item-symbol">▤</span>';action='progression';
+    stats=['Cần cấp '+requiredLevel(id),'Cấp hệ hiện tại: '+systemLevel(save.progression,spellElement(id))];visual=worldItemIcon('scroll',title);action='progression';
   }else if(kind==='quest'){
     if(!save.story.questItems.includes(id))return null;
-    const q=Object.keys(REGIONS).flatMap(v=>villageSidequests(v)).find(q=>q.id===id);
-    title=id==='nameless:seal-core'?'Mảnh lõi ấn Vô Danh':id==='fire:hong-lien'?'Hồng Liên':id==='fire:lotus-medicine'?'Thuốc Hồng Liên':q?.targetName||id;
+    const {name,model,quest:q}=questInventoryItem(id);
+    title=name;
     description=id==='nameless:seal-core'?'Vô Danh Thú trao sau khi được cứu. Cộng hưởng với phong ấn bất thường; dùng tại các dấu vết trong tuyến truyện chính để phát hiện ma lực.':id==='fire:hong-lien'?'Mang Hồng Liên tới Y nữ Đan để điều chế thuốc cứu Hạ Ly.':id==='fire:lotus-medicine'?'Thuốc đã điều chế. Mang tới chữa thương cho Hạ Ly trong nhà lao.':q?.description||'Vật phẩm nhiệm vụ. Mang về cho người nhờ giúp để nhận thưởng.';
-    stats=q?['Người giao việc: '+q.giverName]:[];visual='<span class="inventory-item-symbol">'+(id==='fire:hong-lien'?'✿':id==='fire:lotus-medicine'?'⚱':'▣')+'</span>';
+    stats=q?['Người giao việc: '+q.giverName]:[];visual=worldItemIcon(model,title);
   }else return null;
   const compare=current?`<aside class="inventory-item-current"><small>Đang sử dụng</small><strong>${esc(current.name)}</strong><p>${esc(kind==='armor'?resistanceText(current):bonusText(current))}</p></aside>`:'';
   return {title,kind,id,action,equipped,html:`<div class="inventory-item-visual">${visual}</div><div class="inventory-item-copy"><div class="inventory-item-stats">${stats.map(s=>`<span>${esc(s)}</span>`).join('')}</div><p>${esc(description)}</p>${compare}</div>`};

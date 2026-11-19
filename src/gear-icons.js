@@ -2,6 +2,7 @@ import * as T from 'three';
 import {armorById,armguardById} from './equipment.js';
 import {createArmorWardrobe} from './hero-armor.js';
 import {createArmguardModel} from './armguard-model.js';
+import {createQuestItem} from './quest-items.js';
 
 const cache=new Map();let renderer,scene,camera;
 function picture(kind,item){
@@ -22,16 +23,21 @@ function picture(kind,item){
     }else createArmorWardrobe(anchors).build(item);
     anchors.bracers.forEach(g=>g.visible=false);anchors.shins.forEach(g=>g.visible=false);
     root.rotation.y=-.3;camera.position.set(0,1.76,5);camera.lookAt(0,1.76,0);camera.zoom=1.06;
-  }else{
+  }else if(kind==='armguard'){
     for(const side of [-1,1]){const model=createArmguardModel(item);model.position.set(side*.19,0,0);model.rotation.z=-side*.18;model.rotation.y=-side*.28;root.add(model);}
     camera.position.set(0,-.22,4);camera.lookAt(0,-.22,0);camera.zoom=2.3;
+  }else{
+    root.add(createQuestItem({model:item.id}));
+    const bounds=new T.Box3().setFromObject(root),center=bounds.getCenter(new T.Vector3()),radius=bounds.getBoundingSphere(new T.Sphere()).radius;
+    camera.position.copy(center).add(new T.Vector3(2,1.8,3));camera.lookAt(center);camera.zoom=.66/Math.max(radius,.1);
   }
   camera.updateProjectionMatrix();renderer.render(scene,camera);const url=renderer.domElement.toDataURL('image/png');cache.set(key,url);
-  const ownedMaterials=new Set();root.traverse(o=>{o.geometry?.dispose();if(kind==='armor'&&o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>ownedMaterials.add(m));});ownedMaterials.forEach(m=>m.dispose());scene.remove(root);
+  const ownedMaterials=new Set();root.traverse(o=>{o.geometry?.dispose();if(kind!=='armguard'&&o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>ownedMaterials.add(m));});ownedMaterials.forEach(m=>m.dispose());scene.remove(root);
   return url;
 }
 export function fillGearIcons(container){
   for(const img of container.querySelectorAll('img[data-gear-icon]')){
     const kind=img.dataset.kind,item=(kind==='armor'?armorById:armguardById)(img.dataset.gearIcon);if(item)img.src=picture(kind,item);
   }
+  for(const img of container.querySelectorAll('img[data-item-model]'))img.src=picture('quest',{id:img.dataset.itemModel});
 }
