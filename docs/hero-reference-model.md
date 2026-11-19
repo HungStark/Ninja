@@ -4,33 +4,32 @@ The game loads `assets/hero-ninja-reference.glb`. This is a standalone GLB with
 embedded textures, a skinned outfit and the existing 113-joint humanoid rig.
 `hero-ninja.glb` and `hero-ninja-simple.glb` remain available as source assets.
 
-The new model adds layered black hair, a cloth mask, a high collar with two
-closures, a short asymmetric mantle with crimson piping and a shoulder mark,
-crossed chest straps, a waist belt, split hip panels, fingerless glove guards,
-and laced boots with shaped soles. Native red eyes and the blink morph survive.
-The equipped shuriken pouch remains controlled by the inventory.
+The model uses a high ponytail, fitted face wrap, wider shoulders, crossed
+harness, layered pauldrons, and a maple-print cape with a torn hem. The white
+fox charm is fixed to the belt. The equipped pouch remains controlled by the
+inventory. The original red eyes and eyelid morphs are preserved.
 
-Regenerate with Blender 4.5:
+Regenerate the model and the editable studio scene with Blender:
 
 ```
 blender --background --python tools/build-hero-reference.py
-node tools/preview-hero-reference.cjs after
+blender --background --factory-startup --python tools/preview-maple-blender.py
+node tools/preview-hero-reference.cjs maple
 node tools/build-portraits.mjs --hero
 node tools/build-vercel.mjs
 node tools/build-android.mjs
 ```
 
-The generator reads the optimized source, writes the derived GLB, and records
-its size and geometry cost in `assets/hero-reference-report.json`. It batches
-small details by material and joint family. Eyelid topology, skin joint order,
-and inverse bind matrices are preserved. The red ankle cuffs reuse source cuff
-weights to follow the trousers during movement.
+The generator writes the model size and geometry cost to
+`assets/hero-reference-report.json`. Maple fabric has a 256 × 512 color and
+emissive print, with 128 × 128 woven normals and packed occlusion, roughness,
+and metallic channels. The studio scene `assets/hero-maple.blend` packs its
+textures and includes front, rear, and portrait cameras.
 
-`src/hero.js` loads the new asset and hides the traveler mantle, chest harness
-and hip panels while another armor is equipped. This leaves space for the
-existing armor geometry. The integrated GLB mask replaces the old runtime mask.
-The same model appears in exploration, combat, equipment preview and baked
-dialogue portraits. Web and Android build lists include the new runtime asset.
+`src/hero.js` hides the traveler harness, hip panels, pauldrons, bracers,
+and greaves when village armor occupies those areas. The cape, scarf and fox
+charm remain visible across equipment sets. The same model appears in
+exploration, combat, equipment preview, and baked dialogue portraits.
 
 Hero portraits use only the fixed black outfit and hair colors, with one preset
 per armor. Portrait keys ignore old saved color selections. The portrait builder
@@ -46,7 +45,5 @@ node tests/hero-combat-motion-browser.cjs
 node tests/model-portraits-core.mjs
 ```
 
-Preview captures are written to `test-results/hero-reference/after/`, including
-front, side, back, close portrait, sprint, jump, seal and equipped armor views.
-The design follows the supplied reference; it does not reproduce the original
-illustration's high-detail sculpt or add its full set of facial expressions.
+The preview script captures front, side, back, portrait, sprint, jump, seal, and
+equipped armor views under `test-results/hero-reference/`.

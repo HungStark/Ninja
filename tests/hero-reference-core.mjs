@@ -26,9 +26,21 @@ for(const i of active)for(const p of hero.json.meshes[i].primitives){
  assert.ok(positions.every(p=>p.every(Number.isFinite)));assert.ok(indices.every(([i])=>i>=0&&i<positions.length));assert.ok(weights.every(w=>Math.abs(w.reduce((a,b)=>a+b,0)-1)<.002));assert.ok(joints.every(row=>row.every(j=>j<hero.json.skins[0].joints.length)));triangles+=indices.length/3;
 }
 assert.ok(triangles<28000,'single hero geometry budget');
-for(const part of ['Hair','Mask','Collar','Mantle','Harness','Belt','HipPanels','Gloves','Boots','Hood','KageArms','KageSleeves','KageSash','KageShoulderMetal','KageArmMetal','KageGreavesMetal','Katana'])assert.ok([...active].some(i=>hero.json.meshes[i].name==='HeroReference'+part));
-assert.equal(hero.json.extras.heroReference.style,'kage-reference-sheet');
-const sash=hero.json.meshes.find(m=>m.name==='HeroReferenceKageSash');assert.deepEqual(sash.extras.targetNames,['KageFlutter']);assert.ok(values(hero,sash.primitives[0].targets[0].POSITION).some(row=>row.some(v=>Math.abs(v)>.01)),'cloth has a real deformation target');
+for(const part of ['Hair','PonytailTie','Mask','Collar','Harness','Belt','HipPanels','Gloves','Boots','MapleArms','MapleSleeves','MapleCape','MapleShoulderMetal','MapleBracerMetal','MapleGreavesMetal','FoxCharm'])assert.ok([...active].some(i=>hero.json.meshes[i].name==='HeroReference'+part),part);
+assert.equal(hero.json.extras.heroReference.style,'maple-reference-sheet');
+const cape=hero.json.meshes.find(m=>m.name==='HeroReferenceMapleCape');
+assert.deepEqual(cape.extras.targetNames,['MapleFlutter']);
+const cloth=cape.primitives[0];
+assert.ok(values(hero,cloth.targets[0].POSITION).some(row=>row.some(v=>Math.abs(v)>.01)),'cape has a deformation target');
+const uv=values(hero,cloth.attributes.TEXCOORD_0);
+assert.ok(uv.every(pair=>pair.every(v=>v>=0&&v<=1))&&uv.some(([u,v])=>u===1&&v===1));
+const pbr=hero.json.materials[cloth.material];
+for(const map of [pbr.pbrMetallicRoughness.baseColorTexture,pbr.pbrMetallicRoughness.metallicRoughnessTexture,pbr.normalTexture,pbr.occlusionTexture,pbr.emissiveTexture]){
+ const embedded=hero.json.images[hero.json.textures[map.index].source];
+ assert.equal(embedded.mimeType,'image/png');
+ const view=hero.json.bufferViews[embedded.bufferView];
+ assert.equal(hero.bin.toString('ascii',view.byteOffset+1,view.byteOffset+4),'PNG');
+}
 assert.ok(hero.json.extras.heroReference.integratedMask);
 assert.ok(hero.json.scenes[hero.json.scene||0].extras.heroReference.integratedMask,'GLTFLoader scene exposes the integrated-mask flag');
 console.log('PASS: reference GLB keeps rig, bind matrices, native face and blink; valid skinned geometry, embedded textures and mobile geometry/file budgets. '+triangles+' triangles.');

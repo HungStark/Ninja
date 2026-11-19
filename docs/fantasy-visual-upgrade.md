@@ -1,14 +1,13 @@
-# Hình ảnh fantasy và nhân vật Kage
+# Hình ảnh fantasy và nhân vật chính
 
-Ninja chính được dựng lại theo bảng tham khảo ở phong cách 3D cách điệu: mũ trùm có đường gấp, mặt nạ, khăn đỏ sẫm, tay áo ngắn, dây đeo chéo, tà áo tách lớp, dây thắt lưng, giáp vai bất đối xứng, giáp tay/chân và katana đeo sau lưng. Katana hiện là phụ kiện hiển thị. Tà khăn có morph chuyển động nhẹ.
+Tạo hình ninja theo bảng tham khảo gồm tóc đen buộc cao, khăn che mặt, vai rộng hơn, giáp vai viền đồng, mặt nạ hồ ly ở thắt lưng và áo choàng đỏ họa tiết lá phong. Áo choàng có chuyển động nhẹ theo tư thế và tốc độ.
 
-- `assets/hero-kage.blend`: nhân vật có rig, pose xem trước, vật liệu và camera để chỉnh sửa trong Blender.
-- `assets/hero-ninja-reference.glb`: tài nguyên đang dùng trong game; 25.832 tam giác, 4.849.060 byte, giữ nguyên 113 xương, bind matrices, biểu cảm mắt và khớp ngón tay.
-- `assets/hero-kage-preview.png`: ảnh thật từ Three.js, cùng bộ dựng hình của game.
-- `tools/build-hero-reference.py` và `tools/hero-kage-outfit.py`: nguồn dựng GLB từ model gốc.
-- `tools/preview-kage-blender.py`: đưa GLB vào workshop Blender có thể chỉnh sửa.
+- `assets/hero-maple.blend` chứa rig, vật liệu đã đóng gói và camera để chỉnh sửa trong Blender.
+- `assets/hero-ninja-reference.glb` là model dùng trong game, giữ 113 xương, các khớp ngón tay và chuyển động chớp mắt.
+- `assets/hero-maple-preview.png` và `assets/hero-maple-back.png` là hai góc xem từ Blender.
+- `tools/build-hero-reference.py`, `tools/hero-maple-outfit.py` và `tools/hero-maple-textures.py` dựng model và texture. `tools/preview-maple-blender.py` dựng cảnh xem trước.
 
-Trang phục ninja/NPC từng làng, màu áo do người chơi chọn và bộ trang bị đã lưu tiếp tục dùng dữ liệu hiện có. Các lớp giáp Kage, dây đeo, katana và tà áo được ẩn khi mặc giáp làng để nhường chỗ cho bộ giáp đang trang bị. Mũ trùm và tay áo ngắn vẫn thuộc trang phục nền.
+Giáp làng thay các lớp giáp Lữ Khách tương ứng. Khăn, áo choàng và mặt nạ hồ ly đi cùng các bộ trang bị.
 
 ## Cảnh quan
 

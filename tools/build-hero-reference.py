@@ -47,8 +47,9 @@ for key, metallic in [('fabric',0), ('metal',.55)]:
 # Batch all disconnected details by material and bone family, avoiding a draw
 # for every stitch, lace or buckle. Colors are authored in linear vertex RGB.
 groups = {}
-def geometry(label, vertices, triangles, color='cloth', bone='C_Chest', metal=False, smooth=False):
-    key=(label,'metal' if metal else 'fabric')
+def geometry(label, vertices, triangles, color='cloth', bone='C_Chest', metal=False, smooth=False,
+             material=None, uv=None):
+    key=(label,material or ('metal' if metal else 'fabric'))
     a,ix = groups.setdefault(key, ({k:[] for k in ('POSITION','NORMAL','TEXCOORD_0','COLOR_0','JOINTS_0','WEIGHTS_0')}, []))
     normals = [Vector((0,0,0)) for _ in vertices]
     if smooth:
@@ -56,6 +57,7 @@ def geometry(label, vertices, triangles, color='cloth', bone='C_Chest', metal=Fa
             p,q,r = (Vector(vertices[i]) for i in tri)
             normal = (q-p).cross(r-p)
             for i in tri:normals[i] += normal
+    color_rgb = linear(COLORS.get(color,color))
     for tri in triangles:
         p,q,r = (Vector(vertices[i]) for i in tri)
         normal = (q-p).cross(r-p).normalized()
@@ -63,8 +65,8 @@ def geometry(label, vertices, triangles, color='cloth', bone='C_Chest', metal=Fa
             ix.append(len(a['POSITION']))
             a['POSITION'].append(tuple(vertices[i]))
             a['NORMAL'].append(tuple(normals[i].normalized() if smooth else normal))
-            a['TEXCOORD_0'].append((0,0))
-            a['COLOR_0'].append(linear(COLORS.get(color,color)))
+            a['TEXCOORD_0'].append(uv[i] if uv is not None else (0,0))
+            a['COLOR_0'].append(color_rgb)
             influences=bone(vertices[i]) if callable(bone) else ((joint(bone),0,0,0),(1,0,0,0))
             a['JOINTS_0'].append(influences[0])
             a['WEIGHTS_0'].append(influences[1])
@@ -153,24 +155,36 @@ for row in range(rings-1):
         f.extend([(a,b,a+sides),(b,b+sides,a+sides)])
 geometry('Hair',v,f,'hair','C_Head',smooth=True)
 
-def lock(rows,shade='hair'):
+def lock(rows,shade='hair',curved=False):
+    if curved:
+        anchors = [Vector(p) for p in rows]
+        rows = []
+        for i in range(len(anchors)-1):
+            prev, start, end, after = (anchors[max(0,i-1)], anchors[i], anchors[i+1],
+                                       anchors[min(i+2,len(anchors)-1)])
+            rows.append(start)
+            rows.append((9*(start+end)-prev-after)/16)
+        rows.append(anchors[-1])
     v=[]
+    sides=6 if curved else 5
     for i,(x,y,z,w,d) in enumerate(rows):
         p=Vector((x,y,z))
         tangent=(Vector(rows[min(i+1,len(rows)-1)][:3])-Vector(rows[max(0,i-1)][:3])).normalized()
         across=Vector((0,0,1)).cross(tangent).normalized();depth=tangent.cross(across).normalized()
-        v.extend([tuple(p+across*a*w+depth*b*d) for a,b in [(-1,0),(-.4,.8),(.35,1),(1,0),(0,-.55)]])
+        for j in range(sides):
+            a=j*math.tau/sides
+            v.append(tuple(p+across*math.cos(a)*max(.0007,w)+depth*math.sin(a)*max(.0007,d)))
     f=[]
     for row in range(len(rows)-1):
-        for i in range(5):
-            a=row*5+i;b=row*5+(i+1)%5;f.extend([(a,b,a+5),(b,b+5,a+5)])
-    f.extend([(0,2,1),(0,3,2),(0,4,3)])
+        for i in range(sides):
+            a=row*sides+i;b=row*sides+(i+1)%sides;f.extend([(a,b,a+sides),(b,b+sides,a+sides)])
+    f.extend((0,i+1,i) for i in range(1,sides-1))
     geometry('Hair',v,f,shade,'C_Head',smooth=True)
 
 for i in range(8):
     x=(i-3.5)*.027;tip=1.635+(.018 if i%2 else 0)-(.025 if i in (0,7) else 0)
     sweep=[.008,-.012,.014,-.006,.018,.004,-.01,.006][i]
-    lock([(x+sweep,1.728+(i%3)*.012,.067,.022,.012),(x+.004,1.696,.101,.023,.015),(x-.004+sweep,1.665,.111,.018,.013),(x-.012+sweep,tip,.101,.001,.001)],'hair_light' if i in (1,5) else 'hair')
+    lock([(x+sweep,1.728+(i%3)*.012,.067,.022,.012),(x+.004,1.696,.101,.023,.015),(x-.004+sweep,1.665,.111,.018,.013),(x-.012+sweep,tip,.101,.001,.001)],'hair_light' if i in (1,5) else 'hair',curved=True)
 for side in (-1,1):
     for i in range(3):
         lock([(side*(.075+i*.013),1.743-i*.016,-.01-i*.028,.025,.022),(side*(.116+i*.007),1.677-i*.016,.005-i*.035,.029,.026),(side*(.13+i*.004),1.604-i*.016,-.004-i*.031,.022,.018),(side*(.112+i*.009),1.553-i*.009,-.015-i*.025,.001,.001)],'hair_light' if i==1 else 'hair')
@@ -182,67 +196,14 @@ for i in range(6):
     x=(i-2.5)*.027
     lock([(x+.023,1.735,-.031,.024,.021),(x+.009,1.764+(i%2)*.008,-.015,.026,.022),(x-.014,1.782,-.001,.018,.014),(x-.032,1.779-(i%3)*.008,.012,.001,.001)],'hair_light' if i==1 else 'hair')
 
-tube('Mask',[(0,1.595,.002,.101,.103),(0,1.574,.002,.104,.099),(0,1.533,-.005,.09,.086),(0,1.521,-.008,.082,.077)],'black','C_Head',24,-math.pi*.64,math.pi*.64)
-tube('Mask',[(0,1.596,.002,.102,.104),(0,1.593,.002,.102,.104)],'edge','C_Head',24,-math.pi*.64,math.pi*.64)
 for side in (-1,1):
     geometry('Brows',[(side*.02,1.632,.074),(side*.022,1.638,.074),(side*.071,1.643,.054),(side*.069,1.638,.055)],[(0,1,2),(0,2,3)],'hair','C_Head')
 
-# High collar with red piping and two leather closure tabs.
-tube('Collar',[(0,1.456,-.005,.119,.108),(0,1.49,-.003,.124,.108),(0,1.548,0,.122,.106)],'cloth')
-tube('Collar',[(0,1.545,0,.123,.107),(0,1.552,0,.124,.108)],'red')
-for y in (1.495,1.53):
-    box('Collar',(-.035,y,.111),(.061,.016,.009),'leather')
-    box('Collar',(-.036,y,.119),(.024,.022,.007),'red')
-    for x in (-.059,-.012):box('Collar',(x,y,.118),(.004,.004,.004),'metal',metal=True)
-    buckle('Collar',-.036,y,.124,.015,.013)
-
-# Short asymmetric shoulder mantle: multiple rings create a folded silhouette.
-def mantle_point(t,r):
-    front=max(0,math.cos(t));side=math.sin(t)
-    inner=Vector((.114*side,1.478,-.005+.103*math.cos(t)))
-    hem=Vector((.236*side,1.319+.062*abs(side)-.04*side*front,-.016+(.192 if front else .177)*math.cos(t)))
-    p=inner.lerp(hem,r);p.y+=math.sin(r*math.pi)*.019
-    return tuple(p)
-v=[mantle_point(i*math.tau/40,r) for r in (0,.28,.63,1) for i in range(41)]
-f=[]
-for row in range(3):
-    for i in range(40):
-        a=row*41+i;b=a+41;f.extend([(a,a+1,b),(a+1,b+1,b)])
-geometry('Mantle',v,f,'cloth',smooth=True)
-v=[mantle_point(i*math.tau/40,r) for r in (.972,1) for i in range(41)]
-geometry('Mantle',v,[(i,i+1,i+41) for i in range(40)]+[(i+1,i+42,i+41) for i in range(40)],'red',smooth=True)
-# Diagonal overlapping front fold and the crimson shoulder sigil.
-v=[]
-for t,r in [(-.8,.08),(-.52,.37),(-.21,.69),(.03,.98)]:
-    for dt in (-.028,.028):
-        p=list(mantle_point(t+dt,r));p[1]+=.003;p[2]+=.005;v.append(p)
-geometry('Mantle',v,[(i,i+1,i+2) for i in (0,2,4)]+[(i+1,i+3,i+2) for i in (0,2,4)],'edge')
-for flip in (-1,1):
-    coords=[(.77-.17,.73-flip*.12),(.77+.17,.73+flip*.12)]
-    v=[]
-    for t,r in coords:
-        for dt in (-.025,.025):
-            p=list(mantle_point(t+dt,r));p[2]+=.003;v.append(p)
-    geometry('Mantle',v,[(0,1,2),(1,3,2)],'red')
-diamond('Mantle',-.008,1.355,.199,.018,.025)
-
-# Crossed chest harness follows the shape of the tunic, with depth at the X.
-for side in (-1,1):
-    ribbon('Harness',[(side*.108,1.337,.145),(side*.065,1.255,.154),(-side*.044,1.123,.16),(-side*.117,1.018,.146)],.031,'red')
-    ribbon('Harness',[(side*.103,1.334,.148),(side*.06,1.254,.157),(-side*.049,1.122,.163),(-side*.122,1.018,.149)],.002,'seam')
-diamond('Harness',0,1.272,.165,.032,.048)
-for x in (-.085,.085):buckle('Harness',x,1.104,.169,.027,.03,rotate=x*4)
-
-# A separate waist belt and split hip panels remove the plain long-shirt read.
+# Utility belt and shoulder webbing.
 tube('Belt',[(0,1.035,0,.174,.149),(0,1.085,0,.172,.147)],'leather','C_Hips',32)
 for x in (-.13,-.064,.064,.13):box('Belt',(x,1.061,.143),(.013,.065,.013),'black','C_Hips')
 buckle('Belt',.015,1.062,.16,.05,.035,'C_Hips',-.04)
 for side in (-1,1):
-    v=[(side*.022,1.033,.147),(side*.166,1.033,.116),(side*.184,.856,.116),(side*.077,.813,.143),(side*.03,.866,.15)]
-    geometry('HipPanels',v,[(0,1,2),(0,2,3),(0,3,4)],'cloth','C_Hips')
-    ribbon('HipPanels',[v[1],v[2],v[3]],.003,'edge','C_Hips')
-    back=[(side*.018,1.033,-.148),(side*.165,1.033,-.118),(side*.18,.858,-.121),(side*.055,.835,-.153)]
-    geometry('HipPanels',back,[(0,2,1),(0,3,2)],'cloth','C_Hips')
     ribbon('Belt',[(side*.12,1.09,-.119),(side*.06,1.235,-.147),(-side*.106,1.411,-.12)],.022,'leather','C_Chest')
 box('Belt',(.071,.953,.169),(.034,.15,.008),'red','C_Hips',rotate=.08)
 diamond('Belt',.072,.952,.176,.022,.035,'C_Hips')
@@ -271,40 +232,63 @@ for side in (-1,1):
 for side in (-1,1):
     leg=('L' if side>0 else 'R')+'_LowerLeg';foot=('L' if side>0 else 'R')+'_Foot'
     x=point(foot).x
-    tube('Boots',[(x,.095,-.008,.057,.066),(x,.18,-.006,.057,.064),(x,.265,-.009,.062,.066)],'black',leg,20)
+    tube('Boots',[(x,.095,-.008,.057,.066),(x,.18,-.006,.057,.064),(x,.265,-.009,.062,.066)],'black',leg,16)
     def cuff_weights(p):
         nearest=min(ankle_weights[side],key=lambda entry:sum((a-b)**2 for a,b in zip(p,entry[0])))
         return nearest[1],nearest[2]
-    tube('Boots',[(x,.273,-.022,.086,.108),(x,.305,-.022,.086,.108)],'red',cuff_weights,20)
+    tube('Boots',[(x,.273,-.022,.086,.108),(x,.305,-.022,.086,.108)],'red',cuff_weights,16)
     for y in (.148,.228):
         tube('Boots',[(x,y-.009,-.005,.059,.068),(x,y+.009,-.005,.059,.068)],'leather',leg,16)
-    tube('Boots',[(x,.024,.032,.065,.121),(x,.044,.032,.065,.121),(x,.068,.035,.061,.112),(x,.089,.025,.05,.09),(x,.105,.003,.038,.067)],'black',foot,24)
-    tube('Boots',[(x,.004,.032,.068,.124),(x,.018,.032,.068,.124),(x,.024,.032,.066,.122)],'edge',foot,24)
+    tube('Boots',[(x,.024,.032,.065,.121),(x,.044,.032,.065,.121),(x,.068,.035,.061,.112),(x,.089,.025,.05,.09),(x,.105,.003,.038,.067)],'black',foot,16)
+    tube('Boots',[(x,.004,.032,.068,.124),(x,.018,.032,.068,.124),(x,.024,.032,.066,.122)],'edge',foot,16)
     for i in range(4):
         y=.111+i*.029;z=.067
         for flip in (-1,1):
             ribbon('Boots',[(x-flip*.028,y-.009,z),(x+flip*.026,y+.012,z)],.004,'leather_light',leg)
     diamond('Boots',x,.235,.067,.03,.039,leg)
 
-exec(compile((ROOT/'tools/hero-kage-outfit.py').read_text(encoding='utf-8'),str(ROOT/'tools/hero-kage-outfit.py'),'exec'))
+outfit_path = ROOT/'tools/hero-maple-outfit.py'
+exec(compile(outfit_path.read_text(encoding='utf-8'), str(outfit_path), 'exec'))
 
 # Export skinned batches. Source skin joint order and inverse bind matrices
 # are reused exactly, so existing animation and equipment attachment still work.
 for (label,kind),(attributes,indices) in groups.items():
+    # Weld corners only when every exported attribute agrees, including UVs,
+    # weights and hard normals. This leaves room for the embedded PBR maps.
+    unique = {}
+    keys = list(attributes)
+    welded = [[] for key in keys]
+    remap = []
+    for row in zip(*attributes.values()):
+        if row not in unique:
+            unique[row] = len(unique)
+            for column, value in zip(welded, row):
+                column.append(value)
+        remap.append(unique[row])
+    attributes = dict(zip(keys, welded))
+    indices = [remap[i] for i in indices]
     primitive=dict(material=materials[kind]);asset.replace(primitive,attributes,indices)
-    index=len(g['meshes']);name='HeroReference'+label+('Metal' if kind=='metal' else '')
+    suffix = ''
+    if kind == 'forged':
+        suffix = 'Metal'
+    elif kind == 'metal':
+        suffix = 'Trim' if (label,'forged') in groups else 'Metal'
+    elif kind == 'fabric' and (label,'woven') in groups:
+        suffix = 'Edge'
+    index=len(g['meshes']);name='HeroReference'+label+suffix
     mesh=dict(name=name,primitives=[primitive])
-    if label=='KageSash':
+    if label=='MapleCape':
         deltas=[]
         for x,y,z in attributes['POSITION']:
-            weight=max(0,min(1,(1.06-y)/.63))**1.5
-            deltas.append((math.sin(y*12)*.022*weight,.004*weight,-.034*weight))
+            weight=max(0,min(1,(1.49-y)/1.15))**1.65
+            deltas.append((math.sin(y*9)*.068*weight,.085*weight,-.176*weight))
         primitive['targets']=[{'POSITION':asset.append(deltas,'VEC3')}]
-        mesh.update(weights=[0],extras={'targetNames':['KageFlutter']})
+        mesh.update(weights=[0],extras={'targetNames':['MapleFlutter']})
     g['meshes'].append(mesh)
     node=len(g['nodes']);g['nodes'].append(dict(name=name,mesh=index,skin=skin_index))
     g['scenes'][g.get('scene',0)]['nodes'].append(node)
-metadata=dict(version=2,style='kage-reference-sheet',source='hero-ninja-simple.glb',integratedMask=True,rigPreserved=True,hood=True,katana=True,asymmetricShoulder=True)
+metadata=dict(version=3,style='maple-reference-sheet',source='hero-ninja-simple.glb',
+              integratedMask=True,rigPreserved=True,asymmetricShoulder=True,authoredPBR=True)
 g.setdefault('extras',{})['heroReference']=metadata
 g['scenes'][g.get('scene',0)].setdefault('extras',{})['heroReference']=metadata
 output=ROOT/'assets/hero-ninja-reference.glb';asset.save(output)

@@ -147,15 +147,17 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
       const visual=cloneSkeleton(source),garments={tops:[],bottoms:[],shoes:[],wraps:[],insignia:[]},travelerLayers=[];
       visual.traverse(o=>{
         if(!o.isMesh)return;
-        if(/^HeroReference(Mantle|Harness|HipPanels|KageShoulder|KageArm|KageGreaves|KageSash|Katana)/.test(o.name))travelerLayers.push(o);
+        if(/^HeroReference(Harness|HipPanels|MapleShoulder|MapleBracer|MapleGreaves)/.test(o.name))travelerLayers.push(o);
         if(o.name.toLowerCase()==='icosphere'||!o.material){o.visible=false;return;}
         o.castShadow=true;o.receiveShadow=true;
         o.material=Array.isArray(o.material)?o.material.map(litCharacterMaterial):litCharacterMaterial(o.material);
         for(const m of Array.isArray(o.material)?o.material:[o.material]){
           const n=m.name.toLowerCase();
-          m.roughness=/skin/.test(n)?.64:/metal|silver|buckle/.test(n)?.38:/shoes|leather/.test(n)?.76:.9;
-          if(/metal|silver|buckle/.test(n))m.metalness=.55;
-          if(!/eye|mouth|brow/.test(n))sculptedSurface(m,{fabric:/tops|bottoms|cloth|wrap|fabric/.test(n),rim:/skin/.test(n)?.025:.055});
+          if(!n.startsWith('hero maple pbr')){
+            m.roughness=/skin/.test(n)?.64:/metal|silver|buckle/.test(n)?.38:/shoes|leather/.test(n)?.76:.9;
+            if(/metal|silver|buckle/.test(n))m.metalness=.55;
+          }
+          if(!/eye|mouth|brow/.test(n))sculptedSurface(m,{fabric:!m.normalMap&&/tops|bottoms|cloth|wrap|fabric/.test(n),rim:/skin/.test(n)?.025:.055});
           if(n.includes('face_00_skin'))m.color.set('#dfb99e');
           if(n.includes('tops'))garments.tops.push(m);else if(n.includes('bottoms'))garments.bottoms.push(m);else if(n.includes('shoes'))garments.shoes.push(m);else if(n.includes('crimson wrap'))garments.wraps.push(m);else if(n.includes('warm stitch'))garments.insignia.push(m);
         }
@@ -183,7 +185,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
       const bind=bone=>bone?{bone,base:bone.quaternion.clone(),position:bone.position.clone()}:null;
       avatarPose={hips:bind(bones.hips),spine:bind(bones.spine),chest:bind(bones.chest),scale,legLength:(bones.knees[0]?.position.length()||.393)+(bones.feet[0]?.position.length()||.46)};
       for(const part of ['arms','elbows','hands','legs','knees','feet'])avatarPose[part]=bones[part].map(bind);
-      visual.traverse(o=>{if(o.morphTargetDictionary?.Fcl_EYE_Close!==undefined)eyeMeshes.push(o);if(o.morphTargetDictionary?.KageFlutter!==undefined)clothMeshes.push(o);});setEyeOpening(eyeOpening);
+      visual.traverse(o=>{if(o.morphTargetDictionary?.Fcl_EYE_Close!==undefined)eyeMeshes.push(o);if(o.morphTargetDictionary?.MapleFlutter!==undefined)clothMeshes.push(o);});setEyeOpening(eyeOpening);
       root.add(visual);body.visible=false;root.userData.referenceAppearance=true;outlineMeshes(visual);
       // The armor is fitted to a standing character, rather than the source T-pose.
       for(let i=0;i<2;i++)avatarArm(i,.06,0,.16,REST_ARM_OPEN);
@@ -226,7 +228,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
   }
   let carrying=false;const combatMotion=createHeroCombatMotion();
   function update(time,moving,velocity=null,dt=1/60,sprinting=false,combatOptions=null){
-    for(const mesh of clothMeshes)mesh.morphTargetInfluences[mesh.morphTargetDictionary.KageFlutter]=(.5+.5*Math.sin(time*2.4))*(moving?.9:.35);
+    for(const mesh of clothMeshes)mesh.morphTargetInfluences[mesh.morphTargetDictionary.MapleFlutter]=(.5+.5*Math.sin(time*(moving?4.5:2.4)))*(moving?.9:.28);
     const state=motion.update(time,moving,velocity,dt,sprinting,root.rotation.y,airborne);({localX,localZ,stride,sprintBlend}=state);
     const {weight,side,forward,sprintLean,gait}=state;
     const combat=combatMotion.update(dt,combatOptions||{}),combatWeight=combat?.weight||0,blend=(a,b)=>T.MathUtils.lerp(a,b,combatWeight);
