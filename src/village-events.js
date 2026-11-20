@@ -95,6 +95,12 @@ export function villageEventEncounter(id,step=1,save){
   return {...squad[0],village:id,name:event.enemy,...(squad.length>1?{squad}:{}),eventStep:step,storyBattle:event.battle,coalition:!!event.coalition};
 }
 
+export function lotusKeeperEncounter(save,name){
+  const guardian=configureOpponent({...encounterProfile(save,'boss','fire'),kind:'boss',village:'fire'});
+  return {...guardian,kind:'lotus-duel',name,village:'fire',hp:guardian.phaseHealth[0],
+    phases:1,phaseHealth:[guardian.phaseHealth[0]],balanceStages:[guardian.balanceStages[0]]};
+}
+
 // Flowers collected before accepting the rescue are equally usable, once only.
 export function brewHongLienMedicine(save){
   if(save.expeditions.fire===3||!save.story.questItems?.includes('fire:hong-lien'))return false;

@@ -11,7 +11,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
  const start=async()=>{await page.locator('#heroName').fill('Huyền An');await page.locator('#newJourney').click();if(await page.locator('#newJourneyDialog').evaluate(e=>e.open))await page.locator('#confirmNewJourney').click();await page.waitForFunction(()=>!__AN_HOA__.adventure().loading);await advance(.001);assert.equal((await state()).phase,'opening');};
  const blink=()=>page.evaluate(()=>{const result=[];__openingWorld.hero.root.traverse(o=>{if(o.morphTargetDictionary?.Fcl_EYE_Close!==undefined)result.push(o.morphTargetInfluences[o.morphTargetDictionary.Fcl_EYE_Close]);});return result;});
  try{
-  await page.goto(url);await ready();await start();
+  await page.goto(url);await ready();await page.evaluate(()=>__AN_HOA__.audio.configure({readDialogue:false}));await start();
   assert.equal(await page.locator('#journeyOpening svg, .opening-memory').count(),0,'new game enters the 3D awakening directly');
   console.log('CHECK: frontal camera, actual closed-eye geometry, and frozen controls');
   assert.equal((await state()).opening.stage,'eyes-closed');assert.ok((await blink()).length>0);assert.ok((await blink()).every(v=>v===1));
@@ -19,17 +19,24 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
   assert.equal(await page.locator('#startScreen').isVisible(),false);assert.equal(await page.locator('#journeyHud').isVisible(),false);await page.screenshot({path:out+'/desktop-closed.png'});
   await page.locator('#world').focus();const before=(await state()).position;for(const key of ['w','Space','e','n','m','v','c','b'])await page.keyboard.press(key);await advance(.3);assert.equal((await state()).phase,'opening');assert.deepEqual((await state()).position,before);assert.deepEqual((await state()).input.held,[]);
   await advance(1);const half=(await state()).opening.eyesOpen;assert.ok(half>0&&half<1);assert.ok((await blink()).every(v=>v>0&&v<1));await advance(1.1);assert.equal((await state()).opening.eyesOpen,1);assert.ok((await blink()).every(v=>v===0));
-  await advance(3.4);const line='Mình vậy mà lại trùng sinh rồi. Lần này mình sẽ không phạm sai lầm nữa. Mẹ mình... mình phải tìm mẹ trước đã.';assert.equal((await state()).opening.text,line);assert.equal(await page.locator('.opening-subtitle strong').innerText(),'Huyền An');await page.screenshot({path:out+'/desktop-dialogue.png'});
-  console.log('CHECK: keyboard continue, smooth camera return, and movement restoration');
-  await page.locator('.opening-skip').focus();await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.className),'opening-next');await page.keyboard.press('Enter');assert.equal((await state()).phase,'opening');await advance(1.1);assert.equal((await state()).opening.stage,'returning');assert.deepEqual((await state()).position,before);await advance(1.2);assert.equal((await state()).phase,'explore');assert.equal((await state()).opening.active,false);assert.equal(await page.locator('#journeyOpening').isVisible(),false);assert.equal(await page.locator('#journeyHud').isVisible(),true);assert.equal(await page.evaluate(()=>__openingWorld.camera.fov),68);await page.screenshot({path:out+'/desktop-explore.png'});
+  await advance(.7);assert.match((await state()).opening.text,/^Mình vậy mà lại trùng sinh rồi\./);assert.match(await page.locator('.opening-subtitle').textContent(),/^Huyền An: /);assert.equal(await page.locator('#journeyOpening button').count(),0);await page.screenshot({path:out+'/desktop-dialogue.png'});
+  console.log('CHECK: automatic subtitle pages, hard cut to gameplay, and movement restoration');
+  let lastPage='';
+  for(let i=0;i<60&&(await state()).phase==='opening';i++){
+    assert.equal(await page.evaluate(()=>__openingWorld.camera.fov),40);
+    lastPage=(await state()).opening.text;
+    await advance(.25);
+  }
+  assert.match(lastPage,/mẹ trước đã\.$/);assert.deepEqual((await state()).position,before);
+  assert.equal((await state()).phase,'explore');assert.equal((await state()).opening.active,false);assert.equal(await page.locator('#journeyOpening').isVisible(),false);assert.equal(await page.locator('#journeyHud').isVisible(),true);assert.equal(await page.evaluate(()=>__openingWorld.camera.fov),68);await page.screenshot({path:out+'/desktop-explore.png'});
   await page.keyboard.down('s');await advance(.4);await page.keyboard.up('s');assert.notDeepEqual((await state()).position,before);
   console.log('CHECK: continued saves skip the opening; new games replay; mobile touch and automatic completion');
   await page.reload();await ready();await page.locator('#continueJourney').click();await page.waitForFunction(()=>!__AN_HOA__.adventure().loading);assert.equal((await state()).phase,'explore');assert.equal((await state()).opening.active,false);
-  await page.close();page=await browser.newPage({viewport:{width:915,height:412},hasTouch:true});page.setDefaultTimeout(60000);page.on('pageerror',e=>errors.push(e.stack));await page.route('**/game.js',r=>r.fulfill({contentType:'text/javascript',body:bundle.outputFiles[0].text}));await page.goto(url);await ready();await start();assert.ok((await blink()).every(v=>v===1));await advance(6);assert.equal((await state()).opening.text,line);
+  await page.close();page=await browser.newPage({viewport:{width:915,height:412},hasTouch:true});page.setDefaultTimeout(60000);page.on('pageerror',e=>errors.push(e.stack));await page.route('**/game.js',r=>r.fulfill({contentType:'text/javascript',body:bundle.outputFiles[0].text}));await page.goto(url);await ready();await page.evaluate(()=>__AN_HOA__.audio.configure({readDialogue:false}));await start();assert.ok((await blink()).every(v=>v===1));await advance(3);assert.match((await state()).opening.text,/^Mình vậy mà lại trùng sinh rồi\./);
   const fits=()=>page.locator('.opening-subtitle').evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;});assert.equal(await fits(),true);await page.screenshot({path:out+'/mobile-dialogue.png'});
-  await page.setViewportSize({width:568,height:320});await advance(.001);assert.equal(await fits(),true);await page.screenshot({path:out+'/mobile-small-dialogue.png'});await page.locator('.opening-next').tap({force:true});await advance(2.3);assert.equal((await state()).phase,'explore');
-  await page.locator('#journeyMenu').click();await page.getByRole('button',{name:'Về màn hình chính',exact:true}).click();await start();await page.locator('.opening-skip').click();await advance(2.3);assert.equal((await state()).phase,'explore');assert.equal(await page.locator('#journeyOpening').isVisible(),false);
+  await page.setViewportSize({width:568,height:320});await advance(.001);assert.equal(await fits(),true);await page.screenshot({path:out+'/mobile-small-dialogue.png'});await advance(12);assert.equal((await state()).phase,'explore');
+  await page.locator('#journeyMenu').click();await page.getByRole('button',{name:'Về màn hình chính',exact:true}).click();await start();await page.keyboard.press('Escape');assert.equal((await state()).phase,'explore');assert.equal(await page.locator('#journeyOpening').isVisible(),false);
   await page.locator('#journeyMenu').click();await page.getByRole('button',{name:'Về màn hình chính',exact:true}).click();await start();await page.evaluate(()=>__AN_HOA__.audio.configure({muted:true}));await advance(16);assert.equal((await state()).phase,'explore');assert.equal((await state()).save.story.stage,'mother');assert.deepEqual(errors,[]);
-  console.log('PASS: frontal awakening, blink geometry, exact narration, input lock, camera return, keyboard/touch/skip/automatic paths, new-game replay, continued save, and responsive subtitles.');
+  console.log('PASS: frontal awakening, blink geometry, automatic subtitle pages, input lock, hard cut, continuing saves, and responsive subtitles.');
  }catch(e){await page.screenshot({path:out+'/failure.png'}).catch(()=>{});throw e;}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -3,7 +3,7 @@ import * as T from 'three';
 export const QUEST_ITEM_MODELS={mourning:'flowers',forging:'ore',fishing:'net',mending:'cloth',farming:'seeds',watering:'medicine',mining:'minerals',repair:'tools',repairing:'tools',reading:'scroll',observing:'notes',market:'crate',pottery:'clay',offering:'lantern'};
 export function questAction(item){
   if(item.kind==='sidequest-target')return item.questType==='combat'?'Đối mặt · ':item.questType==='survey'?'Khảo sát · ':'Thu thập · ';
-  return item.kind==='expedition-goal'?'Thu thập · ':null;
+  return item.kind==='expedition-goal'?(item.questType==='dialogue'?'Nói chuyện · ':'Thu thập · '):null;
 }
 export function createQuestItem({model='satchel',name=''}){
   const root=new T.Group();root.name='quest-item-'+model;root.userData.noCollision=true;root.userData.questItem={model,name};

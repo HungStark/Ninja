@@ -144,27 +144,6 @@ html,body{width:100%;height:100%;overscroll-behavior:none;-webkit-user-select:no
 #androidSprintLock.sprint-armed,#androidSprintLock[aria-pressed=true]{background:#8a7136;border-color:#ffe19b;box-shadow:0 0 16px #e6c57588}
 
 /* Keep dialogue choices and conversation controls outside the scrolling text. */
-.android-ui #journeyDialog{box-sizing:border-box;padding:calc(var(--safe-top) + 10px) calc(var(--safe-right) + 10px) calc(var(--safe-bottom) + 10px) calc(var(--safe-left) + 10px);overflow:hidden}
-.android-ui #journeyDialog .journey-dialog-card{display:flex;flex-direction:column;gap:6px;width:min(820px,100%);height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 20px);max-height:560px;min-height:0;padding:12px;box-sizing:border-box;overflow:hidden}
-.android-ui #journeyDialog #dialogKicker{flex:0 0 auto;font-size:8px;line-height:1.3;letter-spacing:1px}
-.android-ui #journeyDialog #dialogTitle{flex:0 0 auto;font-size:clamp(17px,4.6vh,24px);line-height:1.15;margin:0}
-.android-ui #journeyDialog .dialog-layout{display:grid;grid-template-columns:70px minmax(0,1fr);gap:12px;flex:1 1 0;min-height:0;overflow:hidden;align-items:stretch}
-.android-ui #journeyDialog .journey-dialog-card:not(.is-conversation) .dialog-layout{display:flex}
-.android-ui #journeyDialog .dialog-person{display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.android-ui #journeyDialog #dialogPortrait{flex:1 1 0;min-height:0;display:flex;justify-content:center}
-.android-ui #journeyDialog #dialogPortrait svg{width:auto;max-width:100%;height:100%;box-sizing:border-box;box-shadow:none}
-.android-ui #journeyDialog #dialogPortrait .model-portrait{width:auto;max-width:100%;height:100%;flex:0 1 auto;box-shadow:none}
-.android-ui #journeyDialog #dialogPortrait .model-portrait{width:auto;max-width:100%;height:100%;flex:0 1 auto;box-shadow:none}
-.android-ui #journeyDialog #dialogSpeakerName{flex:0 0 auto;font-size:10px;line-height:1.2;margin-top:4px}
-.android-ui #journeyDialog #dialogSpeakerRole{display:none}
-.android-ui #journeyDialog .dialog-copy{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;gap:6px;overflow:hidden}
-.android-ui #journeyDialog #dialogBody{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;pointer-events:auto;font-size:12px;line-height:1.65;margin:0;padding-right:6px;white-space:pre-line;overflow-wrap:anywhere}
-.android-ui #journeyDialog #dialogConversationControls{flex:0 0 34px;min-height:34px;gap:6px;flex-wrap:nowrap;margin:0}
-.android-ui #journeyDialog #dialogConversationControls button{min-height:32px;padding:5px 8px;font-size:10px;white-space:nowrap}
-.android-ui #journeyDialog #dialogLineCount{font-size:9px;flex-shrink:0}
-.android-ui #journeyDialog #dialogActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;flex:0 0 auto;min-width:0;margin:0;padding-top:7px;border-top:1px solid #c9bd8d33}
-.android-ui #journeyDialog #dialogActions button{width:100%;min-width:0;min-height:40px;margin:0;padding:6px 8px;justify-content:center;text-align:center;font-size:clamp(10px,2.8vh,12px);line-height:1.3;letter-spacing:0;white-space:normal;overflow-wrap:anywhere}
-.android-ui #journeyDialog #dialogActions button:last-child:nth-child(odd){grid-column:1 / -1}
 
 /* Saved HUD placement is independent of each component's responsive layout. */
 .android-ui [data-mobile-widget]{translate:var(--mobile-layout-x,0px) var(--mobile-layout-y,0px);scale:var(--mobile-layout-scale,1);opacity:var(--mobile-layout-opacity,1);transform-origin:center}

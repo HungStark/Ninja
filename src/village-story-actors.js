@@ -13,12 +13,14 @@ import {islandOccupied,beastRescued,crescentEmblem} from './island-occupation.js
 import {planVillageCivic} from './village-civic.js';
 import {buildGuardianBeast} from './guardian-beasts.js';
 import {campaignSceneCast,campaignSpeakers} from './campaign-characters.js';
-import {fieldMission} from './field-route.js';
+import {fieldMission,fireRescueMission} from './field-route.js';
+import {STORY_REVEALS} from './cinematic-route.js';
+import {buildChakraDevice} from './story-reveal-props.js';
 
 export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>!blocked(p.x,p.z),addSolid,removeSolid=()=>{},localGuardian=()=>null}){
   const root=new T.Group();root.name='village-story-actors';scene.add(root);
   let follower=null,follow=null,entry=null,activeEvent=null,current='nameless',list=[],moving=false,clock=0;
-  let stationary=[],prison=null,captive=null,mother=null,privateScene=false;
+  let stationary=[],prison=null,captive=null,mother=null,motherPath=[],privateScene=false;
   let syncedKey=null,syncedList=null,carrying=false;
   let castRecords=[],dialogueRecords=[],eventBorrowed=[],dialogueBorrowed=[],dialogueModels=[];
   const invalidate=()=>{scene.userData.dialogueRevision=(scene.userData.dialogueRevision||0)+1;};
@@ -38,6 +40,29 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
     for(let i=0;i<3;i++){const x=(i-1)*.85;mesh(parent,style==='earth'?new T.DodecahedronGeometry(.65):new T.CylinderGeometry(.16,.25,1.6,7),color,[x,.8,-.4],[1,1+i*.12,1]);}
   }
   function addActor(id,p,wounded=false){const model=createNinja(HA_LY);model.root.name=wounded?'ha-ly-wounded':'ha-ly-companion';model.root.position.set(p.x,p.y,p.z);root.add(model.root);if(wounded)stationary.push(model);return model;}
+  function firePatientDown(){
+    if(!captive||!prison)return;
+    const {x,y,z}=prison.point;
+    captive.root.position.set(x-.32,y+.36,z-.62);
+    captive.root.rotation.set(Math.PI/2,0,0);
+    captive.root.userData.storyEyeHeight=.58;
+    captive.setStoryPose('unconscious');
+  }
+  function fireMotherCare(){
+    if(!mother||!prison?.opened)return;
+    const {x,z}=prison.point;
+    motherPath=[[x,z+2.8],[x,z+1.1],[x-.95,z+.54]];
+  }
+  function updateFireCare(dt,time){
+    const point=motherPath[0];
+    if(!point||!mother)return;
+    const p=mother.root.position,dx=point[0]-p.x,dz=point[1]-p.z,distance=Math.hypot(dx,dz);
+    if(distance<.05){motherPath.shift();return;}
+    const step=Math.min(distance,dt*1.9);
+    p.x+=dx*step/distance;p.z+=dz*step/distance;p.y=floor(p.x,p.z,p.y+.25);
+    mother.root.rotation.y=Math.atan2(dx,dz);
+    mother.update(time,true,null,dt);
+  }
   function restoreBorrowed(items){for(const b of items){b.root.position.copy(b.position);b.root.rotation.copy(b.rotation);b.root.visible=b.visible;if(b.entry)Object.assign(b.entry,b.entryPosition);if(b.identity===undefined)delete b.root.userData.storyCharacterId;else b.root.userData.storyCharacterId=b.identity;}items.length=0;}
   function clearDialogue(){restoreBorrowed(dialogueBorrowed);for(const actor of dialogueModels){actor.dispose?.();dispose(actor.root);}dialogueModels=[];dialogueRecords=[];invalidate();}
   function ensureSpeaker(speaker,point,{dialogue=false,name,live=false}={}){
@@ -55,7 +80,6 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
         const entry=list.find(i=>i.id===p.id||i.kind==='npc'&&p.id==='chief'),borrowed=dialogue?dialogueBorrowed:eventBorrowed;
         borrowed.push({root:actorRoot,position:actorRoot.position.clone(),rotation:actorRoot.rotation.clone(),visible:actorRoot.visible,identity:actorRoot.userData.storyCharacterId,entry,entryPosition:entry?{x:entry.x,z:entry.z,y:entry.y}:null});
         const world=actorRoot.getWorldPosition(new T.Vector3());if(Math.hypot(world.x-point.x,world.z-point.z)>(live?9:dialogue?1.25:4.5)){const parentPoint=actorRoot.parent.worldToLocal(new T.Vector3(point.x,point.y,point.z));actorRoot.position.copy(parentPoint);if(entry)Object.assign(entry,{x:point.x,z:point.z,y:point.y});}
-        if(live){const p=actorRoot.getWorldPosition(new T.Vector3());actorRoot.rotation.y=Math.atan2(hero.root.position.x-p.x,hero.root.position.z-p.z);}
         actorRoot.visible=true;const budget=actorRoot.getObjectByName('character-render-budget');if(budget)budget.visible=true;
       }
     }else{
@@ -109,15 +133,29 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
       const step=villageEventStep(save,id),p={...FIRE_PRISON,y:floor(FIRE_PRISON.x,FIRE_PRISON.z)};
       const military=planVillageCivic('fire').military,corpse=createNinja({village:'fire'}),corner={x:military.x-military.w/2+5,z:military.z+military.d/2-6};corpse.root.name='fallen-fire-jailer';corpse.root.position.set(corner.x,floor(corner.x,corner.z)+.35,corner.z);corpse.root.rotation.z=-Math.PI/2;corpse.setStoryPose('unconscious');root.add(corpse.root);stationary.push(corpse);
       prison=createFirePrison(root,p,step>=2,addSolid);
-      const mp=safePoint(eventSpot(id,{spot:'entrance'}));mother=createVillager({...villagerAppearance(id,HA_LY_MOTHER),...HA_LY_MOTHER});mother.root.name=HA_LY_MOTHER.id;mother.root.position.set(mp.x,mp.y,mp.z);root.add(mother.root);stationary.push(mother);
+      const rescue=fireRescueMission(save)?.task?.action;
+      const caring=rescue&&!['wounded','mother'].includes(rescue);
+      const mp=safePoint(rescue?{x:p.x+(caring ? -.95 : .35),y:p.y,z:p.z+(caring ? .54 : 4.65)}:eventSpot(id,{spot:'entrance'}));
+      motherPath=[];
+      mother=createVillager({...villagerAppearance(id,HA_LY_MOTHER),...HA_LY_MOTHER});mother.root.name=HA_LY_MOTHER.id;mother.root.position.set(mp.x,mp.y,mp.z);root.add(mother.root);stationary.push(mother);
       if(step!==0)list.push({kind:'story-witness',id:HA_LY_MOTHER.id,...mp,label:'Bà Hồng · Mẹ nuôi của Hạ Ly'});
       if(!save.story?.companion?.recruited){
-        captive=addActor(HA_LY.id,{x:p.x,y:p.y+.12,z:p.z-.9},true);captive.setStoryPose(step<2?'captive':'wounded');
+        captive=addActor(HA_LY.id,{x:p.x,y:p.y+.12,z:p.z+(step>=2 ? .1 : -.9)},true);
+        captive.setStoryPose(step<2?'captive':step===2?'wounded':'standing');
+        if(rescue&&rescue!=='wounded')firePatientDown();
         if(step===0||step===2)list.push({kind:'story-witness',id:'ha-ly-wounded',x:p.x,z:p.z+3.25,y:p.y,label:'Hạ Ly · Nhà lao'});
+      }
+      if(rescue&&['examine','duel','grant','treat'].includes(rescue)){
+        const nurse=campaignSpeakers(save,id).nurse;
+        ensureSpeaker(nurse,safePoint({x:p.x+.95,y:p.y,z:p.z+.6}));
       }
     }
     if(activeEvent){const giver=id==='fire'&&activeEvent.style==='medicine'?list.find(i=>i.kind==='expedition-giver'):null,coast=activeEvent.spot==='coast'&&list.find(i=>i.kind==='dock'&&i.id==='light'),coastPoint=coast&&{x:coast.x-Math.sin(Math.atan2(coast.x,coast.z))*10,z:coast.z-Math.cos(Math.atan2(coast.x,coast.z))*10},original=giver||coastPoint||eventSpot(id,activeEvent,save),dry=id==='water'&&!waterFootprintDry(original.x,original.z,{w:4,d:4,padding:.8})?nearestDryWaterPoint(original.x,original.z,{w:4,d:4,padding:.8,valid:(x,z)=>!blocked(x,z)}):null,p=safePoint(dry||original);const g=new T.Group();g.position.set(p.x,p.y,p.z);root.add(g);
-      if(id!=='fire'&&activeEvent.style!=='commander'&&(id!=='wood'||activeEvent.style==='medicine'&&!roomId))props(g,activeEvent.style);
+      if(STORY_REVEALS[id+':'+activeEvent.step]?.target==='water-chakra-device'){
+        const device=buildChakraDevice();
+        device.position.x=1.55;
+        g.add(device);
+      }else if(id!=='fire'&&activeEvent.style!=='commander'&&(id!=='wood'||activeEvent.style==='medicine'&&!roomId))props(g,activeEvent.style);
       const people=campaignSceneCast(save,id,activeEvent);
       for(const [i,speaker] of people.entries()){
         const angle=(i-(people.length-1)/2)*.6,point=safePoint({x:p.x+Math.sin(angle)*3.2,y:p.y,z:p.z-2.8-Math.cos(angle)*.5});
@@ -143,5 +181,5 @@ export function createVillageStoryActors({scene,hero,blocked,floor,canFollow=p=>
     const p=follower.root.position,state=paused?follow.state():follow.update(dt,hero.root.position,{...leader,yaw:hero.root.rotation.y,riding,groundAt:(x,z,y)=>floor(x,z,y+.03)});moving=!paused&&state.moving;
     follower.root.rotation.y=state.pose.yaw??follower.root.rotation.y;follower.root.visible=!privateScene;follower.update(clock,moving,paused?null:state.velocity,paused?0:dt,state.pose);Object.assign(entry,{x:p.x,z:p.z,y:p.y});
   }
-  return {sync,reset,update,stageDialogue,clearDialogue,dialogueActor,harborPassengers:()=>follower&&!carrying&&!privateScene?[follower.root]:[],finishHarbor(){follow?.reset(hero.root.position,{yaw:hero.root.rotation.y});},senseSeal(){const item=list.find(i=>i.kind==='village-event');if(!item||!activeEvent?.sealTrace)return false;const target=activeEvent.targetObject===WOOD_SACRED_TREE.id?WOOD_SACRED_TREE:item;sense.position.set(target.x,floor(target.x,target.z),target.z);senseLife=2;sense.visible=true;return true;},actors:()=>[...stationary,...dialogueModels,...(follower?[follower]:[])],state:()=>({cast:[...castRecords,...dialogueRecords].map(r=>({id:r.id,appearance:r.appearance,visible:r.root.visible,position:r.root.getWorldPosition(new T.Vector3()).toArray()})),carrying,sealSense:senseLife>0,event:activeEvent?{village:current,step:activeEvent.step,title:activeEvent.title}:null,prison:prison?{opened:prison.opened,position:[prison.point.x,prison.point.y,prison.point.z]}:null,captive:captive?{pose:captive.root.userData.storyPose,modelReady:captive.modelReady,position:captive.root.position.toArray()}:null,mother:mother?{id:HA_LY_MOTHER.id,position:mother.root.position.toArray()}:null,recruited:!!follower,visible:!!follower?.root.visible,position:follower?.root.getWorldPosition(new T.Vector3()).toArray()||null,female:follower?.profile.female||false,moving,distance:follower?follower.root.getWorldPosition(new T.Vector3()).distanceTo(hero.root.position):null,catchups:follow?.state().catchups||0,following:follow?{...follow.state(),pose:{...follow.state().pose}}:null})};
+  return {sync,reset,update,stageDialogue,firePatientDown,fireMotherCare,updateFireCare,clearDialogue,dialogueActor,harborPassengers:()=>follower&&!carrying&&!privateScene?[follower.root]:[],finishHarbor(){follow?.reset(hero.root.position,{yaw:hero.root.rotation.y});},senseSeal(){const item=list.find(i=>i.kind==='village-event');if(!item||!activeEvent?.sealTrace)return false;const target=activeEvent.targetObject===WOOD_SACRED_TREE.id?WOOD_SACRED_TREE:item;sense.position.set(target.x,floor(target.x,target.z),target.z);senseLife=2;sense.visible=true;return true;},actors:()=>[...stationary,...dialogueModels,...(follower?[follower]:[])],state:()=>({cast:[...castRecords,...dialogueRecords].map(r=>({id:r.id,appearance:r.appearance,visible:r.root.visible,position:r.root.getWorldPosition(new T.Vector3()).toArray()})),carrying,sealSense:senseLife>0,event:activeEvent?{village:current,step:activeEvent.step,title:activeEvent.title}:null,prison:prison?{opened:prison.opened,position:[prison.point.x,prison.point.y,prison.point.z]}:null,captive:captive?{pose:captive.root.userData.storyPose,modelReady:captive.modelReady,position:captive.root.position.toArray()}:null,mother:mother?{id:HA_LY_MOTHER.id,position:mother.root.position.toArray()}:null,recruited:!!follower,visible:!!follower?.root.visible,position:follower?.root.getWorldPosition(new T.Vector3()).toArray()||null,female:follower?.profile.female||false,moving,distance:follower?follower.root.getWorldPosition(new T.Vector3()).distanceTo(hero.root.position):null,catchups:follow?.state().catchups||0,following:follow?{...follow.state(),pose:{...follow.state().pose}}:null})};
 }

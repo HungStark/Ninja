@@ -175,60 +175,15 @@
    ]
   },
   "fire:2": {
-   "title": "Triage at the prison",
+   "title": "A Crimson Lotus for Ha Ly",
    "steps": [
-    {
-     "mode": "escort",
-     "label": "Escort Medic Dan to Ha Ly",
-     "description": "Ha Ly is losing blood and cannot stand. Escort Medic Dan from the yard to the prison door so she can treat her there.",
-     "name": "Medic Dan",
-     "result": "Dan has reached the prison door. Hold the dressing while she stops the bleeding.",
-     "offset": [
-      0,
-      12
-     ],
-     "destination": {
-      "offset": [
-       3,
-       0
-      ],
-      "label": "Triage station by the prison door",
-      "prop": "medicine",
-      "arrival": "Dan has reached the prison door. Hold the dressing while she stops the bleeding.",
-      "obstacle": {
-       "prop": "tools",
-       "seconds": 2.5,
-       "label": "Free the jammed yard latch",
-       "text": "Dan needs both hands for the medicine box. Free the latch so she can pass."
-      }
-     }
-    },
-    {
-     "mode": "hold",
-     "label": "Help Dan treat Ha Ly",
-     "description": "Stay close and help with the dressing. Ha Ly is awake and can explain what she found.",
-     "seconds": 5,
-     "model": "medicine",
-     "offset": [
-      3,
-      0
-     ],
-     "result": "Ha Ly is stable. The group can continue the investigation from here."
-    }
-   ],
-   "script": [
-    [
-     "haly",
-     "Dan, keep the bandage a little lower. I can stand now. Is Mother Hong outside?"
-    ],
-    [
-     "hero",
-     "She is waiting to hear from you. Who gave the order to take you?"
-    ],
-    [
-     "haly",
-     "They wore Fire uniforms, but their orders used the wrong cipher. I can show you where it was altered. Come with me."
-    ]
+    {"mode":"interact","action":"wounded","target":{"kind":"story-witness","id":"ha-ly-wounded"},"label":"Check Ha Ly’s wounds","description":"Check on Ha Ly in the prison after defeating her two captors.","script":[["hero","Both guards are down. Can you hear me?"],["haly","My mother… is she safe?"],["hero","Ha Ly! She’s passed out. I have to tell Mother Hong."]]},
+    {"mode":"interact","action":"mother","target":{"kind":"story-witness","id":"fire-ha-ly-mother"},"label":"Tell Mother Hong","description":"Go outside the prison and tell Ha Ly’s mother what happened.","script":[["hero","Mother Hong, Ha Ly is badly wounded. She just passed out."],["adoptiveMother","Find Medic Dan at the clinic and bring her here quickly."],["adoptiveMother","I’ll go inside and tend to her wounds while I wait. Ha Ly, I’m here."]]},
+    {"mode":"escort","action":"escort","origin":"fire-dan","label":"Find and escort Medic Dan","description":"Meet Medic Dan at the clinic and walk with her to the prison.","name":"Medic Dan","result":"Medic Dan has reached the prison. Go inside to see her examine Ha Ly.","destination":{"point":[-12,23.35],"label":"Ha Ly’s prison entrance","prop":"medicine","arrival":"Medic Dan has arrived at the prison entrance."}},
+    {"mode":"interact","action":"examine","target":{"kind":"story-witness","id":"ha-ly-wounded"},"label":"Watch Medic Dan examine Ha Ly","description":"Return to Ha Ly to hear Medic Dan’s diagnosis.","script":[["nurse","The bleeding has stopped for now. Her pulse is weak, and ordinary medicine won’t be enough."],["adoptiveMother","Is there anything that can save her?"],["nurse","A fresh Crimson Lotus from Crimson Lotus Peak. I can make the medicine from its petals."],["hero","I’ll climb up and find a flower. Stay here with her."]]},
+    {"mode":"interact","action":"duel","target":{"kind":"expedition-goal","id":"fire:hong-lien"},"label":"Meet the keeper at Crimson Lotus Peak","description":"Climb Red Ash Cliff and ask the keeper for a Crimson Lotus.","script":[["lotusKeeper","Stop. The Crimson Lotus is the village’s treasure. I cannot simply give it to an outsider."],["hero","Someone is dying. I only need one flower for medicine. I’ll go straight back down."],["lotusKeeper","A plea is not enough for me to break that rule. If you mean to go further, face me."],["hero","I don’t want to fight you. But she hasn’t much time."]]},
+    {"mode":"interact","action":"grant","target":{"kind":"expedition-goal","id":"fire:hong-lien"},"label":"Speak to the keeper after the duel","description":"Lower your weapon and hear what the keeper has to say.","script":[["lotusKeeper","Please… don’t take that Crimson Lotus. I’ve watched over it through so many winters."],["hero","I understand why you want to keep it. But I need that flower to save someone."],["lotusKeeper","Who are you trying to save?"],["hero","Ha Ly."],["lotusKeeper","Ha Ly… I see. Take the flower and hurry back down."],["lotusKeeper","Take this book as well. It teaches Hỏa Long Cuồng Vũ. Use it to protect the person you came here to save."]]},
+    {"mode":"interact","action":"treat","target":{"kind":"story-witness","id":"ha-ly-wounded"},"label":"Bring the Crimson Lotus back to Medic Dan","description":"Return to the prison so Medic Dan can prepare the medicine and treat Ha Ly.","script":[["hero","I brought the Crimson Lotus. How is she?"],["nurse","Give me the flower. I’ll prepare the medicine here."],["adoptiveMother","Ha Ly, I’m here. Open your eyes slowly."],["nurse","Her pulse is stronger now. Let her rest a little."]]}
    ]
   },
   "lightning:0": {

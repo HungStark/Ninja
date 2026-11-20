@@ -8,6 +8,17 @@ export const SIDE_REWARD=60;
 // Openers, turning points and resolutions. Intermediary instructions keep the play camera.
 const storyScenes={nameless:[0,1,2,3],water:[0,4,6,7],fire:[0,1,2,3,4,5],lightning:[0,2],wind:[0,2,3,4],earth:[0,3,4],wood:[0,1,2,3],ice:[0,2,3,4,6,7],light:[0,3,4,5],dark:[0,2,4,5,6,8,9]};
 export const isStoryScene=event=>!!event&&storyScenes[event.village]?.includes(event.step)===true;
+export const STORY_REVEALS={
+  'water:7':{
+    target:'water-chakra-device',
+    memory:{shot:'thought',before:[{shot:'insert',seconds:1.65},{shot:'thought',seconds:.6}]}
+  },
+  'ice:7':{
+    target:'ice-capture-boat',
+    narrator:{shot:'insert'},
+    memory:{shot:'thought',before:[{shot:'thought',seconds:.7}]}
+  }
+};
 export const isMajorBattle=battle=>['boss','intro-trio','guardian-order','village-event'].includes(battle.kind)||battle.guardianChain===true;
 const validPoint=p=>Array.isArray(p)&&p.length===2&&p.every(n=>Number.isFinite(n)&&Math.abs(n)<=140);
 

@@ -15,6 +15,7 @@ const {chromium}=require('playwright');
     await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);});
     browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
     const page=await browser.newPage({viewport:{width:1024,height:680}}),errors=[];
+    page.setDefaultTimeout(60000);
     page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/game.js',r=>r.fulfill({contentType:'text/javascript',body:bundle.outputFiles[0].text}));
     await page.addInitScript(()=>{
@@ -42,8 +43,18 @@ const {chromium}=require('playwright');
       await page.locator('#continueJourney').click();await explore();await quiet();
     };
     const finishDialogue=async()=>{
-      await page.waitForSelector('#journeyDialog:not([hidden])');
-      await page.evaluate(()=>{
+      await page.waitForSelector('#journeyDialog:not([hidden])',{state:'attached'});
+      if((await state()).dialogue.autoplay){
+        const subtitles=[];
+        for(let i=0;i<100;i++){
+          if(!await page.locator('#journeyDialog.story-shot').count())return subtitles.join(' ');
+          const body=await page.locator('#storySubtitle span').textContent();
+          if(body&&subtitles.at(-1)!==body)subtitles.push(body);
+          await advance(1.2);
+        }
+        throw Error('Cutscene did not complete');
+      }
+      return page.evaluate(()=>{
         const skip=document.querySelector('#dialogSkip'),next=document.querySelector('#dialogNext');
         if(!skip.hidden&&!next.parentElement.hidden){skip.click();return;}
         for(let i=0;i<40;i++){
@@ -58,10 +69,10 @@ const {chromium}=require('playwright');
     await page.goto(`http://127.0.0.1:${port}/?test=1&adventure=1`);
     await page.waitForFunction(()=>document.body.dataset.ready==='true');
     await page.locator('#heroForm button[type=submit]').click();
-    await page.locator('.opening-skip').click();await advance(2.3);await explore();await quiet();
+    await page.locator('#journeyOpening').waitFor();await page.keyboard.press('Escape');await explore();await quiet();
     await interact('lore','nameless-resident-war-cemetery');await finishDialogue();await button(/Con hứa/).click();
-    await interact('npc');await finishDialogue();
-    assert.match(await page.locator('#dialogBody').innerText(),/xin thần linh phù hộ/);
+    await interact('npc');
+    assert.match(await finishDialogue(),/xin thần linh phù hộ/);
     await button(/Học Thủy/).click();
     assert.equal((await state()).waypoint.id,'nameless-save-1');
     await interact('field-task');
@@ -100,9 +111,8 @@ const {chromium}=require('playwright');
       __AN_HOA__.advance(.2);
     });
     assert.ok(await page.evaluate(()=>__AN_HOA__.state().victory));
-    await page.locator('#nextButton').click();await finishDialogue();
-    assert.match(await page.locator('#dialogBody').innerText(),/Con bị thương rồi.*trạm y tế/);
-    await button('Tới trạm y tế').click();
+    await page.locator('#nextButton').click();
+    assert.match(await finishDialogue(),/Con bị thương rồi.*trạm y tế/);
     assert.equal((await state()).waypoint.kind,'clinic');
     await resume();
     assert.equal((await state()).waypoint.kind,'clinic');

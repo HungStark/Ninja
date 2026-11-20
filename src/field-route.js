@@ -21,19 +21,22 @@ export function fieldMission(save,event=null){
   const step=Math.min(definition.steps.length,Math.max(0,save.story.fieldMissions?.[key]?.step||0));
   return {...definition,key,step,task:definition.steps[step]||null,complete:step===definition.steps.length,opening};
 }
+export function fireRescueMission(save){
+  return save.story?.villageEvents?.fire===2?fieldMission(save,{village:'fire',step:2}):null;
+}
 export function completeFieldTask(save,key,expectedStep){
   const definition=key==='nameless:road'?FIELD_ROUTE.opening:FIELD_ROUTE.events[key];
   if(save.story?.fieldRouteRevision!==FIELD_ROUTE_REVISION||!definition||!Number.isInteger(expectedStep))return null;
   save.story.fieldMissions??={};
   const before=save.story.fieldMissions[key]?.step||0;
   if(before!==expectedStep||before>=definition.steps.length)return null;
+  if(key==='fire:2'){
+    const item={grant:'fire:hong-lien',treat:'fire:lotus-medicine'}[definition.steps[before].action];
+    if(item&&!save.story.questItems?.includes(item))return null;
+  }
   save.story.fieldMissions[key]={step:before+1};
   const complete=before+1===definition.steps.length;
   if(complete&&key==='nameless:road'){save.gold+=35;save.xp+=40;}
-  if(complete&&key==='fire:2'){
-    save.story.questItems=save.story.questItems.filter(id=>!['fire:hong-lien','fire:lotus-medicine'].includes(id));
-    save.story.questItems.push('fire:lotus-medicine');save.expeditions.fire=3;
-  }
   return {complete,result:definition.steps[before].result,key,opening:key==='nameless:road'};
 }
 export function readFieldMissions(raw){
@@ -44,5 +47,6 @@ export function readFieldMissions(raw){
 }
 export function fieldObjective(save,event=null){
   const mission=fieldMission(save,event);if(!mission||mission.complete)return null;
-  return {title:mission.task.label,description:mission.task.description,targetVillage:mission.opening?'nameless':event.village,targetKind:'field-task',targetId:'field-'+mission.key+'-'+mission.step,storyStep:mission.step+1,storyTotal:mission.steps.length};
+  const target=mission.task.target||{kind:'field-task',id:'field-'+mission.key+'-'+mission.step};
+  return {title:mission.task.label,description:mission.task.description,targetVillage:mission.opening?'nameless':event.village,targetKind:target.kind,targetId:target.id,storyStep:mission.step+1,storyTotal:mission.steps.length};
 }

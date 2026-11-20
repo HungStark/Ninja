@@ -14,6 +14,9 @@ import {createVillageStoryActors} from './village-story-actors.js';
 import {createFieldRouteScene} from './field-route-scene.js';
 import {createResidentRoutes} from './resident-routes.js';
 import {createStoryCamera} from './story-camera.js';
+import {createStoryPerformance} from './story-performance.js';
+import {stageIceCapture} from './story-reveal-props.js';
+import {FIELD_ROUTE_REVISION,fireRescueMission} from './field-route.js';
 import {createVillagePatrols} from './village-patrols.js';
 import {placeVillageGuards} from './guard-placement.js';
 import {createGuardAmbush} from './guard-ambush.js';
@@ -160,24 +163,52 @@ export function createAdventureScene(){
   function solidGeometry(object,{name='landscape-solid',flat=false}={}){object.updateWorldMatrix(true,false);const collider=colliderFromGeometry(object.geometry,object.matrixWorld,name);if(collider){if(flat){delete collider.topAt;delete collider.bottomAt;}object.userData.collider=true;return physics.addBox(collider);}}
   let residentRoutes=null,patrols=null;
   const taskScene={scene,hero,interactives,blocked,findPath,dispose:disposeObject,floor:(x,z,ceiling)=>physics.floorAt(x,z,ceiling??standingHeightAt(x,z)+.55)};
-  const fieldRoute=createFieldRouteScene(taskScene),sideRoute=createFieldRouteScene({...taskScene,side:true,residentRoot:id=>residents.find(r=>r.person.id===id)?.char.root});
+  const fieldRoute=createFieldRouteScene({...taskScene,residentRoot:id=>citizens.find(c=>c.root.userData.villager?.id===id)?.root}),sideRoute=createFieldRouteScene({...taskScene,side:true,residentRoot:id=>residents.find(r=>r.person.id===id)?.char.root});
   const storyCamera=createStoryCamera({camera,hero,resolveActor:storyActors.dialogueActor,onFrame:()=>scene.userData.dialogueRevision=(scene.userData.dialogueRevision||0)+1,occluded:(from,to)=>{
     const sample=new T.Vector3();for(let t=.15;t<=1;t+=.12){sample.lerpVectors(from,to,t);if(sample.y<groundHeight(sample.x,sample.z)+.3||physics.overlaps(sample.x,sample.z,sample.y-.18,.36,.18))return true;}return false;
   }});
-  let sceneCast=[];
-  function stageDialogue(speakers,live=false){
-    storyCamera.end(true);storyActors.stageDialogue(speakers,live);
-    const roots=new Set(speakers.map(s=>storyActors.dialogueActor(s.id)));
-    sceneCast=[...new Set([...citizens,...storyActors.actors()])].filter(actor=>roots.has(actor.root));
-    return live&&storyCamera.begin(speakers);
+  const storyPerformance=createStoryPerformance({hero,resolveActor:storyActors.dialogueActor,walkPoint:(point,startY)=>{
+    const {x,z}=point;
+    if(blocked(x,z))return false;
+    point.y=physics.floorAt(x,z,startY+.22);
+    return Math.abs(point.y-startY)<=.22&&!physics.overlaps(x,z,point.y,2.75,.29);
+  }});
+  let storySavePoint=null,storyTarget=null,iceCapture=null;
+  function stageDialogue(speakers,reveal){
+    endDialogue();
+    const {x,y,z}=physics.safePosition();
+    storySavePoint={position:[x,z],surface,elevation:y};
+    storyActors.stageDialogue(speakers,true);
+    const iceHarbor=reveal==='ice-capture-boat'?harbors.get('light'):null;
+    if(iceHarbor)iceCapture=stageIceCapture(iceHarbor);
+    if(reveal)storyTarget=scene.getObjectByName(reveal)||null;
+    storyCamera.begin(speakers);
+    storyPerformance.begin(speakers,[hero,...citizens,...storyActors.actors()]);
   }
-  function endDialogue(){storyCamera.end();storyActors.clearDialogue();sceneCast=[];}
+  function playDialogueBeat({shot,speaker}){
+    if(shot==='reaction'&&speaker){storyCamera.reactTo(speaker);return;}
+    storyPerformance.lookAt(storyTarget);
+    storyCamera.visual(shot,storyTarget);
+  }
+  function playDialogueLine(line,index,seconds,next){
+    const {shot}=line.cue||{};
+    if(line.cue?.patientDown)storyActors.firePatientDown();
+    if(line.cue?.motherCare)storyActors.fireMotherCare();
+    if(shot==='insert')iceCapture?.depart();
+    const target=shot==='insert'||shot==='thought'?storyTarget:null;
+    storyCamera.line(line,index,seconds,next,target);
+    storyPerformance.line(line,seconds,target);
+  }
+  function endDialogue(){
+    storyCamera.end();storyPerformance.end();storyActors.clearDialogue();
+    iceCapture?.dispose();iceCapture=null;storyTarget=null;storySavePoint=null;
+  }
   function syncStoryActors(save,id){
     storyActors.sync(save,id,interactives,room?.id||null);
     fieldRoute.sync(save,id,room?.id||null);sideRoute.sync(save,id,room?.id||null);
   }
   function disposeObject(root,extraMaterials=[]){return disposeSceneResources(root,{materials:extraMaterials,textures:extraMaterials.map(m=>reliefMaps.get(m)).filter(Boolean)});}
-  function disposeLand(){storyCamera.end(true);sceneCast=[];fieldRoute.reset();sideRoute.reset();residentRoutes=null;patrols=null;infiltration.clear();randomEnemy=null;infiltratorCaught=null;for(const h of harbors.values()){h.skipper.dispose();h.skipper.root.removeFromParent();}harbors.clear();harborPlans=[];for(const c of new Set([...citizens,...party.map(p=>p.char),...(randomEnemy?[randomEnemy]:[])])){c.dispose?.();c.root.removeFromParent();}oreNodes.clear();miningTime=0;pickaxe.visible=false;disposeObject(land,Object.values(surfaces||{}).flat().filter(m=>m?.isMaterial));land.clear();questActors.clear();physics.clear();obstacles.length=0;interactives.length=0;animated.length=0;citizens.length=0;party.length=0;residents.length=0;introFighters.length=0;skirmishTime=0;bridges=[];routes=[];ride=null;surface=null;materials.clear();randomEnemy=null;boss=null;foliage=null;groundCover=null;}
+  function disposeLand(){endDialogue();fieldRoute.reset();sideRoute.reset();residentRoutes=null;patrols=null;infiltration.clear();randomEnemy=null;infiltratorCaught=null;for(const h of harbors.values()){h.skipper.dispose();h.skipper.root.removeFromParent();}harbors.clear();harborPlans=[];for(const c of new Set([...citizens,...party.map(p=>p.char),...(randomEnemy?[randomEnemy]:[])])){c.dispose?.();c.root.removeFromParent();}oreNodes.clear();miningTime=0;pickaxe.visible=false;disposeObject(land,Object.values(surfaces||{}).flat().filter(m=>m?.isMaterial));land.clear();questActors.clear();physics.clear();obstacles.length=0;interactives.length=0;animated.length=0;citizens.length=0;party.length=0;residents.length=0;introFighters.length=0;skirmishTime=0;bridges=[];routes=[];ride=null;surface=null;materials.clear();randomEnemy=null;boss=null;foliage=null;groundCover=null;}
   function segmentDistance(x,z,target){const dot=Math.max(0,Math.min(1,(x*target.x+z*target.z)/(target.x*target.x+target.z*target.z||1)));return Math.hypot(x-target.x*dot,z-target.z*dot);}
   const laneDistance=(x,z,p)=>{const dx=p.b[0]-p.a[0],dz=p.b[1]-p.a[1],t=Math.max(0,Math.min(1,((x-p.a[0])*dx+(z-p.a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-p.a[0]-dx*t,z-p.a[1]-dz*t);};
   const harborClear=(x,z,padding)=>harborPlans.some(h=>harborDistance(h,x,z)<4+padding);
@@ -298,11 +329,18 @@ export function createAdventureScene(){
   function syncSidequests(save){if(room)return;
     if(!questPositions.size)questPositions=placeQuestTargets(villageSidequests(current),{limit:metrics().limit,heightAt:(x,z)=>physics.floorAt(x,z,heightAt(x,z)+.5),valid:(x,z,y)=>!interactives.some(i=>i.kind==='save'&&Math.hypot(i.x-x,i.z-z)<5)&&!blocked(x,z)&&!physics.overlaps(x,z,y,2.9,.6,true)&&!citizens.some(c=>Math.hypot(c.root.position.x-x,c.root.position.z-z)<2.1)&&!interactives.some(i=>['village-guard','quest','boss','save','interior-enter'].includes(i.kind)&&Math.hypot(i.x-x,i.z-z)<5),relocate:current==='water'?(entry,valid)=>waterFootprintDry(entry.x,entry.z,{w:1.5,d:1.5,padding:1})?null:nearestDryWaterPoint(entry.x,entry.z,{w:1.5,d:1.5,padding:1,valid}):null});
     const active=new Map(villageSidequests(current).filter(q=>sidequestTargetVisible(save,q)).map(q=>[q.id,q]));
-    if(current==='fire'&&(save.expeditions.fire||0)<2&&!save.story.questItems?.includes('fire:hong-lien'))active.set('fire:hong-lien',{id:'fire:hong-lien',kind:'expedition-goal',type:'retrieve',targetModel:'lotus',x:88,z:-96,y:36,targetName:'Hái Hồng Liên trên đỉnh núi'});
+    if(current==='fire'&&(save.expeditions.fire||0)<2&&!save.story.questItems?.includes('fire:hong-lien')){
+      const rescue=fireRescueMission(save)?.task;
+      if(['duel','grant'].includes(rescue?.action)||save.story.fieldRouteRevision!==FIELD_ROUTE_REVISION){
+        active.set('fire:hong-lien',{id:'fire:hong-lien',kind:'expedition-goal',type:rescue?'dialogue':'retrieve',targetModel:'lotus',x:88,z:-96,y:36,targetName:rescue?.label||'Hái Hồng Liên trên đỉnh núi'});
+      }
+    }
     for(let i=interactives.length-1;i>=0;i--){const entry=interactives[i];if(!['sidequest-target','expedition-goal'].includes(entry.kind)||active.has(entry.id))continue;
       const actor=questActors.get(entry.id);if(actor){actor.root.removeFromParent();if(actor.char){const index=citizens.indexOf(actor.char);if(index>=0)citizens.splice(index,1);actor.char.dispose();}else disposeObject(actor.root);questActors.delete(entry.id);}interactives.splice(i,1);
     }
     for(const q of active.values())if(!questActors.has(q.id)){let entry=interactives.find(i=>i.id===q.id);if(!entry){entry={kind:q.kind||'sidequest-target',id:q.id,questType:q.type,targetModel:q.targetModel,x:q.x,z:q.z,label:q.targetName};interactives.push(entry);}addSidequestActor(entry);}
+    const lotus=interactives.find(i=>i.id==='fire:hong-lien');
+    if(lotus&&active.has(lotus.id))lotus.label=active.get(lotus.id).targetName;
   }
   function syncJailers(save){
     jailerCombatEnabled=current!=='fire'||save.story?.villageEvents?.fire===1;
@@ -518,13 +556,18 @@ export function createAdventureScene(){
     camera.lookAt(head.clone().addScaledVector(forward,5).addScaledVector(right,.25).add(new T.Vector3(0,-Math.tan(orbitPitch)*6,0)));
   }
   function update(dt,moving,menu=false,paused=false,sprinting=false){treatment.update(dt);
-    if(paused&&!menu&&pausedFrame&&!boarding){
-      if(storyCamera.update(dt)){
-        time+=dt;
-        for(const actor of sceneCast)actor.update(time,false,null,dt,hero.root.position);
-      }
+    if(storyCamera.active){
+      time+=dt;
+      iceCapture?.update(dt);
+      storyPerformance.update(dt,time);
+      storyActors.updateFireCare(dt,time);
+      storyCamera.update(dt);
+      atmosphere.update(camera);
+      groundCover?.update(camera,visualQuality,time);
+      for(const culler of staticInstanceCullers)culler.update(camera);
       return;
     }
+    if(paused&&!menu&&pausedFrame&&!boarding)return;
     pausedFrame=paused&&!menu;time+=dt;if(menu)hero.root.rotation.y=.6;if(!ride&&!boarding&&!menu&&!paused)physics.step(dt);
     if(!room&&current==='wood'&&!ride&&!surface){const r=routes[0],p=hero.root.position;if(r&&p.y>=r.toY-.12&&!platformBlocked('heart-tree',p.x,p.z)){surface='heart-tree';physics.reset(r.toY);}}
     const velocity={x:dt>0?(hero.root.position.x-previousHeroPosition.x)/dt:0,z:dt>0?(hero.root.position.z-previousHeroPosition.z)/dt:0};previousHeroPosition.copy(hero.root.position);
@@ -539,11 +582,11 @@ export function createAdventureScene(){
     for(const a of animated){if(a.kind==='float'){a.mesh.rotation.y=time*.55;a.mesh.position.y=a.base+Math.sin(time*1.6)*.2;}if(a.kind==='balloon'){a.mesh.position.y=a.base+Math.sin(time*1.3+a.base)*.25;a.mesh.rotation.z=Math.sin(time*.7)*.035;}if(a.kind==='windmill')a.mesh.rotation.z=time*.45;if(a.kind==='halo')a.mesh.rotation.y+=dt*.24;if(a.kind==='boss'){a.mesh.position.y=a.base+Math.sin(time*1.1)*.18;a.mesh.rotation.y=Math.sin(time*.35)*.08;}if(a.kind==='pulse')a.mesh.scale.setScalar(1+Math.sin(time*2)*.08);if(a.kind==='flag')a.mesh.rotation.y=Math.sin(time*2.4)*.15;if(a.kind==='ripple')a.mesh.material.opacity=.76+Math.sin(time)*.04;}
     for(const h of harbors.values()){h.skipper.update(time,false,null,dt);h.sail.rotation.y=Math.sin(time*1.6)*.025;}
     focusSun();contacts.update([hero,...citizens,...party.map(p=>p.char),...storyActors.actors(),...infiltration.characters()],contactFloor);
-    if(!storyCamera.update(dt)&&(!paused||menu||boarding))followCamera(dt,false,menu);atmosphere.update(camera);groundCover?.update(camera,visualQuality,time);for(const culler of staticInstanceCullers)culler.update(camera);destination.rotation.z=time;
+    if(!paused||menu||boarding)followCamera(dt,false,menu);atmosphere.update(camera);groundCover?.update(camera,visualQuality,time);for(const culler of staticInstanceCullers)culler.update(camera);destination.rotation.z=time;
     const target=hero.root.position.clone().add(new T.Vector3(0,2,0));
     if(foliage){const sight=new T.Line3(camera.position,target),nearest=new T.Vector3(),hiddenMatrix=new T.Matrix4().makeScale(0,0,0);let changed=false;foliage.items.forEach((item,index)=>{sight.closestPointToPoint(item.center,true,nearest);const hidden=nearest.distanceTo(item.center)<item.radius+1;if(hidden!==item.hidden){foliage.mesh.setMatrixAt(index,hidden?hiddenMatrix:item.matrix);item.hidden=hidden;changed=true;}});if(changed)foliage.mesh.instanceMatrix.needsUpdate=true;}
   }
   function project(x,z,y=3){camera.updateMatrixWorld();const p=new T.Vector3(x,heightAt(x,z)+y,z).project(camera);return {left:(p.x+1)*innerWidth/2,top:(1-p.y)*innerHeight/2,visible:p.z<1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1};}
   function pick(clientX,clientY,canvas){if(!terrain)return null;camera.updateMatrixWorld();terrain.updateMatrixWorld();const r=canvas.getBoundingClientRect(),ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((clientX-r.left)/r.width*2-1,-(clientY-r.top)/r.height*2+1),camera);const hit=ray.intersectObject(terrain,false)[0];return hit?[hit.point.x,hit.point.z]:null;}
-  return {scene,camera,hero,fieldRoute,sideRoute,storyCamera,patrolState:()=>patrols?.state()||[],residentRouteState:()=>residentRoutes?.state()||[],stageDialogue,endDialogue,startTreatment:seconds=>treatment.start(seconds),stopTreatment:()=>treatment.clear(),beginBoarding,beginHarborArrival,advanceBoarding,harborPassageState:()=>boarding?.state()||null,harborsState:()=>[...harbors.values()].map(h=>({id:h.id,waterY:h.waterY,deckY:h.deckY,edge:h.edge,length:h.length,boat:h.boat.getWorldPosition(new T.Vector3()).toArray(),skipper:h.skipper.root.getWorldPosition(new T.Vector3()).toArray(),skipperReady:h.skipper.modelReady,waterBounds:new T.Box3().setFromObject(h.water).getSize(new T.Vector3()).toArray()})),charactersReady:()=>Promise.all([hero,...citizens,...party.map(p=>p.char),...storyActors.actors(),...[...harbors.values()].map(h=>h.skipper)].map(c=>c.ready)).then(values=>values.every(value=>value!==false)),characterBudgetState:characterBudget.state,skirmishState:()=>introFighters.map(({char,element,action,target})=>({element,action,target,position:char.root.position.toArray(),arms:char.arms.map(a=>a.pivot.rotation.x)})),syncMines,miningStrike,get clinics(){return clinicPlans;},get civic(){return civicPlan;},get military(){return room?null:civicPlan?.military||null;},get interior(){return room;},syncVillageEvents:save=>{syncGuardianOrder(save);syncStoryActors(save,current);const seal=land.getObjectByName('crescent-center-seal');if(seal)seal.visible=islandCenterLocked(save,current);syncJailers(save);sacredTree?.sync(save);tournamentBoard?.sync(save);},sacredTreeState:()=>sacredTree?.state()||null,storyState:storyActors.state,senseSeal:storyActors.senseSeal,obstacles,interactives,syncSidequests,setQuality,presentationState:()=>({dressingClusters:dressingCount,contactShadows:contacts.mesh.count,quality:visualQuality,lighting:{ambient:ambient.intensity,sun:sun.intensity,fill:fill.intensity,shadowExtent:sun.shadow.camera.right,shadowMap:sun.shadow.mapSize.x}}),guardsState:()=>roadGuards.map(g=>g.state()),guardSmokeState:guardSmoke.state,advanceGuards(dt,enabled=true){return roadGuards.filter(g=>g.update(dt,{hero:hero.root.position,enabled:enabled&&g.entry.guardRole!=='jailer'&&(g.entry.occupation||g.entry.guardRole!=='guardian'),riding:!!ride,surface})).map(g=>g.entry.id);},caughtGuard:()=>roadGuards.find(g=>g.caught())?.entry||null,dismissGuard(id){roadGuards.find(g=>g.entry.id===id)?.dismiss();},sabotageState:()=>null,infiltrationState:infiltration.state,caughtInfiltrator:()=>infiltratorCaught,residentsState:()=>residents.map(({person,char})=>({id:person.id,name:person.name,landmark:person.landmark,activity:person.activity,expression:char.root.userData.expression,platform:person.platform||null,position:char.root.position.toArray(),armPose:char.arms.map(a=>a.rotation.x),headPose:char.head.rotation.toArray().slice(0,3),bodyLean:char.body.rotation.x})),blocked,physicsState:physics.state,get solids(){return physics.solids;},moveHero:(dx,dz)=>physics.move(dx,dz),jump:jumpHero,tryGrabLedge,releaseCliff,recoverHero,heightAt,heroHeightAt,canHeroMove,navigationBlocked,startTraversal,advanceTraversal,unlockAudio(){storm.unlock();guardSmoke.unlock();},get surface(){return surface;},get riding(){return !!ride;},get routes(){return routes;},get metrics(){return metrics();},weatherState:storm.state,traversalState:()=>ride?{id:ride.route.id,kind:ride.route.kind,automatic:!!ride.route.automatic,progress:ride.progress,side:ride.side,mode:ride.mode,ledge:ride.index}:null,safeSave:()=>{if(boarding)return {position:[boarding.shore.x,boarding.shore.z],surface:null,elevation:boarding.shore.y};if(ride?.rock){const p=ride.route.ledges[ride.index];return {position:[p.x,p.z],surface:null,elevation:p.y};}if(ride)return {position:[...(ride.side?ride.route.to:ride.route.from)],surface:ride.side?ride.route.platform?.id||null:null,elevation:ride.side?ride.route.toY:ride.route.fromY};const p=physics.safePosition();return {position:[p.x,p.z],surface,elevation:p.y};},load,resume,update,project,pick,spawnEnemy,clearEnemy,orbit(dx,dy){orbitYaw=Math.atan2(Math.sin(orbitYaw-dx*.005),Math.cos(orbitYaw-dx*.005));orbitPitch=Math.max(-.95,Math.min(1.1,orbitPitch+dy*.003));hero.root.rotation.y=orbitYaw+Math.PI;},faceView(){hero.root.rotation.y=orbitYaw+Math.PI;},followHeading(yaw,dt){const target=yaw-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*8));},zoom(delta){orbitDistance=Math.max(2.8,Math.min(6.5,orbitDistance+delta*.004));},movementAxes(){return {forward:[-Math.sin(orbitYaw),-Math.cos(orbitYaw)],right:[Math.cos(orbitYaw),-Math.sin(orbitYaw)]};},cameraState:()=>({anchorHeight:cameraHeight.value,heroVisible:hero.root.visible,yaw:orbitYaw,heroYaw:hero.root.rotation.y,pitch:orbitPitch,distance:orbitDistance,position:camera.position.toArray(),height:camera.position.y-hero.root.position.y}),get guard(){return guard;},get boss(){return boss;},get gates(){return gates;},get bridges(){return bridges;},get randomEnemy(){return randomEnemy;},destination,resize(){pausedFrame=false;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();hero.setInkViewport(innerWidth,innerHeight);for(const char of citizens)char.setInkViewport?.(innerWidth,innerHeight);for(const h of harbors.values())h.skipper.setInkViewport(innerWidth,innerHeight);}};
+  return {scene,camera,hero,fieldRoute,sideRoute,storyCamera,playDialogueBeat,playDialogueLine,patrolState:()=>patrols?.state()||[],residentRouteState:()=>residentRoutes?.state()||[],stageDialogue,endDialogue,startTreatment:seconds=>treatment.start(seconds),stopTreatment:()=>treatment.clear(),beginBoarding,beginHarborArrival,advanceBoarding,harborPassageState:()=>boarding?.state()||null,harborsState:()=>[...harbors.values()].map(h=>({id:h.id,waterY:h.waterY,deckY:h.deckY,edge:h.edge,length:h.length,boat:h.boat.getWorldPosition(new T.Vector3()).toArray(),skipper:h.skipper.root.getWorldPosition(new T.Vector3()).toArray(),skipperReady:h.skipper.modelReady,waterBounds:new T.Box3().setFromObject(h.water).getSize(new T.Vector3()).toArray()})),charactersReady:()=>Promise.all([hero,...citizens,...party.map(p=>p.char),...storyActors.actors(),...[...harbors.values()].map(h=>h.skipper)].map(c=>c.ready)).then(values=>values.every(value=>value!==false)),characterBudgetState:characterBudget.state,skirmishState:()=>introFighters.map(({char,element,action,target})=>({element,action,target,position:char.root.position.toArray(),arms:char.arms.map(a=>a.pivot.rotation.x)})),syncMines,miningStrike,get clinics(){return clinicPlans;},get civic(){return civicPlan;},get military(){return room?null:civicPlan?.military||null;},get interior(){return room;},syncVillageEvents:save=>{syncGuardianOrder(save);syncStoryActors(save,current);const seal=land.getObjectByName('crescent-center-seal');if(seal)seal.visible=islandCenterLocked(save,current);syncJailers(save);sacredTree?.sync(save);tournamentBoard?.sync(save);},sacredTreeState:()=>sacredTree?.state()||null,storyState:storyActors.state,senseSeal:storyActors.senseSeal,obstacles,interactives,syncSidequests,setQuality,presentationState:()=>({dressingClusters:dressingCount,contactShadows:contacts.mesh.count,quality:visualQuality,lighting:{ambient:ambient.intensity,sun:sun.intensity,fill:fill.intensity,shadowExtent:sun.shadow.camera.right,shadowMap:sun.shadow.mapSize.x}}),guardsState:()=>roadGuards.map(g=>g.state()),guardSmokeState:guardSmoke.state,advanceGuards(dt,enabled=true){return roadGuards.filter(g=>g.update(dt,{hero:hero.root.position,enabled:enabled&&g.entry.guardRole!=='jailer'&&(g.entry.occupation||g.entry.guardRole!=='guardian'),riding:!!ride,surface})).map(g=>g.entry.id);},caughtGuard:()=>roadGuards.find(g=>g.caught())?.entry||null,dismissGuard(id){roadGuards.find(g=>g.entry.id===id)?.dismiss();},sabotageState:()=>null,infiltrationState:infiltration.state,caughtInfiltrator:()=>infiltratorCaught,residentsState:()=>residents.map(({person,char})=>({id:person.id,name:person.name,landmark:person.landmark,activity:person.activity,expression:char.root.userData.expression,platform:person.platform||null,position:char.root.position.toArray(),armPose:char.arms.map(a=>a.rotation.x),headPose:char.head.rotation.toArray().slice(0,3),bodyLean:char.body.rotation.x})),blocked,physicsState:physics.state,get solids(){return physics.solids;},moveHero:(dx,dz)=>physics.move(dx,dz),jump:jumpHero,tryGrabLedge,releaseCliff,recoverHero,heightAt,heroHeightAt,canHeroMove,navigationBlocked,startTraversal,advanceTraversal,unlockAudio(){storm.unlock();guardSmoke.unlock();},get surface(){return surface;},get riding(){return !!ride;},get routes(){return routes;},get metrics(){return metrics();},weatherState:storm.state,traversalState:()=>ride?{id:ride.route.id,kind:ride.route.kind,automatic:!!ride.route.automatic,progress:ride.progress,side:ride.side,mode:ride.mode,ledge:ride.index}:null,safeSave:()=>{if(storySavePoint)return storySavePoint;if(boarding)return {position:[boarding.shore.x,boarding.shore.z],surface:null,elevation:boarding.shore.y};if(ride?.rock){const p=ride.route.ledges[ride.index];return {position:[p.x,p.z],surface:null,elevation:p.y};}if(ride)return {position:[...(ride.side?ride.route.to:ride.route.from)],surface:ride.side?ride.route.platform?.id||null:null,elevation:ride.side?ride.route.toY:ride.route.fromY};const p=physics.safePosition();return {position:[p.x,p.z],surface,elevation:p.y};},load,resume,update,project,pick,spawnEnemy,clearEnemy,orbit(dx,dy){orbitYaw=Math.atan2(Math.sin(orbitYaw-dx*.005),Math.cos(orbitYaw-dx*.005));orbitPitch=Math.max(-.95,Math.min(1.1,orbitPitch+dy*.003));hero.root.rotation.y=orbitYaw+Math.PI;},faceView(){hero.root.rotation.y=orbitYaw+Math.PI;},followHeading(yaw,dt){const target=yaw-Math.PI,delta=Math.atan2(Math.sin(target-orbitYaw),Math.cos(target-orbitYaw));orbitYaw+=delta*(1-Math.exp(-dt*8));},zoom(delta){orbitDistance=Math.max(2.8,Math.min(6.5,orbitDistance+delta*.004));},movementAxes(){return {forward:[-Math.sin(orbitYaw),-Math.cos(orbitYaw)],right:[Math.cos(orbitYaw),-Math.sin(orbitYaw)]};},cameraState:()=>({anchorHeight:cameraHeight.value,heroVisible:hero.root.visible,yaw:orbitYaw,heroYaw:hero.root.rotation.y,pitch:orbitPitch,distance:orbitDistance,position:camera.position.toArray(),height:camera.position.y-hero.root.position.y}),get guard(){return guard;},get boss(){return boss;},get gates(){return gates;},get bridges(){return bridges;},get randomEnemy(){return randomEnemy;},destination,resize(){pausedFrame=false;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();hero.setInkViewport(innerWidth,innerHeight);for(const char of citizens)char.setInkViewport?.(innerWidth,innerHeight);for(const h of harbors.values())h.skipper.setInkViewport(innerWidth,innerHeight);}};
 }

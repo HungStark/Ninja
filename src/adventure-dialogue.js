@@ -18,7 +18,10 @@ export function campaignLines(script,save,id=save.village){
   const hero=heroSpeaker(save),speakers={...campaignSpeakers(save,id),hero,
     narrator:{...hero,name:'Suy nghĩ nội tâm',role:hero.name,thought:true},
     memory:{...hero,role:'Suy nghĩ nội tâm',thought:true}};
-  return (script||[]).filter(([key])=>key!=='haly'||!companionSacrificed(save)).map(([key,text])=>({speaker:speakers[key]||speakers.guide,text}));
+  return (script||[]).filter(([key])=>key!=='haly'||!companionSacrificed(save)).map(([key,text,cue])=>{
+    const line={speaker:speakers[key]||speakers.guide,text};
+    return cue?{...line,cue}:line;
+  });
 }
 
 export function dialogueCast(item,save,region,biome){

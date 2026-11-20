@@ -29,14 +29,15 @@ export function attachVillageNinja(root,profile,fallback){
   function pose(state,time){
     if(!bones)return;
     const {weight,forward,side,sprintLean,sprintBlend,gait}=state;
+    const acting=root.userData.storyActing;
     for(let i=0;i<2;i++){
-      const step=gait.legs[i],a=state.arms[i];arm(i,a.pitch,a.spread,a.flex,REST_ARM_OPEN);
+      const step=gait.legs[i],a=state.arms[i],reach=i===0?(acting?.reach||0):0;arm(i,a.pitch-reach,a.spread,a.flex+reach*.65,REST_ARM_OPEN);
       apply(bones.legs[i],rotation(step.hip-sprintLean,0,step.side));apply(bones.knees[i],rotation(step.knee));apply(bones.feet[i],rotation(step.ankle,0,-step.side));
     }
     apply(bones.hips,rotation(forward*weight*.045*(1-sprintBlend)+sprintLean,0,-side*weight*.05));
     bones.hips.position.y=hipsY-gait.drop*bones.legLength+Math.sin(time*2)*.008*(1-weight)/scale;
-    apply(bones.spine,rotation(-forward*weight*.018,0,side*weight*.018));apply(bones.chest,rotation(-forward*weight*.012,0,side*weight*.012));
-    apply(bones.head,rotation(Math.sin(time*.9+profile.variant)*.012,Math.sin(time*.5+profile.variant)*.025));
+    apply(bones.spine,rotation(-forward*weight*.018,0,side*weight*.018));apply(bones.chest,rotation(-forward*weight*.012+(acting?.lean||0),0,side*weight*.012));
+    apply(bones.head,rotation(Math.sin(time*.9+profile.variant)*.012+(acting?.nod||0),Math.sin(time*.5+profile.variant)*.025));
     const blink=((time+profile.variant*.61)%4.6+4.6)%4.6;
     visual.traverse(o=>{if(o.morphTargetDictionary&&o.morphTargetInfluences){const index=o.morphTargetDictionary.Fcl_EYE_Close;if(index!==undefined)o.morphTargetInfluences[index]=blink<.15?Math.sin(blink/.15*Math.PI):0;}});
   }

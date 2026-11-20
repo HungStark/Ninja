@@ -156,7 +156,7 @@ export function createVillager(profile,{procedural=typeof document==='undefined'
     legs.forEach((leg,i)=>{leg.rotation.x=moving?Math.sin(stride+i*Math.PI)*.35:0;});
     arms.forEach((arm,i)=>{arm.rotation.x=rest[i].x+(moving?-Math.sin(stride+i*Math.PI)*.24:Math.sin(time*1.2+i)*.025);});
     if(!moving&&profile.job==='smith')arms[1].rotation.x=-.35+Math.sin(time*1.5)*.16;
-    activity?.update(time,moving);
+    if(!root.userData.storyActing)activity?.update(time,moving);
     forearms.forEach((elbow,i)=>{const work=!moving&&profile.activity,flex=work?Math.min(.38,Math.abs(arms[i].rotation.x)*.24):.08;elbow.rotation.x=profile.memorialOffering?(i===0?-.12-.5*(root.userData.activity?.reach||0):0):-flex-Math.sin(time*1.05+profile.variant+i)*.025;});
     const cycle=3.4+(profile.variant%5)*.37,blinkPhase=((time+profile.variant*.71)%cycle+cycle)%cycle,blink=blinkPhase<.16?Math.sin(blinkPhase/.16*Math.PI):0;
     eyes.scale.y=1-blink*.94;
@@ -167,6 +167,8 @@ export function createVillager(profile,{procedural=typeof document==='undefined'
     const ease=1-Math.exp(-Math.max(0,dt)*5);lookYaw+=(targetYaw-lookYaw)*ease;lookPitch+=(targetPitch-lookPitch)*ease;
     head.rotation.y+=lookYaw;head.rotation.x=(head.rotation.x||0)+lookPitch;head.rotation.z=Math.sin(time*.49+profile.variant)*.017;
     brows.position.y=.09+Math.sin(time*.7+profile.variant)*.003;
+    const acting=root.userData.storyActing;
+    if(acting){head.rotation.x+=acting.nod;body.rotation.x+=acting.lean;arms[0].rotation.x-=acting.reach;forearms[0].rotation.x-=acting.reach*.65;}
     root.userData.expression={blink,lookYaw,lookPitch};
     npcModelUpdate?.(time,moving,{body,head,arms,forearms,legs});
   }

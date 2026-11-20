@@ -175,60 +175,15 @@
    ]
   },
   "fire:2": {
-   "title": "Trạm cứu thương tại nhà lao",
+   "title": "Hồng Liên cứu Hạ Ly",
    "steps": [
-    {
-     "mode": "escort",
-     "label": "Dẫn Y nữ Đan tới Hạ Ly",
-     "description": "Hạ Ly đang mất máu và chưa thể tự đứng dậy. Dẫn Y nữ Đan từ ngoài sân tới cửa nhà lao để cô xử lý vết thương tại chỗ.",
-     "name": "Y nữ Đan",
-     "result": "Đan đã tới cửa nhà lao. Hãy giữ băng trong lúc cô cầm máu cho Hạ Ly.",
-     "offset": [
-      0,
-      12
-     ],
-     "destination": {
-      "offset": [
-       3,
-       0
-      ],
-      "label": "Điểm cứu thương cạnh cửa nhà lao",
-      "prop": "medicine",
-      "arrival": "Đan đã tới cửa nhà lao. Hãy giữ băng trong lúc cô cầm máu cho Hạ Ly.",
-      "obstacle": {
-       "prop": "tools",
-       "seconds": 2.5,
-       "label": "Gỡ chốt cửa sân bị kẹt",
-       "text": "Đan cần cả hai tay giữ hộp thuốc. Hãy gỡ chốt để cô đi qua."
-      }
-     }
-    },
-    {
-     "mode": "hold",
-     "label": "Cùng Đan cầm máu cho Hạ Ly",
-     "description": "Giữ vị trí trong lúc Đan băng bó. Hạ Ly vẫn tỉnh và bắt đầu chỉ ra những điểm bất thường trong quân lệnh.",
-     "seconds": 5,
-     "model": "medicine",
-     "offset": [
-      3,
-      0
-     ],
-     "result": "Hạ Ly đã qua nguy hiểm. Thuốc được dùng tại hiện trường; cả nhóm có thể tiếp tục điều tra ngay."
-    }
-   ],
-   "script": [
-    [
-     "haly",
-     "Đan, giữ băng thấp hơn một chút. Ta đứng được rồi. Bà Hồng vẫn ở ngoài chứ?"
-    ],
-    [
-     "hero",
-     "Bà đang chờ tin cô. Ai đã ra lệnh bắt cô?"
-    ],
-    [
-     "haly",
-     "Hai kẻ đó mặc áo lính Hỏa, nhưng quân lệnh của chúng sai mật mã. Ta có thể chỉ cho ngươi cách nhận ra nét sửa. Đi cùng ta."
-    ]
+    {"mode":"interact","action":"wounded","target":{"kind":"story-witness","id":"ha-ly-wounded"},"label":"Kiểm tra vết thương của Hạ Ly","description":"Vào nhà lao xem Hạ Ly sau khi hạ hai kẻ giam giữ.","script":[["hero","Hai tên giữ ngục đã ngã. Cô còn nghe ta nói không?"],["haly","Mẹ ta… bà có bình an không?"],["hero","Hạ Ly! Cô ấy ngất rồi. Ta phải báo cho bà Hồng."]]},
+    {"mode":"interact","action":"mother","target":{"kind":"story-witness","id":"fire-ha-ly-mother"},"label":"Báo cho bà Hồng","description":"Ra ngoài cửa nhà lao và nói cho mẹ Hạ Ly biết tình hình.","script":[["hero","Bà Hồng, Hạ Ly bị thương nặng. Cô ấy vừa ngất."],["adoptiveMother","Cậu đến trạm y tế tìm Y nữ Đan. Dẫn cô ấy về đây ngay."],["adoptiveMother","Ta vào giữ vết thương và chăm con bé trong lúc chờ. Hạ Ly, mẹ tới rồi đây."]]},
+    {"mode":"escort","action":"escort","origin":"fire-dan","label":"Tìm và hộ tống Y nữ Đan","description":"Gặp Y nữ Đan ở trạm y tế rồi đi cạnh cô tới nhà lao.","name":"Y nữ Đan","result":"Y nữ Đan đã tới nhà lao. Hãy vào xem cô khám cho Hạ Ly.","destination":{"point":[-12,23.35],"label":"Cửa nhà lao của Hạ Ly","prop":"medicine","arrival":"Đã đưa Y nữ Đan đến cửa nhà lao."}},
+    {"mode":"interact","action":"examine","target":{"kind":"story-witness","id":"ha-ly-wounded"},"label":"Xem Y nữ Đan khám cho Hạ Ly","description":"Trở lại chỗ Hạ Ly để nghe Y nữ Đan chẩn đoán.","script":[["nurse","Ta đã cầm máu tạm thời. Mạch cô ấy quá yếu, thuốc thường sẽ không đủ."],["adoptiveMother","Còn cách nào cứu con bé không?"],["nurse","Phải có Hồng Liên tươi trên Đỉnh Hồng Liên. Ta có thể điều chế thuốc từ hoa ấy."],["hero","Ta sẽ leo lên đỉnh hái hoa. Hai người ở lại chăm cô ấy."]]},
+    {"mode":"interact","action":"duel","target":{"kind":"expedition-goal","id":"fire:hong-lien"},"label":"Gặp cao nhân trên Đỉnh Hồng Liên","description":"Leo bậc đá Vách Tro Hồng tới đỉnh và xin người canh cho lấy Hồng Liên.","script":[["lotusKeeper","Dừng lại. Hồng Liên là bảo vật của làng. Ta không thể tùy tiện giao nó cho người ngoài."],["hero","Có người đang nguy kịch. Ta chỉ xin một bông để làm thuốc, lấy xong sẽ lập tức xuống núi."],["lotusKeeper","Lời cầu xin chưa đủ để ta phá lệ. Nếu vẫn muốn tiến tới, hãy vượt qua ta."],["hero","Ta không muốn động thủ. Nhưng người ấy không còn nhiều thời gian."]]},
+    {"mode":"interact","action":"grant","target":{"kind":"expedition-goal","id":"fire:hong-lien"},"label":"Nói chuyện với cao nhân sau trận đấu","description":"Hạ vũ khí và nghe người canh giữ nói về bông Hồng Liên.","script":[["lotusKeeper","Ta xin cậu… đừng lấy bông Hồng Liên ấy. Ta đã trông nom nó qua bao mùa lạnh."],["hero","Ta hiểu vì sao ông muốn giữ nó. Nhưng ta cần bông hoa để cứu một người."],["lotusKeeper","Người đó là ai?"],["hero","Hạ Ly."],["lotusKeeper","Hạ Ly… Vậy sao. Cậu hãy hái bông hoa và mang xuống núi ngay."],["lotusKeeper","Cầm cả quyển sách này. Trong đó có thuật Hỏa Long Cuồng Vũ. Dùng nó để bảo vệ người cậu muốn cứu."]]},
+    {"mode":"interact","action":"treat","target":{"kind":"story-witness","id":"ha-ly-wounded"},"label":"Mang Hồng Liên về cho Y nữ Đan","description":"Trở về nhà lao để Y nữ Đan điều chế thuốc và chữa thương cho Hạ Ly.","script":[["hero","Ta mang Hồng Liên về rồi. Cô ấy thế nào?"],["nurse","Đưa hoa cho ta. Ta sẽ điều chế thuốc ngay tại đây."],["adoptiveMother","Hạ Ly, mẹ ở đây. Con từ từ mở mắt thôi."],["nurse","Mạch đã ổn hơn rồi. Hãy để cô ấy nghỉ một lát."]]}
    ]
   },
   "lightning:0": {

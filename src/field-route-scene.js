@@ -127,8 +127,8 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
     reset();key=next;
     if(bridgeProgress||local&&mission.opening)bridgeWork(bridgeProgress);
     if(siteProgress)showRestoredSite(id,siteProgress,save);
-    if(!local||mission.complete)return;
-    const anchor=mission.opening?interactives.find(i=>i.id==='old-bridge'):eventSpot(id,event,save);
+    if(!local||mission.complete||mission.task.target)return;
+    const anchor=mission.task.origin?interactives.find(i=>i.id===mission.task.origin):mission.opening?interactives.find(i=>i.id==='old-bridge'):eventSpot(id,event,save);
     if(anchor)spawn(mission,anchor,id);
   }
   function spawn(mission,anchor,id){
@@ -143,7 +143,7 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
     let actor=null,represented=null;
     if(task.name){
       const nurse=mission.key==='fire:2';
-      const guide=side&&REGIONS[id].npcs.find(p=>p.id===mission.giver);
+      const guide=REGIONS[id].npcs.find(p=>p.id===(side?mission.giver:task.origin));
       const person=guide?{...guide,activity:null}:{id:nurse?'fire-dan':'field-actor',kind:nurse?'healer':'lore',appearance:{female:nurse,job:mission.opening&&mission.step===1?'carpenter':'villager'}};
       actor=task.mode==='chase'?createNinja({id:'field-runner',village:id==='nameless'?'wind':id}):createVillager(villagerAppearance(id,person));
       const original=guide&&residentRoot(guide.id);

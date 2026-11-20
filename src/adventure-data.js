@@ -14,7 +14,7 @@ import {readInterior,INTERIORS} from './adventure-interiors.js';
 import {combatExperienceRewards} from './combat-experience.js';
 import {villageEventObjective,villageEventComplete,advanceVillageEvent} from './village-events.js';
 import {newStory,readStory,HOME,openingObjective,FIRST_VILLAGES,completeSidequestTarget,villageSidequests,INTRO_SQUAD} from './journey-story.js';
-import {fieldObjective} from './field-route.js';
+import {fieldObjective,fireRescueMission,completeFieldTask} from './field-route.js';
 import {openingTutorialObjective} from './opening-tutorial.js';
 import {newEquipment,readEquipment} from './equipment.js';
 import {WORLD_LIMIT,REGIONS,STARTER_SPELLS,ALL_ADVENTURE_SPELLS,regionMetrics} from './adventure-world.js';
@@ -194,6 +194,11 @@ export function completeLesson(save,id) {
 export function bossRewardSpells(id){return [...(REGIONS[id]?.boss.rewardSpells||[])];}
 export function resolveBattle(save,encounter,victory) {
   if(isEarthDepartureTrial(encounter)&&!victory)return save;
+  if(encounter.kind==='lotus-duel'){
+    const mission=fireRescueMission(save);
+    if(victory&&save.village==='fire'&&mission?.task?.action==='duel'&&completeFieldTask(save,mission.key,mission.step))save.wins++;
+    return save;
+  }
   if(encounter.kind==='arena'){
     if(resolveTournamentMatch(save,encounter,victory))awardTournamentEquipment(save);
     return save;

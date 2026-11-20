@@ -17,6 +17,8 @@ const ninja=(id,name,village,look={},extra={})=>{
 export function campaignSpeakers(save,id=save.village){
   const event=currentVillageEvent(save,id),family=event?.guardianVillage||id;
   const mother=REGIONS.nameless.npcs.find(p=>p.id==='nameless-resident-war-cemetery');
+  const nurse=REGIONS.fire.npcs.find(p=>p.id==='fire-dan');
+  const lotusKeeper=REGIONS.fire.npcs.find(p=>p.id==='fire-resident-summit-lotus');
   let guide=person('story-guide-'+id,PLOT.villages[id]?.speaker||'Người làm chứng',id,'lore',
     id==='wood'?{female:true,job:'healer',hairStyle:'bun'}:id==='ice'?{female:true,hairStyle:'braid'}:id==='dark'?{female:true,hairStyle:'long',hat:'hood'}:{});
   if(id==='earth')guide={...guide,appearance:villagerAppearance(id,REGIONS.earth.npcs.find(p=>p.id==='earth-son'))};
@@ -28,6 +30,8 @@ export function campaignSpeakers(save,id=save.village){
     haly:{...HA_LY,appearance:ninjaProfile(HA_LY),sceneCharacter:true},
     mother:{id:mother.id,name:mother.name,role:mother.role,appearance:villagerAppearance('nameless',mother),sceneCharacter:true},
     adoptiveMother:{...HA_LY_MOTHER,appearance:{...villagerAppearance('fire',HA_LY_MOTHER),...HA_LY_MOTHER},sceneCharacter:true},
+    nurse:{...nurse,appearance:villagerAppearance('fire',nurse),sceneCharacter:true},
+    lotusKeeper:{...lotusKeeper,appearance:villagerAppearance('fire',lotusKeeper),sceneCharacter:true},
     commander:ninja('crescent-commander-'+family,event?.enemy||'Phó đoàn Trăng Khuyết',family,commanderLook,{faction:'crescent'}),
     captor:ninja('crescent-captor','Nội gián Trăng Khuyết','fire',encounterAppearance({kind:'infiltrator',element:'fire'}),{faction:'crescent'}),
     traitor:ninja('crescent-traitor-'+traitorFamily,event?.storyBoss?event.enemy:'Kẻ phản bội Làng Băng',traitorFamily,encounterAppearance({kind:'boss',village:traitorFamily}),{faction:'crescent'}),

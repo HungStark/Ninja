@@ -183,7 +183,7 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
         arms:['J_Bip_L_UpperArm','J_Bip_R_UpperArm'].map(n=>visual.getObjectByName(n)),elbows:['J_Bip_L_LowerArm','J_Bip_R_LowerArm'].map(n=>visual.getObjectByName(n)),hands:['J_Bip_L_Hand','J_Bip_R_Hand'].map(n=>visual.getObjectByName(n)),
         legs:['J_Bip_L_UpperLeg','J_Bip_R_UpperLeg'].map(n=>visual.getObjectByName(n)),knees:['J_Bip_L_LowerLeg','J_Bip_R_LowerLeg'].map(n=>visual.getObjectByName(n)),feet:['J_Bip_L_Foot','J_Bip_R_Foot'].map(n=>visual.getObjectByName(n))};
       const bind=bone=>bone?{bone,base:bone.quaternion.clone(),position:bone.position.clone()}:null;
-      avatarPose={hips:bind(bones.hips),spine:bind(bones.spine),chest:bind(bones.chest),scale,legLength:(bones.knees[0]?.position.length()||.393)+(bones.feet[0]?.position.length()||.46)};
+      avatarPose={hips:bind(bones.hips),spine:bind(bones.spine),chest:bind(bones.chest),head:bind(visual.getObjectByName('J_Bip_C_Head')),scale,legLength:(bones.knees[0]?.position.length()||.393)+(bones.feet[0]?.position.length()||.46)};
       for(const part of ['arms','elbows','hands','legs','knees','feet'])avatarPose[part]=bones[part].map(bind);
       visual.traverse(o=>{if(o.morphTargetDictionary?.Fcl_EYE_Close!==undefined)eyeMeshes.push(o);if(o.morphTargetDictionary?.MapleFlutter!==undefined)clothMeshes.push(o);});setEyeOpening(eyeOpening);
       root.add(visual);body.visible=false;root.userData.referenceAppearance=true;outlineMeshes(visual);
@@ -231,12 +231,18 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
     for(const mesh of clothMeshes)mesh.morphTargetInfluences[mesh.morphTargetDictionary.MapleFlutter]=(.5+.5*Math.sin(time*(moving?4.5:2.4)))*(moving?.9:.28);
     const state=motion.update(time,moving,velocity,dt,sprinting,root.rotation.y,airborne);({localX,localZ,stride,sprintBlend}=state);
     const {weight,side,forward,sprintLean,gait}=state;
+    const acting=root.userData.storyActing,kneel=acting?.kneel||0;
     const combat=combatMotion.update(dt,combatOptions||{}),combatWeight=combat?.weight||0,blend=(a,b)=>T.MathUtils.lerp(a,b,combatWeight);
     legs.forEach((leg,i)=>{
       const step=gait.legs[i];
       leg.pivot.rotation.x=step.hip-sprintLean;
       leg.pivot.rotation.z=step.side;leg.knee.rotation.x=step.knee;
       leg.foot.rotation.x=step.ankle;leg.foot.rotation.z=-step.side;
+      if(kneel){
+        leg.pivot.rotation.x=T.MathUtils.lerp(leg.pivot.rotation.x,i===0?-1.28:-.48,kneel);
+        leg.knee.rotation.x=T.MathUtils.lerp(leg.knee.rotation.x,i===0?1.57:1.92,kneel);
+        leg.foot.rotation.x=T.MathUtils.lerp(leg.foot.rotation.x,i===0?-.29:-1.2,kneel);
+      }
       // Both hands trail behind the shoulders instead of pumping beside the torso.
       arms[i].pivot.rotation.x=state.arms[i].pitch;arms[i].pivot.rotation.z=state.arms[i].spread;arms[i].elbow.rotation.x=-state.arms[i].flex;
       if(combat){const target=combat.arms[i];arms[i].pivot.rotation.x=blend(arms[i].pivot.rotation.x,target.pitch);arms[i].pivot.rotation.z=blend(arms[i].pivot.rotation.z,target.spread);arms[i].elbow.rotation.x=blend(arms[i].elbow.rotation.x,-target.flex);if(combat.legs){const step=combat.legs[i];leg.pivot.rotation.x=blend(leg.pivot.rotation.x,step.hip);leg.knee.rotation.x=blend(leg.knee.rotation.x,step.knee);leg.foot.rotation.x=blend(leg.foot.rotation.x,step.ankle);}}
@@ -248,6 +254,8 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
     body.rotation.x=forward*weight*.045*(1-sprintBlend)+sprintLean+combatLean;body.rotation.z=-side*weight*.05;body.rotation.y=combatTwist;body.position.y-=combatDrop;
     scarf.rotation.y=Math.sin(time*1.6)*.018+side*weight*.045;
     tails.forEach((tail,i)=>{tail.rotation.x=-.05-weight*.12+Math.sin(time*2.1+i*1.7)*(.025+weight*.045);tail.rotation.z=Math.sin(time*1.7+i)*.025+side*weight*.06;});
+    head.rotation.x=acting?.nod||0;
+    if(acting&&!airborne){body.position.y-=kneel*.52;body.rotation.x+=acting.lean;arms[0].pivot.rotation.x-=acting.reach;arms[0].elbow.rotation.x-=acting.reach*.65;}
     if(carrying)arms.forEach((a,i)=>{a.pivot.rotation.x=-1.15;a.pivot.rotation.z=(i===0?-1:1)*.25;a.elbow.rotation.x=-1.35;});
     if(avatarPose){
       const rotation=(x,y,z)=>new T.Quaternion().setFromEuler(new T.Euler(x,y,z));
@@ -255,10 +263,11 @@ export function createHero({outlineWidth=1.15,procedural=typeof document==='unde
         avatarArm(i,airborne?-.6:arms[i].pivot.rotation.x,airborne?(i===0?.22:-.22):arms[i].pivot.rotation.z,airborne?.35:-arms[i].elbow.rotation.x,airborne?0:REST_ARM_OPEN);
         const step=gait.legs[i];avatarLeg(i,airborne?-.3:legs[i].pivot.rotation.x,airborne?(airVerticalSpeed>0?.48:.62):legs[i].knee.rotation.x,airborne?-.22:legs[i].foot.rotation.x,airborne?0:step.side);
       }
-      if(avatarPose.hips){avatarPose.hips.bone.quaternion.copy(avatarPose.hips.base).premultiply(rotation(airborne?-.04:forward*weight*.045*(1-sprintBlend)+sprintLean+combatLean,combatTwist*.35,airborne?0:-side*weight*.05));avatarPose.hips.bone.position.y=avatarPose.hips.position.y+(airborne?0:-gait.drop*avatarPose.legLength+(Math.sin(time*2)*.008*(1-weight)-combatDrop)/avatarPose.scale);}
+      if(avatarPose.hips){avatarPose.hips.bone.quaternion.copy(avatarPose.hips.base).premultiply(rotation(airborne?-.04:forward*weight*.045*(1-sprintBlend)+sprintLean+combatLean+(acting?.lean||0),combatTwist*.35,airborne?0:-side*weight*.05));avatarPose.hips.bone.position.y=avatarPose.hips.position.y+(airborne?0:-gait.drop*avatarPose.legLength+(Math.sin(time*2)*.008*(1-weight)-combatDrop-kneel*.52)/avatarPose.scale);}
       if(avatarPose.spine)avatarPose.spine.bone.quaternion.copy(avatarPose.spine.base).premultiply(rotation((airborne?.08:-forward*weight*.018)+combatLean*.15,combatTwist*.35,airborne?0:side*weight*.018));
       if(avatarPose.chest)avatarPose.chest.bone.quaternion.copy(avatarPose.chest.base).premultiply(rotation((airborne?-.04:-forward*weight*.012)+combatLean*.1,combatTwist*.3,airborne?0:side*weight*.012));
     }
+    if(avatarPose?.head)avatarPose.head.bone.quaternion.copy(avatarPose.head.base).premultiply(new T.Quaternion().setFromEuler(new T.Euler(acting?.nod||0,0,0)));
     if(carrying){root.updateMatrixWorld(true);for(let i=0;i<2;i++){const side=i===0?1:-1,arm=arms.find(a=>a.side===side),upper=avatarPose?.arms[i]?.bone||arm.pivot,lower=avatarPose?.elbows[i]?.bone||arm.elbow,hand=avatarPose?.hands[i]?.bone||arm.hand;reachResidentHand(root,upper,lower,hand,[side*.55,1.45,.7],side,[side*.85,1.4,.25]);}}
     if(!carrying&&combat?.hands&&!airborne){
       root.updateMatrixWorld(true);

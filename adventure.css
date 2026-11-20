@@ -208,18 +208,19 @@ body[data-journey=boarding] #startScreen{display:none!important}
    Shared selectors also override the older Android fullscreen dialogue rules. */
 body[data-journey=dialog] #journeyHud{visibility:hidden}
 #adventure #journeyDialog{position:fixed;inset:auto 0 0;display:flex;align-items:flex-end;justify-content:center;box-sizing:border-box;padding:0 calc(16px + var(--safe-right,0px)) calc(12px + var(--safe-bottom,0px)) calc(16px + var(--safe-left,0px));background:transparent;backdrop-filter:none;overflow:visible;pointer-events:none}
-#adventure #journeyDialog .journey-dialog-card{display:flex;flex-direction:column;gap:8px;width:min(980px,100%);height:clamp(240px,36dvh,320px);max-height:56dvh;min-height:0;box-sizing:border-box;padding:16px 20px;overflow:hidden;pointer-events:auto;background:linear-gradient(140deg,#243c40f5,#172d34f5);box-shadow:0 8px 30px #0005;border-radius:8px}
+#adventure #journeyDialog .journey-dialog-card{display:flex;flex-direction:column;gap:6px;width:min(680px,100%);height:auto;max-height:min(60dvh,420px);min-height:0;box-sizing:border-box;padding:10px 14px;overflow:auto;overscroll-behavior:contain;pointer-events:auto;background:linear-gradient(140deg,#243c40f5,#172d34f5);box-shadow:0 8px 30px #0005;border-radius:8px}
 #adventure #journeyDialog #dialogKicker{flex:none;font-size:8px;line-height:1.3;letter-spacing:1.2px}
-#adventure #journeyDialog #dialogTitle{flex:none;font-size:clamp(18px,2.2vw,25px);line-height:1.2;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#adventure #journeyDialog .dialog-layout{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:stretch;flex:1 1 0;min-height:0;overflow:hidden}
+#adventure #journeyDialog .is-conversation #dialogKicker{display:none}
+#adventure #journeyDialog #dialogTitle{flex:none;font-size:clamp(15px,1.8vw,19px);line-height:1.2;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#adventure #journeyDialog .dialog-layout{display:grid;grid-template-columns:60px minmax(0,1fr);gap:10px;align-items:start;flex:0 0 auto;min-height:0}
 #adventure #journeyDialog .journey-dialog-card:not(.is-conversation) .dialog-layout{display:flex}
 #adventure #journeyDialog .dialog-person{display:flex;flex-direction:column;min-height:0;overflow:hidden}
-#adventure #journeyDialog #dialogPortrait{display:flex;justify-content:center;flex:1 1 0;min-height:0;max-height:120px}
+#adventure #journeyDialog #dialogPortrait{display:flex;justify-content:center;flex:none;height:57px}
 #adventure #journeyDialog #dialogPortrait svg,#adventure #journeyDialog #dialogPortrait .model-portrait{width:auto;max-width:100%;height:100%;box-sizing:border-box;box-shadow:none;flex:0 1 auto}
 #adventure #journeyDialog #dialogSpeakerName{flex:none;font-size:11px;line-height:1.3;margin-top:4px}
-#adventure #journeyDialog #dialogSpeakerRole{flex:none;font-size:9px;line-height:1.3;margin-top:3px}
+#adventure #journeyDialog #dialogSpeakerRole{display:none}
 #adventure #journeyDialog .dialog-copy{display:flex;flex-direction:column;flex:1;gap:6px;min-width:0;min-height:0;overflow:hidden}
-#adventure #journeyDialog #dialogBody{flex:1 1 0;min-height:0;margin:0;padding-right:7px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;pointer-events:auto;font-size:14px;line-height:1.7;white-space:pre-line;overflow-wrap:anywhere;scrollbar-width:thin;scrollbar-color:#b5a57c #10272c}
+#adventure #journeyDialog #dialogBody{flex:0 0 auto;min-height:0;max-height:min(23dvh,10rem);margin:0;padding-right:4px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;pointer-events:auto;font-size:13px;line-height:1.55;white-space:pre-line;overflow-wrap:anywhere;scrollbar-width:thin;scrollbar-color:#b5a57c #10272c}
 #adventure #journeyDialog #dialogConversationControls{display:flex;align-items:center;flex:0 0 32px;min-height:32px;gap:6px;flex-wrap:nowrap;margin:0}
 #adventure #journeyDialog #dialogConversationControls button{min-height:32px;margin:0;padding:5px 9px;font-size:11px;line-height:1.3;white-space:nowrap}
 #adventure #journeyDialog #dialogLineCount{flex:none;font-size:10px}
@@ -229,12 +230,11 @@ body[data-journey=dialog] #journeyHud{visibility:hidden}
 #adventure #journeyDialog #dialogActions button:last-child:nth-child(odd){grid-column:1 / -1}
 #adventure #journeyDialog #dialogActions:has(button:nth-child(5)){grid-template-columns:repeat(3,minmax(0,1fr))}
 #adventure #journeyDialog #dialogActions:has(button:nth-child(5)) button{grid-column:auto}
-#adventure #journeyDialog .journey-dialog-card:has(#dialogActions button:nth-child(5)){height:min(480px,56dvh)}
 #adventure #journeyDialog button:focus-visible{outline:2px solid #e4cf92;outline-offset:1px}
 @media(max-width:620px){
  #adventure #journeyDialog{padding:0 calc(8px + var(--safe-right,0px)) calc(8px + var(--safe-bottom,0px)) calc(8px + var(--safe-left,0px))}
  #adventure #journeyDialog .journey-dialog-card{padding:12px;gap:6px}
- #adventure #journeyDialog .dialog-layout{grid-template-columns:66px minmax(0,1fr);gap:10px}
+ #adventure #journeyDialog .dialog-layout{grid-template-columns:56px minmax(0,1fr);gap:8px}
  #adventure #journeyDialog #dialogBody{font-size:13px;line-height:1.65}
  #adventure #journeyDialog #dialogSpeakerRole{display:none}
  #adventure #journeyDialog #dialogConversationControls button{font-size:10px;padding:5px 6px}
@@ -244,10 +244,10 @@ body[data-journey=dialog] #journeyHud{visibility:hidden}
 }
 @media(max-height:450px){
  #adventure #journeyDialog{padding:0 calc(8px + var(--safe-right,0px)) calc(6px + var(--safe-bottom,0px)) calc(8px + var(--safe-left,0px))}
- #adventure #journeyDialog .journey-dialog-card{height:60dvh;max-height:60dvh;padding:8px 10px;gap:4px}
+ #adventure #journeyDialog .journey-dialog-card{padding:8px 10px;gap:4px}
  #adventure #journeyDialog #dialogKicker{display:none}
  #adventure #journeyDialog #dialogTitle{font-size:17px;line-height:1.1}
- #adventure #journeyDialog .dialog-layout{grid-template-columns:56px minmax(0,1fr);gap:10px}
+ #adventure #journeyDialog .dialog-layout{grid-template-columns:56px minmax(0,1fr);gap:8px}
  #adventure #journeyDialog #dialogSpeakerName{font-size:9px;line-height:1.2;margin-top:2px}
  #adventure #journeyDialog #dialogSpeakerRole{display:none}
  #adventure #journeyDialog .dialog-copy{gap:4px}
@@ -257,12 +257,10 @@ body[data-journey=dialog] #journeyHud{visibility:hidden}
  #adventure #journeyDialog #dialogActions{gap:4px;padding-top:5px}
  #adventure #journeyDialog #dialogActions button{min-height:32px;padding:4px 7px;font-size:11px;line-height:1.25}
  #adventure #journeyDialog #dialogActions:has(button:nth-child(5)){grid-template-columns:repeat(3,minmax(0,1fr))}
- #adventure #journeyDialog .journey-dialog-card:has(#dialogActions button:nth-child(5)){height:76dvh;max-height:76dvh}
 }
 @media(max-height:320px){
- #adventure #journeyDialog .journey-dialog-card{height:70dvh;max-height:70dvh;padding:6px 8px}
+ #adventure #journeyDialog .journey-dialog-card{max-height:74dvh;padding:6px 8px}
  #adventure #journeyDialog #dialogTitle{font-size:16px}
- #adventure #journeyDialog .journey-dialog-card:has(#dialogActions button:nth-child(5)){height:80dvh;max-height:80dvh}
 }
 .atlas-map .atlas-order text{fill:#fff0c3;stroke:none}
 
@@ -344,16 +342,7 @@ body[data-journey=dialog] #journeyHud{visibility:hidden}
 @media(max-height:360px){#heroForm .hero-home-meta{margin-top:8px;padding-top:8px}#heroForm .journey-language{font-size:10px;gap:5px}#heroForm .journey-language select{min-width:90px;min-height:30px;padding:5px 6px;font-size:10px}#heroForm .journey-version{font-size:7px;line-height:1.6;letter-spacing:.7px;margin-top:7px}#heroForm .hero-home-actions{gap:6px}#heroForm .hero-home-actions>button{min-height:36px;padding:8px 10px;font-size:10px;letter-spacing:.3px;gap:8px}#heroForm .hero-home-actions>button span{font-size:15px}}
 body[data-journey=opening] #startScreen{display:none!important}
 body[data-journey=opening] #journeyToast{display:none}
-.journey-opening{position:fixed;inset:0;z-index:42;pointer-events:auto;background:linear-gradient(180deg,rgba(5,13,18,.38),transparent 23%,transparent 63%,rgba(5,13,18,.58));font-family:"Segoe UI",Arial,sans-serif}
-.journey-opening[hidden]{display:none}
-.journey-opening::before,.journey-opening::after{content:"";position:absolute;left:0;right:0;height:5vh;background:#080e12;pointer-events:none}
-.journey-opening::before{top:0}.journey-opening::after{bottom:0}
-.opening-skip{position:absolute;top:max(7vh,env(safe-area-inset-top));right:max(3vw,env(safe-area-inset-right));padding:8px 15px;border:1px solid #d9c59166;border-radius:5px;color:#f1e6cc;background:#14292cbb;font:600 13px "Segoe UI",Arial,sans-serif;cursor:pointer}
-.opening-subtitle{position:absolute;left:50%;bottom:9vh;transform:translateX(-50%);width:min(760px,85vw);box-sizing:border-box;padding:18px 24px;color:#f7efd9;background:rgba(15,32,35,.91);border:1px solid #d9c59144;border-top:2px solid #d9c591;border-radius:5px;box-shadow:0 10px 36px #0005}
-.opening-subtitle strong{display:block;color:#e4c78d;font-size:14px;letter-spacing:.04em}.opening-subtitle p{margin:8px 0 0;font-size:clamp(15px,1.35vw,20px);line-height:1.6;min-height:3.2em;max-height:24vh;overflow:auto}
-.opening-next{display:block;margin:10px 0 0 auto;padding:7px 15px;background:#dec38e;color:#182c30;border:0;border-radius:4px;font:600 13px "Segoe UI",Arial,sans-serif;cursor:pointer}
-.opening-subtitle[hidden],.opening-next[hidden]{display:none}
-@media(max-height:500px){.opening-subtitle{bottom:7vh;padding:10px 16px;width:min(720px,88vw)}.opening-subtitle p{margin-top:4px;font-size:15px;line-height:1.4;min-height:2.8em;max-height:21vh}.opening-subtitle strong{font-size:12px}.opening-next{margin-top:6px;padding:5px 12px}.opening-skip{padding:6px 12px;top:6vh}}
+.journey-opening{position:fixed;inset:0;z-index:42;pointer-events:auto}
 
 /* Visibility reduction belongs only to a third-person guardian shadow field. */
 #guardianNightVeil{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle 190px at var(--guardian-vision-x,50%) var(--guardian-vision-y,60%),transparent 25%,#090611d9 85%,#090611ef 100%)}#guardianNightVeil[hidden]{display:none}
@@ -387,12 +376,16 @@ body[data-journey=treatment] #worldLabels{visibility:hidden}
 @media(max-width:700px){.tournament-popup{padding:12px}.tournament-popup header{top:-12px}.tournament-popup h2{font-size:16px}.tournament-records{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .field-progress{position:absolute;top:24%;left:50%;transform:translateX(-50%);width:max-content;max-width:min(76vw,360px);box-sizing:border-box;padding:8px 12px;border:1px solid #d7c49577;border-radius:4px;background:#173138ee;color:#f1e1bd;text-align:center;font:600 12px/1.35 'Segoe UI',sans-serif;pointer-events:none}
 .field-progress progress{display:block;width:100%;height:7px;margin-top:6px;accent-color:#93d6af}.field-progress[hidden],.field-progress progress[hidden]{display:none}
-#adventure #journeyDialog.story-shot{padding:0 clamp(12px,4vw,60px) max(14px,env(safe-area-inset-bottom));background:none}
-#adventure #journeyDialog.story-shot .journey-dialog-card.is-conversation{width:min(780px,100%);height:auto;max-height:43dvh;gap:5px;padding:10px 16px;overflow:auto;background:#12242bef;border:1px solid #c6b98f70;border-radius:5px;box-shadow:0 6px 30px #0006}
-#adventure #journeyDialog.story-shot #dialogKicker{display:none}#adventure #journeyDialog.story-shot #dialogTitle{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-#adventure #journeyDialog.story-shot .dialog-layout{display:block;flex:auto;overflow:visible}#adventure #journeyDialog.story-shot .dialog-person{display:block;width:auto;text-align:left;margin:0 0 4px;padding:0;border:0;background:none}
-#adventure #journeyDialog.story-shot #dialogPortrait,#adventure #journeyDialog.story-shot #dialogSpeakerRole{display:none}#adventure #journeyDialog.story-shot #dialogSpeakerName{margin:0;color:#e4c78d;font-size:13px}
-#adventure #journeyDialog.story-shot #dialogBody{flex:auto;margin:0;min-height:1.55em;max-height:15dvh;color:#f5ebd6;font-size:clamp(12px,1.55vw,17px);line-height:1.45}
-#adventure #journeyDialog.story-shot #dialogConversationControls{margin:0}#adventure #journeyDialog.story-shot #dialogActions:not(:empty){margin-top:0}#adventure #journeyDialog.story-shot #dialogActions button{min-height:32px;padding:6px 12px}
-#adventure:has(#journeyDialog.story-shot:not([hidden])) #journeyToast{visibility:hidden}
-@media(max-height:460px){#adventure #journeyDialog.story-shot .journey-dialog-card.is-conversation{max-height:49dvh;padding:6px 9px}#adventure #journeyDialog.story-shot #dialogActions button{min-height:28px}}
+#adventure #journeyDialog.story-shot{display:none}
+#adventure #journeyDialog.story-choice .dialog-layout,#adventure #journeyDialog.story-choice #dialogKicker{display:none}
+#adventure #journeyDialog.story-choice .journey-dialog-card{width:min(520px,100%)}
+#adventure #journeyDialog #dialogActions:empty{display:none}
+#adventure:has(#journeyDialog.story-shot) #journeyToast{visibility:hidden}
+#adventure .cinematic-subtitle{
+ position:fixed;z-index:41;bottom:calc(max(14px, 4dvh) + var(--safe-bottom,env(safe-area-inset-bottom,0px)));
+ left:calc(10px + var(--safe-left,env(safe-area-inset-left,0px)));right:calc(10px + var(--safe-right,env(safe-area-inset-right,0px)));
+ width:auto;max-width:68ch;margin:0 auto;padding:0;box-sizing:border-box;pointer-events:none;
+ color:#fff;font-size:clamp(13px,1.55vw,20px);font-weight:600;line-height:1.4;text-align:center;text-wrap:balance;
+ overflow-wrap:anywhere;text-shadow:0 2px 3px #000,0 0 5px #000,1px 0 2px #000,-1px 0 2px #000;
+}
+#adventure .cinematic-subtitle strong{color:#ffe7ab}

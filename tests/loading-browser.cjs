@@ -32,9 +32,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),{spawn
    assert.equal((await state()).phase,'transition');assert.deepEqual((await state()).position,before);
    await page.evaluate(()=>__releasePaint());
   }
-  const prepareBattle=async()=>{await page.evaluate(()=>{for(let i=0;i<40&&!__AN_HOA__.adventure().dialogue.complete;i++)document.getElementById('dialogNext').click();});await page.locator('#dialogActions button').first().click();};
+  const prepareBattle=async()=>{await page.evaluate(()=>{for(let i=0;i<120&&!__AN_HOA__.adventure().dialogue.complete;i++){if(__AN_HOA__.adventure().dialogue.autoplay)__AN_HOA__.advance(.5);else document.getElementById('dialogNext').click();}});await page.locator('#dialogActions button').first().click();};
   await open();
-  console.log('CHECK: new journey, paint order and input lock');await begin('#heroForm button[type=submit]');await settled();assert.equal((await state()).phase,'opening');await page.locator('.opening-skip').click();await page.evaluate(()=>__AN_HOA__.advance(2.3));assert.equal((await state()).phase,'explore');
+  console.log('CHECK: new journey, paint order and input lock');await begin('#heroForm button[type=submit]');await settled();assert.equal((await state()).phase,'opening');await page.keyboard.press('Escape');assert.equal((await state()).phase,'explore');
   const {newJourney}=await import('../src/adventure-data.js'),{promiseMother,chooseStarter}=await import('../src/journey-story.js'),save=newJourney('Loading test');promiseMother(save);chooseStarter(save,'water-barrier');save.story.stage='infiltrate';save.activated=['nameless','water'];save.visited=['nameless','water'];save.position=[0,7];save.gold=83;
   const {captureCheckpoint}=await import('../src/checkpoint-state.js'),{planSavePoints}=await import('../src/save-points.js'),savedWater=structuredClone(save);
   savedWater.village='water';const waterPoint=planSavePoints('water')[0];savedWater.position=[waterPoint.x,waterPoint.z];captureCheckpoint(savedWater,waterPoint);save.checkpointSave=savedWater.checkpointSave;

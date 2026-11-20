@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import '../game-core.js';
 import {campaignFixtures} from './campaign-fixtures.mjs';
-import {campaignObjective,findPath,newJourney,readJourney} from '../src/adventure-data.js';
+import {campaignObjective,findPath,newJourney,readJourney,resolveBattle} from '../src/adventure-data.js';
 import {chooseStarter,promiseMother} from '../src/journey-story.js';
-import {currentVillageEvent,advanceVillageEvent} from '../src/village-events.js';
+import {currentVillageEvent,advanceVillageEvent,brewHongLienMedicine,lotusKeeperEncounter} from '../src/village-events.js';
 import {completeFieldTask,FIELD_ROUTE,FIELD_ROUTE_REVISION,fieldMission} from '../src/field-route.js';
+import {encounterProfile} from '../src/progression.js';
+import {configureOpponent} from '../src/opponent-balance.js';
 import {createAdventureScene} from '../src/adventure-scene.js';
 
 globalThis.innerWidth=1280;
@@ -77,6 +79,33 @@ for(const key of Object.keys(FIELD_ROUTE.events)){
   const event=currentVillageEvent(save);
   assert.equal(advanceVillageEvent(save,save.village,event.step,{victory:!!event.battle}).reason,'field');
   world.load(save.village,save);
+  if(key==='fire:2'){
+    assert.equal(campaignObjective(save).targetId,'ha-ly-wounded');
+    assert.ok(!world.scene.getObjectByName('quest-item-lotus'));
+    assert.ok(completeFieldTask(save,key,0));
+    assert.equal(campaignObjective(save).targetId,'fire-ha-ly-mother');
+    assert.ok(completeFieldTask(save,key,1));world.syncVillageEvents(save);
+    assert.equal(world.fieldRoute.state().mode,'escort');
+    assert.equal(world.fieldRoute.state().destination.label,'Cửa nhà lao của Hạ Ly');
+    playTask(save);
+    assert.ok(!save.story.questItems.includes('fire:lotus-medicine'));
+    assert.ok(completeFieldTask(save,key,3));world.syncSidequests(save);
+    assert.equal(campaignObjective(save).targetId,'fire:hong-lien');
+    assert.ok(world.scene.getObjectByName('quest-item-lotus'));
+    const keeper=lotusKeeperEncounter(save,'Cụ Liên');
+    const phase=configureOpponent({...encounterProfile(save,'boss','fire'),kind:'boss',village:'fire'});
+    assert.equal(keeper.hp,phase.phaseHealth[0]);assert.equal(keeper.phases,1);
+    assert.deepEqual(keeper.spellIds,phase.spellIds);assert.deepEqual(keeper.balanceStages,[phase.balanceStages[0]]);
+    resolveBattle(save,keeper,false);assert.equal(fieldMission(save,event).task.action,'duel');
+    resolveBattle(save,keeper,true);assert.equal(fieldMission(save,event).task.action,'grant');
+    const wins=save.wins;resolveBattle(save,keeper,true);assert.equal(save.wins,wins);
+    assert.equal(completeFieldTask(save,key,5),null);
+    save.story.questItems.push('fire:hong-lien');assert.ok(completeFieldTask(save,key,5));
+    assert.equal(completeFieldTask(save,key,6),null);assert.ok(brewHongLienMedicine(save));
+    assert.ok(completeFieldTask(save,key,6)?.complete);
+    assert.ok(advanceVillageEvent(save,'fire',2).ok);
+    continue;
+  }
   assert.equal(campaignObjective(save).targetKind,'field-task',key);
   for(const task of FIELD_ROUTE.events[key].steps){
     const start=world.fieldRoute.state()?.target;
@@ -87,6 +116,5 @@ for(const key of Object.keys(FIELD_ROUTE.events)){
   }
   const result=advanceVillageEvent(save,save.village,event.step,{choiceIndex:Math.max(0,event.choices?.findIndex(c=>c.correct)??0),victory:!!event.battle});
   assert.equal(result.ok,true,key);
-  if(key==='fire:2')assert.ok(save.story.questItems.includes('fire:lotus-medicine'));
 }
 console.log('PASS: Vô Danh rescue, mobile task paths, chase, hold and escort behavior, persistent progress, moving residents, and field actions across all ten villages.');

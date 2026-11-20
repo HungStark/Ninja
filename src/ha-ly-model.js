@@ -19,17 +19,18 @@ export function attachHaLy(root,profile,fallback){
   function arm(i,pitch,spread,flex){const side=i===0?1:-1,upper=bones.arms[i],lower=bones.elbows[i];upper.quaternion.copy(rest.get(upper)).premultiply(rotation(0,0,-side*1.55)).premultiply(rotation(pitch,0,spread));lower.quaternion.copy(rest.get(lower)).multiply(rotation(0,-side*flex,0));}
   function pose(state,time){
     if(!bones)return;
-    const wounded=storyPose!=='standing',airborne=!wounded&&state.airborne,breath=Math.sin(time*1.8)*.008;
+    const wounded=storyPose!=='standing',airborne=!wounded&&state.airborne,breath=Math.sin(time*1.8)*.008,acting=root.userData.storyActing;
     visual.traverse(o=>{if(o.isBone&&rest.has(o))o.quaternion.copy(rest.get(o));});
     bones.hips.position.y=hipsY-(wounded?.68:airborne?0:state.gait.drop*bones.legLength*scale)/scale;
     apply(bones.hips,rotation(wounded?.10:airborne?-.04:state.sprintLean));
-    apply(bones.spine,rotation(wounded?.16+breath:0));apply(bones.chest,rotation(wounded?.10+breath:breath));
-    apply(bones.head,rotation(wounded?.24+breath:Math.sin(time*.9)*.012,wounded?-.12:Math.sin(time*.5)*.025,wounded?-.09:0));
+    apply(bones.spine,rotation(wounded?.16+breath:0));apply(bones.chest,rotation((wounded?.10:0)+breath+(acting?.lean||0)));
+    apply(bones.head,rotation((wounded?.24+breath:Math.sin(time*.9)*.012)+(acting?.nod||0),wounded?-.12:Math.sin(time*.5)*.025,wounded?-.09:0));
     for(let i=0;i<2;i++){
       const step=state.gait.legs[i],a=state.arms[i],side=i===0?1:-1;
       apply(bones.legs[i],rotation(wounded?-1.70:airborne?-.3:step.hip-state.sprintLean,0,wounded?side*.07:airborne?0:step.side));
       apply(bones.knees[i],rotation(wounded?1.48:airborne?(state.verticalSpeed>0?.48:.62):step.knee));apply(bones.feet[i],rotation(wounded?-.08:airborne?-.22:step.ankle));
-      arm(i,wounded?-.2:airborne?-.6:a.pitch,wounded?side*.1+side*REST_ARM_OPEN:airborne?side*.22:a.spread+side*REST_ARM_OPEN,wounded?1.2:airborne?.35:a.flex);
+      const reach=i===0?(acting?.reach||0):0;
+      arm(i,wounded?-.2:airborne?-.6:a.pitch-reach,wounded?side*.1+side*REST_ARM_OPEN:airborne?side*.22:a.spread+side*REST_ARM_OPEN,wounded?1.2:airborne?.35:a.flex+reach*.65);
     }
     for(const bone of bones.skirt){
       const front=/Front/.test(bone.name),side=/Side/.test(bone.name),i=bone.name.includes('_L_')?0:1;
@@ -43,7 +44,7 @@ export function attachHaLy(root,profile,fallback){
     const unconscious=storyPose==='carried'||storyPose==='unconscious';
     if(unconscious){bones.hips.position.y=hipsY;apply(bones.hips,rotation(.1));apply(bones.spine,rotation(.08));apply(bones.head,rotation(.25,0,.15));for(let i=0;i<2;i++){const side=i===0?1:-1;apply(bones.legs[i],rotation(-.45,0,side*.05));apply(bones.knees[i],rotation(.85));arm(i,-.1,side*.08,1.1);}}
     bonds.visible=storyPose==='captive';
-    visual.traverse(o=>{const d=o.morphTargetDictionary,v=o.morphTargetInfluences;if(!d||!v)return;const blink=time%4.8;for(const [name,value]of [['Fcl_EYE_Close',unconscious?1:blink<.16?Math.sin(blink/.16*Math.PI):wounded?.12:0],['Fcl_BRW_Sorrow',wounded?.45:0],['Fcl_MTH_Small',wounded?.12:0]])if(d[name]!==undefined)v[d[name]]=value;});
+    visual.traverse(o=>{const d=o.morphTargetDictionary,v=o.morphTargetInfluences;if(!d||!v)return;const blink=time%4.8;for(const [name,value]of [['Fcl_EYE_Close',unconscious?1:blink<.16?Math.sin(blink/.16*Math.PI):wounded?.12:0],['Fcl_BRW_Sorrow',wounded?.45:0],['Fcl_MTH_Small',wounded?.12:0],['Fcl_MTH_A',acting?.mouth||0]])if(d[name]!==undefined)v[d[name]]=value;});
   }
   function update(time,moving,velocity=null,dt=1/60,locomotion={}){lastTime=time;lastState={...motion.update(time,moving,velocity,dt,locomotion.sprinting??(moving&&Math.hypot(velocity?.x||0,velocity?.z||0)>5.1),root.rotation.y,!!locomotion.airborne),airborne:!!locomotion.airborne,verticalSpeed:locomotion.verticalSpeed||0};pose(lastState,time);}
   const ready=typeof document==='undefined'?Promise.resolve(false):(sourcePromise??=new GLTFLoader().loadAsync(new URL('assets/ha-ly-simple.glb',document.baseURI).href).then(g=>prepareCharacterSource(g.scene))).then(source=>{

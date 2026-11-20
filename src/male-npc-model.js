@@ -39,7 +39,7 @@ export function attachNpcModel(root,profile){
       m.onBeforeCompile=shader=>{shader.uniforms.npcTint={value:color.clone()};shader.uniforms.npcShade={value:new T.Vector2(low,high)};shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 npcTint;uniform vec2 npcShade;').replace('#include <map_fragment>','#include <map_fragment>\nfloat npcLuma=dot(diffuseColor.rgb,vec3(0.299,0.587,0.114));diffuseColor.rgb=npcTint*mix(npcShade.x,npcShade.y,npcLuma);');};
       m.customProgramCacheKey=()=>'npc-lit-toon-appearance-v1';sculptedSurface(m,{rim:.035});m.needsUpdate=true;return m;
     };
-    const outlineMeshes=[];model.traverse(o=>{
+    const outlineMeshes=[],mouths=[];model.traverse(o=>{
       if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;
       if(!/eye|facemouth|facebrow/i.test(Array.isArray(o.material)?o.material.map(m=>m.name).join(' '):o.material.name))outlineMeshes.push(o);
       const tint=material=>{
@@ -53,6 +53,7 @@ export function attachNpcModel(root,profile){
       };
       o.material=Array.isArray(o.material)?o.material.map(tint):tint(o.material);
       if(o.morphTargetDictionary&&o.morphTargetInfluences){
+        const mouth=o.morphTargetDictionary.Fcl_MTH_A;if(mouth!==undefined)mouths.push({mesh:o,index:mouth});
         const faces=[
           ['Fcl_EYE_Fun','Fcl_BRW_Fun','Fcl_MTH_Up'],['Fcl_EYE_Sorrow','Fcl_BRW_Sorrow','Fcl_MTH_Small'],
           ['Fcl_EYE_Angry','Fcl_BRW_Angry','Fcl_MTH_Down'],['Fcl_EYE_Spread','Fcl_BRW_Surprised','Fcl_MTH_Small'],
@@ -79,14 +80,16 @@ export function attachNpcModel(root,profile){
       prop.position.fromArray(prop.userData.grip||[0,0,0]).negate();prop.rotation.set(0,0,0);
       held.push({carrier,hand,betweenHands});
     }
-    visual={visualRoot,model,bones,rest,held,fingers,scale,elderFace,restHipsY:bones.hips?.position.y??0};
+    visual={visualRoot,model,bones,rest,held,fingers,mouths,scale,elderFace,restHipsY:bones.hips?.position.y??0};
     const procedural=root.getObjectByName('body');if(procedural)procedural.visible=false;
     root.userData.characterModel={asset:profile.female?'npc_nu-simple.vrm':'npc_nam-simple.vrm',ready:true};return true;
   }).catch(error=>{console.warn(`Could not load ${profile.female?'female':'male'} NPC VRM:`,error);return false;});
 
   const update=(time,moving,{body,head,arms,forearms,legs})=>{
     if(!visual)return;
-    const {visualRoot,bones,rest,restHipsY,held,fingers,scale}=visual,pose=residentActivityPose(profile,time,moving);
+    const {visualRoot,bones,rest,restHipsY,held,fingers,mouths,scale}=visual,acting=root.userData.storyActing;
+    const pose=acting?null:residentActivityPose(profile,time,moving);
+    for(const {mesh,index} of mouths)mesh.morphTargetInfluences[index]=acting?.mouth||0;
     const standing=pose?null:residentStandingPose(profile,moving),hipsDrop=pose?.hipsDrop??standing?.hipsDrop??0;
     visual.elderFace?.update(root.userData.expression?.blink||0);
     visualRoot.position.copy(body.position);if(pose?.kneeling)visualRoot.position.y=0;
@@ -97,7 +100,7 @@ export function attachNpcModel(root,profile){
     };
     apply('head',new T.Euler(head.rotation.x+(standing?.head||0),head.rotation.y,head.rotation.z));
     if(bones.hips)bones.hips.position.y=restHipsY-hipsDrop/scale;
-    apply('spine',new T.Euler(pose?.spine??standing?.spine??body.rotation.x,0,0));apply('chest',new T.Euler(pose?.chest??standing?.chest??0,0,0));
+    apply('spine',new T.Euler(acting?body.rotation.x:pose?.spine??standing?.spine??body.rotation.x,0,0));apply('chest',new T.Euler(pose?.chest??standing?.chest??0,0,0));
     const channels=[{upper:'rightArm',lower:'rightForearm',hand:'rightHand',leg:'rightLeg',knee:'rightKnee',foot:'rightFoot',side:-1},{upper:'leftArm',lower:'leftForearm',hand:'leftHand',leg:'leftLeg',knee:'leftKnee',foot:'leftFoot',side:1}];
     channels.forEach((channel,i)=>{
       const upper=bones[channel.upper],lower=bones[channel.lower],side=channel.side;
