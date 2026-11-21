@@ -1,6 +1,6 @@
 ﻿import * as T from 'three';
 import {PLOT} from './campaign-plot.js';
-import {createCutsceneDialogue} from './cutscene-dialogue.js';
+import {createCutsceneControls,createCutsceneDialogue} from './cutscene-dialogue.js';
 
 export const OPENING_LINE=PLOT.opening.at(-1)[1];
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
@@ -15,6 +15,10 @@ export function createOpeningCinematic(root,world,onComplete){
   const dialogue=createCutsceneDialogue(panel.firstElementChild);
   const {camera,hero}=world;
   let active=false,age=0,normal,speaker,aspect;
+  const controls=createCutsceneControls(panel,{onNext:()=>{
+    if(dialogue.active)dialogue.advance();
+    else if(active){age=2.3;update(0);}
+  },onSkip:complete});
 
   function reset(){
     if(active){
@@ -25,6 +29,7 @@ export function createOpeningCinematic(root,world,onComplete){
       camera.updateMatrixWorld();
     }
     active=false;
+    controls.hide();
     panel.hidden=true;
     hero.setEyeOpening(1);
     dialogue.reset();
@@ -53,6 +58,7 @@ export function createOpeningCinematic(root,world,onComplete){
     active=true;
     age=0;
     panel.hidden=false;
+    controls.show();
     normal={position:camera.position.clone(),quaternion:camera.quaternion.clone(),fov:camera.fov};
     frameCloseup();
     hero.setEyeOpening(0);
@@ -68,7 +74,7 @@ export function createOpeningCinematic(root,world,onComplete){
     dialogue.update(dt);
   }
 
-  return {start,update,reset,keydown(event){event.preventDefault();if(event.key==='Escape')complete();},
+  return {start,update,reset,keydown:controls.keydown,
     state:()=>({active,age,stage:!active?'done':age<.7?'eyes-closed':age<2?'awakening':age<2.3?'awake':'dialogue',
       eyesOpen:hero.eyeOpening,text:panel.querySelector('span').textContent})};
 }

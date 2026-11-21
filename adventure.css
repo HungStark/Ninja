@@ -389,3 +389,15 @@ body[data-journey=treatment] #worldLabels{visibility:hidden}
  overflow-wrap:anywhere;text-shadow:0 2px 3px #000,0 0 5px #000,1px 0 2px #000,-1px 0 2px #000;
 }
 #adventure .cinematic-subtitle strong{color:#ffe7ab}
+#adventure .cutscene-controls{
+ position:fixed;z-index:43;display:flex;gap:6px;
+ top:calc(10px + var(--safe-top,env(safe-area-inset-top,0px)));
+ right:calc(12px + var(--safe-right,env(safe-area-inset-right,0px)));pointer-events:auto;
+}
+#adventure .cutscene-controls[hidden]{display:none}
+#adventure .cutscene-controls button{
+ min-height:36px;padding:6px 11px;border:1px solid #ead8aa70;border-radius:4px;
+ background:#112627dd;color:#fff5de;font:600 13px/1.2 'Segoe UI',sans-serif;
+}
+#adventure .cutscene-controls button:hover,#adventure .cutscene-controls button:focus-visible{background:#2d4946;border-color:#ffe7ab}
+@media(pointer:coarse){#adventure .cutscene-controls button{min-height:44px}}

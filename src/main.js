@@ -1376,8 +1376,8 @@ async function main() {
     earthArts.visuals(animationTime,reducedMotion);
     world.terrain.deform((x,z)=>earthArts.heightAt(x,z),earthArts.revision);
     natureArts.visuals(shots,windActors(),camera3d,quality,reducedMotion);
-    // Intro/loading ticks can return early. Set the combat camera before every
-    // world render so the first exposed frame never uses the first-person view.
+    // Intro/loading ticks can return early. Apply the selected view on the
+    // first exposed frame as well as during combat.
     syncCombatView();
     guardianCamera();
     darkDomain.intro.updateCamera(camera3d);
@@ -1692,6 +1692,8 @@ async function main() {
     started = true; paused = false; won = false; selected = 0; score = 0; battleTime = 0; aiTimer = 2.2; aiSpell = null; aiStep = 0; aiCycle = 0; aiCasts = 0; aiCastAge = 99; enemyPose = -1; enemyHit = 0;
     shots.length = 0; particles.length = 0; salvos.length = 0; walls.length = 0; fields.length = 0; effects.reset(); hands.clearEffects(); recoil = flashTimer = hitTimer = 0; activePose = -1; poseAge = 99; moveTargetX = 0; moveDirection = 0; touchPoint = null;
     camera = { p: [0, 1.72, 7], yaw: 0, pitch: 0 }; opponent.group.position.copy(world.opponentSpawn); opponent.group.rotation.set(0, 0, 0);
+    camera3d.position.fromArray(playerPos());
+    camera3d.rotation.set(camera.pitch,camera.yaw,0,'YXZ');
     playerAvatar.group.position.set(camera.p[0],earthFloor('player',camera.p[0],camera.p[2]),camera.p[2]);playerAvatar.group.rotation.set(0,Math.PI,0);
     opponent.setNaturalCombat(true);opponent.group.scale.setScalar(characterScale());playerAvatar.group.scale.setScalar(characterScale());opponent.setAppearance(adventure?.encounter?.squad?{kind:'intro-trio',...adventure.encounter.squad[0]}:adventure?.encounter||((practiceEncounter?.kind==='boss')?practiceEncounter:null));enemyMovement.reset();enemyMoving=false;
     opponent.group.position.fromArray(clampPracticeActorPoint(opponent.group.position.toArray(),'enemy',movementClearance('enemy')));
@@ -1710,7 +1712,7 @@ async function main() {
   function resume(event) { paused = false; gameAudio.pauseVoice(false); moveTargetX = camera.p[0]; moveDirection = 0; document.body.classList.remove('paused'); $('pauseScreen').classList.add('hidden'); updateUI(); requestAimLock(event); }
   function prepare(next = false) {ninjaWarnings.clear();
     damageNumbers.reset();
-    practiceView=adventure?.encounter?'overhead':combatOptions.view;
+    practiceView=combatOptions.view;
     practiceOpponentPicker.close();practiceOpponentConfirmed=false;practiceEncounter=null;
     practiceOverhead.reset();$('practiceHandInset').hidden=true;document.body.classList.remove('practice-overhead');playerAvatar.group.visible=false;
     gameAudio.clearSpellSounds();

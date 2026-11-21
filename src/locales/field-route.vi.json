@@ -75,7 +75,7 @@
      14,
      -16
     ],
-    "result": "Kẻ phá cầu để lộ hướng tập kích Đồi Chuông Gió. Dân đã an toàn, cầu được gia cố. Nhận 35 xu tại chỗ và tới trợ giúp Vô Danh Thú."
+    "result": "Kẻ phá cầu để lộ dấu vết của đồng bọn ở Đồi Chuông Gió. Dân đã an toàn, cầu được gia cố. Nhận 35 xu."
    }
   ]
  },
@@ -476,6 +476,7 @@
   }
  },
  "ui": {
+  "sideQuest": "Nhiệm vụ phụ",
   "continue": "Tiếp tục tại đây",
   "dispatchTitle": "Tin từ đồi chuông",
   "dispatchAction": "Nhận sứ mệnh và lên đường",

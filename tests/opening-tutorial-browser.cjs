@@ -18,10 +18,6 @@ const {chromium}=require('playwright');
     page.setDefaultTimeout(60000);
     page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/game.js',r=>r.fulfill({contentType:'text/javascript',body:bundle.outputFiles[0].text}));
-    await page.addInitScript(()=>{
-      const repaired=sessionStorage.getItem('opening-bridge-repaired');
-      if(repaired){localStorage.setItem('anhoa-adventure-v1',repaired);sessionStorage.removeItem('opening-bridge-repaired');}
-    });
     const state=()=>page.evaluate(()=>__AN_HOA__.adventure());
     const advance=seconds=>page.evaluate(seconds=>__AN_HOA__.advance(seconds),seconds);
     const button=name=>page.locator('#dialogActions').getByRole('button',{name});
@@ -75,9 +71,6 @@ const {chromium}=require('playwright');
     assert.match(await finishDialogue(),/xin thần linh phù hộ/);
     await button(/Học Thủy/).click();
     assert.equal((await state()).waypoint.id,'nameless-save-1');
-    await interact('field-task');
-    assert.match(await page.locator('#dialogTitle').innerText(),/lời phù hộ/);
-    await page.keyboard.press('Escape');
     await interact('intro-guardian');
     assert.match(await page.locator('#dialogTitle').innerText(),/lời phù hộ/);
     await page.keyboard.press('Escape');
@@ -85,26 +78,24 @@ const {chromium}=require('playwright');
     await interact('save');
     assert.equal((await state()).save.checkpointSave.snapshot.story.openingTutorial.blessed,true);
     await resume();
-    assert.equal((await state()).waypoint.kind,'field-task');
-    await interact('field-task');
-    assert.ok(await page.evaluate(()=>__openingWorld.fieldRoute.state()?.started));
-    // The field-route suite plays the bridge tasks. Resume here with the bridge repaired.
-    await page.evaluate(step=>{
-      const key='anhoa-adventure-v1',save=JSON.parse(localStorage.getItem(key));
-      save.story.fieldMissions['nameless:road']={step};
-      sessionStorage.setItem('opening-bridge-repaired',JSON.stringify(save));
-    },FIELD_ROUTE.opening.steps.length);
-    await resume();
     assert.equal((await state()).waypoint.kind,'intro-guardian');
+    assert.equal((await state()).save.story.fieldMissions['nameless:road'],undefined);
 
     await interact('intro-guardian');
     assert.equal((await state()).encounter?.kind,'intro-trio');
     await finishDialogue();await button('Chuẩn bị giao chiến').click();
     await page.locator('#startButton').click();
     await page.waitForFunction(()=>{const {started,battleIntro}=__AN_HOA__.state();return started&&battleIntro.loaded;});
+    assert.equal(await page.evaluate(()=>__AN_HOA__.state().practiceView),'overhead');
     await page.evaluate(()=>{
       __AN_HOA__.setAIEnabled(false);
       __AN_HOA__.advance(3.5);
+    });
+    await page.locator('#combatSettingsButton').click();
+    await page.locator('#combatView').selectOption('first-person');
+    await page.locator('#closeCombatSettings').click();
+    assert.equal(await page.evaluate(()=>__AN_HOA__.state().practiceView),'first-person');
+    await page.evaluate(()=>{
       const {playerMaxHealth,squad}=__AN_HOA__.state();
       __AN_HOA__.setHealth('player',playerMaxHealth*.55);
       for(const {id} of squad)__AN_HOA__.setHealth(id,0);
@@ -125,13 +116,21 @@ const {chromium}=require('playwright');
     assert.equal(treated.healthFraction,1);
     assert.equal(treated.flask.charges,1);
     assert.equal(treated.story.openingTutorial.treated,true);
-    await finishDialogue();await button(FIELD_ROUTE.ui.dispatchAction).click();
+    const dispatch=await finishDialogue();assert.doesNotMatch(dispatch,/Tín gửi lời cảm ơn|Kẻ phá cầu muốn chặn/);
+    await button(FIELD_ROUTE.ui.dispatchAction).click();
     assert.equal((await state()).save.story.stage,'infiltrate');
 
     await nearby('shop');
     assert.equal(await page.locator('#nearbyAction').innerText(),'E Mua đồ');
     await page.locator('#nearbyAction').click();
     assert.equal((await state()).phase,'shop');
+    await page.locator('#closeShop').click();
+    await page.evaluate(()=>__AN_HOA__.explore.offerBattle('random',{immediate:true,element:'fire'}));
+    await page.locator('#startButton').click();
+    await page.waitForFunction(()=>__AN_HOA__.state().started);
+    const nextBattle=await page.evaluate(()=>__AN_HOA__.state());
+    assert.equal(nextBattle.practiceView,'first-person');assert.equal(nextBattle.handsVisible,true);
+    assert.equal(nextBattle.viewFov,68);assert.ok(nextBattle.viewPosition[1]<7);
     assert.deepEqual(errors,[]);
     console.log('PASS: new journey, chief instructions, blessing checkpoint and reload, trio victory, cancel and complete treatment, dispatch, and both facility actions.');
   }finally{await browser?.close();server.kill();}

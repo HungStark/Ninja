@@ -4,7 +4,7 @@ import {createNinja} from './ninja.js';
 import {createVillager} from './villager.js';
 import {villagerAppearance} from './villager-appearance.js';
 import {currentVillageEvent,eventSpot} from './village-events.js';
-import {fieldMission,FIELD_ROUTE} from './field-route.js';
+import {bridgeMission,fieldMission,FIELD_ROUTE} from './field-route.js';
 import {canProgressPlot} from './campaign-plot.js';
 import {villageSideStory} from './cinematic-route.js';
 import {REGIONS} from './adventure-world.js';
@@ -117,18 +117,19 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
       }else spawn({...story,task:{...story.task,name:story.task.mode==='escort'?story.title:null}},anchor,id);
       return;
     }
-    const event=canProgressPlot(save,id)?currentVillageEvent(save,id):null,mission=fieldMission(save,event);
-    const local=mission&&(!mission.opening||id==='nameless')&&(mission.opening?!roomId:(event.interior||null)===(roomId||null));
-    const bridgeProgress=id==='nameless'&&!roomId&&(save.story.fieldMissions?.['nameless:road']?.step||0);
+    const event=canProgressPlot(save,id)?currentVillageEvent(save,id):null;
+    const bridge=id==='nameless'&&!roomId?bridgeMission(save):null;
+    const mission=fieldMission(save,event)||bridge;
+    const local=mission&&(mission.bridge||(event.interior||null)===(roomId||null));
     const signalStep={water:2,lightning:0,wood:3}[id];
     const siteProgress=!roomId&&(save.story.fieldMissions?.[id+':'+signalStep]?.step||0);
-    const next=JSON.stringify([id,roomId,local?mission.key:null,local?mission.step:null,bridgeProgress,siteProgress]);
+    const next=JSON.stringify([id,roomId,local?mission.key:null,local?mission.step:null,bridge?.step,siteProgress]);
     if(next===key)return;
     reset();key=next;
-    if(bridgeProgress||local&&mission.opening)bridgeWork(bridgeProgress);
+    if(bridge)bridgeWork(bridge.step);
     if(siteProgress)showRestoredSite(id,siteProgress,save);
     if(!local||mission.complete||mission.task.target)return;
-    const anchor=mission.task.origin?interactives.find(i=>i.id===mission.task.origin):mission.opening?interactives.find(i=>i.id==='old-bridge'):eventSpot(id,event,save);
+    const anchor=mission.task.origin?interactives.find(i=>i.id===mission.task.origin):mission.bridge?interactives.find(i=>i.id==='old-bridge'):eventSpot(id,event,save);
     if(anchor)spawn(mission,anchor,id);
   }
   function spawn(mission,anchor,id){
@@ -136,7 +137,7 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
     const [dx,dz]=task.offset||(side&&mission.step>0?[2.1,1.4]:[0,0]);
     const point=safePoint(anchor.x+dx,anchor.z+dz)||safePoint(hero.root.position.x,hero.root.position.z);
     if(!point)return;
-    const entry={kind,id:'field-'+mission.key+'-'+mission.step,label:task.label,...point};
+    const entry={kind,id:'field-'+mission.key+'-'+mission.step,label:task.label,...(mission.bridge?{bridgeQuest:true}:{}),...point};
     const group=new T.Group();group.name='field-task-'+task.mode;group.position.set(point.x,point.y,point.z);root.add(group);
     const mobile=task.mode==='escort'||task.mode==='chase';
     const escort=task.mode==='escort'?escortTrail(point,anchor,task.destination):null;
@@ -144,7 +145,7 @@ export function createFieldRouteScene({scene,hero,interactives,blocked,floor,fin
     if(task.name){
       const nurse=mission.key==='fire:2';
       const guide=REGIONS[id].npcs.find(p=>p.id===(side?mission.giver:task.origin));
-      const person=guide?{...guide,activity:null}:{id:nurse?'fire-dan':'field-actor',kind:nurse?'healer':'lore',appearance:{female:nurse,job:mission.opening&&mission.step===1?'carpenter':'villager'}};
+      const person=guide?{...guide,activity:null}:{id:nurse?'fire-dan':'field-actor',kind:nurse?'healer':'lore',appearance:{female:nurse,job:mission.bridge&&mission.step===1?'carpenter':'villager'}};
       actor=task.mode==='chase'?createNinja({id:'field-runner',village:id==='nameless'?'wind':id}):createVillager(villagerAppearance(id,person));
       const original=guide&&residentRoot(guide.id);
       if(original){represented={root:original,visible:original.visible};original.visible=false;}

@@ -31,6 +31,7 @@ const {chromium}=require('playwright');
     const start=async()=>{
       await page.evaluate(()=>__fieldWorld.hero.root.position.fromArray(__fieldWorld.fieldRoute.state().target));
       await page.locator('#world').focus();await page.keyboard.press('e');
+      if(await step()===0)await page.locator('#adventure > .cutscene-controls').getByRole('button',{name:'Bỏ qua',exact:true}).click();
       await page.waitForFunction(()=>__fieldWorld.fieldRoute.state()?.started);
     };
     const finish=async i=>{
@@ -46,14 +47,20 @@ const {chromium}=require('playwright');
     };
     await page.goto('http://127.0.0.1:4398/?test=1&adventure=1');await ready();
     await page.locator('#journeyMenu').click();await page.getByRole('button',{name:'Bật tuyến nhiệm vụ mới'}).click();
-    assert.match(await page.locator('#campaignSummary').innerText(),/Giữ dây/);
+    assert.match(await page.locator('#campaignSummary').innerText(),/Vô Danh/);
+    assert.equal(await page.evaluate(()=>__AN_HOA__.adventure().waypoint.kind),'intro-guardian');
+    await page.keyboard.press('b');
+    const bridge=page.locator('[data-journal-group=quests]').getByRole('button',{name:/Tiếng gãy ở Cầu Vọng Âm/});
+    await bridge.click();
+    assert.equal(await page.evaluate(()=>__AN_HOA__.adventure().waypoint.id),'field-nameless:road-0');
     await start();await page.evaluate(()=>__AN_HOA__.advance(.6));
     assert.ok(await page.locator('#fieldProgress').isVisible());
     assert.match(await page.locator('#fieldProgress').innerText(),/Ở gần để tiếp tục/);
     const out='test-results/field-route';await fs.mkdir(out,{recursive:true});
     await page.screenshot({path:out+'/bridge-rescue.png'});
     await finish(0);await page.reload();await ready();assert.equal(await step(),1);
-    assert.match(await page.locator('#campaignSummary').innerText(),/Gia cố/);
+    assert.match(await page.locator('#campaignSummary').innerText(),/Vô Danh/);
+    assert.match(await page.evaluate(()=>__fieldWorld.fieldRoute.state().entry.label),/Gia cố/);
     for(let i=1;i<5;i++){
       if(i===4)await page.setViewportSize({width:915,height:412});
       await start();await finish(i);

@@ -476,6 +476,7 @@
   }
  },
  "ui": {
+  "sideQuest": "Side quest",
   "continue": "Continue here",
   "dispatchTitle": "News from the bell hill",
   "dispatchAction": "Accept the mission and set out",

@@ -4,7 +4,7 @@ import {campaignFixtures} from './campaign-fixtures.mjs';
 import {campaignObjective,findPath,newJourney,readJourney,resolveBattle} from '../src/adventure-data.js';
 import {chooseStarter,promiseMother} from '../src/journey-story.js';
 import {currentVillageEvent,advanceVillageEvent,brewHongLienMedicine,lotusKeeperEncounter} from '../src/village-events.js';
-import {completeFieldTask,FIELD_ROUTE,FIELD_ROUTE_REVISION,fieldMission} from '../src/field-route.js';
+import {bridgeMission,completeFieldTask,FIELD_ROUTE,FIELD_ROUTE_REVISION,fieldMission} from '../src/field-route.js';
 import {encounterProfile} from '../src/progression.js';
 import {configureOpponent} from '../src/opponent-balance.js';
 import {createAdventureScene} from '../src/adventure-scene.js';
@@ -53,11 +53,13 @@ function playTask(save){
 
 let opening=newJourney();opening.story.fieldRouteRevision=FIELD_ROUTE_REVISION;
 promiseMother(opening);chooseStarter(opening,'water-barrier');world.load('nameless',opening);
-assert.equal(campaignObjective(opening).targetKind,'field-task');
+assert.equal(campaignObjective(opening).targetKind,'intro-guardian');
+assert.equal(fieldMission(opening),null);
+assert.equal(world.fieldRoute.state().entry.bridgeQuest,true);
 assert.ok(world.scene.getObjectByName('bridge-repair-site'));
 playTask(opening);
 opening=readJourney({getItem:()=>JSON.stringify(opening)});
-assert.equal(fieldMission(opening).step,1,'save remembers the completed field task');
+assert.equal(bridgeMission(opening).step,1,'save remembers the optional field task');
 world.load('nameless',opening);
 for(let i=1;i<FIELD_ROUTE.opening.steps.length;i++)playTask(opening);
 assert.equal(campaignObjective(opening).targetKind,'intro-guardian');

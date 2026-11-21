@@ -1,5 +1,32 @@
 import {gameAudio} from './game-audio.js';
 
+export function createCutsceneControls(parent,{onNext,onSkip}){
+  const controls=document.createElement('div');
+  controls.className='cutscene-controls';
+  controls.hidden=true;
+  const next=document.createElement('button'),skip=document.createElement('button');
+  next.type=skip.type='button';
+  next.textContent='Tiếp tục';
+  next.title='Enter';
+  skip.textContent='Bỏ qua';
+  skip.title='Esc';
+  next.onclick=onNext;skip.onclick=onSkip;
+  controls.append(next,skip);parent.append(controls);
+  return {show(){controls.hidden=false;},hide(){controls.hidden=true;},keydown(event){
+    if(event.ctrlKey||event.metaKey||event.altKey)return;
+    if(!controls.hidden&&event.key==='Tab'){
+      event.preventDefault();
+      (event.target===next||event.shiftKey&&event.target!==skip?skip:next).focus({preventScroll:true});
+      return;
+    }
+    if(!event.repeat&&(event.target===next||event.target===skip)&&['Enter',' '].includes(event.key))return;
+    event.preventDefault();
+    if(controls.hidden||event.repeat)return;
+    if(event.key==='Escape')onSkip();
+    if(event.key==='Enter')onNext();
+  }};
+}
+
 function subtitlePages(text){
   const pages=[];
   let page='';
@@ -47,6 +74,25 @@ export function createCutsceneDialogue(subtitle){
     enterLine();
   }
 
+  function finish(skipped=false){
+    if(!scene||scene.complete)return;
+    scene.complete=true;
+    subtitle.hidden=true;
+    gameAudio.stopDialogue();
+    scene.onComplete(skipped);
+  }
+
+  function advance(){
+    if(!scene||scene.complete)return;
+    if(scene.before?.length){scene.before=null;startLine();return;}
+    const speaker=scene.lines[scene.index].speaker;
+    const next=scene.lines.findIndex((line,index)=>index>scene.index&&
+      ((line.speaker.id||line.speaker.name)!==(speaker.id||speaker.name)||Boolean(line.speaker.thought)!==Boolean(speaker.thought)));
+    if(next<0){finish();return;}
+    scene.index=next;
+    enterLine();
+  }
+
   function update(dt){
     if(!scene||scene.complete)return;
     if(scene.before?.length){
@@ -68,15 +114,11 @@ export function createCutsceneDialogue(subtitle){
       return;
     }
     if(gameAudio.speaking&&scene.pageAge<seconds+7)return;
-    if(++scene.index<scene.lines.length){enterLine();return;}
-    scene.index--;
-    scene.complete=true;
-    subtitle.hidden=true;
-    gameAudio.stopDialogue();
-    scene.onComplete();
+    if(scene.index+1<scene.lines.length){scene.index++;enterLine();return;}
+    finish();
   }
 
-  return {start,update,get active(){return !!scene;},get playing(){return !!scene&&!scene.complete;},get complete(){return !!scene?.complete;},
+  return {start,update,advance,skip:()=>finish(true),get active(){return !!scene;},get playing(){return !!scene&&!scene.complete;},get complete(){return !!scene?.complete;},
     state:()=>scene?{active:true,index:scene.index,count:scene.lines.length,typing:false,complete:scene.complete,autoplay:true}:null,
     reset(){if(scene)gameAudio.stopDialogue();scene=null;subtitle.hidden=true;name.textContent='';copy.textContent='';}};
 }
